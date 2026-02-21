@@ -341,7 +341,7 @@ export function stripAnteFromLevels(levels: Level[]): Level[] {
 
 export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentConfig {
   const base = {
-    anteEnabled: true,
+    anteEnabled: false,
     players: [] as Player[],
     payout: defaultPayoutConfig(),
     rebuy: defaultRebuyConfig(),
@@ -450,7 +450,7 @@ export function loadConfig(): TournamentConfig | null {
     return {
       name: parsed.name ?? 'Tournament',
       levels: parsed.levels,
-      anteEnabled: parsed.anteEnabled ?? true,
+      anteEnabled: parsed.anteEnabled ?? false,
       players: Array.isArray(parsed.players)
         ? parsed.players.map((p: Record<string, unknown>) => ({
             ...p,
