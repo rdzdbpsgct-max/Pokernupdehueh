@@ -1,0 +1,66 @@
+// Sound effects using Web Audio API (no external files needed)
+
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!audioCtx) {
+    audioCtx = new AudioContext();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function playNote(
+  ctx: AudioContext,
+  frequency: number,
+  startTime: number,
+  duration: number,
+  volume = 0.3,
+  type: OscillatorType = 'sine',
+) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = frequency;
+  gain.gain.setValueAtTime(volume, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+/** Short fanfare for tournament start */
+export function playStartSound() {
+  try {
+    const ctx = getAudioContext();
+    const t = ctx.currentTime;
+    // Aufsteigende Fanfare: C5-E5-G5-C6
+    playNote(ctx, 523, t, 0.15, 0.25, 'triangle');       // C5
+    playNote(ctx, 659, t + 0.15, 0.15, 0.25, 'triangle'); // E5
+    playNote(ctx, 784, t + 0.30, 0.15, 0.25, 'triangle'); // G5
+    playNote(ctx, 1047, t + 0.45, 0.4, 0.3, 'triangle');  // C6 (lang)
+  } catch {
+    // audio not available
+  }
+}
+
+/** Victory melody for tournament winner */
+export function playVictorySound() {
+  try {
+    const ctx = getAudioContext();
+    const t = ctx.currentTime;
+    // Siegesmelodie: G4-C5-E5 - G5-E5-G5-C6
+    playNote(ctx, 392, t, 0.15, 0.2, 'triangle');        // G4
+    playNote(ctx, 523, t + 0.15, 0.15, 0.2, 'triangle');  // C5
+    playNote(ctx, 659, t + 0.30, 0.15, 0.2, 'triangle');  // E5
+    playNote(ctx, 784, t + 0.50, 0.2, 0.25, 'triangle');  // G5
+    playNote(ctx, 659, t + 0.70, 0.15, 0.2, 'triangle');  // E5
+    playNote(ctx, 784, t + 0.85, 0.2, 0.25, 'triangle');  // G5
+    playNote(ctx, 1047, t + 1.10, 0.6, 0.3, 'triangle');  // C6 (lang)
+  } catch {
+    // audio not available
+  }
+}

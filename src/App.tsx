@@ -16,6 +16,7 @@ import {
   validateConfig,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
+import { playStartSound, playVictorySound } from './domain/sounds';
 import { TimerDisplay } from './components/TimerDisplay';
 import { Controls } from './components/Controls';
 import { LevelPreview } from './components/LevelPreview';
@@ -193,12 +194,13 @@ function App() {
     return errors;
   }, [config]);
 
-  // Auto-pause timer when tournament finishes
+  // Auto-pause timer and play victory sound when tournament finishes
   useEffect(() => {
     if (tournamentFinished) {
       timer.pause();
+      if (settings.soundEnabled) playVictorySound();
     }
-  }, [tournamentFinished, timer]);
+  }, [tournamentFinished, timer, settings.soundEnabled]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
@@ -215,6 +217,7 @@ function App() {
     }));
     setMode('game');
     timer.restart();
+    if (settings.soundEnabled) playStartSound();
   };
 
   const switchToSetup = () => {
