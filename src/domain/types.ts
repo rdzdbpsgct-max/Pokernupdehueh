@@ -1,0 +1,77 @@
+export interface Level {
+  id: string;
+  type: 'level' | 'break';
+  durationSeconds: number;
+  smallBlind?: number;
+  bigBlind?: number;
+  ante?: number;
+  label?: string;
+}
+
+export interface Player {
+  id: string;
+  name: string;
+  rebuys: number;
+  status: 'active' | 'eliminated';
+  placement: number | null;
+  eliminatedBy: string | null;
+  knockouts: number;
+}
+
+export type PayoutMode = 'percent' | 'euro';
+
+export interface PayoutEntry {
+  place: number;
+  value: number;
+}
+
+export interface PayoutConfig {
+  mode: PayoutMode;
+  entries: PayoutEntry[];
+}
+
+export type RebuyLimitType = 'levels' | 'time';
+
+export interface RebuyConfig {
+  enabled: boolean;
+  limitType: RebuyLimitType;
+  /** When limitType === 'levels': rebuy allowed up to this play-level number */
+  levelLimit: number;
+  /** When limitType === 'time': rebuy period in seconds */
+  timeLimit: number;
+}
+
+export interface BountyConfig {
+  enabled: boolean;
+  amount: number;
+}
+
+export interface TournamentConfig {
+  name: string;
+  levels: Level[];
+  anteEnabled: boolean;
+  players: Player[];
+  payout: PayoutConfig;
+  rebuy: RebuyConfig;
+  bounty: BountyConfig;
+  buyIn: number;
+}
+
+export interface Settings {
+  soundEnabled: boolean;
+  countdownEnabled: boolean;
+  autoAdvance: boolean;
+  largeDisplay: boolean;
+}
+
+export type TimerStatus = 'stopped' | 'running' | 'paused';
+
+export interface TimerState {
+  currentLevelIndex: number;
+  remainingSeconds: number;
+  status: TimerStatus;
+  /** Epoch ms when the timer was last started/resumed */
+  startedAt: number | null;
+  /** Seconds remaining at the moment the timer was last started/resumed */
+  remainingAtStart: number | null;
+}

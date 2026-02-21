@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/opt/homebrew/bin/brew install:*)",
+      "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite build)",
+      "Bash(npm test:*)",
+      "Bash(npm run build:*)",
+      "Bash(git -C /Users/michaelprill/Claudeprojekte/Pokernupdehueh remote:*)",
+      "Bash(git -C /Users/michaelprill/Claudeprojekte/Pokernupdehueh init)",
+      "Bash(gh auth:*)",
+      "Bash(git -C /Users/michaelprill/Claudeprojekte/Pokernupdehueh add -A)",
+      "Bash(git -C /Users/michaelprill/Claudeprojekte/Pokernupdehueh status)"
+    ]
+  }
+}

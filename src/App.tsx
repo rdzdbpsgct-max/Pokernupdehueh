@@ -1,0 +1,548 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { TournamentConfig, Settings } from './domain/types';
+import {
+  createPreset,
+  defaultSettings,
+  saveConfig,
+  loadConfig,
+  saveSettings,
+  loadSettings,
+  stripAnteFromLevels,
+  isRebuyActive,
+  computeTournamentElapsedSeconds,
+  computeNextPlacement,
+} from './domain/logic';
+import { useTimer } from './hooks/useTimer';
+import { TimerDisplay } from './components/TimerDisplay';
+import { Controls } from './components/Controls';
+import { LevelPreview } from './components/LevelPreview';
+import { ConfigEditor } from './components/ConfigEditor';
+import { PresetPicker } from './components/PresetPicker';
+import { SettingsPanel } from './components/SettingsPanel';
+import { ImportExportModal } from './components/ImportExportModal';
+import { PlayerManager } from './components/PlayerManager';
+import { PayoutEditor } from './components/PayoutEditor';
+import { RebuyEditor } from './components/RebuyEditor';
+import { RebuyStatus } from './components/RebuyStatus';
+import { PlayerPanel } from './components/PlayerPanel';
+import { BountyEditor } from './components/BountyEditor';
+import { TournamentFinished } from './components/TournamentFinished';
+
+type Mode = 'setup' | 'game';
+
+function App() {
+  const [mode, setMode] = useState<Mode>('setup');
+  const [config, setConfig] = useState<TournamentConfig>(
+    () => loadConfig() ?? createPreset('standard'),
+  );
+  const [settings, setSettings] = useState<Settings>(
+    () => loadSettings() ?? defaultSettings(),
+  );
+  const [showImportExport, setShowImportExport] = useState(false);
+  const [showPlayerPanel, setShowPlayerPanel] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const timer = useTimer(config.levels, settings);
+
+  // Persist config & settings
+  useEffect(() => {
+    saveConfig(config);
+  }, [config]);
+
+  useEffect(() => {
+    saveSettings(settings);
+  }, [settings]);
+
+  // Keyboard shortcuts (only in game mode)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (mode !== 'game') return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          timer.toggleStartPause();
+          break;
+        case 'KeyN':
+          timer.nextLevel();
+          break;
+        case 'KeyP':
+          timer.previousLevel();
+          break;
+        case 'KeyR':
+          setConfirmAction({
+            title: 'Level zurücksetzen?',
+            message: 'Die verbleibende Zeit des aktuellen Levels wird auf die volle Dauer zurückgesetzt.',
+            confirmLabel: 'Level zurücksetzen',
+            onConfirm: timer.resetLevel,
+          });
+          break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mode, timer]);
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
+    }
+  }, []);
+
+  // --- Ante toggle ---
+  const toggleAnte = useCallback(() => {
+    setConfig((prev) => {
+      const newAnteEnabled = !prev.anteEnabled;
+      return {
+        ...prev,
+        anteEnabled: newAnteEnabled,
+        levels: newAnteEnabled ? prev.levels : stripAnteFromLevels(prev.levels),
+      };
+    });
+  }, []);
+
+  // --- Rebuy update handler ---
+  const updatePlayerRebuys = useCallback((playerId: string, newCount: number) => {
+    setConfig((prev) => ({
+      ...prev,
+      players: prev.players.map((p) =>
+        p.id === playerId ? { ...p, rebuys: newCount } : p,
+      ),
+    }));
+  }, []);
+
+  // --- Eliminate player handler ---
+  const eliminatePlayer = useCallback((playerId: string, eliminatedBy: string | null) => {
+    setConfig((prev) => {
+      const placement = computeNextPlacement(prev.players);
+      return {
+        ...prev,
+        players: prev.players.map((p) => {
+          if (p.id === playerId) {
+            return { ...p, status: 'eliminated' as const, placement, eliminatedBy };
+          }
+          if (eliminatedBy && p.id === eliminatedBy) {
+            return { ...p, knockouts: p.knockouts + 1 };
+          }
+          return p;
+        }),
+      };
+    });
+  }, []);
+
+  // --- Computed rebuy state for game mode ---
+  const tournamentElapsed = useMemo(
+    () =>
+      computeTournamentElapsedSeconds(
+        config.levels,
+        timer.timerState.currentLevelIndex,
+        timer.timerState.remainingSeconds,
+      ),
+    [config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds],
+  );
+
+  const rebuyActive = useMemo(
+    () =>
+      isRebuyActive(
+        config.rebuy,
+        timer.timerState.currentLevelIndex,
+        config.levels,
+        tournamentElapsed,
+      ),
+    [config.rebuy, timer.timerState.currentLevelIndex, config.levels, tournamentElapsed],
+  );
+
+  const currentPlayLevel = useMemo(() => {
+    return config.levels
+      .slice(0, timer.timerState.currentLevelIndex + 1)
+      .filter((l) => l.type === 'level').length;
+  }, [config.levels, timer.timerState.currentLevelIndex]);
+
+  const tournamentFinished = useMemo(() => {
+    if (config.players.length < 2) return false;
+    return config.players.filter((p) => p.status === 'active').length === 1;
+  }, [config.players]);
+
+  const winner = useMemo(() => {
+    if (!tournamentFinished) return null;
+    return config.players.find((p) => p.status === 'active') ?? null;
+  }, [tournamentFinished, config.players]);
+
+  // Auto-pause timer when tournament finishes
+  useEffect(() => {
+    if (tournamentFinished) {
+      timer.pause();
+    }
+  }, [tournamentFinished, timer]);
+
+  const switchToGame = () => {
+    // Reset all player state when starting a new tournament
+    setConfig((prev) => ({
+      ...prev,
+      players: prev.players.map((p) => ({
+        ...p,
+        rebuys: 0,
+        status: 'active' as const,
+        placement: null,
+        eliminatedBy: null,
+        knockouts: 0,
+      })),
+    }));
+    setMode('game');
+    timer.restart();
+  };
+
+  const switchToSetup = () => {
+    timer.restart();
+    setMode('setup');
+  };
+
+  const confirmBeforeAction = (
+    title: string,
+    message: string,
+    confirmLabel: string,
+    onConfirm: () => void,
+  ) => {
+    setConfirmAction({ title, message, confirmLabel, onConfirm });
+  };
+
+  const handleResetLevel = () => {
+    confirmBeforeAction(
+      'Level zurücksetzen?',
+      'Die verbleibende Zeit des aktuellen Levels wird auf die volle Dauer zurückgesetzt.',
+      'Level zurücksetzen',
+      timer.resetLevel,
+    );
+  };
+
+  const handleRestart = () => {
+    confirmBeforeAction(
+      'Turnier neu starten?',
+      'Das gesamte Turnier wird auf Level 1 zurückgesetzt. Alle Fortschritte gehen verloren.',
+      'Turnier neu starten',
+      timer.restart,
+    );
+  };
+
+  const handleExitToSetup = () => {
+    confirmBeforeAction(
+      'Turnier beenden?',
+      'Wenn du zum Setup zurückkehrst, wird das laufende Turnier beendet und der Timer zurückgesetzt.',
+      'Turnier beenden',
+      switchToSetup,
+    );
+  };
+
+  return (
+    <div className="min-h-full flex flex-col">
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <h1 className="text-lg font-bold text-white tracking-tight">
+          {mode === 'game' && config.name ? `♠ ${config.name}` : '♠ Pokern up de Hüh'}
+        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (mode === 'game') {
+                handleExitToSetup();
+              } else {
+                setMode('game');
+              }
+            }}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              mode === 'game'
+                ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+            }`}
+          >
+            {mode === 'setup' ? '▶ Spiel starten' : '⚙ Setup'}
+          </button>
+          <button
+            onClick={() => setShowImportExport(true)}
+            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
+          >
+            ↕ Import/Export
+          </button>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="flex-1 flex">
+        {mode === 'setup' ? (
+          /* Setup Mode */
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-2xl mx-auto space-y-6">
+              {/* Turnier-Name */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Turnier-Name
+                </h2>
+                <input
+                  type="text"
+                  value={config.name}
+                  onChange={(e) =>
+                    setConfig((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="z.B. Freitagspoker"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              {/* Presets */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Preset laden
+                </h2>
+                <PresetPicker onSelect={setConfig} />
+              </div>
+
+              {/* Spieler */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Spieler
+                </h2>
+                <PlayerManager
+                  players={config.players}
+                  onChange={(players) => setConfig((prev) => ({ ...prev, players }))}
+                />
+              </div>
+
+              {/* Buy-In */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Buy-In
+                </h2>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={config.buyIn}
+                    onChange={(e) =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        buyIn: Math.max(1, Number(e.target.value)),
+                      }))
+                    }
+                    className="w-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                  />
+                  <span className="text-gray-400 text-sm">EUR</span>
+                </div>
+              </div>
+
+              {/* Ante Toggle + Blind-Struktur */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                    Blind-Struktur
+                  </h2>
+                  <button
+                    onClick={toggleAnte}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      config.anteEnabled
+                        ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                        : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                    }`}
+                  >
+                    {config.anteEnabled ? '✓ mit Ante' : 'ohne Ante'}
+                  </button>
+                </div>
+                <ConfigEditor
+                  config={config}
+                  onChange={setConfig}
+                  anteEnabled={config.anteEnabled}
+                />
+              </div>
+
+              {/* Auszahlung */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Auszahlung
+                </h2>
+                <PayoutEditor
+                  payout={config.payout}
+                  onChange={(payout) => setConfig((prev) => ({ ...prev, payout }))}
+                />
+              </div>
+
+              {/* Rebuy */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Rebuy
+                </h2>
+                <RebuyEditor
+                  rebuy={config.rebuy}
+                  onChange={(rebuy) => setConfig((prev) => ({ ...prev, rebuy }))}
+                />
+              </div>
+
+              {/* Bounty */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Bounty
+                </h2>
+                <BountyEditor
+                  bounty={config.bounty}
+                  onChange={(bounty) => setConfig((prev) => ({ ...prev, bounty }))}
+                />
+              </div>
+
+              {/* Start button */}
+              <div className="pt-4 border-t border-gray-800">
+                <button
+                  onClick={switchToGame}
+                  className="w-full px-6 py-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-lg font-bold transition-colors"
+                >
+                  ▶ Turnier starten
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : tournamentFinished && winner ? (
+          /* Tournament Finished */
+          <TournamentFinished
+            players={config.players}
+            winner={winner}
+            buyIn={config.buyIn}
+            payout={config.payout}
+            bounty={config.bounty}
+            onBackToSetup={switchToSetup}
+          />
+        ) : (
+          /* Game Mode */
+          <div className="flex-1 flex flex-col lg:flex-row">
+            {/* Player Panel (LEFT) */}
+            {showPlayerPanel && config.players.length > 0 && (
+              <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-gray-800 p-4 overflow-y-auto">
+                <PlayerPanel
+                  players={config.players}
+                  buyIn={config.buyIn}
+                  payout={config.payout}
+                  rebuyEnabled={config.rebuy.enabled}
+                  rebuyActive={rebuyActive}
+                  bountyConfig={config.bounty}
+                  onUpdateRebuys={updatePlayerRebuys}
+                  onEliminatePlayer={eliminatePlayer}
+                />
+              </aside>
+            )}
+
+            {/* Timer area (CENTER) with edge toggle buttons */}
+            <div className="flex-1 flex relative">
+              {/* Left toggle button (Player Panel) */}
+              {config.players.length > 0 && (
+                <button
+                  onClick={() => setShowPlayerPanel((v) => !v)}
+                  className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-r-lg text-xs transition-colors"
+                  title={showPlayerPanel ? 'Spieler ausblenden' : 'Spieler einblenden'}
+                >
+                  {showPlayerPanel ? '\u25C0' : '\u25B6'}
+                </button>
+              )}
+
+              {/* Timer + Controls + Next Level */}
+              <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
+                <TimerDisplay
+                  timerState={timer.timerState}
+                  levels={config.levels}
+                  largeDisplay={settings.largeDisplay}
+                  countdownEnabled={settings.countdownEnabled}
+                  onScrub={timer.setRemainingSeconds}
+                />
+                <RebuyStatus
+                  active={rebuyActive}
+                  rebuy={config.rebuy}
+                  currentPlayLevel={currentPlayLevel}
+                  elapsedSeconds={tournamentElapsed}
+                />
+                <Controls
+                  timerState={timer.timerState}
+                  onToggleStartPause={timer.toggleStartPause}
+                  onNext={timer.nextLevel}
+                  onPrevious={timer.previousLevel}
+                  onReset={handleResetLevel}
+                  onRestart={handleRestart}
+                />
+
+              </div>
+
+              {/* Right toggle button (Sidebar) */}
+              <button
+                onClick={() => setShowSidebar((v) => !v)}
+                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-l-lg text-xs transition-colors"
+                title={showSidebar ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
+              >
+                {showSidebar ? '\u25B6' : '\u25C0'}
+              </button>
+            </div>
+
+            {/* Sidebar (RIGHT) */}
+            {showSidebar && (
+              <aside className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-gray-800 p-4 space-y-6 overflow-y-auto">
+                <LevelPreview timerState={timer.timerState} levels={config.levels} />
+                <SettingsPanel
+                  settings={settings}
+                  onChange={setSettings}
+                  onToggleFullscreen={toggleFullscreen}
+                />
+                <button
+                  onClick={handleExitToSetup}
+                  className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
+                >
+                  ⚙ Zurueck zum Setup
+                </button>
+              </aside>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Import/Export Modal */}
+      {showImportExport && (
+        <ImportExportModal
+          config={config}
+          onImport={setConfig}
+          onClose={() => setShowImportExport(false)}
+        />
+      )}
+
+      {/* Confirm Action Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full space-y-4">
+            <h3 className="text-lg font-bold text-white">{confirmAction.title}</h3>
+            <p className="text-gray-400 text-sm">{confirmAction.message}</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => {
+                  confirmAction.onConfirm();
+                  setConfirmAction(null);
+                }}
+                className="px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {confirmAction.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
