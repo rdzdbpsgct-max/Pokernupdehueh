@@ -2,7 +2,7 @@ export type Language = 'de' | 'en';
 
 const de = {
   // --- App ---
-  'app.title': '♠ Pokern up de Hüh',
+  'app.title': '♠ ♥ Pokern up de Hüh ♦ ♣',
   'app.startGame': '▶ Spiel starten',
   'app.setup': '⚙ Setup',
   'app.importExport': '↕ Import/Export',
@@ -205,7 +205,7 @@ export type TranslationKey = keyof typeof de;
 
 const en: Record<TranslationKey, string> = {
   // --- App ---
-  'app.title': '♠ Pokern up de Hüh',
+  'app.title': '♠ ♥ Pokern up de Hüh ♦ ♣',
   'app.startGame': '▶ Start Game',
   'app.setup': '⚙ Setup',
   'app.importExport': '↕ Import/Export',

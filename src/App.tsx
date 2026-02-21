@@ -316,7 +316,7 @@ function App() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <h1 className="text-lg font-bold text-white tracking-tight">
-          {mode === 'game' && config.name ? `♠ ${config.name}` : t('app.title')}
+          {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
         </h1>
         <div className="flex items-center gap-2">
           {mode === 'setup' && <LanguageSwitcher />}

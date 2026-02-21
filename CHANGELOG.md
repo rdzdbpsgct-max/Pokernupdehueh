@@ -22,6 +22,7 @@ All notable changes to the Pokern up de Hüh app.
 
 - **Größere Blinds-Anzeige / Larger blinds display** — Die aktuelle Blindstufe wird im Timer deutlich größer dargestellt (ca. 80% der Timer-Größe) und ist damit auch aus Entfernung gut lesbar. / The current blind level is displayed much larger in the timer (~80% of timer size), readable from a distance.
 - **Default-Spielernamen sprachabhängig / Language-aware default player names** — Beim Sprachwechsel werden Standard-Spielernamen automatisch angepasst (Spieler 1 ↔ Player 1). Benutzerdefinierte Namen bleiben unverändert. / When switching languages, default player names are automatically updated (Spieler 1 ↔ Player 1). Custom names remain unchanged.
+- **Poker-Farben im Header / Poker suits in header** — Alle vier Poker-Farben (♠ ♥ ♦ ♣) werden in absteigender Reihenfolge neben dem App- und Turniernamen angezeigt. / All four poker suits (♠ ♥ ♦ ♣) are displayed in descending order around the app and tournament name.
 
 ### Technisch / Technical
 
