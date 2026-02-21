@@ -1,93 +1,170 @@
-# Pokern up de Hüh - Tournament Timer
+<div align="center">
 
-Lokale Poker-Turnier-Timer-Webapp für Homegames.
+<img src="https://img.shields.io/badge/%F0%9F%83%8F%20Pokern-up%20de%20H%C3%BCh-1a1a2e?style=for-the-badge&labelColor=065f46&color=1a1a2e" alt="Pokern up de Hüh" height="40" />
 
-## Features
+# Pokern up de Hüh
 
-- Blind-Level-Struktur (SB / BB / Ante)
-- Break-Level-Unterstützung
-- Driftfreier Timer (basierend auf `Date.now()`, kein inkrementelles Zählen)
-- Start / Pause / Resume / Next / Previous / Reset / Restart
-- Spielerverwaltung (Anzahl + Namen)
-- Ante Toggle (mit/ohne Ante)
-- Auszahlungsstruktur (% oder Euro, beliebig viele Plätze)
-- Rebuy-Unterstützung (nach Levels oder nach Zeit)
-- Sound-Beeps (Web Audio API) bei Countdown und Level-Ende
-- Countdown-Anzeige (letzte 10 Sekunden)
-- Presets: Turbo (6 min), Standard (15 min), Deep Stack (20 min)
-- Setup-Mode zum Konfigurieren des Turniers
-- Game-Mode mit großer Timer-Anzeige + Rebuy-Status
-- Persistenz via localStorage
-- JSON Import / Export
-- Fullscreen-Modus
-- Tastenkürzel:
-  - `Space` - Start / Pause
-  - `N` - Nächstes Level
-  - `P` - Vorheriges Level
-  - `R` - Level zurücksetzen
+**Der Poker-Turnier-Timer für deinen Spieleabend**
 
-## Tech Stack
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
+[![Tests](https://img.shields.io/badge/Tests-82%20passed-brightgreen?style=flat-square)](#)
+[![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 
-- React 19 + TypeScript
-- Vite 7
-- Tailwind CSS 4
-- Vitest (Unit Tests)
-- Keine Backend-Komponenten
+</div>
 
-## Starten
+---
+
+Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. Kein Server, kein Account, kein Schnickschnack — einfach öffnen und losspielen.
+
+- **Timer & Blindstruktur** mit Presets (Turbo, Standard, Deep Stack) oder eigener Konfiguration
+- **Spielerverwaltung** mit Eliminierungen, Rebuys, Bounties und automatischer Platzierung
+- **Auszahlungsrechner** mit prozentualer oder fester Verteilung
+- **Mobilfreundlich** und offline nutzbar (kein Backend nötig)
+
+---
+
+## Technologien
+
+![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-82_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+
+- **React 19** mit funktionalen Komponenten und Hooks
+- **TypeScript** mit strikter Typisierung
+- **Vite** als Build-Tool (< 260 KB Bundle)
+- **Tailwind CSS 4** für das gesamte Styling
+- **Vitest** für Unit-Tests
+- **GitHub Actions** CI/CD mit automatischem Deploy auf GitHub Pages
+
+---
+
+## Quickstart
+
+### Voraussetzungen
+
+- Node.js 20+
+- npm
+
+### Installation
 
 ```bash
+git clone https://github.com/rdzdbpsgct-max/Pokernupdehueh.git
+cd Pokernupdehueh
 npm install
+```
+
+### Entwicklung
+
+```bash
 npm run dev
 ```
 
-Öffne http://localhost:5173
+Öffnet die App unter `http://localhost:5173/Pokernupdehueh/`.
 
-## Tests
-
-```bash
-npm test
-```
-
-## Build
+### Build & Test
 
 ```bash
-npm run build
-npm run preview
+npm run lint        # ESLint
+npm run test        # 82 Unit-Tests
+npm run build       # Production-Build nach ./dist
 ```
+
+---
+
+## Verwendung
+
+1. **Preset wählen** oder eigene Blindstruktur erstellen
+2. **Spieler hinzufügen** (2–20), Buy-In und Startchips festlegen
+3. **Turnier starten** — der Timer läuft, Blinds steigen automatisch
+4. **Spieler eliminieren** — Platzierung und Killer werden erfasst
+5. **Ergebnis** — Auszahlungen, Bounties und Platzierungen auf einen Blick
+
+### Tastenkürzel
+
+| Taste | Aktion |
+|-------|--------|
+| `Space` | Start / Pause |
+| `N` | Nächstes Level |
+| `V` | Vorheriges Level |
+| `R` | Level zurücksetzen |
+
+> **Live-Demo:** [rdzdbpsgct-max.github.io/Pokernupdehueh](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
+
+---
+
+## Features
+
+| Feature | Beschreibung |
+|---------|-------------|
+| Timer | Drift-freier Countdown mit Fortschrittsbalken und Countdown-Warnung (letzte 10 Sek.) |
+| Blindstruktur | Drei Presets + vollständig anpassbare Levels und Pausen |
+| Ante | Optional, automatische Vorbelegung (~12,5 % des Big Blind) |
+| Spielerverwaltung | Eliminierung mit Killer-Auswahl, automatische Platzierung |
+| Rebuys | Konfigurierbares Limit (nach Levels oder Zeit), separate Kosten und Chips |
+| Bounty | Optionales Kopfgeld pro Knockout mit Gesamtauswertung |
+| Auszahlung | Prozentual oder fest, automatischer Vorschlag je nach Spielerzahl |
+| Import / Export | Turnierkonfiguration als JSON speichern und laden |
+| Sound | Countdown-Beeps und Sieges-Melodie via Web Audio API |
+| Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
+| Persistenz | Automatische Speicherung im Browser (localStorage) |
+| Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
+
+---
 
 ## Projektstruktur
 
 ```
 src/
   domain/
-    types.ts            # Datenmodelle (Level, Player, Payout, Rebuy, Config, etc.)
-    logic.ts            # Reine Funktionen (Format, Validate, Presets, Persistence, etc.)
+    types.ts            # TypeScript-Typen
+    logic.ts            # Geschäftslogik (Timer, Blinds, Payouts)
+    sounds.ts           # Web Audio API Sounds
   hooks/
     useTimer.ts         # Timer-Hook mit drift-freier Berechnung
   components/
-    TimerDisplay.tsx    # Große Uhranzeige + Blinds
-    Controls.tsx        # Start/Pause/Next/Prev/Reset Buttons
-    LevelPreview.tsx    # Level-Übersicht (Sidebar)
-    ConfigEditor.tsx    # Level-Editor im Setup-Mode
-    PresetPicker.tsx    # Turbo/Standard/Deep Auswahl
-    SettingsPanel.tsx   # Sound/Countdown/AutoAdvance Toggles
-    PlayerManager.tsx   # Spieleranzahl + Namen
-    PayoutEditor.tsx    # Auszahlungsstruktur (% / €)
+    TimerDisplay.tsx    # Timer-Anzeige mit Fortschrittsbalken
+    ConfigEditor.tsx    # Blindstruktur-Editor
+    PlayerManager.tsx   # Spielerverwaltung
+    PlayerPanel.tsx     # Spieler-Panel während des Turniers
+    PayoutEditor.tsx    # Auszahlungsstruktur
     RebuyEditor.tsx     # Rebuy-Konfiguration
-    RebuyStatus.tsx     # Rebuy-Status im Game-Mode
-    ImportExportModal.tsx  # JSON Import/Export Dialog
-  App.tsx               # Haupt-App mit Mode-Switch
-  main.tsx              # Entry Point
+    BountyEditor.tsx    # Bounty-Konfiguration
+    Controls.tsx        # Start/Pause/Next/Prev/Reset
+    ...
 tests/
-  logic.test.ts         # 51 Unit Tests für Domain-Logik
+  logic.test.ts         # 82 Unit-Tests
 ```
 
 ## Architektur-Entscheidungen
 
-- **Timer ohne Drift**: `startTimestamp` + `Date.now()` statt inkrementeller `setInterval`-Zählung
-- **State Machine**: `stopped` -> `running` -> `paused` -> `stopped`
-- **Domain/UI-Trennung**: `domain/` enthält ausschließlich reine, testbare Funktionen ohne UI-Abhängigkeiten
-- **Keine externen Dependencies** außer React, Tailwind, Vite
-- **Sound via Web Audio API** (kein externes Audio-File nötig)
-- **Backward-Kompatibilität**: Alte localStorage-Daten werden mit Defaults ergänzt
+- **Timer ohne Drift** — `startTimestamp` + `Date.now()` statt inkrementeller `setInterval`-Zählung
+- **Domain/UI-Trennung** — `domain/` enthält ausschließlich reine, testbare Funktionen ohne UI-Abhängigkeiten
+- **Keine externen Dependencies** außer React und Tailwind
+- **Sound via Web Audio API** — kein externes Audio-File nötig
+- **Backward-Kompatibilität** — alte localStorage-Daten werden mit Defaults ergänzt
+
+---
+
+## Contributing
+
+Beiträge sind willkommen!
+
+1. Fork erstellen
+2. Feature-Branch anlegen (`git checkout -b feature/mein-feature`)
+3. Änderungen committen (`git commit -m 'Feature hinzugefügt'`)
+4. Branch pushen (`git push origin feature/mein-feature`)
+5. Pull Request öffnen
+
+Bitte stelle sicher, dass `npm run lint` und `npm run test` fehlerfrei durchlaufen.
+
+---
+
+<div align="center">
+
+**[Live Demo](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)** · **[Issues](https://github.com/rdzdbpsgct-max/Pokernupdehueh/issues)**
+
+Gebaut mit React, TypeScript und viel Liebe zum Pokern.
+
+</div>
