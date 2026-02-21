@@ -83,6 +83,14 @@ export function TournamentFinished({
               const isPaid = payoutMap.has(player.finalPlace);
               const amount = payoutMap.get(player.finalPlace);
               const showDivider = idx > 0 && !isPaid && payoutMap.has(standings[idx - 1].finalPlace);
+              const rebuyCost = rebuy.enabled ? rebuy.rebuyCost : 0;
+              const totalPaid = buyIn + player.rebuys * rebuyCost;
+              const bountyEarnings = bounty.enabled ? player.knockouts * bounty.amount : 0;
+
+              // Build paid-in label: "10 EUR" or "10 + 2×10 = 30 EUR"
+              const paidInLabel = player.rebuys > 0
+                ? `${buyIn} + ${player.rebuys}×${rebuyCost} = ${totalPaid} ${t('unit.eur')}`
+                : `${totalPaid} ${t('unit.eur')}`;
 
               return (
                 <div key={player.id}>
@@ -90,7 +98,7 @@ export function TournamentFinished({
                     <div className="border-t border-gray-700 mx-3" />
                   )}
                   <div
-                    className={`flex items-center justify-between px-4 py-2.5 ${
+                    className={`px-4 py-2.5 ${
                       player.finalPlace === 1
                         ? 'bg-amber-900/20'
                         : idx % 2 === 0
@@ -98,27 +106,41 @@ export function TournamentFinished({
                         : ''
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <span
-                        className={`text-sm font-bold w-6 text-right shrink-0 ${placeColor(
-                          player.finalPlace,
-                        )}`}
-                      >
-                        {placeLabel(player.finalPlace)}
-                      </span>
-                      <span
-                        className={`text-sm truncate ${
-                          isPaid ? 'text-white font-medium' : 'text-gray-500'
-                        }`}
-                      >
-                        {player.name}
-                      </span>
+                    {/* Row 1: Place, Name, Winnings */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span
+                          className={`text-sm font-bold w-6 text-right shrink-0 ${placeColor(
+                            player.finalPlace,
+                          )}`}
+                        >
+                          {placeLabel(player.finalPlace)}
+                        </span>
+                        <span
+                          className={`text-sm truncate ${
+                            isPaid ? 'text-white font-medium' : 'text-gray-500'
+                          }`}
+                        >
+                          {player.name}
+                        </span>
+                      </div>
+                      {isPaid && amount != null && (
+                        <span className="text-emerald-400 text-sm font-bold shrink-0 ml-3">
+                          {amount.toFixed(2)} {t('unit.eur')}
+                        </span>
+                      )}
                     </div>
-                    {isPaid && amount != null && (
-                      <span className="text-emerald-400 text-sm font-bold shrink-0 ml-3">
-                        {amount.toFixed(2)} {t('unit.eur')}
+                    {/* Row 2: Paid in, Bounty earnings */}
+                    <div className="flex items-center gap-4 ml-9 mt-0.5">
+                      <span className="text-xs text-gray-500">
+                        {t('finished.paidIn')}: {paidInLabel}
                       </span>
-                    )}
+                      {bounty.enabled && bountyEarnings > 0 && (
+                        <span className="text-xs text-amber-500/70">
+                          {t('finished.bountyEarned')}: {bountyEarnings.toFixed(2)} {t('unit.eur')} ({player.knockouts} KO)
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
