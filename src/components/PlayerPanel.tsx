@@ -12,6 +12,7 @@ interface Props {
   bountyConfig: BountyConfig;
   onUpdateRebuys: (playerId: string, newCount: number) => void;
   onEliminatePlayer: (playerId: string, eliminatedBy: string | null) => void;
+  onReinstatePlayer: (playerId: string) => void;
 }
 
 export function PlayerPanel({
@@ -24,6 +25,7 @@ export function PlayerPanel({
   bountyConfig,
   onUpdateRebuys,
   onEliminatePlayer,
+  onReinstatePlayer,
 }: Props) {
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
   const [selectedKiller, setSelectedKiller] = useState<string>('');
@@ -213,35 +215,50 @@ export function PlayerPanel({
             Ausgeschieden
           </h3>
           <div className="mt-1 space-y-1">
-            {eliminatedPlayers.map((player) => (
-              <div
-                key={player.id}
-                className="flex items-center justify-between px-3 py-1.5 bg-gray-800/30 rounded opacity-60"
-              >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="text-xs text-gray-500 font-bold w-6 text-right shrink-0">
-                    {player.placement}.
-                  </span>
-                  <span className="text-sm text-gray-400 line-through truncate">
-                    {player.name}
-                  </span>
-                </div>
-                {bountyConfig.enabled && (
-                  <div className="flex items-center gap-2 text-xs text-gray-500 shrink-0">
-                    {player.knockouts > 0 && (
-                      <span className="text-amber-500/70">
-                        {player.knockouts} KO
-                      </span>
+            {eliminatedPlayers.map((player, idx) => {
+              // Only the most recently eliminated player (highest placement = last in sorted list) can be reinstated
+              const isLastEliminated = idx === eliminatedPlayers.length - 1;
+              return (
+                <div
+                  key={player.id}
+                  className="flex items-center justify-between px-3 py-1.5 bg-gray-800/30 rounded opacity-60"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-xs text-gray-500 font-bold w-6 text-right shrink-0">
+                      {player.placement}.
+                    </span>
+                    <span className="text-sm text-gray-400 line-through truncate">
+                      {player.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {bountyConfig.enabled && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {player.knockouts > 0 && (
+                          <span className="text-amber-500/70">
+                            {player.knockouts} KO
+                          </span>
+                        )}
+                        {player.eliminatedBy && (
+                          <span>
+                            von {players.find((p) => p.id === player.eliminatedBy)?.name ?? '?'}
+                          </span>
+                        )}
+                      </div>
                     )}
-                    {player.eliminatedBy && (
-                      <span>
-                        von {players.find((p) => p.id === player.eliminatedBy)?.name ?? '?'}
-                      </span>
+                    {isLastEliminated && (
+                      <button
+                        onClick={() => onReinstatePlayer(player.id)}
+                        className="px-2 py-0.5 rounded bg-blue-900/50 hover:bg-blue-800 text-blue-300 text-xs font-medium transition-colors"
+                        title="Eliminierung rückgängig machen"
+                      >
+                        Zurück
+                      </button>
                     )}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

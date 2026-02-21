@@ -147,6 +147,31 @@ function App() {
     });
   }, []);
 
+  // --- Reinstate (undo elimination) handler ---
+  const reinstatePlayer = useCallback((playerId: string) => {
+    setConfig((prev) => {
+      const player = prev.players.find((p) => p.id === playerId);
+      if (!player || player.status !== 'eliminated') return prev;
+
+      const killedBy = player.eliminatedBy;
+
+      return {
+        ...prev,
+        players: prev.players.map((p) => {
+          // Reset the reinstated player
+          if (p.id === playerId) {
+            return { ...p, status: 'active' as const, placement: null, eliminatedBy: null };
+          }
+          // Decrement knockout count of the killer
+          if (killedBy && p.id === killedBy) {
+            return { ...p, knockouts: Math.max(0, p.knockouts - 1) };
+          }
+          return p;
+        }),
+      };
+    });
+  }, []);
+
   // --- Computed rebuy state for game mode ---
   const tournamentElapsed = useMemo(
     () =>
@@ -518,6 +543,7 @@ function App() {
                   bountyConfig={config.bounty}
                   onUpdateRebuys={updatePlayerRebuys}
                   onEliminatePlayer={eliminatePlayer}
+                  onReinstatePlayer={reinstatePlayer}
                 />
               </aside>
             )}
