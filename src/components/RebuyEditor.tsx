@@ -73,9 +73,10 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 min={1}
                 step={1000}
                 value={rebuy.rebuyChips}
-                onChange={(e) =>
-                  onChange({ ...rebuy, rebuyChips: Math.max(1, Number(e.target.value)) })
-                }
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  onChange({ ...rebuy, rebuyChips: Math.max(1000, Math.round(raw / 1000) * 1000) });
+                }}
                 className="w-24 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
               />
               <span className="text-gray-500 text-xs">Chips</span>

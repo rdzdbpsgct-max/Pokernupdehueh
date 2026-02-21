@@ -374,7 +374,8 @@ function App() {
                       step={1000}
                       value={config.startingChips}
                       onChange={(e) => {
-                        const newChips = Math.max(1, Number(e.target.value));
+                        const raw = Number(e.target.value);
+                        const newChips = Math.max(1000, Math.round(raw / 1000) * 1000);
                         setConfig((prev) => ({
                           ...prev,
                           startingChips: newChips,
