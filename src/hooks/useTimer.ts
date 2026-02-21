@@ -145,6 +145,8 @@ export function useTimer(levels: Level[], settings: Settings) {
   }, []);
 
   const pause = useCallback(() => {
+    lastCountdownSecRef.current = null;
+    levelEndAudioPlayedRef.current = false;
     setTimerState((prev) => {
       if (prev.status !== 'running' || prev.startedAt === null || prev.remainingAtStart === null) return prev;
       const remaining = computeRemaining(prev.startedAt, prev.remainingAtStart, Date.now());
@@ -162,6 +164,8 @@ export function useTimer(levels: Level[], settings: Settings) {
     setTimerState((prev) => {
       if (prev.status === 'running') {
         // Pause
+        lastCountdownSecRef.current = null;
+        levelEndAudioPlayedRef.current = false;
         if (prev.startedAt === null || prev.remainingAtStart === null) return prev;
         const remaining = computeRemaining(prev.startedAt, prev.remainingAtStart, Date.now());
         return {
