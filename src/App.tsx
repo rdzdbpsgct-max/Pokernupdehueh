@@ -383,9 +383,18 @@ function App() {
                       onChange={(e) => {
                         const raw = Number(e.target.value);
                         setConfig((prev) => {
-                          const diff = Math.abs(raw - prev.startingChips);
-                          const isStep = diff > 0 && diff <= 1000;
-                          const newChips = Math.max(1, isStep ? Math.round(raw / 1000) * 1000 : raw);
+                          const diff = raw - prev.startingChips;
+                          const absDiff = Math.abs(diff);
+                          let newChips: number;
+                          if (absDiff > 0 && absDiff <= 1000) {
+                            // Spinner arrow: step up/down in 1000s
+                            newChips = diff > 0
+                              ? Math.ceil(raw / 1000) * 1000
+                              : Math.floor(raw / 1000) * 1000;
+                          } else {
+                            newChips = raw;
+                          }
+                          newChips = Math.max(1, newChips);
                           return {
                             ...prev,
                             startingChips: newChips,

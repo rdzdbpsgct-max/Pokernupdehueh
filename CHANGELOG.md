@@ -5,7 +5,7 @@ Alle wichtigen Änderungen an der Pokern up de Hüh App.
 ## [Unreleased]
 
 ### Neu
-- Startchips im Setup konfigurierbar (Standard: 1000)
+- Startchips im Setup konfigurierbar (Standard: 20.000)
 - Rebuy-Kosten separat vom Buy-In einstellbar (Standard: gleich wie Buy-In)
 - Rebuy-Chips separat von Startchips einstellbar (Standard: gleich wie Startchips)
 - Preisgeld-Berechnung berücksichtigt separate Rebuy-Kosten
