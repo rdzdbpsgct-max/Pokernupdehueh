@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { TournamentConfig, Settings } from './domain/types';
 import {
   createPreset,
@@ -246,12 +246,19 @@ function App() {
   }, [config, t]);
 
   // Auto-pause timer and play victory sound when tournament finishes
+  const victorySoundPlayedRef = useRef(false);
   useEffect(() => {
-    if (tournamentFinished) {
+    if (mode === 'game' && tournamentFinished) {
       timer.pause();
-      if (settings.soundEnabled) playVictorySound();
+      if (settings.soundEnabled && !victorySoundPlayedRef.current) {
+        victorySoundPlayedRef.current = true;
+        playVictorySound();
+      }
     }
-  }, [tournamentFinished, timer, settings.soundEnabled]);
+    if (!tournamentFinished) {
+      victorySoundPlayedRef.current = false;
+    }
+  }, [mode, tournamentFinished, timer, settings.soundEnabled]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
