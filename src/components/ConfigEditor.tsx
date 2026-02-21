@@ -20,6 +20,14 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
   );
   const [globalBreakMinutes, setGlobalBreakMinutes] = useState(firstBreakMinutes);
 
+  // Sync global inputs when levels change externally (e.g. preset switch)
+  const [prevLevels, setPrevLevels] = useState(config.levels);
+  if (config.levels !== prevLevels) {
+    setPrevLevels(config.levels);
+    setGlobalMinutes(firstLevelMinutes);
+    setGlobalBreakMinutes(firstBreakMinutes);
+  }
+
   const applyGlobalDuration = () => {
     const seconds = Math.max(60, globalMinutes * 60);
     const newLevels = config.levels.map((l) =>

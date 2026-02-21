@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Player } from '../domain/types';
 import { generatePlayerId } from '../domain/logic';
 
@@ -7,12 +7,12 @@ interface Props {
   onChange: (players: Player[]) => void;
 }
 
-export function PlayerManager({ players, onChange }: Props) {
+/**
+ * Inner component that owns countInput state.
+ * Re-keyed externally when players.length changes to reset the input.
+ */
+function PlayerManagerInner({ players, onChange }: Props) {
   const [countInput, setCountInput] = useState(String(players.length));
-
-  useEffect(() => {
-    setCountInput(String(players.length));
-  }, [players.length]);
 
   const setPlayerCount = (count: number) => {
     const clamped = Math.max(2, Math.min(20, count));
@@ -78,5 +78,19 @@ export function PlayerManager({ players, onChange }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Wrapper that re-keys the inner component when players.length changes,
+ * resetting the countInput state without useEffect + setState.
+ */
+export function PlayerManager({ players, onChange }: Props) {
+  return (
+    <PlayerManagerInner
+      key={players.length}
+      players={players}
+      onChange={onChange}
+    />
   );
 }

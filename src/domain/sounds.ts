@@ -32,21 +32,6 @@ function playNote(
   osc.stop(startTime + duration);
 }
 
-/** Short fanfare for tournament start */
-export function playStartSound() {
-  try {
-    const ctx = getAudioContext();
-    const t = ctx.currentTime;
-    // Aufsteigende Fanfare: C5-E5-G5-C6
-    playNote(ctx, 523, t, 0.15, 0.25, 'triangle');       // C5
-    playNote(ctx, 659, t + 0.15, 0.15, 0.25, 'triangle'); // E5
-    playNote(ctx, 784, t + 0.30, 0.15, 0.25, 'triangle'); // G5
-    playNote(ctx, 1047, t + 0.45, 0.4, 0.3, 'triangle');  // C6 (lang)
-  } catch {
-    // audio not available
-  }
-}
-
 /** Victory melody for tournament winner */
 export function playVictorySound() {
   try {

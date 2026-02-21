@@ -12,14 +12,32 @@ Alle wichtigen Änderungen an der Pokern up de Hüh App.
 - Rebuy-Details in Turnier-Ergebnis und Spieler-Panel sichtbar
 - Globale Leveldauer: Alle Blindstufen auf einmal auf eine Dauer setzen
 - Globale Pausendauer: Alle Pausen auf einmal auf eine Dauer setzen
+- Ante-Vorbelegung: Beim Aktivieren von Ante werden Standard-Ante-Werte (ca. 12,5% des BB) automatisch pro Level gesetzt
 
 ### Geändert
 - Ante ist standardmäßig deaktiviert
+- Ante-Toggle setzt/entfernt Ante-Werte automatisch bei allen Blindstufen
 - Buy-In und Startchips werden nebeneinander angezeigt
 - Rebuy-Kosten und -Chips passen sich automatisch an, wenn Buy-In oder Startchips geändert werden
 - Startchips und Rebuy-Chips in 1000er-Schritten einstellbar (Direkteingabe weiterhin möglich)
 - "Break" überall durch "Pause" ersetzt
 - Sound: AudioContext-Resume für bessere Browser-Kompatibilität
+
+### Behoben
+- ESLint-Fehler: setState in useEffect in PlayerManager und useTimer refactored
+- Alle npm-audit-Vulnerabilities (minimatch ReDoS) via overrides behoben
+- globalMinutes/globalBreakMinutes synchronisieren sich bei Preset-Wechsel
+
+### Verbessert
+- Duplizierter Code: loadConfig/importConfigJSON teilen sich parseConfigObject
+- Duplizierter Code: Spinner-Rounding-Logik in snapSpinnerValue() extrahiert
+- IIFE in TimerDisplay durch NextLevelInfo-Subkomponente ersetzt
+- CI-Workflow um Lint- und Test-Schritte erweitert
+- Leerer public/-Ordner entfernt
+- Tests für computeDefaultAnte/applyDefaultAntes hinzugefügt (82 Tests gesamt)
+
+### Entfernt
+- Start-Sound beim Turnierbeginn entfernt
 
 ## [1.0.0] – Erste Version
 

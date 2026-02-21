@@ -24,6 +24,31 @@ export function generatePlayerId(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Spinner rounding helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Rounds a spinner input value to the nearest `step` boundary based on direction.
+ * When the user clicks the spinner arrow, the raw value changes by `step`.
+ * This helper snaps it to a clean multiple so e.g. 1500 + 1000 → 2000 (not 2500).
+ */
+export function snapSpinnerValue(raw: number, prev: number, step: number, min = 1): number {
+  const diff = raw - prev;
+  const absDiff = Math.abs(diff);
+  let val: number;
+  if (absDiff > 0 && absDiff <= step) {
+    // Spinner arrow click: snap to nearest step boundary
+    val = diff > 0
+      ? Math.ceil(raw / step) * step
+      : Math.floor(raw / step) * step;
+  } else {
+    // Direct keyboard input: accept as-is
+    val = raw;
+  }
+  return Math.max(min, val);
+}
+
+// ---------------------------------------------------------------------------
 // Format
 // ---------------------------------------------------------------------------
 
@@ -338,6 +363,35 @@ export function stripAnteFromLevels(levels: Level[]): Level[] {
   );
 }
 
+/**
+ * Compute a standard ante value based on the big blind.
+ * Typical poker tournament ante ≈ 10-12.5% of BB, rounded to a "nice" value.
+ */
+export function computeDefaultAnte(bigBlind: number): number {
+  if (bigBlind <= 0) return 0;
+  const raw = Math.round(bigBlind * 0.125); // 12.5% of BB
+  if (raw <= 0) return 0;
+
+  // Round to nearest "nice" value
+  if (raw <= 5) return raw;
+  if (raw <= 10) return Math.round(raw / 5) * 5;
+  if (raw <= 50) return Math.round(raw / 5) * 5;
+  if (raw <= 100) return Math.round(raw / 25) * 25;
+  if (raw <= 500) return Math.round(raw / 50) * 50;
+  return Math.round(raw / 100) * 100;
+}
+
+/**
+ * Apply standard ante values to all play levels based on their big blind.
+ */
+export function applyDefaultAntes(levels: Level[]): Level[] {
+  return levels.map((level) => {
+    if (level.type !== 'level') return level;
+    const ante = computeDefaultAnte(level.bigBlind ?? 0);
+    return { ...level, ante };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Presets
 // ---------------------------------------------------------------------------
@@ -362,15 +416,15 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 50, bigBlind: 100, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 75, bigBlind: 150, ante: 0 },
         { id: generateId(), type: 'break', durationSeconds: 300, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 100, bigBlind: 200, ante: 25 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 150, bigBlind: 300, ante: 25 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 200, bigBlind: 400, ante: 50 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 300, bigBlind: 600, ante: 50 },
+        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 100, bigBlind: 200, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 150, bigBlind: 300, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 200, bigBlind: 400, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 300, bigBlind: 600, ante: 0 },
         { id: generateId(), type: 'break', durationSeconds: 300, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 400, bigBlind: 800, ante: 100 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 500, bigBlind: 1000, ante: 100 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 750, bigBlind: 1500, ante: 150 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 1000, bigBlind: 2000, ante: 200 },
+        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 400, bigBlind: 800, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 500, bigBlind: 1000, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 750, bigBlind: 1500, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 1000, bigBlind: 2000, ante: 0 },
       ],
     },
     standard: {
@@ -382,16 +436,16 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 75, bigBlind: 150, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 100, bigBlind: 200, ante: 0 },
         { id: generateId(), type: 'break', durationSeconds: 600, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 150, bigBlind: 300, ante: 25 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 200, bigBlind: 400, ante: 50 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 300, bigBlind: 600, ante: 50 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 400, bigBlind: 800, ante: 75 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 150, bigBlind: 300, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 200, bigBlind: 400, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 300, bigBlind: 600, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 400, bigBlind: 800, ante: 0 },
         { id: generateId(), type: 'break', durationSeconds: 600, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 500, bigBlind: 1000, ante: 100 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 750, bigBlind: 1500, ante: 150 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 1000, bigBlind: 2000, ante: 200 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 1500, bigBlind: 3000, ante: 300 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 2000, bigBlind: 4000, ante: 400 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 500, bigBlind: 1000, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 750, bigBlind: 1500, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 1000, bigBlind: 2000, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 1500, bigBlind: 3000, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 2000, bigBlind: 4000, ante: 0 },
       ],
     },
     deep: {
@@ -404,17 +458,17 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 100, bigBlind: 200, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 125, bigBlind: 250, ante: 0 },
         { id: generateId(), type: 'break', durationSeconds: 900, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 150, bigBlind: 300, ante: 25 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 200, bigBlind: 400, ante: 50 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 250, bigBlind: 500, ante: 50 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 300, bigBlind: 600, ante: 75 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 400, bigBlind: 800, ante: 75 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 150, bigBlind: 300, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 200, bigBlind: 400, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 250, bigBlind: 500, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 300, bigBlind: 600, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 400, bigBlind: 800, ante: 0 },
         { id: generateId(), type: 'break', durationSeconds: 900, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 500, bigBlind: 1000, ante: 100 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 750, bigBlind: 1500, ante: 150 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 1000, bigBlind: 2000, ante: 200 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 1500, bigBlind: 3000, ante: 300 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 2000, bigBlind: 4000, ante: 400 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 500, bigBlind: 1000, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 750, bigBlind: 1500, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 1000, bigBlind: 2000, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 1500, bigBlind: 3000, ante: 0 },
+        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 2000, bigBlind: 4000, ante: 0 },
       ],
     },
   };
@@ -445,43 +499,47 @@ export function saveConfig(config: TournamentConfig): void {
   localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
 }
 
+/** Shared parser: normalizes a raw parsed object into a TournamentConfig. */
+function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | null {
+  if (!parsed || !Array.isArray(parsed.levels)) return null;
+  const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
+  const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 20000;
+  const rebuyRaw = parsed.rebuy as Record<string, unknown> | undefined;
+  const rebuy: RebuyConfig = rebuyRaw
+    ? {
+        ...defaultRebuyConfig(buyIn, startingChips),
+        ...(rebuyRaw as Partial<RebuyConfig>),
+        rebuyCost: typeof rebuyRaw.rebuyCost === 'number' ? rebuyRaw.rebuyCost : buyIn,
+        rebuyChips: typeof rebuyRaw.rebuyChips === 'number' ? rebuyRaw.rebuyChips : startingChips,
+      }
+    : defaultRebuyConfig(buyIn, startingChips);
+  return {
+    name: typeof parsed.name === 'string' ? parsed.name : 'Tournament',
+    levels: parsed.levels as Level[],
+    anteEnabled: (parsed.anteEnabled as boolean) ?? false,
+    players: Array.isArray(parsed.players)
+      ? ((parsed.players as Record<string, unknown>[]).map((p) => ({
+          ...p,
+          rebuys: typeof p.rebuys === 'number' ? p.rebuys : 0,
+          status: p.status === 'eliminated' ? 'eliminated' : 'active',
+          placement: typeof p.placement === 'number' ? p.placement : null,
+          eliminatedBy: typeof p.eliminatedBy === 'string' ? p.eliminatedBy : null,
+          knockouts: typeof p.knockouts === 'number' ? p.knockouts : 0,
+        })) as Player[])
+      : ([] as Player[]),
+    payout: (parsed.payout as PayoutConfig) ?? defaultPayoutConfig(),
+    rebuy,
+    bounty: (parsed.bounty as BountyConfig) ?? defaultBountyConfig(),
+    buyIn,
+    startingChips,
+  };
+}
+
 export function loadConfig(): TournamentConfig | null {
   const raw = localStorage.getItem(CONFIG_KEY);
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.levels)) return null;
-    const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
-    const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 20000;
-    const rebuyRaw = parsed.rebuy;
-    const rebuy: RebuyConfig = rebuyRaw
-      ? {
-          ...defaultRebuyConfig(buyIn, startingChips),
-          ...rebuyRaw,
-          rebuyCost: typeof rebuyRaw.rebuyCost === 'number' ? rebuyRaw.rebuyCost : buyIn,
-          rebuyChips: typeof rebuyRaw.rebuyChips === 'number' ? rebuyRaw.rebuyChips : startingChips,
-        }
-      : defaultRebuyConfig(buyIn, startingChips);
-    return {
-      name: parsed.name ?? 'Tournament',
-      levels: parsed.levels,
-      anteEnabled: parsed.anteEnabled ?? false,
-      players: Array.isArray(parsed.players)
-        ? parsed.players.map((p: Record<string, unknown>) => ({
-            ...p,
-            rebuys: typeof p.rebuys === 'number' ? p.rebuys : 0,
-            status: p.status === 'eliminated' ? 'eliminated' : 'active',
-            placement: typeof p.placement === 'number' ? p.placement : null,
-            eliminatedBy: typeof p.eliminatedBy === 'string' ? p.eliminatedBy : null,
-            knockouts: typeof p.knockouts === 'number' ? p.knockouts : 0,
-          }))
-        : [],
-      payout: parsed.payout ?? defaultPayoutConfig(),
-      rebuy,
-      bounty: parsed.bounty ?? defaultBountyConfig(),
-      buyIn,
-      startingChips,
-    };
+    return parseConfigObject(JSON.parse(raw));
   } catch {
     return null;
   }
@@ -508,40 +566,8 @@ export function exportConfigJSON(config: TournamentConfig): string {
 export function importConfigJSON(json: string): TournamentConfig | null {
   try {
     const parsed = JSON.parse(json);
-    if (parsed && Array.isArray(parsed.levels) && typeof parsed.name === 'string') {
-      const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
-      const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 20000;
-      const rebuyRaw = parsed.rebuy;
-      const rebuy: RebuyConfig = rebuyRaw
-        ? {
-            ...defaultRebuyConfig(buyIn, startingChips),
-            ...rebuyRaw,
-            rebuyCost: typeof rebuyRaw.rebuyCost === 'number' ? rebuyRaw.rebuyCost : buyIn,
-            rebuyChips: typeof rebuyRaw.rebuyChips === 'number' ? rebuyRaw.rebuyChips : startingChips,
-          }
-        : defaultRebuyConfig(buyIn, startingChips);
-      return {
-        name: parsed.name,
-        levels: parsed.levels,
-        anteEnabled: parsed.anteEnabled ?? false,
-        players: Array.isArray(parsed.players)
-          ? parsed.players.map((p: Record<string, unknown>) => ({
-              ...p,
-              rebuys: typeof p.rebuys === 'number' ? p.rebuys : 0,
-              status: p.status === 'eliminated' ? 'eliminated' : 'active',
-              placement: typeof p.placement === 'number' ? p.placement : null,
-              eliminatedBy: typeof p.eliminatedBy === 'string' ? p.eliminatedBy : null,
-              knockouts: typeof p.knockouts === 'number' ? p.knockouts : 0,
-            }))
-          : [],
-        payout: parsed.payout ?? defaultPayoutConfig(),
-        rebuy,
-        bounty: parsed.bounty ?? defaultBountyConfig(),
-        buyIn,
-        startingChips,
-      };
-    }
-    return null;
+    if (!parsed || typeof parsed.name !== 'string') return null;
+    return parseConfigObject(parsed);
   } catch {
     return null;
   }

@@ -1,4 +1,5 @@
 import type { RebuyConfig, RebuyLimitType } from '../domain/types';
+import { snapSpinnerValue } from '../domain/logic';
 
 interface Props {
   rebuy: RebuyConfig;
@@ -74,18 +75,8 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 step={1000}
                 value={rebuy.rebuyChips}
                 onChange={(e) => {
-                  const raw = Number(e.target.value);
-                  const diff = raw - rebuy.rebuyChips;
-                  const absDiff = Math.abs(diff);
-                  let val: number;
-                  if (absDiff > 0 && absDiff <= 1000) {
-                    val = diff > 0
-                      ? Math.ceil(raw / 1000) * 1000
-                      : Math.floor(raw / 1000) * 1000;
-                  } else {
-                    val = raw;
-                  }
-                  onChange({ ...rebuy, rebuyChips: Math.max(1, val) });
+                  const val = snapSpinnerValue(Number(e.target.value), rebuy.rebuyChips, 1000);
+                  onChange({ ...rebuy, rebuyChips: val });
                 }}
                 className="w-24 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
               />

@@ -10,6 +10,29 @@ interface Props {
   onScrub?: (seconds: number) => void;
 }
 
+function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Level[]; currentLevelIndex: number; largeDisplay: boolean }) {
+  const nextIdx = currentLevelIndex + 1;
+  const nextLvl = nextIdx < levels.length ? levels[nextIdx] : null;
+  if (!nextLvl) return null;
+  const nextLabel = getLevelLabel(nextLvl, nextIdx, levels);
+  return (
+    <div className="text-center">
+      <p className={`text-gray-500 ${largeDisplay ? 'text-sm' : 'text-xs'} uppercase tracking-wider`}>
+        Nächstes {nextLabel}
+      </p>
+      {nextLvl.type === 'break' ? (
+        <p className={`text-amber-500/70 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
+          Pause ({formatTime(nextLvl.durationSeconds)})
+        </p>
+      ) : (
+        <p className={`text-gray-400 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
+          {getBlindsText(nextLvl)} ({formatTime(nextLvl.durationSeconds)})
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub }: Props) {
   const [scrubbing, setScrubbing] = useState(false);
 
@@ -60,28 +83,11 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       </div>
 
       {/* Next Level info */}
-      {(() => {
-        const nextIdx = timerState.currentLevelIndex + 1;
-        const nextLvl = nextIdx < levels.length ? levels[nextIdx] : null;
-        if (!nextLvl) return null;
-        const nextLabel = getLevelLabel(nextLvl, nextIdx, levels);
-        return (
-          <div className="text-center">
-            <p className={`text-gray-500 ${largeDisplay ? 'text-sm' : 'text-xs'} uppercase tracking-wider`}>
-              Nächstes {nextLabel}
-            </p>
-            {nextLvl.type === 'break' ? (
-              <p className={`text-amber-500/70 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
-                Pause ({formatTime(nextLvl.durationSeconds)})
-              </p>
-            ) : (
-              <p className={`text-gray-400 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
-                {getBlindsText(nextLvl)} ({formatTime(nextLvl.durationSeconds)})
-              </p>
-            )}
-          </div>
-        );
-      })()}
+      <NextLevelInfo
+        levels={levels}
+        currentLevelIndex={timerState.currentLevelIndex}
+        largeDisplay={largeDisplay}
+      />
 
       {/* Timer */}
       <div

@@ -8,15 +8,17 @@ import {
   saveSettings,
   loadSettings,
   stripAnteFromLevels,
+  applyDefaultAntes,
   isRebuyActive,
   computeTournamentElapsedSeconds,
   computeNextPlacement,
   defaultPayoutForPlayerCount,
   validatePayoutConfig,
   validateConfig,
+  snapSpinnerValue,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
-import { playStartSound, playVictorySound } from './domain/sounds';
+import { playVictorySound } from './domain/sounds';
 import { TimerDisplay } from './components/TimerDisplay';
 import { Controls } from './components/Controls';
 import { LevelPreview } from './components/LevelPreview';
@@ -109,7 +111,9 @@ function App() {
       return {
         ...prev,
         anteEnabled: newAnteEnabled,
-        levels: newAnteEnabled ? prev.levels : stripAnteFromLevels(prev.levels),
+        levels: newAnteEnabled
+          ? applyDefaultAntes(prev.levels)
+          : stripAnteFromLevels(prev.levels),
       };
     });
   }, []);
@@ -217,7 +221,6 @@ function App() {
     }));
     setMode('game');
     timer.restart();
-    if (settings.soundEnabled) playStartSound();
   };
 
   const switchToSetup = () => {
@@ -386,18 +389,7 @@ function App() {
                       onChange={(e) => {
                         const raw = Number(e.target.value);
                         setConfig((prev) => {
-                          const diff = raw - prev.startingChips;
-                          const absDiff = Math.abs(diff);
-                          let newChips: number;
-                          if (absDiff > 0 && absDiff <= 1000) {
-                            // Spinner arrow: step up/down in 1000s
-                            newChips = diff > 0
-                              ? Math.ceil(raw / 1000) * 1000
-                              : Math.floor(raw / 1000) * 1000;
-                          } else {
-                            newChips = raw;
-                          }
-                          newChips = Math.max(1, newChips);
+                          const newChips = snapSpinnerValue(raw, prev.startingChips, 1000);
                           return {
                             ...prev,
                             startingChips: newChips,

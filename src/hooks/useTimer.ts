@@ -121,14 +121,13 @@ export function useTimer(levels: Level[], settings: Settings) {
   }, [timerState.status, tick, clearTick]);
 
   // Reset timer state when levels change externally (e.g. preset switch)
-  const levelsRef = useRef(levels);
-  useEffect(() => {
-    if (levels !== levelsRef.current) {
-      levelsRef.current = levels;
-      clearTick();
-      setTimerState(restartTournament(levels));
-    }
-  }, [levels, clearTick]);
+  const [prevLevels, setPrevLevels] = useState(levels);
+  if (levels !== prevLevels) {
+    setPrevLevels(levels);
+    setTimerState(restartTournament(levels));
+    // clearTick will happen via the status-based useEffect above
+    // since restartTournament returns status='stopped'
+  }
 
   const start = useCallback(() => {
     lastCountdownSecRef.current = null;

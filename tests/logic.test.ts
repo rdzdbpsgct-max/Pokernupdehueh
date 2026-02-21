@@ -14,6 +14,8 @@ import {
   defaultPlayers,
   validatePayoutConfig,
   stripAnteFromLevels,
+  computeDefaultAnte,
+  applyDefaultAntes,
   isRebuyActive,
   computeTournamentElapsedSeconds,
   defaultPayoutConfig,
@@ -29,12 +31,13 @@ import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Pl
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
   return {
-    anteEnabled: true,
+    anteEnabled: false,
     players: [],
     payout: defaultPayoutConfig(),
     rebuy: defaultRebuyConfig(),
     bounty: defaultBountyConfig(),
     buyIn: 10,
+    startingChips: 20000,
     ...partial,
   };
 }
@@ -276,6 +279,7 @@ describe('import/export', () => {
       rebuy: defaultRebuyConfig(),
       bounty: defaultBountyConfig(),
       buyIn: 10,
+      startingChips: 20000,
     };
     const json = exportConfigJSON(config);
     const imported = importConfigJSON(json);
@@ -293,7 +297,7 @@ describe('import/export', () => {
   it('fills in default anteEnabled when missing', () => {
     const json = JSON.stringify({ name: 'Old', levels: [] });
     const imported = importConfigJSON(json);
-    expect(imported?.anteEnabled).toBe(true);
+    expect(imported?.anteEnabled).toBe(false);
   });
 
   it('fills in default players when missing', () => {
@@ -321,9 +325,10 @@ describe('import/export', () => {
       anteEnabled: false,
       players: [makePlayer({ id: 'x', name: 'Bob', rebuys: 2 })],
       payout: { mode: 'euro', entries: [{ place: 1, value: 100 }] },
-      rebuy: { enabled: true, limitType: 'time', levelLimit: 4, timeLimit: 7200 },
+      rebuy: { enabled: true, limitType: 'time', levelLimit: 4, timeLimit: 7200, rebuyCost: 25, rebuyChips: 15000 },
       bounty: { enabled: true, amount: 10 },
       buyIn: 25,
+      startingChips: 15000,
     };
     const imported = importConfigJSON(exportConfigJSON(config));
     expect(imported?.anteEnabled).toBe(false);
@@ -331,9 +336,12 @@ describe('import/export', () => {
     expect(imported?.players[0].status).toBe('active');
     expect(imported?.payout.mode).toBe('euro');
     expect(imported?.rebuy.enabled).toBe(true);
+    expect(imported?.rebuy.rebuyCost).toBe(25);
+    expect(imported?.rebuy.rebuyChips).toBe(15000);
     expect(imported?.bounty.enabled).toBe(true);
     expect(imported?.bounty.amount).toBe(10);
     expect(imported?.buyIn).toBe(25);
+    expect(imported?.startingChips).toBe(15000);
   });
 });
 
@@ -486,6 +494,85 @@ describe('stripAnteFromLevels', () => {
 });
 
 // ---------------------------------------------------------------------------
+// computeDefaultAnte
+// ---------------------------------------------------------------------------
+describe('computeDefaultAnte', () => {
+  it('returns 0 for zero or negative big blind', () => {
+    expect(computeDefaultAnte(0)).toBe(0);
+    expect(computeDefaultAnte(-100)).toBe(0);
+  });
+
+  it('computes ~12.5% of big blind, rounded to nice values', () => {
+    // 50 * 0.125 = 6.25 → round=6, ≤10 → round(6/5)*5 = 5
+    expect(computeDefaultAnte(50)).toBe(5);
+    // 100 * 0.125 = 12.5 → round=13, ≤50 → round(13/5)*5 = 15
+    expect(computeDefaultAnte(100)).toBe(15);
+    // 150 * 0.125 = 18.75 → round=19, ≤50 → round(19/5)*5 = 20
+    expect(computeDefaultAnte(150)).toBe(20);
+  });
+
+  it('rounds to nice values for medium blinds', () => {
+    expect(computeDefaultAnte(200)).toBe(25);   // 200 * 0.125 = 25
+    expect(computeDefaultAnte(400)).toBe(50);   // 400 * 0.125 = 50
+    expect(computeDefaultAnte(600)).toBe(75);   // 600 * 0.125 = 75
+    expect(computeDefaultAnte(800)).toBe(100);  // 800 * 0.125 = 100
+  });
+
+  it('rounds to nice values for large blinds', () => {
+    // 1000 * 0.125 = 125 → round=125, ≤500 → round(125/50)*50 = 150
+    expect(computeDefaultAnte(1000)).toBe(150);
+    expect(computeDefaultAnte(2000)).toBe(250);  // 2000 * 0.125 = 250
+    expect(computeDefaultAnte(4000)).toBe(500);  // 4000 * 0.125 = 500
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyDefaultAntes
+// ---------------------------------------------------------------------------
+describe('applyDefaultAntes', () => {
+  it('applies ante values to all play levels', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 },
+      { id: '2', type: 'level', durationSeconds: 600, smallBlind: 100, bigBlind: 200, ante: 0 },
+    ];
+    const result = applyDefaultAntes(levels);
+    expect(result[0].ante).toBe(5);   // 50 * 0.125 = 6.25 → rounded to 5
+    expect(result[1].ante).toBe(25);  // 200 * 0.125 = 25
+  });
+
+  it('does not modify break levels', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'break', durationSeconds: 300, label: 'Pause' },
+    ];
+    const result = applyDefaultAntes(levels);
+    expect(result[0]).toEqual(levels[0]);
+  });
+
+  it('returns new array (immutability)', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 },
+    ];
+    const result = applyDefaultAntes(levels);
+    expect(result).not.toBe(levels);
+    expect(result[0]).not.toBe(levels[0]);
+    expect(levels[0].ante).toBe(0);
+  });
+
+  it('handles mixed levels and breaks', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 },
+      { id: '2', type: 'break', durationSeconds: 300, label: 'Pause' },
+      { id: '3', type: 'level', durationSeconds: 600, smallBlind: 200, bigBlind: 400, ante: 0 },
+    ];
+    const result = applyDefaultAntes(levels);
+    expect(result[0].ante).toBe(5);   // 50 * 0.125 → rounded to 5
+    expect(result[1].type).toBe('break');
+    expect(result[1].ante).toBeUndefined();
+    expect(result[2].ante).toBe(50);  // 400 * 0.125 = 50
+  });
+});
+
+// ---------------------------------------------------------------------------
 // isRebuyActive
 // ---------------------------------------------------------------------------
 describe('isRebuyActive', () => {
@@ -498,28 +585,28 @@ describe('isRebuyActive', () => {
   ];
 
   it('returns false when rebuy is disabled', () => {
-    const rebuy: RebuyConfig = { enabled: false, limitType: 'levels', levelLimit: 4, timeLimit: 3600 };
+    const rebuy: RebuyConfig = { enabled: false, limitType: 'levels', levelLimit: 4, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 };
     expect(isRebuyActive(rebuy, 0, levels, 0)).toBe(false);
   });
 
   it('returns true during level-based rebuy period', () => {
-    const rebuy: RebuyConfig = { enabled: true, limitType: 'levels', levelLimit: 2, timeLimit: 3600 };
+    const rebuy: RebuyConfig = { enabled: true, limitType: 'levels', levelLimit: 2, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 };
     expect(isRebuyActive(rebuy, 0, levels, 0)).toBe(true);
     expect(isRebuyActive(rebuy, 1, levels, 0)).toBe(true);
   });
 
   it('returns false after level-based rebuy period ends', () => {
-    const rebuy: RebuyConfig = { enabled: true, limitType: 'levels', levelLimit: 2, timeLimit: 3600 };
+    const rebuy: RebuyConfig = { enabled: true, limitType: 'levels', levelLimit: 2, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 };
     expect(isRebuyActive(rebuy, 3, levels, 0)).toBe(false);
   });
 
   it('returns true during time-based rebuy period', () => {
-    const rebuy: RebuyConfig = { enabled: true, limitType: 'time', levelLimit: 4, timeLimit: 3600 };
+    const rebuy: RebuyConfig = { enabled: true, limitType: 'time', levelLimit: 4, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 };
     expect(isRebuyActive(rebuy, 0, levels, 1800)).toBe(true);
   });
 
   it('returns false after time-based rebuy period ends', () => {
-    const rebuy: RebuyConfig = { enabled: true, limitType: 'time', levelLimit: 4, timeLimit: 3600 };
+    const rebuy: RebuyConfig = { enabled: true, limitType: 'time', levelLimit: 4, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 };
     expect(isRebuyActive(rebuy, 0, levels, 3600)).toBe(false);
     expect(isRebuyActive(rebuy, 0, levels, 4000)).toBe(false);
   });
