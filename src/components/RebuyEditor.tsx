@@ -1,5 +1,6 @@
 import type { RebuyConfig, RebuyLimitType } from '../domain/types';
 import { snapSpinnerValue } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   rebuy: RebuyConfig;
@@ -9,6 +10,8 @@ interface Props {
 }
 
 export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
+  const { t } = useTranslation();
+
   const toggle = () => {
     onChange({
       ...rebuy,
@@ -45,7 +48,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
             : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
         }`}
       >
-        {rebuy.enabled ? '✓ Rebuy aktiviert' : 'Rebuy deaktiviert'}
+        {rebuy.enabled ? t('rebuyEditor.enabled') : t('rebuyEditor.disabled')}
       </button>
 
       {/* Settings (only when enabled) */}
@@ -54,7 +57,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
           {/* Rebuy cost & chips */}
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">Kosten</label>
+              <label className="text-sm text-gray-300">{t('rebuyEditor.cost')}</label>
               <input
                 type="number"
                 min={1}
@@ -65,10 +68,10 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 }
                 className="w-20 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
               />
-              <span className="text-gray-500 text-xs">EUR</span>
+              <span className="text-gray-500 text-xs">{t('unit.eur')}</span>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">Chips</label>
+              <label className="text-sm text-gray-300">{t('rebuyEditor.chips')}</label>
               <input
                 type="number"
                 min={1}
@@ -80,7 +83,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 }}
                 className="w-24 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
               />
-              <span className="text-gray-500 text-xs">Chips</span>
+              <span className="text-gray-500 text-xs">{t('unit.chips')}</span>
             </div>
           </div>
 
@@ -94,7 +97,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
               }`}
             >
-              Nach Levels
+              {t('rebuyEditor.byLevels')}
             </button>
             <button
               onClick={() => setLimitType('time')}
@@ -104,14 +107,14 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
               }`}
             >
-              Nach Zeit
+              {t('rebuyEditor.byTime')}
             </button>
           </div>
 
           {/* Level limit */}
           {rebuy.limitType === 'levels' && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">Rebuy bis Level</label>
+              <label className="text-sm text-gray-300">{t('rebuyEditor.untilLevel')}</label>
               <input
                 type="number"
                 min={1}
@@ -126,7 +129,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
           {/* Time limit */}
           {rebuy.limitType === 'time' && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">Rebuy-Zeitraum</label>
+              <label className="text-sm text-gray-300">{t('rebuyEditor.timePeriod')}</label>
               <input
                 type="number"
                 min={0}
@@ -137,7 +140,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 }
                 className="w-14 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
               />
-              <span className="text-gray-500 text-xs">Std</span>
+              <span className="text-gray-500 text-xs">{t('rebuyEditor.hours')}</span>
               <input
                 type="number"
                 min={0}
@@ -148,7 +151,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 }
                 className="w-14 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
               />
-              <span className="text-gray-500 text-xs">Min</span>
+              <span className="text-gray-500 text-xs">{t('rebuyEditor.minutes')}</span>
             </div>
           )}
         </div>

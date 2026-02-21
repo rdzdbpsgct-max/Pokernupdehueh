@@ -1,17 +1,20 @@
 import type { TournamentConfig } from '../domain/types';
 import { createPreset } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   onSelect: (config: TournamentConfig) => void;
 }
 
-const presets = [
-  { key: 'turbo' as const, label: 'Turbo', desc: '6 min Levels, schnelles Spiel' },
-  { key: 'standard' as const, label: 'Standard', desc: '15 min Levels, klassisch' },
-  { key: 'deep' as const, label: 'Deep Stack', desc: '20 min Levels, viel Spieltiefe' },
-];
-
 export function PresetPicker({ onSelect }: Props) {
+  const { t } = useTranslation();
+
+  const presets = [
+    { key: 'turbo' as const, label: t('preset.turbo'), desc: t('preset.turboDesc') },
+    { key: 'standard' as const, label: t('preset.standard'), desc: t('preset.standardDesc') },
+    { key: 'deep' as const, label: t('preset.deep'), desc: t('preset.deepDesc') },
+  ];
+
   return (
     <div className="flex flex-wrap gap-3">
       {presets.map((p) => (

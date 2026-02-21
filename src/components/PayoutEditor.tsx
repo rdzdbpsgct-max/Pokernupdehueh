@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PayoutConfig, PayoutMode } from '../domain/types';
 import { validatePayoutConfig } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   payout: PayoutConfig;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
+  const { t } = useTranslation();
   const [errors, setErrors] = useState<string[]>([]);
 
   const validate = (p: PayoutConfig) => validatePayoutConfig(p, maxPlaces);
@@ -76,7 +78,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
           }`}
         >
-          % Prozent
+          {t('payoutEditor.percent')}
         </button>
         <button
           onClick={() => setMode('euro')}
@@ -86,13 +88,13 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
           }`}
         >
-          € Euro
+          {t('payoutEditor.euro')}
         </button>
       </div>
 
       {/* Place count */}
       <div className="flex items-center gap-3">
-        <label className="text-xs text-gray-400 uppercase tracking-wider">Bezahlte Plätze</label>
+        <label className="text-xs text-gray-400 uppercase tracking-wider">{t('payoutEditor.paidPlaces')}</label>
         <input
           type="number"
           min={1}
@@ -107,7 +109,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
       <div className="space-y-2">
         {payout.entries.map((entry, i) => (
           <div key={entry.place} className="flex items-center gap-2">
-            <span className="text-gray-400 text-sm w-16">Platz {entry.place}</span>
+            <span className="text-gray-400 text-sm w-16">{t('payoutEditor.placeN', { n: entry.place })}</span>
             <input
               type="number"
               min={0}
@@ -130,14 +132,14 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
           disabled={payout.entries.length >= maxPlaces}
           className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-xs font-medium transition-colors disabled:opacity-30"
         >
-          + Platz
+          {t('payoutEditor.addPlace')}
         </button>
         <button
           onClick={removeLastPlace}
           disabled={payout.entries.length <= 1}
           className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-xs font-medium transition-colors disabled:opacity-30"
         >
-          − Platz
+          {t('payoutEditor.removePlace')}
         </button>
       </div>
 
@@ -153,7 +155,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
       {/* Sum display for percent */}
       {payout.mode === 'percent' && (
         <p className="text-xs text-gray-500">
-          Summe: {payout.entries.reduce((s, e) => s + e.value, 0)}%
+          {t('payoutEditor.sum')} {payout.entries.reduce((s, e) => s + e.value, 0)}%
         </p>
       )}
     </div>

@@ -18,6 +18,7 @@ import {
   snapSpinnerValue,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
+import { useTranslation } from './i18n';
 import { playVictorySound } from './domain/sounds';
 import { TimerDisplay } from './components/TimerDisplay';
 import { Controls } from './components/Controls';
@@ -33,10 +34,12 @@ import { RebuyStatus } from './components/RebuyStatus';
 import { PlayerPanel } from './components/PlayerPanel';
 import { BountyEditor } from './components/BountyEditor';
 import { TournamentFinished } from './components/TournamentFinished';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 
 type Mode = 'setup' | 'game';
 
 function App() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('setup');
   const [config, setConfig] = useState<TournamentConfig>(
     () => loadConfig() ?? createPreset('standard'),
@@ -84,9 +87,9 @@ function App() {
           break;
         case 'KeyR':
           setConfirmAction({
-            title: 'Level zurücksetzen?',
-            message: 'Die verbleibende Zeit des aktuellen Levels wird auf die volle Dauer zurückgesetzt.',
-            confirmLabel: 'Level zurücksetzen',
+            title: t('confirm.resetLevel.title'),
+            message: t('confirm.resetLevel.message'),
+            confirmLabel: t('confirm.resetLevel.confirm'),
             onConfirm: timer.resetLevel,
           });
           break;
@@ -94,7 +97,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, timer]);
+  }, [mode, timer, t]);
 
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -213,15 +216,15 @@ function App() {
   const startErrors = useMemo(() => {
     const errors: string[] = [];
     if (config.players.length < 2) {
-      errors.push('Mindestens 2 Spieler erforderlich');
+      errors.push(t('app.minPlayersRequired'));
     }
     if (config.payout.entries.length > config.players.length) {
-      errors.push(`Mehr Auszahlungsplätze (${config.payout.entries.length}) als Spieler (${config.players.length})`);
+      errors.push(t('app.morePlacesThanPlayers', { places: config.payout.entries.length, players: config.players.length }));
     }
     errors.push(...validatePayoutConfig(config.payout, config.players.length));
     errors.push(...validateConfig(config).map((e) => e.message));
     return errors;
-  }, [config]);
+  }, [config, t]);
 
   // Auto-pause timer and play victory sound when tournament finishes
   useEffect(() => {
@@ -264,27 +267,27 @@ function App() {
 
   const handleResetLevel = () => {
     confirmBeforeAction(
-      'Level zurücksetzen?',
-      'Die verbleibende Zeit des aktuellen Levels wird auf die volle Dauer zurückgesetzt.',
-      'Level zurücksetzen',
+      t('confirm.resetLevel.title'),
+      t('confirm.resetLevel.message'),
+      t('confirm.resetLevel.confirm'),
       timer.resetLevel,
     );
   };
 
   const handleRestart = () => {
     confirmBeforeAction(
-      'Turnier neu starten?',
-      'Das gesamte Turnier wird auf Level 1 zurückgesetzt. Alle Fortschritte gehen verloren.',
-      'Turnier neu starten',
+      t('confirm.restartTournament.title'),
+      t('confirm.restartTournament.message'),
+      t('confirm.restartTournament.confirm'),
       timer.restart,
     );
   };
 
   const handleExitToSetup = () => {
     confirmBeforeAction(
-      'Turnier beenden?',
-      'Wenn du zum Setup zurückkehrst, wird das laufende Turnier beendet und der Timer zurückgesetzt.',
-      'Turnier beenden',
+      t('confirm.exitTournament.title'),
+      t('confirm.exitTournament.message'),
+      t('confirm.exitTournament.confirm'),
       switchToSetup,
     );
   };
@@ -294,9 +297,10 @@ function App() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <h1 className="text-lg font-bold text-white tracking-tight">
-          {mode === 'game' && config.name ? `♠ ${config.name}` : '♠ Pokern up de Hüh'}
+          {mode === 'game' && config.name ? `♠ ${config.name}` : t('app.title')}
         </h1>
         <div className="flex items-center gap-2">
+          {mode === 'setup' && <LanguageSwitcher />}
           <button
             onClick={() => {
               if (mode === 'game') {
@@ -311,13 +315,13 @@ function App() {
                 : 'bg-emerald-700 hover:bg-emerald-600 text-white'
             }`}
           >
-            {mode === 'setup' ? '▶ Spiel starten' : '⚙ Setup'}
+            {mode === 'setup' ? t('app.startGame') : t('app.setup')}
           </button>
           <button
             onClick={() => setShowImportExport(true)}
             className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
           >
-            ↕ Import/Export
+            {t('app.importExport')}
           </button>
         </div>
       </header>
@@ -331,7 +335,7 @@ function App() {
               {/* Turnier-Name */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Turnier-Name
+                  {t('app.tournamentName')}
                 </h2>
                 <input
                   type="text"
@@ -339,7 +343,7 @@ function App() {
                   onChange={(e) =>
                     setConfig((prev) => ({ ...prev, name: e.target.value }))
                   }
-                  placeholder="z.B. Freitagspoker"
+                  placeholder={t('app.tournamentNamePlaceholder')}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -347,7 +351,7 @@ function App() {
               {/* Presets */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Preset laden
+                  {t('app.loadPreset')}
                 </h2>
                 <PresetPicker onSelect={(preset) =>
                   setConfig((prev) => ({
@@ -362,7 +366,7 @@ function App() {
               {/* Spieler */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Spieler
+                  {t('app.players')}
                 </h2>
                 <PlayerManager
                   players={config.players}
@@ -379,11 +383,11 @@ function App() {
               {/* Buy-In & Startchips */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Buy-In & Startchips
+                  {t('app.buyInAndChips')}
                 </h2>
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-500">Buy-In</label>
+                    <label className="text-xs text-gray-500">{t('app.buyIn')}</label>
                     <input
                       type="number"
                       min={1}
@@ -402,10 +406,10 @@ function App() {
                       }}
                       className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
                     />
-                    <span className="text-gray-400 text-sm">EUR</span>
+                    <span className="text-gray-400 text-sm">{t('unit.eur')}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-500">Startchips</label>
+                    <label className="text-xs text-gray-500">{t('app.startingChips')}</label>
                     <input
                       type="number"
                       min={1}
@@ -427,7 +431,7 @@ function App() {
                       }}
                       className="w-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
                     />
-                    <span className="text-gray-400 text-sm">Chips</span>
+                    <span className="text-gray-400 text-sm">{t('unit.chips')}</span>
                   </div>
                 </div>
               </div>
@@ -436,7 +440,7 @@ function App() {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
-                    Blind-Struktur
+                    {t('app.blindStructure')}
                   </h2>
                   <button
                     onClick={toggleAnte}
@@ -446,7 +450,7 @@ function App() {
                         : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
                     }`}
                   >
-                    {config.anteEnabled ? '✓ mit Ante' : 'ohne Ante'}
+                    {config.anteEnabled ? t('app.withAnte') : t('app.withoutAnte')}
                   </button>
                 </div>
                 <ConfigEditor
@@ -459,7 +463,7 @@ function App() {
               {/* Auszahlung */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Auszahlung
+                  {t('app.payout')}
                 </h2>
                 <PayoutEditor
                   payout={config.payout}
@@ -471,7 +475,7 @@ function App() {
               {/* Rebuy */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Rebuy
+                  {t('app.rebuy')}
                 </h2>
                 <RebuyEditor
                   rebuy={config.rebuy}
@@ -484,7 +488,7 @@ function App() {
               {/* Bounty */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Bounty
+                  {t('app.bounty')}
                 </h2>
                 <BountyEditor
                   bounty={config.bounty}
@@ -496,14 +500,14 @@ function App() {
               <div className="pt-4 border-t border-gray-800 space-y-3">
                 {startErrors.length > 0 ? (
                   <div className="bg-red-900/30 border border-red-700 rounded-lg p-3">
-                    <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Konfiguration prüfen:</p>
+                    <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">{t('app.checkConfig')}</p>
                     {startErrors.map((e, i) => (
                       <p key={i} className="text-red-400 text-sm">• {e}</p>
                     ))}
                   </div>
                 ) : (
                   <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
-                    <p className="text-emerald-400 text-sm">✓ Alles bereit – Turnier kann gestartet werden</p>
+                    <p className="text-emerald-400 text-sm">{t('app.allReady')}</p>
                   </div>
                 )}
                 <button
@@ -511,7 +515,7 @@ function App() {
                   disabled={startErrors.length > 0}
                   className="w-full px-6 py-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-lg font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-700"
                 >
-                  ▶ Turnier starten
+                  {t('app.startTournament')}
                 </button>
               </div>
             </div>
@@ -555,7 +559,7 @@ function App() {
                 <button
                   onClick={() => setShowPlayerPanel((v) => !v)}
                   className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-r-lg text-xs transition-colors"
-                  title={showPlayerPanel ? 'Spieler ausblenden' : 'Spieler einblenden'}
+                  title={showPlayerPanel ? t('app.hidePlayers') : t('app.showPlayers')}
                 >
                   {showPlayerPanel ? '\u25C0' : '\u25B6'}
                 </button>
@@ -563,7 +567,7 @@ function App() {
               <button
                 onClick={() => setShowSidebar((v) => !v)}
                 className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-l-lg text-xs transition-colors"
-                title={showSidebar ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
+                title={showSidebar ? t('app.hideSidebar') : t('app.showSidebar')}
               >
                 {showSidebar ? '\u25B6' : '\u25C0'}
               </button>
@@ -604,7 +608,7 @@ function App() {
                         : 'bg-gray-800 text-gray-400'
                     }`}
                   >
-                    {showPlayerPanel ? '✓ Spieler' : 'Spieler'}
+                    {showPlayerPanel ? `✓ ${t('app.players')}` : t('app.players')}
                   </button>
                 )}
                 <button
@@ -633,7 +637,7 @@ function App() {
                   onClick={handleExitToSetup}
                   className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
                 >
-                  ⚙ Zurück zum Setup
+                  {t('app.backToSetup')}
                 </button>
               </aside>
             )}
@@ -661,7 +665,7 @@ function App() {
                 onClick={() => setConfirmAction(null)}
                 className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                Abbrechen
+                {t('app.cancel')}
               </button>
               <button
                 onClick={() => {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig } from '../domain/types';
 import { computeTotalRebuys, computePrizePool, computePayouts } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   players: Player[];
@@ -27,6 +28,7 @@ export function PlayerPanel({
   onEliminatePlayer,
   onReinstatePlayer,
 }: Props) {
+  const { t } = useTranslation();
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
   const [selectedKiller, setSelectedKiller] = useState<string>('');
 
@@ -65,21 +67,21 @@ export function PlayerPanel({
     <div className="space-y-4">
       {/* Prize Pool */}
       <div>
-        <h3 className="text-xs text-gray-500 uppercase tracking-wider">Preisgeld</h3>
+        <h3 className="text-xs text-gray-500 uppercase tracking-wider">{t('playerPanel.prizePool')}</h3>
         <div className="mt-1 px-3 py-2 bg-emerald-900/30 border border-emerald-800 rounded-lg">
           <p className="text-emerald-300 text-lg font-bold">
-            {prizePool.toFixed(2)} EUR
+            {prizePool.toFixed(2)} {t('unit.eur')}
           </p>
           <p className="text-emerald-500/70 text-xs">
-            {players.length} &times; {buyIn} EUR
+            {players.length} &times; {buyIn} {t('unit.eur')}
             {totalRebuys > 0 && (
-              <> + {totalRebuys} Rebuy{totalRebuys > 1 ? 's' : ''} &times; {rebuyConfig.rebuyCost} EUR</>
+              <> + {totalRebuys} Rebuy{totalRebuys > 1 ? 's' : ''} &times; {rebuyConfig.rebuyCost} {t('unit.eur')}</>
             )}
           </p>
           {bountyConfig.enabled && (
             <p className="text-amber-500/70 text-xs mt-0.5">
-              + Bounty-Pool: {(players.length * bountyConfig.amount).toFixed(2)} EUR
-              ({players.length} &times; {bountyConfig.amount} EUR)
+              + Bounty-Pool: {(players.length * bountyConfig.amount).toFixed(2)} {t('unit.eur')}
+              ({players.length} &times; {bountyConfig.amount} {t('unit.eur')})
             </p>
           )}
         </div>
@@ -87,7 +89,7 @@ export function PlayerPanel({
 
       {/* Payout breakdown */}
       <div>
-        <h3 className="text-xs text-gray-500 uppercase tracking-wider">Auszahlung</h3>
+        <h3 className="text-xs text-gray-500 uppercase tracking-wider">{t('playerPanel.payout')}</h3>
         <div className="mt-1 space-y-1">
           {payoutAmounts.map((p) => (
             <div
@@ -95,9 +97,9 @@ export function PlayerPanel({
               className="flex justify-between px-3 py-1 bg-gray-800/50 rounded text-sm"
             >
               <span className="text-gray-400">
-                {p.place === 1 ? '1.' : p.place === 2 ? '2.' : p.place === 3 ? '3.' : `${p.place}.`} Platz
+                {p.place}. {t('playerPanel.place')}
               </span>
-              <span className="text-white font-medium">{p.amount.toFixed(2)} EUR</span>
+              <span className="text-white font-medium">{p.amount.toFixed(2)} {t('unit.eur')}</span>
             </div>
           ))}
         </div>
@@ -106,7 +108,7 @@ export function PlayerPanel({
       {/* Active Players */}
       <div>
         <h3 className="text-xs text-gray-500 uppercase tracking-wider">
-          Aktive Spieler ({activePlayers.length})
+          {t('playerPanel.activePlayers')} ({activePlayers.length})
         </h3>
         <div className="mt-1 space-y-1">
           {activePlayers.map((player) => (
@@ -120,7 +122,7 @@ export function PlayerPanel({
                 </span>
                 {bountyConfig.enabled && player.knockouts > 0 && (
                   <span className="text-xs text-amber-400">
-                    {player.knockouts} KO ({(player.knockouts * bountyConfig.amount).toFixed(0)} EUR)
+                    {player.knockouts} KO ({(player.knockouts * bountyConfig.amount).toFixed(0)} {t('unit.eur')})
                   </span>
                 )}
               </div>
@@ -159,9 +161,9 @@ export function PlayerPanel({
                   <button
                     onClick={() => handleEliminate(player.id)}
                     className="px-2 py-1 rounded bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-medium transition-colors"
-                    title="Spieler ist ausgeschieden"
+                    title={t('playerPanel.eliminateTooltip')}
                   >
-                    Raus
+                    {t('playerPanel.eliminate')}
                   </button>
                 )}
               </div>
@@ -174,14 +176,14 @@ export function PlayerPanel({
       {eliminatingId && bountyConfig.enabled && (
         <div className="px-3 py-3 bg-amber-900/20 border border-amber-800 rounded-lg space-y-2">
           <p className="text-sm text-amber-300 font-medium">
-            Wer hat {players.find((p) => p.id === eliminatingId)?.name} eliminiert?
+            {t('playerPanel.whoEliminated', { name: players.find((p) => p.id === eliminatingId)?.name ?? '?' })}
           </p>
           <select
             value={selectedKiller}
             onChange={(e) => setSelectedKiller(e.target.value)}
             className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-amber-500"
           >
-            <option value="">-- Spieler wählen --</option>
+            <option value="">{t('playerPanel.selectPlayer')}</option>
             {activePlayers
               .filter((p) => p.id !== eliminatingId)
               .map((p) => (
@@ -195,14 +197,14 @@ export function PlayerPanel({
               onClick={cancelElimination}
               className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
             >
-              Abbrechen
+              {t('app.cancel')}
             </button>
             <button
               onClick={confirmElimination}
               disabled={!selectedKiller}
               className="flex-1 px-2 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              Bestätigen
+              {t('playerPanel.confirm')}
             </button>
           </div>
         </div>
@@ -212,7 +214,7 @@ export function PlayerPanel({
       {eliminatedPlayers.length > 0 && (
         <div>
           <h3 className="text-xs text-gray-500 uppercase tracking-wider">
-            Ausgeschieden
+            {t('playerPanel.eliminated')}
           </h3>
           <div className="mt-1 space-y-1">
             {eliminatedPlayers.map((player, idx) => {
@@ -241,7 +243,7 @@ export function PlayerPanel({
                         )}
                         {player.eliminatedBy && (
                           <span>
-                            von {players.find((p) => p.id === player.eliminatedBy)?.name ?? '?'}
+                            {t('playerPanel.by')} {players.find((p) => p.id === player.eliminatedBy)?.name ?? '?'}
                           </span>
                         )}
                       </div>
@@ -250,9 +252,9 @@ export function PlayerPanel({
                       <button
                         onClick={() => onReinstatePlayer(player.id)}
                         className="px-2 py-0.5 rounded bg-blue-900/50 hover:bg-blue-800 text-blue-300 text-xs font-medium transition-colors"
-                        title="Eliminierung rückgängig machen"
+                        title={t('playerPanel.reinstateTooltip')}
                       >
-                        Zurück
+                        {t('playerPanel.reinstate')}
                       </button>
                     )}
                   </div>

@@ -1,5 +1,6 @@
 import type { Level, TimerState } from '../domain/types';
 import { getLevelLabel, getBlindsText, formatTime } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   timerState: TimerState;
@@ -7,11 +8,12 @@ interface Props {
 }
 
 export function LevelPreview({ timerState, levels }: Props) {
+  const { t } = useTranslation();
   const nextIndex = timerState.currentLevelIndex + 1;
 
   return (
     <div className="w-full max-w-xl">
-      <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">Level-Übersicht</h3>
+      <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">{t('levelPreview.title')}</h3>
       <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
         {levels.map((level, i) => {
           const isCurrent = i === timerState.currentLevelIndex;

@@ -8,6 +8,7 @@ import type {
   RebuyConfig,
   BountyConfig,
 } from './types';
+import { t as moduleT } from '../i18n/translations';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -145,18 +146,18 @@ export interface ValidationError {
   message: string;
 }
 
-export function validateConfig(config: TournamentConfig): ValidationError[] {
+export function validateConfig(config: TournamentConfig, t = moduleT): ValidationError[] {
   const errors: ValidationError[] = [];
 
   config.levels.forEach((level, i) => {
     if (level.durationSeconds <= 0) {
-      errors.push({ levelIndex: i, message: `Level ${i + 1}: Dauer muss > 0 sein` });
+      errors.push({ levelIndex: i, message: t('logic.durationMustBePositive', { n: i + 1 }) });
     }
     if (level.type === 'level') {
       if (level.smallBlind == null || level.bigBlind == null) {
-        errors.push({ levelIndex: i, message: `Level ${i + 1}: SB und BB müssen gesetzt sein` });
+        errors.push({ levelIndex: i, message: t('logic.blindsMustBeSet', { n: i + 1 }) });
       } else if (level.bigBlind <= level.smallBlind) {
-        errors.push({ levelIndex: i, message: `Level ${i + 1}: BB muss > SB sein` });
+        errors.push({ levelIndex: i, message: t('logic.bbMustBeGreaterThanSb', { n: i + 1 }) });
       }
     }
   });
@@ -168,10 +169,10 @@ export function validateConfig(config: TournamentConfig): ValidationError[] {
 // Players
 // ---------------------------------------------------------------------------
 
-export function defaultPlayers(count: number): Player[] {
+export function defaultPlayers(count: number, t = moduleT): Player[] {
   return Array.from({ length: count }, (_, i) => ({
     id: generatePlayerId(),
-    name: `Spieler ${i + 1}`,
+    name: t('logic.defaultPlayerName', { n: i + 1 }),
     rebuys: 0,
     status: 'active' as const,
     placement: null,
@@ -236,30 +237,28 @@ export function defaultPayoutForPlayerCount(playerCount: number): PayoutConfig {
   return { mode: 'percent', entries };
 }
 
-export function validatePayoutConfig(payout: PayoutConfig, maxPlaces?: number): string[] {
+export function validatePayoutConfig(payout: PayoutConfig, maxPlaces?: number, t = moduleT): string[] {
   const errors: string[] = [];
 
   if (payout.entries.length === 0) {
-    errors.push('Mindestens ein Auszahlungsplatz erforderlich');
+    errors.push(t('logic.minOnePayoutPlace'));
     return errors;
   }
 
   if (maxPlaces !== undefined && payout.entries.length > maxPlaces) {
-    errors.push(
-      `Maximal ${maxPlaces} Auszahlungsplätze möglich (Anzahl Spieler: ${maxPlaces})`,
-    );
+    errors.push(t('logic.maxPayoutPlaces', { max: maxPlaces }));
   }
 
   payout.entries.forEach((entry) => {
     if (entry.value < 0) {
-      errors.push(`Platz ${entry.place}: Wert darf nicht negativ sein`);
+      errors.push(t('logic.valueMustNotBeNegative', { place: entry.place }));
     }
   });
 
   if (payout.mode === 'percent') {
     const sum = payout.entries.reduce((s, e) => s + e.value, 0);
     if (Math.abs(sum - 100) > 0.01) {
-      errors.push(`Prozente müssen 100% ergeben (aktuell: ${Math.round(sum)}%)`);
+      errors.push(t('logic.percentMustBe100', { sum: Math.round(sum) }));
     }
   }
 
@@ -577,19 +576,19 @@ export function importConfigJSON(json: string): TournamentConfig | null {
 // Level label helpers
 // ---------------------------------------------------------------------------
 
-export function getLevelLabel(level: Level, index: number, levels: Level[]): string {
+export function getLevelLabel(level: Level, index: number, levels: Level[], t = moduleT): string {
   if (level.type === 'break') {
-    return level.label || 'Pause';
+    return level.label || t('logic.defaultBreakLabel');
   }
   const playLevels = levels.slice(0, index + 1).filter(l => l.type === 'level');
-  return `Level ${playLevels.length}`;
+  return t('logic.levelN', { n: playLevels.length });
 }
 
-export function getBlindsText(level: Level): string {
+export function getBlindsText(level: Level, t = moduleT): string {
   if (level.type === 'break') return '';
   const parts = [`${level.smallBlind ?? 0} / ${level.bigBlind ?? 0}`];
   if (level.ante && level.ante > 0) {
-    parts.push(`Ante ${level.ante}`);
+    parts.push(`${t('logic.ante')} ${level.ante}`);
   }
   return parts.join(' - ');
 }

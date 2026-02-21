@@ -1,4 +1,5 @@
 import type { TimerState } from '../domain/types';
+import { useTranslation } from '../i18n';
 
 interface Props {
   timerState: TimerState;
@@ -17,6 +18,7 @@ export function Controls({
   onReset,
   onRestart,
 }: Props) {
+  const { t } = useTranslation();
   const isRunning = timerState.status === 'running';
   const isStopped = timerState.status === 'stopped';
 
@@ -26,9 +28,9 @@ export function Controls({
         <button
           onClick={onPrevious}
           className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
-          title="Vorheriges Level (P)"
+          title={t('controls.previousTooltip')}
         >
-          ⏮ Zurück
+          {t('controls.previous')}
         </button>
 
         <button
@@ -38,17 +40,17 @@ export function Controls({
               ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
               : 'bg-emerald-600 hover:bg-emerald-500 text-white'
           }`}
-          title="Start/Pause (Space)"
+          title={t('controls.startPauseTooltip')}
         >
-          {isRunning ? '⏸ Pause' : isStopped && timerState.remainingSeconds <= 0 ? '⏹ Ende' : '▶ Start'}
+          {isRunning ? t('controls.pause') : isStopped && timerState.remainingSeconds <= 0 ? t('controls.end') : t('controls.start')}
         </button>
 
         <button
           onClick={onNext}
           className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
-          title="Nächstes Level (N)"
+          title={t('controls.nextTooltip')}
         >
-          Weiter ⏭
+          {t('controls.next')}
         </button>
       </div>
 
@@ -56,16 +58,16 @@ export function Controls({
         <button
           onClick={onReset}
           className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs font-medium transition-colors"
-          title="Level zurücksetzen (R)"
+          title={t('controls.levelResetTooltip')}
         >
-          ↺ Level Reset
+          {t('controls.levelReset')}
         </button>
         <button
           onClick={onRestart}
           className="px-3 py-1.5 bg-gray-800 hover:bg-red-900 text-gray-300 hover:text-red-300 rounded text-xs font-medium transition-colors"
-          title="Turnier neu starten"
+          title={t('controls.tournamentRestartTooltip')}
         >
-          ⟲ Turnier Restart
+          {t('controls.tournamentRestart')}
         </button>
       </div>
     </div>

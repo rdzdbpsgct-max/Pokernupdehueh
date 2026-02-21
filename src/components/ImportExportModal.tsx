@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { TournamentConfig } from '../domain/types';
 import { exportConfigJSON, importConfigJSON } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   config: TournamentConfig;
@@ -9,13 +10,14 @@ interface Props {
 }
 
 export function ImportExportModal({ config, onImport, onClose }: Props) {
+  const { t } = useTranslation();
   const [jsonText, setJsonText] = useState(exportConfigJSON(config));
   const [error, setError] = useState('');
 
   const handleImport = () => {
     const parsed = importConfigJSON(jsonText);
     if (!parsed) {
-      setError('Ungültiges JSON-Format. Benötigt "name" und "levels".');
+      setError(t('importExport.invalidJson'));
       return;
     }
     onImport(parsed);
@@ -30,7 +32,7 @@ export function ImportExportModal({ config, onImport, onClose }: Props) {
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-lg w-full max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white">Import / Export</h2>
+          <h2 className="text-lg font-bold text-white">{t('importExport.title')}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white text-xl"
@@ -56,19 +58,19 @@ export function ImportExportModal({ config, onImport, onClose }: Props) {
             onClick={handleCopy}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
           >
-            Kopieren
+            {t('importExport.copy')}
           </button>
           <button
             onClick={handleImport}
             className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors"
           >
-            Importieren
+            {t('importExport.import')}
           </button>
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors ml-auto"
           >
-            Schließen
+            {t('importExport.close')}
           </button>
         </div>
       </div>

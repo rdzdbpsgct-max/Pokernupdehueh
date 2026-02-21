@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Level, TimerState } from '../domain/types';
 import { formatTime, getLevelLabel, getBlindsText } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   timerState: TimerState;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Level[]; currentLevelIndex: number; largeDisplay: boolean }) {
+  const { t } = useTranslation();
   const nextIdx = currentLevelIndex + 1;
   const nextLvl = nextIdx < levels.length ? levels[nextIdx] : null;
   if (!nextLvl) return null;
@@ -18,11 +20,11 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
   return (
     <div className="text-center">
       <p className={`text-gray-500 ${largeDisplay ? 'text-sm' : 'text-xs'} uppercase tracking-wider`}>
-        Nächstes {nextLabel}
+        {t('timer.next')} {nextLabel}
       </p>
       {nextLvl.type === 'break' ? (
         <p className={`text-amber-500/70 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
-          Pause ({formatTime(nextLvl.durationSeconds)})
+          {t('timer.break')} ({formatTime(nextLvl.durationSeconds)})
         </p>
       ) : (
         <p className={`text-gray-400 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
@@ -34,6 +36,7 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
 }
 
 export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub }: Props) {
+  const { t } = useTranslation();
   const [scrubbing, setScrubbing] = useState(false);
 
   const currentLevel = levels[timerState.currentLevelIndex];
@@ -76,7 +79,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
               <p className={`text-gray-400 font-semibold ${
                 largeDisplay ? 'text-lg sm:text-2xl' : 'text-base sm:text-lg'
               }`}>
-                Ante {currentLevel.ante}
+                {t('timer.ante')} {currentLevel.ante}
               </p>
             )}
           </div>
@@ -85,7 +88,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
           <p className={`text-amber-300 font-semibold mt-2 ${
             largeDisplay ? 'text-3xl sm:text-5xl' : 'text-xl sm:text-2xl'
           }`}>
-            Pause
+            {t('timer.break')}
           </p>
         )}
       </div>
@@ -125,7 +128,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
                 : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
             }`}
           >
-            {scrubbing ? 'Slider schließen' : 'Zeit anpassen'}
+            {scrubbing ? t('timer.closeSlider') : t('timer.adjustTime')}
           </button>
           {scrubbing && (
             <div className="w-full flex items-center gap-3">
@@ -150,12 +153,12 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       {/* Status */}
       <p className="text-sm text-gray-500 uppercase tracking-widest">
         {timerState.status === 'running'
-          ? 'Läuft'
+          ? t('timer.running')
           : timerState.status === 'paused'
-          ? 'Pausiert'
+          ? t('timer.paused')
           : remaining <= 0
-          ? 'Beendet'
-          : 'Gestoppt'}
+          ? t('timer.finished')
+          : t('timer.stopped')}
       </p>
     </div>
   );

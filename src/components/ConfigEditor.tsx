@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Level, TournamentConfig } from '../domain/types';
 import { generateId, validateConfig, formatTime } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   config: TournamentConfig;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
+  const { t } = useTranslation();
   const [errors, setErrors] = useState<string[]>([]);
   const firstLevelMinutes = Math.round(
     (config.levels.find((l) => l.type === 'level')?.durationSeconds ?? 600) / 60,
@@ -71,7 +73,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
       id: generateId(),
       type: 'break',
       durationSeconds: 600,
-      label: 'Pause',
+      label: t('logic.defaultBreakLabel'),
     };
     onChange({ ...config, levels: [...config.levels, newBreak] });
   };
@@ -110,7 +112,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
       {/* Global duration controls */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg">
-          <label className="text-gray-400 text-xs whitespace-nowrap">Alle Levels:</label>
+          <label className="text-gray-400 text-xs whitespace-nowrap">{t('config.allLevels')}</label>
           <input
             type="number"
             min={1}
@@ -118,16 +120,16 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             onChange={(e) => setGlobalMinutes(Math.max(1, Number(e.target.value)))}
             className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
           />
-          <span className="text-gray-500 text-xs">Min</span>
+          <span className="text-gray-500 text-xs">{t('config.min')}</span>
           <button
             onClick={applyGlobalDuration}
             className="px-3 py-1 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded text-xs font-medium transition-colors"
           >
-            Übernehmen
+            {t('config.apply')}
           </button>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-amber-900/20 border border-amber-800/50 rounded-lg">
-          <label className="text-amber-400/70 text-xs whitespace-nowrap">Alle Pausen:</label>
+          <label className="text-amber-400/70 text-xs whitespace-nowrap">{t('config.allBreaks')}</label>
           <input
             type="number"
             min={1}
@@ -135,12 +137,12 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             onChange={(e) => setGlobalBreakMinutes(Math.max(1, Number(e.target.value)))}
             className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-amber-500"
           />
-          <span className="text-gray-500 text-xs">Min</span>
+          <span className="text-gray-500 text-xs">{t('config.min')}</span>
           <button
             onClick={applyGlobalBreakDuration}
             className="px-3 py-1 bg-amber-800 hover:bg-amber-700 text-amber-200 rounded text-xs font-medium transition-colors"
           >
-            Übernehmen
+            {t('config.apply')}
           </button>
         </div>
       </div>
@@ -167,12 +169,12 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                   : 'bg-emerald-800 text-emerald-200'
               }`}
             >
-              {level.type === 'break' ? 'Pause' : 'Level'}
+              {level.type === 'break' ? t('config.break') : t('config.level')}
             </span>
 
             {/* Duration */}
             <div className="flex items-center gap-1">
-              <label className="text-gray-500 text-xs">Min:</label>
+              <label className="text-gray-500 text-xs">{t('config.min')}:</label>
               <input
                 type="number"
                 min={1}
@@ -210,7 +212,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 </div>
                 {anteEnabled && (
                   <div className="flex items-center gap-1">
-                    <label className="text-gray-500 text-xs">Ante:</label>
+                    <label className="text-gray-500 text-xs">{t('timer.ante')}:</label>
                     <input
                       type="number"
                       min={0}
@@ -226,10 +228,10 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             {/* Break label */}
             {level.type === 'break' && (
               <div className="flex items-center gap-1">
-                <label className="text-gray-500 text-xs">Label:</label>
+                <label className="text-gray-500 text-xs">{t('config.label')}</label>
                 <input
                   type="text"
-                  value={level.label ?? 'Pause'}
+                  value={level.label ?? t('logic.defaultBreakLabel')}
                   onChange={(e) => updateLevel(i, { label: e.target.value })}
                   className="w-24 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-emerald-500"
                 />
@@ -242,7 +244,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 onClick={() => moveLevel(i, -1)}
                 disabled={i === 0}
                 className="p-1 text-gray-500 hover:text-white disabled:opacity-30 text-xs"
-                title="Nach oben"
+                title={t('config.moveUp')}
               >
                 ▲
               </button>
@@ -250,14 +252,14 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 onClick={() => moveLevel(i, 1)}
                 disabled={i === config.levels.length - 1}
                 className="p-1 text-gray-500 hover:text-white disabled:opacity-30 text-xs"
-                title="Nach unten"
+                title={t('config.moveDown')}
               >
                 ▼
               </button>
               <button
                 onClick={() => duplicateLevel(i)}
                 className="p-1 text-gray-500 hover:text-blue-400 text-xs"
-                title="Duplizieren"
+                title={t('config.duplicate')}
               >
                 ⧉
               </button>
@@ -265,7 +267,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 onClick={() => removeLevel(i)}
                 disabled={config.levels.length <= 1}
                 className="p-1 text-gray-500 hover:text-red-400 disabled:opacity-30 text-xs"
-                title="Löschen"
+                title={t('config.delete')}
               >
                 ✕
               </button>
@@ -280,13 +282,13 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
           onClick={addLevel}
           className="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded-lg text-sm font-medium transition-colors"
         >
-          + Level
+          {t('config.addLevel')}
         </button>
         <button
           onClick={addBreak}
           className="px-4 py-2 bg-amber-800 hover:bg-amber-700 text-amber-200 rounded-lg text-sm font-medium transition-colors"
         >
-          + Pause
+          {t('config.addBreak')}
         </button>
       </div>
     </div>

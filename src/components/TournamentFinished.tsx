@@ -1,5 +1,6 @@
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig } from '../domain/types';
 import { computeTotalRebuys, computePrizePool, computePayouts } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   players: Player[];
@@ -20,6 +21,7 @@ export function TournamentFinished({
   rebuy,
   onBackToSetup,
 }: Props) {
+  const { t } = useTranslation();
   const totalRebuys = computeTotalRebuys(players);
   const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost);
   const payoutAmounts = computePayouts(payout, prizePool);
@@ -50,12 +52,7 @@ export function TournamentFinished({
     return 'text-gray-500';
   };
 
-  const placeLabel = (place: number) => {
-    if (place === 1) return '1.';
-    if (place === 2) return '2.';
-    if (place === 3) return '3.';
-    return `${place}.`;
-  };
+  const placeLabel = (place: number) => `${place}.`;
 
   return (
     <div className="flex-1 flex items-start justify-center p-6 overflow-y-auto">
@@ -66,20 +63,20 @@ export function TournamentFinished({
             &#127942;
           </div>
           <p className="text-emerald-400 text-lg font-medium tracking-wide">
-            Herzlichen Glückwunsch
+            {t('finished.congratulations')}
           </p>
           <p className="text-4xl font-bold text-white">
             {winner.name}
           </p>
           <p className="text-amber-400/70 text-sm uppercase tracking-widest">
-            Turniersieger
+            {t('finished.tournamentWinner')}
           </p>
         </div>
 
         {/* Standings / Ergebnis */}
         <div>
           <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-            Ergebnis
+            {t('finished.results')}
           </h3>
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
             {standings.map((player, idx) => {
@@ -119,7 +116,7 @@ export function TournamentFinished({
                     </div>
                     {isPaid && amount != null && (
                       <span className="text-emerald-400 text-sm font-bold shrink-0 ml-3">
-                        {amount.toFixed(2)} EUR
+                        {amount.toFixed(2)} {t('unit.eur')}
                       </span>
                     )}
                   </div>
@@ -133,7 +130,7 @@ export function TournamentFinished({
         {bounty.enabled && bountyResults.length > 0 && (
           <div>
             <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Bounty
+              {t('finished.bounty')}
             </h3>
             <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
               {bountyResults.map((player, idx) => (
@@ -152,14 +149,14 @@ export function TournamentFinished({
                     </span>
                   </div>
                   <span className="text-amber-400 text-sm font-bold shrink-0 ml-3">
-                    {player.bountyEarned.toFixed(2)} EUR
+                    {player.bountyEarned.toFixed(2)} {t('unit.eur')}
                   </span>
                 </div>
               ))}
               <div className="border-t border-gray-700 px-4 py-2 flex justify-between">
-                <span className="text-xs text-gray-500">Bounty-Pool gesamt</span>
+                <span className="text-xs text-gray-500">{t('finished.bountyPoolTotal')}</span>
                 <span className="text-xs text-amber-400/70 font-medium">
-                  {(players.length * bounty.amount).toFixed(2)} EUR
+                  {(players.length * bounty.amount).toFixed(2)} {t('unit.eur')}
                 </span>
               </div>
             </div>
@@ -169,38 +166,38 @@ export function TournamentFinished({
         {/* Tournament info summary */}
         <div>
           <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-            Turnier-Info
+            {t('finished.tournamentInfo')}
           </h3>
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-3 space-y-1">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Preisgeld</span>
-              <span className="text-white font-medium">{prizePool.toFixed(2)} EUR</span>
+              <span className="text-gray-400">{t('finished.prizePool')}</span>
+              <span className="text-white font-medium">{prizePool.toFixed(2)} {t('unit.eur')}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Spieler</span>
+              <span className="text-gray-400">{t('finished.players')}</span>
               <span className="text-white">{players.length}</span>
             </div>
             {totalRebuys > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Rebuys</span>
+                <span className="text-gray-400">{t('finished.rebuys')}</span>
                 <span className="text-white">
-                  {totalRebuys} &times; {rebuy.rebuyCost} EUR
+                  {totalRebuys} &times; {rebuy.rebuyCost} {t('unit.eur')}
                 </span>
               </div>
             )}
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Buy-In</span>
-              <span className="text-white">{buyIn} EUR</span>
+              <span className="text-gray-400">{t('finished.buyIn')}</span>
+              <span className="text-white">{buyIn} {t('unit.eur')}</span>
             </div>
             {bounty.enabled && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Bounty</span>
-                <span className="text-white">{bounty.amount} EUR / KO</span>
+                <span className="text-gray-400">{t('finished.bountyLabel')}</span>
+                <span className="text-white">{bounty.amount} {t('unit.eur')} / KO</span>
               </div>
             )}
             {maxPaidPlace > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Bezahlte Plätze</span>
+                <span className="text-gray-400">{t('finished.paidPlaces')}</span>
                 <span className="text-white">Top {maxPaidPlace}</span>
               </div>
             )}
@@ -213,7 +210,7 @@ export function TournamentFinished({
             onClick={onBackToSetup}
             className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-lg font-medium transition-colors"
           >
-            Zurück zum Setup
+            {t('finished.backToSetup')}
           </button>
         </div>
       </div>

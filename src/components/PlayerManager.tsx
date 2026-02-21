@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Player } from '../domain/types';
 import { generatePlayerId } from '../domain/logic';
+import { useTranslation } from '../i18n';
 
 interface Props {
   players: Player[];
@@ -12,6 +13,7 @@ interface Props {
  * Re-keyed externally when players.length changes to reset the input.
  */
 function PlayerManagerInner({ players, onChange }: Props) {
+  const { t } = useTranslation();
   const [countInput, setCountInput] = useState(String(players.length));
 
   const setPlayerCount = (count: number) => {
@@ -19,7 +21,7 @@ function PlayerManagerInner({ players, onChange }: Props) {
     if (clamped > players.length) {
       const newPlayers = [...players];
       for (let i = players.length; i < clamped; i++) {
-        newPlayers.push({ id: generatePlayerId(), name: `Spieler ${i + 1}`, rebuys: 0, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 });
+        newPlayers.push({ id: generatePlayerId(), name: t('playerManager.playerN', { n: i + 1 }), rebuys: 0, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 });
       }
       onChange(newPlayers);
     } else if (clamped < players.length) {
@@ -45,7 +47,7 @@ function PlayerManagerInner({ players, onChange }: Props) {
     <div className="space-y-3">
       {/* Player count */}
       <div className="flex items-center gap-3">
-        <label className="text-xs text-gray-400 uppercase tracking-wider">Anzahl Spieler</label>
+        <label className="text-xs text-gray-400 uppercase tracking-wider">{t('playerManager.count')}</label>
         <input
           type="number"
           min={2}
@@ -70,7 +72,7 @@ function PlayerManagerInner({ players, onChange }: Props) {
                 type="text"
                 value={player.name}
                 onChange={(e) => updateName(i, e.target.value)}
-                placeholder={`Spieler ${i + 1}`}
+                placeholder={t('playerManager.playerN', { n: i + 1 })}
                 className="flex-1 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-emerald-500"
               />
             </div>
