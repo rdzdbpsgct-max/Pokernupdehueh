@@ -15,6 +15,9 @@ All notable changes to the Pokern up de Hüh app.
 - **Zurück-Button bei Eliminierung** — Der zuletzt eliminierte Spieler kann per "Zurück"-Button wieder ins Turnier aufgenommen werden (Undo bei versehentlicher Eliminierung).
 - **Reinstate button for eliminations** — The most recently eliminated player can be reinstated via "Undo" button (undo accidental eliminations).
 
+- **Erweiterte Turnier-Ergebnisübersicht** — Pro Spieler werden Gesamteinzahlung (Buy-In + Rebuys mit Aufschlüsselung), Gewinn und Bounty-Einnahmen angezeigt.
+- **Extended tournament results** — Per player: total paid in (buy-in + rebuys with breakdown), winnings and bounty earnings.
+
 ### Verbesserungen / Improvements
 
 - **Größere Blinds-Anzeige / Larger blinds display** — Die aktuelle Blindstufe wird im Timer deutlich größer dargestellt (ca. 80% der Timer-Größe) und ist damit auch aus Entfernung gut lesbar. / The current blind level is displayed much larger in the timer (~80% of timer size), readable from a distance.
