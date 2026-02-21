@@ -23,7 +23,7 @@ export function TournamentFinished({
   onBackToSetup,
 }: Props) {
   const { t } = useTranslation();
-  const [detailsExpanded, setDetailsExpanded] = useState(true);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const totalRebuys = computeTotalRebuys(players);
   const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost);
   const payoutAmounts = computePayouts(payout, prizePool);
@@ -83,7 +83,7 @@ export function TournamentFinished({
             </h3>
             <button
               onClick={() => setDetailsExpanded((prev) => !prev)}
-              className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              className={`text-xs px-3 py-1 rounded-lg transition-colors ${detailsExpanded ? 'text-gray-500 hover:text-gray-300' : 'text-amber-400 border border-amber-500/40 hover:bg-amber-500/10'}`}
             >
               {detailsExpanded ? `▲ ${t('finished.collapse')}` : `▼ ${t('finished.expand')}`}
             </button>
