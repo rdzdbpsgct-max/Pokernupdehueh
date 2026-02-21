@@ -375,15 +375,19 @@ function App() {
                       value={config.startingChips}
                       onChange={(e) => {
                         const raw = Number(e.target.value);
-                        const newChips = Math.max(1000, Math.round(raw / 1000) * 1000);
-                        setConfig((prev) => ({
-                          ...prev,
-                          startingChips: newChips,
-                          rebuy: {
-                            ...prev.rebuy,
-                            rebuyChips: prev.rebuy.rebuyChips === prev.startingChips ? newChips : prev.rebuy.rebuyChips,
-                          },
-                        }));
+                        setConfig((prev) => {
+                          const diff = Math.abs(raw - prev.startingChips);
+                          const isStep = diff > 0 && diff <= 1000;
+                          const newChips = Math.max(1, isStep ? Math.round(raw / 1000) * 1000 : raw);
+                          return {
+                            ...prev,
+                            startingChips: newChips,
+                            rebuy: {
+                              ...prev.rebuy,
+                              rebuyChips: prev.rebuy.rebuyChips === prev.startingChips ? newChips : prev.rebuy.rebuyChips,
+                            },
+                          };
+                        });
                       }}
                       className="w-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
                     />
