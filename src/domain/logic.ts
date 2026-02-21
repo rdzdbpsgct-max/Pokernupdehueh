@@ -245,7 +245,7 @@ export function validatePayoutConfig(payout: PayoutConfig, maxPlaces?: number): 
 // Rebuy
 // ---------------------------------------------------------------------------
 
-export function defaultRebuyConfig(buyIn = 10, startingChips = 1000): RebuyConfig {
+export function defaultRebuyConfig(buyIn = 10, startingChips = 20000): RebuyConfig {
   return {
     enabled: false,
     limitType: 'levels',
@@ -347,10 +347,10 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
     anteEnabled: false,
     players: [] as Player[],
     payout: defaultPayoutConfig(),
-    rebuy: defaultRebuyConfig(10, 1000),
+    rebuy: defaultRebuyConfig(10, 20000),
     bounty: defaultBountyConfig(),
     buyIn: 10,
-    startingChips: 1000,
+    startingChips: 20000,
   };
 
   const presets: Record<string, TournamentConfig> = {
@@ -452,7 +452,7 @@ export function loadConfig(): TournamentConfig | null {
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.levels)) return null;
     const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
-    const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 1000;
+    const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 20000;
     const rebuyRaw = parsed.rebuy;
     const rebuy: RebuyConfig = rebuyRaw
       ? {
@@ -510,7 +510,7 @@ export function importConfigJSON(json: string): TournamentConfig | null {
     const parsed = JSON.parse(json);
     if (parsed && Array.isArray(parsed.levels) && typeof parsed.name === 'string') {
       const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
-      const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 1000;
+      const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 20000;
       const rebuyRaw = parsed.rebuy;
       const rebuy: RebuyConfig = rebuyRaw
         ? {
