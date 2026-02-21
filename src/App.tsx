@@ -39,7 +39,7 @@ import { LanguageSwitcher } from './components/LanguageSwitcher';
 type Mode = 'setup' | 'game';
 
 function App() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [mode, setMode] = useState<Mode>('setup');
   const [config, setConfig] = useState<TournamentConfig>(
     () => loadConfig() ?? createPreset('standard'),
@@ -58,6 +58,25 @@ function App() {
   } | null>(null);
 
   const timer = useTimer(config.levels, settings);
+
+  // Rename default player names when language changes
+  const defaultNamePattern = /^(Spieler|Player) (\d+)$/;
+  useEffect(() => {
+    setConfig((prev) => {
+      const updated = prev.players.map((p) => {
+        const match = defaultNamePattern.exec(p.name);
+        if (match) {
+          return { ...p, name: t('playerManager.playerN', { n: Number(match[2]) }) };
+        }
+        return p;
+      });
+      if (updated.some((p, i) => p.name !== prev.players[i].name)) {
+        return { ...prev, players: updated };
+      }
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]);
 
   // Persist config & settings
   useEffect(() => {
