@@ -1,4 +1,4 @@
-import type { Player, PayoutConfig, BountyConfig } from '../domain/types';
+import type { Player, PayoutConfig, BountyConfig, RebuyConfig } from '../domain/types';
 import { computeTotalRebuys, computePrizePool, computePayouts } from '../domain/logic';
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
   buyIn: number;
   payout: PayoutConfig;
   bounty: BountyConfig;
+  rebuy: RebuyConfig;
   onBackToSetup: () => void;
 }
 
@@ -16,10 +17,11 @@ export function TournamentFinished({
   buyIn,
   payout,
   bounty,
+  rebuy,
   onBackToSetup,
 }: Props) {
   const totalRebuys = computeTotalRebuys(players);
-  const prizePool = computePrizePool(players, buyIn);
+  const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost);
   const payoutAmounts = computePayouts(payout, prizePool);
   const payoutMap = new Map(payoutAmounts.map((p) => [p.place, p.amount]));
   const maxPaidPlace = payoutAmounts.length > 0 ? Math.max(...payoutAmounts.map((p) => p.place)) : 0;
@@ -181,7 +183,9 @@ export function TournamentFinished({
             {totalRebuys > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Rebuys</span>
-                <span className="text-white">{totalRebuys}</span>
+                <span className="text-white">
+                  {totalRebuys} &times; {rebuy.rebuyCost} EUR
+                </span>
               </div>
             )}
             <div className="flex justify-between text-sm">

@@ -4,8 +4,18 @@ Alle wichtigen Änderungen an der Pokern up de Hüh App.
 
 ## [Unreleased]
 
+### Neu
+- Startchips im Setup konfigurierbar (Standard: 1000)
+- Rebuy-Kosten separat vom Buy-In einstellbar (Standard: gleich wie Buy-In)
+- Rebuy-Chips separat von Startchips einstellbar (Standard: gleich wie Startchips)
+- Preisgeld-Berechnung berücksichtigt separate Rebuy-Kosten
+- Rebuy-Details in Turnier-Ergebnis und Spieler-Panel sichtbar
+- Globale Leveldauer: Alle Blindstufen auf einmal auf eine Dauer setzen
+
 ### Geändert
 - Ante ist standardmäßig deaktiviert
+- Buy-In und Startchips werden nebeneinander angezeigt
+- Rebuy-Kosten und -Chips passen sich automatisch an, wenn Buy-In oder Startchips geändert werden
 
 ## [1.0.0] – Erste Version
 

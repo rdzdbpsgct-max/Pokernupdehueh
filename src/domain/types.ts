@@ -39,6 +39,10 @@ export interface RebuyConfig {
   levelLimit: number;
   /** When limitType === 'time': rebuy period in seconds */
   timeLimit: number;
+  /** Cost per rebuy in EUR (defaults to buyIn) */
+  rebuyCost: number;
+  /** Chips received per rebuy (defaults to startingChips) */
+  rebuyChips: number;
 }
 
 export interface BountyConfig {
@@ -55,6 +59,7 @@ export interface TournamentConfig {
   rebuy: RebuyConfig;
   bounty: BountyConfig;
   buyIn: number;
+  startingChips: number;
 }
 
 export interface Settings {

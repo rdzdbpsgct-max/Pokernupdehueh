@@ -3,11 +3,18 @@ import type { RebuyConfig, RebuyLimitType } from '../domain/types';
 interface Props {
   rebuy: RebuyConfig;
   onChange: (rebuy: RebuyConfig) => void;
+  buyIn: number;
+  startingChips: number;
 }
 
-export function RebuyEditor({ rebuy, onChange }: Props) {
+export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
   const toggle = () => {
-    onChange({ ...rebuy, enabled: !rebuy.enabled });
+    onChange({
+      ...rebuy,
+      enabled: !rebuy.enabled,
+      rebuyCost: rebuy.rebuyCost || buyIn,
+      rebuyChips: rebuy.rebuyChips || startingChips,
+    });
   };
 
   const setLimitType = (limitType: RebuyLimitType) => {
@@ -43,6 +50,38 @@ export function RebuyEditor({ rebuy, onChange }: Props) {
       {/* Settings (only when enabled) */}
       {rebuy.enabled && (
         <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+          {/* Rebuy cost & chips */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-300">Kosten</label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={rebuy.rebuyCost}
+                onChange={(e) =>
+                  onChange({ ...rebuy, rebuyCost: Math.max(1, Number(e.target.value)) })
+                }
+                className="w-20 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+              />
+              <span className="text-gray-500 text-xs">EUR</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-300">Chips</label>
+              <input
+                type="number"
+                min={1}
+                step={100}
+                value={rebuy.rebuyChips}
+                onChange={(e) =>
+                  onChange({ ...rebuy, rebuyChips: Math.max(1, Number(e.target.value)) })
+                }
+                className="w-24 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+              />
+              <span className="text-gray-500 text-xs">Chips</span>
+            </div>
+          </div>
+
           {/* Limit type toggle */}
           <div className="flex items-center gap-2">
             <button

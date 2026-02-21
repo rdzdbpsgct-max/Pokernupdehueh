@@ -338,26 +338,56 @@ function App() {
                 />
               </div>
 
-              {/* Buy-In */}
+              {/* Buy-In & Startchips */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Buy-In
+                  Buy-In & Startchips
                 </h2>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={config.buyIn}
-                    onChange={(e) =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        buyIn: Math.max(1, Number(e.target.value)),
-                      }))
-                    }
-                    className="w-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
-                  />
-                  <span className="text-gray-400 text-sm">EUR</span>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-500">Buy-In</label>
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={config.buyIn}
+                      onChange={(e) => {
+                        const newBuyIn = Math.max(1, Number(e.target.value));
+                        setConfig((prev) => ({
+                          ...prev,
+                          buyIn: newBuyIn,
+                          rebuy: {
+                            ...prev.rebuy,
+                            rebuyCost: prev.rebuy.rebuyCost === prev.buyIn ? newBuyIn : prev.rebuy.rebuyCost,
+                          },
+                        }));
+                      }}
+                      className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="text-gray-400 text-sm">EUR</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-500">Startchips</label>
+                    <input
+                      type="number"
+                      min={1}
+                      step={100}
+                      value={config.startingChips}
+                      onChange={(e) => {
+                        const newChips = Math.max(1, Number(e.target.value));
+                        setConfig((prev) => ({
+                          ...prev,
+                          startingChips: newChips,
+                          rebuy: {
+                            ...prev.rebuy,
+                            rebuyChips: prev.rebuy.rebuyChips === prev.startingChips ? newChips : prev.rebuy.rebuyChips,
+                          },
+                        }));
+                      }}
+                      className="w-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="text-gray-400 text-sm">Chips</span>
+                  </div>
                 </div>
               </div>
 
@@ -405,6 +435,8 @@ function App() {
                 <RebuyEditor
                   rebuy={config.rebuy}
                   onChange={(rebuy) => setConfig((prev) => ({ ...prev, rebuy }))}
+                  buyIn={config.buyIn}
+                  startingChips={config.startingChips}
                 />
               </div>
 
@@ -451,6 +483,7 @@ function App() {
             buyIn={config.buyIn}
             payout={config.payout}
             bounty={config.bounty}
+            rebuy={config.rebuy}
             onBackToSetup={switchToSetup}
           />
         ) : (
@@ -465,6 +498,7 @@ function App() {
                   payout={config.payout}
                   rebuyEnabled={config.rebuy.enabled}
                   rebuyActive={rebuyActive}
+                  rebuyConfig={config.rebuy}
                   bountyConfig={config.bounty}
                   onUpdateRebuys={updatePlayerRebuys}
                   onEliminatePlayer={eliminatePlayer}

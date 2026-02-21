@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Player, PayoutConfig, BountyConfig } from '../domain/types';
+import type { Player, PayoutConfig, BountyConfig, RebuyConfig } from '../domain/types';
 import { computeTotalRebuys, computePrizePool, computePayouts } from '../domain/logic';
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
   payout: PayoutConfig;
   rebuyEnabled: boolean;
   rebuyActive: boolean;
+  rebuyConfig: RebuyConfig;
   bountyConfig: BountyConfig;
   onUpdateRebuys: (playerId: string, newCount: number) => void;
   onEliminatePlayer: (playerId: string, eliminatedBy: string | null) => void;
@@ -19,6 +20,7 @@ export function PlayerPanel({
   payout,
   rebuyEnabled,
   rebuyActive,
+  rebuyConfig,
   bountyConfig,
   onUpdateRebuys,
   onEliminatePlayer,
@@ -27,7 +29,7 @@ export function PlayerPanel({
   const [selectedKiller, setSelectedKiller] = useState<string>('');
 
   const totalRebuys = computeTotalRebuys(players);
-  const prizePool = computePrizePool(players, buyIn);
+  const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost);
   const payoutAmounts = computePayouts(payout, prizePool);
 
   const activePlayers = players.filter((p) => p.status === 'active');
@@ -67,7 +69,10 @@ export function PlayerPanel({
             {prizePool.toFixed(2)} EUR
           </p>
           <p className="text-emerald-500/70 text-xs">
-            ({players.length} Spieler{totalRebuys > 0 ? ` + ${totalRebuys} Rebuys` : ''}) &times; {buyIn} EUR
+            {players.length} &times; {buyIn} EUR
+            {totalRebuys > 0 && (
+              <> + {totalRebuys} Rebuy{totalRebuys > 1 ? 's' : ''} &times; {rebuyConfig.rebuyCost} EUR</>
+            )}
           </p>
           {bountyConfig.enabled && (
             <p className="text-amber-500/70 text-xs mt-0.5">

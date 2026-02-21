@@ -10,6 +10,18 @@ interface Props {
 
 export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
   const [errors, setErrors] = useState<string[]>([]);
+  const firstLevelMinutes = Math.round(
+    (config.levels.find((l) => l.type === 'level')?.durationSeconds ?? 600) / 60,
+  );
+  const [globalMinutes, setGlobalMinutes] = useState(firstLevelMinutes);
+
+  const applyGlobalDuration = () => {
+    const seconds = Math.max(60, globalMinutes * 60);
+    const newLevels = config.levels.map((l) =>
+      l.type === 'level' ? { ...l, durationSeconds: seconds } : l,
+    );
+    onChange({ ...config, levels: newLevels });
+  };
 
   const updateLevel = (index: number, partial: Partial<Level>) => {
     const newLevels = config.levels.map((l, i) =>
@@ -73,6 +85,25 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
           ))}
         </div>
       )}
+
+      {/* Global duration */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg">
+        <label className="text-gray-400 text-xs whitespace-nowrap">Alle Levels:</label>
+        <input
+          type="number"
+          min={1}
+          value={globalMinutes}
+          onChange={(e) => setGlobalMinutes(Math.max(1, Number(e.target.value)))}
+          className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+        />
+        <span className="text-gray-500 text-xs">Min</span>
+        <button
+          onClick={applyGlobalDuration}
+          className="px-3 py-1 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded text-xs font-medium transition-colors"
+        >
+          Übernehmen
+        </button>
+      </div>
 
       {/* Levels */}
       <div className="space-y-2">

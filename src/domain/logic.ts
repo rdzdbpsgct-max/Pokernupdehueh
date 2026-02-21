@@ -245,12 +245,14 @@ export function validatePayoutConfig(payout: PayoutConfig, maxPlaces?: number): 
 // Rebuy
 // ---------------------------------------------------------------------------
 
-export function defaultRebuyConfig(): RebuyConfig {
+export function defaultRebuyConfig(buyIn = 10, startingChips = 1000): RebuyConfig {
   return {
     enabled: false,
     limitType: 'levels',
     levelLimit: 4,
     timeLimit: 3600,
+    rebuyCost: buyIn,
+    rebuyChips: startingChips,
   };
 }
 
@@ -307,9 +309,10 @@ export function computeTotalRebuys(players: Player[]): number {
   return players.reduce((sum, p) => sum + p.rebuys, 0);
 }
 
-export function computePrizePool(players: Player[], buyIn: number): number {
+export function computePrizePool(players: Player[], buyIn: number, rebuyCost?: number): number {
   const totalRebuys = computeTotalRebuys(players);
-  return (players.length + totalRebuys) * buyIn;
+  const costPerRebuy = rebuyCost ?? buyIn;
+  return (players.length * buyIn) + (totalRebuys * costPerRebuy);
 }
 
 export function computePayouts(
@@ -344,9 +347,10 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
     anteEnabled: false,
     players: [] as Player[],
     payout: defaultPayoutConfig(),
-    rebuy: defaultRebuyConfig(),
+    rebuy: defaultRebuyConfig(10, 1000),
     bounty: defaultBountyConfig(),
     buyIn: 10,
+    startingChips: 1000,
   };
 
   const presets: Record<string, TournamentConfig> = {
@@ -447,6 +451,17 @@ export function loadConfig(): TournamentConfig | null {
   try {
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.levels)) return null;
+    const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
+    const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 1000;
+    const rebuyRaw = parsed.rebuy;
+    const rebuy: RebuyConfig = rebuyRaw
+      ? {
+          ...defaultRebuyConfig(buyIn, startingChips),
+          ...rebuyRaw,
+          rebuyCost: typeof rebuyRaw.rebuyCost === 'number' ? rebuyRaw.rebuyCost : buyIn,
+          rebuyChips: typeof rebuyRaw.rebuyChips === 'number' ? rebuyRaw.rebuyChips : startingChips,
+        }
+      : defaultRebuyConfig(buyIn, startingChips);
     return {
       name: parsed.name ?? 'Tournament',
       levels: parsed.levels,
@@ -462,9 +477,10 @@ export function loadConfig(): TournamentConfig | null {
           }))
         : [],
       payout: parsed.payout ?? defaultPayoutConfig(),
-      rebuy: parsed.rebuy ?? defaultRebuyConfig(),
+      rebuy,
       bounty: parsed.bounty ?? defaultBountyConfig(),
-      buyIn: typeof parsed.buyIn === 'number' ? parsed.buyIn : 10,
+      buyIn,
+      startingChips,
     };
   } catch {
     return null;
@@ -493,10 +509,21 @@ export function importConfigJSON(json: string): TournamentConfig | null {
   try {
     const parsed = JSON.parse(json);
     if (parsed && Array.isArray(parsed.levels) && typeof parsed.name === 'string') {
+      const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
+      const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 1000;
+      const rebuyRaw = parsed.rebuy;
+      const rebuy: RebuyConfig = rebuyRaw
+        ? {
+            ...defaultRebuyConfig(buyIn, startingChips),
+            ...rebuyRaw,
+            rebuyCost: typeof rebuyRaw.rebuyCost === 'number' ? rebuyRaw.rebuyCost : buyIn,
+            rebuyChips: typeof rebuyRaw.rebuyChips === 'number' ? rebuyRaw.rebuyChips : startingChips,
+          }
+        : defaultRebuyConfig(buyIn, startingChips);
       return {
         name: parsed.name,
         levels: parsed.levels,
-        anteEnabled: parsed.anteEnabled ?? true,
+        anteEnabled: parsed.anteEnabled ?? false,
         players: Array.isArray(parsed.players)
           ? parsed.players.map((p: Record<string, unknown>) => ({
               ...p,
@@ -508,9 +535,10 @@ export function importConfigJSON(json: string): TournamentConfig | null {
             }))
           : [],
         payout: parsed.payout ?? defaultPayoutConfig(),
-        rebuy: parsed.rebuy ?? defaultRebuyConfig(),
+        rebuy,
         bounty: parsed.bounty ?? defaultBountyConfig(),
-        buyIn: typeof parsed.buyIn === 'number' ? parsed.buyIn : 10,
+        buyIn,
+        startingChips,
       };
     }
     return null;
