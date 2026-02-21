@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig } from '../domain/types';
 import { computeTotalRebuys, computePrizePool, computePayouts } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -22,6 +23,7 @@ export function TournamentFinished({
   onBackToSetup,
 }: Props) {
   const { t } = useTranslation();
+  const [detailsExpanded, setDetailsExpanded] = useState(true);
   const totalRebuys = computeTotalRebuys(players);
   const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost);
   const payoutAmounts = computePayouts(payout, prizePool);
@@ -75,9 +77,17 @@ export function TournamentFinished({
 
         {/* Standings / Ergebnis */}
         <div>
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-            {t('finished.results')}
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs text-gray-500 uppercase tracking-wider">
+              {t('finished.results')}
+            </h3>
+            <button
+              onClick={() => setDetailsExpanded((prev) => !prev)}
+              className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              {detailsExpanded ? `▲ ${t('finished.collapse')}` : `▼ ${t('finished.expand')}`}
+            </button>
+          </div>
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
             {standings.map((player, idx) => {
               const isPaid = payoutMap.has(player.finalPlace);
@@ -90,11 +100,6 @@ export function TournamentFinished({
               const totalCost = totalPaid + bountyEntryFee;
               const totalIncome = (amount ?? 0) + bountyEarnings;
               const netBalance = totalIncome - totalCost;
-
-              // Build paid-in label: "10 EUR" or "10 + 2×10 = 30 EUR"
-              const paidInLabel = player.rebuys > 0
-                ? `${buyIn} + ${player.rebuys}×${rebuyCost} = ${totalPaid} ${t('unit.eur')}`
-                : `${totalPaid} ${t('unit.eur')}`;
 
               return (
                 <div key={player.id}>
@@ -134,23 +139,48 @@ export function TournamentFinished({
                         </span>
                       )}
                     </div>
-                    {/* Row 2: Paid in, Bounty earnings */}
-                    <div className="flex items-center gap-4 ml-9 mt-0.5">
-                      <span className="text-xs text-gray-500">
-                        {t('finished.paidIn')}: {paidInLabel}
-                      </span>
-                      {bounty.enabled && bountyEarnings > 0 && (
-                        <span className="text-xs text-amber-500/70">
-                          {t('finished.bountyEarned')}: {bountyEarnings.toFixed(2)} {t('unit.eur')} ({player.knockouts} KO)
-                        </span>
-                      )}
-                    </div>
-                    {/* Row 3: Net balance */}
-                    <div className="ml-9 mt-0.5">
-                      <span className={`text-xs font-semibold ${netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-500'}`}>
-                        {t('finished.balance')}: {netBalance >= 0 ? '+' : ''}{netBalance.toFixed(2)} {t('unit.eur')}
-                      </span>
-                    </div>
+                    {/* Detail rows (collapsible) */}
+                    {detailsExpanded && (
+                      <div className="ml-9 mt-1 space-y-0.5">
+                        {/* Buy-In */}
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500">{t('finished.buyIn')}</span>
+                          <span className="text-gray-400">{buyIn.toFixed(2)} {t('unit.eur')}</span>
+                        </div>
+                        {/* Rebuys */}
+                        {player.rebuys > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">{t('finished.rebuys')} ({player.rebuys}×)</span>
+                            <span className="text-gray-400">{(player.rebuys * rebuyCost).toFixed(2)} {t('unit.eur')}</span>
+                          </div>
+                        )}
+                        {/* Bounty paid */}
+                        {bounty.enabled && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">{t('finished.bountyPaid')}</span>
+                            <span className="text-gray-400">{bounty.amount.toFixed(2)} {t('unit.eur')}</span>
+                          </div>
+                        )}
+                        {/* Bounty earned */}
+                        {bounty.enabled && bountyEarnings > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-amber-500/70">{t('finished.bountyEarned')} ({player.knockouts} KO)</span>
+                            <span className="text-amber-500/70">+{bountyEarnings.toFixed(2)} {t('unit.eur')}</span>
+                          </div>
+                        )}
+                        {/* Divider + Balance */}
+                        <div className="border-t border-gray-700/50 pt-0.5 mt-0.5">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className={netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-500'}>
+                              {t('finished.balance')}
+                            </span>
+                            <span className={netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-500'}>
+                              {netBalance >= 0 ? '+' : ''}{netBalance.toFixed(2)} {t('unit.eur')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

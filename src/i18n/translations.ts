@@ -176,8 +176,11 @@ const de = {
   'finished.bountyLabel': 'Bounty',
   'finished.paidPlaces': 'Bezahlte Plätze',
   'finished.paidIn': 'Eingezahlt',
-  'finished.bountyEarned': 'Bounty',
+  'finished.bountyPaid': 'Bounty gezahlt',
+  'finished.bountyEarned': 'Bounty erhalten',
   'finished.balance': 'Bilanz',
+  'finished.collapse': 'Einklappen',
+  'finished.expand': 'Ausklappen',
   'finished.backToSetup': 'Zurück zum Setup',
 
   // --- Level Preview ---
@@ -379,8 +382,11 @@ const en: Record<TranslationKey, string> = {
   'finished.bountyLabel': 'Bounty',
   'finished.paidPlaces': 'Paid Places',
   'finished.paidIn': 'Paid in',
-  'finished.bountyEarned': 'Bounty',
+  'finished.bountyPaid': 'Bounty paid',
+  'finished.bountyEarned': 'Bounty earned',
   'finished.balance': 'Balance',
+  'finished.collapse': 'Collapse',
+  'finished.expand': 'Expand',
   'finished.backToSetup': 'Back to Setup',
 
   // --- Level Preview ---
