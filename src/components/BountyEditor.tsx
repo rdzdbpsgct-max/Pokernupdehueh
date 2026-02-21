@@ -42,7 +42,7 @@ export function BountyEditor({ bounty, onChange }: Props) {
             <span className="text-gray-500 text-xs">EUR</span>
           </div>
           <p className="text-xs text-gray-500">
-            Jeder Spieler hat ein Bounty auf seinem Kopf. Wer einen Spieler eliminiert, erhaelt dessen Bounty-Betrag.
+            Jeder Spieler hat ein Bounty auf seinem Kopf. Wer einen Spieler eliminiert, erhält dessen Bounty-Betrag.
           </p>
         </div>
       )}

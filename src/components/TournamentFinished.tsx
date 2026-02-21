@@ -64,7 +64,7 @@ export function TournamentFinished({
             &#127942;
           </div>
           <p className="text-emerald-400 text-lg font-medium tracking-wide">
-            Herzlichen Glueckwunsch
+            Herzlichen Glückwunsch
           </p>
           <p className="text-4xl font-bold text-white">
             {winner.name}
@@ -196,7 +196,7 @@ export function TournamentFinished({
             )}
             {maxPaidPlace > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Bezahlte Plaetze</span>
+                <span className="text-gray-400">Bezahlte Plätze</span>
                 <span className="text-white">Top {maxPaidPlace}</span>
               </div>
             )}
@@ -209,7 +209,7 @@ export function TournamentFinished({
             onClick={onBackToSetup}
             className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-lg font-medium transition-colors"
           >
-            Zurueck zum Setup
+            Zurück zum Setup
           </button>
         </div>
       </div>

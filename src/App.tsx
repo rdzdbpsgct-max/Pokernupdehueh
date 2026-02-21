@@ -186,7 +186,7 @@ function App() {
       errors.push('Mindestens 2 Spieler erforderlich');
     }
     if (config.payout.entries.length > config.players.length) {
-      errors.push(`Mehr Auszahlungsplaetze (${config.payout.entries.length}) als Spieler (${config.players.length})`);
+      errors.push(`Mehr Auszahlungsplätze (${config.payout.entries.length}) als Spieler (${config.players.length})`);
     }
     errors.push(...validatePayoutConfig(config.payout, config.players.length));
     errors.push(...validateConfig(config).map((e) => e.message));
@@ -423,7 +423,7 @@ function App() {
               <div className="pt-4 border-t border-gray-800 space-y-3">
                 {startErrors.length > 0 ? (
                   <div className="bg-red-900/30 border border-red-700 rounded-lg p-3">
-                    <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Konfiguration pruefen:</p>
+                    <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Konfiguration prüfen:</p>
                     {startErrors.map((e, i) => (
                       <p key={i} className="text-red-400 text-sm">• {e}</p>
                     ))}
@@ -557,7 +557,7 @@ function App() {
                   onClick={handleExitToSetup}
                   className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
                 >
-                  ⚙ Zurueck zum Setup
+                  ⚙ Zurück zum Setup
                 </button>
               </aside>
             )}

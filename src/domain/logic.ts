@@ -221,7 +221,7 @@ export function validatePayoutConfig(payout: PayoutConfig, maxPlaces?: number): 
 
   if (maxPlaces !== undefined && payout.entries.length > maxPlaces) {
     errors.push(
-      `Maximal ${maxPlaces} Auszahlungsplaetze moeglich (Anzahl Spieler: ${maxPlaces})`,
+      `Maximal ${maxPlaces} Auszahlungsplätze möglich (Anzahl Spieler: ${maxPlaces})`,
     );
   }
 

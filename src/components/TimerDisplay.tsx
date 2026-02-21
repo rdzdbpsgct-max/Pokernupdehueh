@@ -68,7 +68,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         return (
           <div className="text-center">
             <p className={`text-gray-500 ${largeDisplay ? 'text-sm' : 'text-xs'} uppercase tracking-wider`}>
-              Naechstes {nextLabel}
+              Nächstes {nextLabel}
             </p>
             {nextLvl.type === 'break' ? (
               <p className={`text-amber-500/70 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
@@ -111,7 +111,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
                 : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
             }`}
           >
-            {scrubbing ? 'Slider schliessen' : 'Zeit anpassen'}
+            {scrubbing ? 'Slider schließen' : 'Zeit anpassen'}
           </button>
           {scrubbing && (
             <div className="w-full flex items-center gap-3">
@@ -136,7 +136,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       {/* Status */}
       <p className="text-sm text-gray-500 uppercase tracking-widest">
         {timerState.status === 'running'
-          ? 'Laeuft'
+          ? 'Läuft'
           : timerState.status === 'paused'
           ? 'Pausiert'
           : remaining <= 0

@@ -173,7 +173,7 @@ export function PlayerPanel({
             onChange={(e) => setSelectedKiller(e.target.value)}
             className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-amber-500"
           >
-            <option value="">-- Spieler waehlen --</option>
+            <option value="">-- Spieler wählen --</option>
             {activePlayers
               .filter((p) => p.id !== eliminatingId)
               .map((p) => (
@@ -194,7 +194,7 @@ export function PlayerPanel({
               disabled={!selectedKiller}
               className="flex-1 px-2 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              Bestaetigen
+              Bestätigen
             </button>
           </div>
         </div>
