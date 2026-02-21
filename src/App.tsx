@@ -11,6 +11,9 @@ import {
   isRebuyActive,
   computeTournamentElapsedSeconds,
   computeNextPlacement,
+  defaultPayoutForPlayerCount,
+  validatePayoutConfig,
+  validateConfig,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { TimerDisplay } from './components/TimerDisplay';
@@ -177,6 +180,19 @@ function App() {
     return config.players.find((p) => p.status === 'active') ?? null;
   }, [tournamentFinished, config.players]);
 
+  const startErrors = useMemo(() => {
+    const errors: string[] = [];
+    if (config.players.length < 2) {
+      errors.push('Mindestens 2 Spieler erforderlich');
+    }
+    if (config.payout.entries.length > config.players.length) {
+      errors.push(`Mehr Auszahlungsplaetze (${config.payout.entries.length}) als Spieler (${config.players.length})`);
+    }
+    errors.push(...validatePayoutConfig(config.payout, config.players.length));
+    errors.push(...validateConfig(config).map((e) => e.message));
+    return errors;
+  }, [config]);
+
   // Auto-pause timer when tournament finishes
   useEffect(() => {
     if (tournamentFinished) {
@@ -279,8 +295,8 @@ function App() {
       <main className="flex-1 flex">
         {mode === 'setup' ? (
           /* Setup Mode */
-          <div className="flex-1 p-6 overflow-y-auto">
-            <div className="max-w-2xl mx-auto space-y-6">
+          <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
+            <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
               {/* Turnier-Name */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
@@ -312,7 +328,13 @@ function App() {
                 </h2>
                 <PlayerManager
                   players={config.players}
-                  onChange={(players) => setConfig((prev) => ({ ...prev, players }))}
+                  onChange={(players) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      players,
+                      payout: defaultPayoutForPlayerCount(players.length),
+                    }))
+                  }
                 />
               </div>
 
@@ -371,6 +393,7 @@ function App() {
                 <PayoutEditor
                   payout={config.payout}
                   onChange={(payout) => setConfig((prev) => ({ ...prev, payout }))}
+                  maxPlaces={config.players.length}
                 />
               </div>
 
@@ -396,11 +419,24 @@ function App() {
                 />
               </div>
 
-              {/* Start button */}
-              <div className="pt-4 border-t border-gray-800">
+              {/* Validation + Start button */}
+              <div className="pt-4 border-t border-gray-800 space-y-3">
+                {startErrors.length > 0 ? (
+                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-3">
+                    <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Konfiguration pruefen:</p>
+                    {startErrors.map((e, i) => (
+                      <p key={i} className="text-red-400 text-sm">• {e}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
+                    <p className="text-emerald-400 text-sm">✓ Alles bereit – Turnier kann gestartet werden</p>
+                  </div>
+                )}
                 <button
                   onClick={switchToGame}
-                  className="w-full px-6 py-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-lg font-bold transition-colors"
+                  disabled={startErrors.length > 0}
+                  className="w-full px-6 py-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-lg font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-700"
                 >
                   ▶ Turnier starten
                 </button>
@@ -419,10 +455,10 @@ function App() {
           />
         ) : (
           /* Game Mode */
-          <div className="flex-1 flex flex-col lg:flex-row">
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
             {/* Player Panel (LEFT) */}
             {showPlayerPanel && config.players.length > 0 && (
-              <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-gray-800 p-4 overflow-y-auto">
+              <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-gray-800 p-3 sm:p-4 overflow-y-auto max-h-[50vh] lg:max-h-none">
                 <PlayerPanel
                   players={config.players}
                   buyIn={config.buyIn}
@@ -437,8 +473,8 @@ function App() {
             )}
 
             {/* Timer area (CENTER) with edge toggle buttons */}
-            <div className="flex-1 flex relative">
-              {/* Left toggle button (Player Panel) */}
+            <div className="flex-1 flex flex-col relative">
+              {/* Desktop: side toggle buttons */}
               {config.players.length > 0 && (
                 <button
                   onClick={() => setShowPlayerPanel((v) => !v)}
@@ -448,9 +484,16 @@ function App() {
                   {showPlayerPanel ? '\u25C0' : '\u25B6'}
                 </button>
               )}
+              <button
+                onClick={() => setShowSidebar((v) => !v)}
+                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-l-lg text-xs transition-colors"
+                title={showSidebar ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
+              >
+                {showSidebar ? '\u25B6' : '\u25C0'}
+              </button>
 
-              {/* Timer + Controls + Next Level */}
-              <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
+              {/* Timer + Controls */}
+              <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 gap-3 sm:gap-6">
                 <TimerDisplay
                   timerState={timer.timerState}
                   levels={config.levels}
@@ -472,22 +515,38 @@ function App() {
                   onReset={handleResetLevel}
                   onRestart={handleRestart}
                 />
-
               </div>
 
-              {/* Right toggle button (Sidebar) */}
-              <button
-                onClick={() => setShowSidebar((v) => !v)}
-                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-l-lg text-xs transition-colors"
-                title={showSidebar ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
-              >
-                {showSidebar ? '\u25B6' : '\u25C0'}
-              </button>
+              {/* Mobile: toggle buttons row at bottom */}
+              <div className="flex lg:hidden justify-center gap-2 px-3 pb-2">
+                {config.players.length > 0 && (
+                  <button
+                    onClick={() => setShowPlayerPanel((v) => !v)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      showPlayerPanel
+                        ? 'bg-emerald-700 text-white'
+                        : 'bg-gray-800 text-gray-400'
+                    }`}
+                  >
+                    {showPlayerPanel ? '✓ Spieler' : 'Spieler'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowSidebar((v) => !v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    showSidebar
+                      ? 'bg-emerald-700 text-white'
+                      : 'bg-gray-800 text-gray-400'
+                  }`}
+                >
+                  {showSidebar ? '✓ Sidebar' : 'Sidebar'}
+                </button>
+              </div>
             </div>
 
             {/* Sidebar (RIGHT) */}
             {showSidebar && (
-              <aside className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-gray-800 p-4 space-y-6 overflow-y-auto">
+              <aside className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-gray-800 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[50vh] lg:max-h-none">
                 <LevelPreview timerState={timer.timerState} levels={config.levels} />
                 <SettingsPanel
                   settings={settings}

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { Player } from '../domain/types';
 import { generatePlayerId } from '../domain/logic';
 
@@ -7,6 +8,12 @@ interface Props {
 }
 
 export function PlayerManager({ players, onChange }: Props) {
+  const [countInput, setCountInput] = useState(String(players.length));
+
+  useEffect(() => {
+    setCountInput(String(players.length));
+  }, [players.length]);
+
   const setPlayerCount = (count: number) => {
     const clamped = Math.max(2, Math.min(20, count));
     if (clamped > players.length) {
@@ -17,6 +24,15 @@ export function PlayerManager({ players, onChange }: Props) {
       onChange(newPlayers);
     } else if (clamped < players.length) {
       onChange(players.slice(0, clamped));
+    }
+  };
+
+  const applyCountInput = () => {
+    const n = Number(countInput);
+    if (!isNaN(n) && n >= 2 && n <= 20) {
+      setPlayerCount(n);
+    } else {
+      setCountInput(String(players.length));
     }
   };
 
@@ -34,15 +50,19 @@ export function PlayerManager({ players, onChange }: Props) {
           type="number"
           min={2}
           max={20}
-          value={players.length}
-          onChange={(e) => setPlayerCount(Number(e.target.value))}
+          value={countInput}
+          onChange={(e) => setCountInput(e.target.value)}
+          onBlur={applyCountInput}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
           className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
         />
       </div>
 
       {/* Player list */}
       {players.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {players.map((player, i) => (
             <div key={player.id} className="flex items-center gap-2">
               <span className="text-gray-500 text-xs w-5 text-right">{i + 1}.</span>

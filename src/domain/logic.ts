@@ -170,12 +170,59 @@ export function defaultPayoutConfig(): PayoutConfig {
   };
 }
 
-export function validatePayoutConfig(payout: PayoutConfig): string[] {
+export function defaultPayoutForPlayerCount(playerCount: number): PayoutConfig {
+  let entries: { place: number; value: number }[];
+
+  if (playerCount <= 2) {
+    entries = [{ place: 1, value: 100 }];
+  } else if (playerCount <= 3) {
+    entries = [
+      { place: 1, value: 65 },
+      { place: 2, value: 35 },
+    ];
+  } else if (playerCount <= 4) {
+    entries = [
+      { place: 1, value: 60 },
+      { place: 2, value: 40 },
+    ];
+  } else if (playerCount <= 10) {
+    entries = [
+      { place: 1, value: 50 },
+      { place: 2, value: 30 },
+      { place: 3, value: 20 },
+    ];
+  } else if (playerCount <= 15) {
+    entries = [
+      { place: 1, value: 40 },
+      { place: 2, value: 25 },
+      { place: 3, value: 20 },
+      { place: 4, value: 15 },
+    ];
+  } else {
+    entries = [
+      { place: 1, value: 35 },
+      { place: 2, value: 25 },
+      { place: 3, value: 18 },
+      { place: 4, value: 13 },
+      { place: 5, value: 9 },
+    ];
+  }
+
+  return { mode: 'percent', entries };
+}
+
+export function validatePayoutConfig(payout: PayoutConfig, maxPlaces?: number): string[] {
   const errors: string[] = [];
 
   if (payout.entries.length === 0) {
     errors.push('Mindestens ein Auszahlungsplatz erforderlich');
     return errors;
+  }
+
+  if (maxPlaces !== undefined && payout.entries.length > maxPlaces) {
+    errors.push(
+      `Maximal ${maxPlaces} Auszahlungsplaetze moeglich (Anzahl Spieler: ${maxPlaces})`,
+    );
   }
 
   payout.entries.forEach((entry) => {

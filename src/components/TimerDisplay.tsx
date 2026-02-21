@@ -25,7 +25,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
   const blindsText = getBlindsText(currentLevel);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 select-none">
+    <div className="flex flex-col items-center justify-center gap-2 sm:gap-4 select-none w-full">
       {/* Progress bar */}
       <div className="w-full max-w-xl h-2 bg-gray-700 rounded-full overflow-hidden">
         <div
@@ -45,7 +45,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         </p>
         {blindsText && (
           <p className={`text-gray-200 font-semibold mt-1 ${
-            largeDisplay ? 'text-4xl' : 'text-2xl'
+            largeDisplay ? 'text-2xl sm:text-4xl' : 'text-xl sm:text-2xl'
           }`}>
             {blindsText}
           </p>
@@ -86,7 +86,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       {/* Timer */}
       <div
         className={`font-mono font-bold tabular-nums ${
-          largeDisplay ? 'text-[10rem] leading-none' : 'text-8xl'
+          largeDisplay ? 'text-[4rem] sm:text-[7rem] lg:text-[10rem] leading-none' : 'text-5xl sm:text-8xl'
         } ${
           isCountdown
             ? 'text-red-500 animate-pulse'

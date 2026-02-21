@@ -5,15 +5,18 @@ import { validatePayoutConfig } from '../domain/logic';
 interface Props {
   payout: PayoutConfig;
   onChange: (payout: PayoutConfig) => void;
+  maxPlaces?: number;
 }
 
-export function PayoutEditor({ payout, onChange }: Props) {
+export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
   const [errors, setErrors] = useState<string[]>([]);
+
+  const validate = (p: PayoutConfig) => validatePayoutConfig(p, maxPlaces);
 
   const setMode = (mode: PayoutMode) => {
     const updated = { ...payout, mode };
     onChange(updated);
-    setErrors(validatePayoutConfig(updated));
+    setErrors(validate(updated));
   };
 
   const updateEntry = (index: number, value: number) => {
@@ -22,17 +25,18 @@ export function PayoutEditor({ payout, onChange }: Props) {
     );
     const updated = { ...payout, entries };
     onChange(updated);
-    setErrors(validatePayoutConfig(updated));
+    setErrors(validate(updated));
   };
 
   const addPlace = () => {
+    if (payout.entries.length >= maxPlaces) return;
     const nextPlace = payout.entries.length + 1;
     const updated = {
       ...payout,
       entries: [...payout.entries, { place: nextPlace, value: 0 }],
     };
     onChange(updated);
-    setErrors(validatePayoutConfig(updated));
+    setErrors(validate(updated));
   };
 
   const removeLastPlace = () => {
@@ -42,11 +46,11 @@ export function PayoutEditor({ payout, onChange }: Props) {
       entries: payout.entries.slice(0, -1),
     };
     onChange(updated);
-    setErrors(validatePayoutConfig(updated));
+    setErrors(validate(updated));
   };
 
   const setPlaceCount = (count: number) => {
-    const clamped = Math.max(1, Math.min(10, count));
+    const clamped = Math.max(1, Math.min(maxPlaces, count));
     let entries = [...payout.entries];
     if (clamped > entries.length) {
       for (let i = entries.length; i < clamped; i++) {
@@ -57,7 +61,7 @@ export function PayoutEditor({ payout, onChange }: Props) {
     }
     const updated = { ...payout, entries };
     onChange(updated);
-    setErrors(validatePayoutConfig(updated));
+    setErrors(validate(updated));
   };
 
   return (
@@ -92,7 +96,7 @@ export function PayoutEditor({ payout, onChange }: Props) {
         <input
           type="number"
           min={1}
-          max={10}
+          max={maxPlaces}
           value={payout.entries.length}
           onChange={(e) => setPlaceCount(Number(e.target.value))}
           className="w-16 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
@@ -123,7 +127,7 @@ export function PayoutEditor({ payout, onChange }: Props) {
       <div className="flex gap-2">
         <button
           onClick={addPlace}
-          disabled={payout.entries.length >= 10}
+          disabled={payout.entries.length >= maxPlaces}
           className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-xs font-medium transition-colors disabled:opacity-30"
         >
           + Platz
