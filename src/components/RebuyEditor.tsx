@@ -71,7 +71,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               <input
                 type="number"
                 min={1}
-                step={100}
+                step={1000}
                 value={rebuy.rebuyChips}
                 onChange={(e) =>
                   onChange({ ...rebuy, rebuyChips: Math.max(1, Number(e.target.value)) })

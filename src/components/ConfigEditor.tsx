@@ -15,10 +15,23 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
   );
   const [globalMinutes, setGlobalMinutes] = useState(firstLevelMinutes);
 
+  const firstBreakMinutes = Math.round(
+    (config.levels.find((l) => l.type === 'break')?.durationSeconds ?? 600) / 60,
+  );
+  const [globalBreakMinutes, setGlobalBreakMinutes] = useState(firstBreakMinutes);
+
   const applyGlobalDuration = () => {
     const seconds = Math.max(60, globalMinutes * 60);
     const newLevels = config.levels.map((l) =>
       l.type === 'level' ? { ...l, durationSeconds: seconds } : l,
+    );
+    onChange({ ...config, levels: newLevels });
+  };
+
+  const applyGlobalBreakDuration = () => {
+    const seconds = Math.max(60, globalBreakMinutes * 60);
+    const newLevels = config.levels.map((l) =>
+      l.type === 'break' ? { ...l, durationSeconds: seconds } : l,
     );
     onChange({ ...config, levels: newLevels });
   };
@@ -50,7 +63,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
       id: generateId(),
       type: 'break',
       durationSeconds: 600,
-      label: 'Break',
+      label: 'Pause',
     };
     onChange({ ...config, levels: [...config.levels, newBreak] });
   };
@@ -86,23 +99,42 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
         </div>
       )}
 
-      {/* Global duration */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg">
-        <label className="text-gray-400 text-xs whitespace-nowrap">Alle Levels:</label>
-        <input
-          type="number"
-          min={1}
-          value={globalMinutes}
-          onChange={(e) => setGlobalMinutes(Math.max(1, Number(e.target.value)))}
-          className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
-        />
-        <span className="text-gray-500 text-xs">Min</span>
-        <button
-          onClick={applyGlobalDuration}
-          className="px-3 py-1 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded text-xs font-medium transition-colors"
-        >
-          Übernehmen
-        </button>
+      {/* Global duration controls */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg">
+          <label className="text-gray-400 text-xs whitespace-nowrap">Alle Levels:</label>
+          <input
+            type="number"
+            min={1}
+            value={globalMinutes}
+            onChange={(e) => setGlobalMinutes(Math.max(1, Number(e.target.value)))}
+            className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+          />
+          <span className="text-gray-500 text-xs">Min</span>
+          <button
+            onClick={applyGlobalDuration}
+            className="px-3 py-1 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded text-xs font-medium transition-colors"
+          >
+            Übernehmen
+          </button>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-900/20 border border-amber-800/50 rounded-lg">
+          <label className="text-amber-400/70 text-xs whitespace-nowrap">Alle Pausen:</label>
+          <input
+            type="number"
+            min={1}
+            value={globalBreakMinutes}
+            onChange={(e) => setGlobalBreakMinutes(Math.max(1, Number(e.target.value)))}
+            className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-amber-500"
+          />
+          <span className="text-gray-500 text-xs">Min</span>
+          <button
+            onClick={applyGlobalBreakDuration}
+            className="px-3 py-1 bg-amber-800 hover:bg-amber-700 text-amber-200 rounded text-xs font-medium transition-colors"
+          >
+            Übernehmen
+          </button>
+        </div>
       </div>
 
       {/* Levels */}
@@ -127,7 +159,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                   : 'bg-emerald-800 text-emerald-200'
               }`}
             >
-              {level.type === 'break' ? 'Break' : 'Level'}
+              {level.type === 'break' ? 'Pause' : 'Level'}
             </span>
 
             {/* Duration */}
@@ -189,7 +221,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 <label className="text-gray-500 text-xs">Label:</label>
                 <input
                   type="text"
-                  value={level.label ?? 'Break'}
+                  value={level.label ?? 'Pause'}
                   onChange={(e) => updateLevel(i, { label: e.target.value })}
                   className="w-24 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-emerald-500"
                 />
@@ -246,7 +278,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
           onClick={addBreak}
           className="px-4 py-2 bg-amber-800 hover:bg-amber-700 text-amber-200 rounded-lg text-sm font-medium transition-colors"
         >
-          + Break
+          + Pause
         </button>
       </div>
     </div>

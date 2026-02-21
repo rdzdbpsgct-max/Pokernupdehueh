@@ -11,11 +11,15 @@ Alle wichtigen Änderungen an der Pokern up de Hüh App.
 - Preisgeld-Berechnung berücksichtigt separate Rebuy-Kosten
 - Rebuy-Details in Turnier-Ergebnis und Spieler-Panel sichtbar
 - Globale Leveldauer: Alle Blindstufen auf einmal auf eine Dauer setzen
+- Globale Pausendauer: Alle Pausen auf einmal auf eine Dauer setzen
 
 ### Geändert
 - Ante ist standardmäßig deaktiviert
 - Buy-In und Startchips werden nebeneinander angezeigt
 - Rebuy-Kosten und -Chips passen sich automatisch an, wenn Buy-In oder Startchips geändert werden
+- Startchips und Rebuy-Chips in 1000er-Schritten einstellbar (Direkteingabe weiterhin möglich)
+- "Break" überall durch "Pause" ersetzt
+- Sound: AudioContext-Resume für bessere Browser-Kompatibilität
 
 ## [1.0.0] – Erste Version
 

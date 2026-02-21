@@ -371,7 +371,7 @@ function App() {
                     <input
                       type="number"
                       min={1}
-                      step={100}
+                      step={1000}
                       value={config.startingChips}
                       onChange={(e) => {
                         const newChips = Math.max(1, Number(e.target.value));

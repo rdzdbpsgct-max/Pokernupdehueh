@@ -361,12 +361,12 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 25, bigBlind: 50, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 50, bigBlind: 100, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 75, bigBlind: 150, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 300, label: 'Break' },
+        { id: generateId(), type: 'break', durationSeconds: 300, label: 'Pause' },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 100, bigBlind: 200, ante: 25 },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 150, bigBlind: 300, ante: 25 },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 200, bigBlind: 400, ante: 50 },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 300, bigBlind: 600, ante: 50 },
-        { id: generateId(), type: 'break', durationSeconds: 300, label: 'Break' },
+        { id: generateId(), type: 'break', durationSeconds: 300, label: 'Pause' },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 400, bigBlind: 800, ante: 100 },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 500, bigBlind: 1000, ante: 100 },
         { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 750, bigBlind: 1500, ante: 150 },
@@ -381,12 +381,12 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 50, bigBlind: 100, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 75, bigBlind: 150, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 100, bigBlind: 200, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 600, label: 'Break' },
+        { id: generateId(), type: 'break', durationSeconds: 600, label: 'Pause' },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 150, bigBlind: 300, ante: 25 },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 200, bigBlind: 400, ante: 50 },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 300, bigBlind: 600, ante: 50 },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 400, bigBlind: 800, ante: 75 },
-        { id: generateId(), type: 'break', durationSeconds: 600, label: 'Break' },
+        { id: generateId(), type: 'break', durationSeconds: 600, label: 'Pause' },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 500, bigBlind: 1000, ante: 100 },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 750, bigBlind: 1500, ante: 150 },
         { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 1000, bigBlind: 2000, ante: 200 },
@@ -403,13 +403,13 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 75, bigBlind: 150, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 100, bigBlind: 200, ante: 0 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 125, bigBlind: 250, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 900, label: 'Break' },
+        { id: generateId(), type: 'break', durationSeconds: 900, label: 'Pause' },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 150, bigBlind: 300, ante: 25 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 200, bigBlind: 400, ante: 50 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 250, bigBlind: 500, ante: 50 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 300, bigBlind: 600, ante: 75 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 400, bigBlind: 800, ante: 75 },
-        { id: generateId(), type: 'break', durationSeconds: 900, label: 'Break' },
+        { id: generateId(), type: 'break', durationSeconds: 900, label: 'Pause' },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 500, bigBlind: 1000, ante: 100 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 750, bigBlind: 1500, ante: 150 },
         { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 1000, bigBlind: 2000, ante: 200 },
@@ -553,7 +553,7 @@ export function importConfigJSON(json: string): TournamentConfig | null {
 
 export function getLevelLabel(level: Level, index: number, levels: Level[]): string {
   if (level.type === 'break') {
-    return level.label || 'Break';
+    return level.label || 'Pause';
   }
   const playLevels = levels.slice(0, index + 1).filter(l => l.type === 'level');
   return `Level ${playLevels.length}`;

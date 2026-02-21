@@ -36,6 +36,9 @@ export function useTimer(levels: Level[], settings: Settings) {
           countdownAudioRef.current = new AudioContext();
         }
         const ctx = countdownAudioRef.current;
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
