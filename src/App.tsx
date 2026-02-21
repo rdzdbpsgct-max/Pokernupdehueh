@@ -318,7 +318,14 @@ function App() {
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
                   Preset laden
                 </h2>
-                <PresetPicker onSelect={setConfig} />
+                <PresetPicker onSelect={(preset) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    name: preset.name,
+                    levels: preset.levels,
+                    anteEnabled: preset.anteEnabled,
+                  }))
+                } />
               </div>
 
               {/* Spieler */}
