@@ -6,7 +6,7 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-1.1.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Tests](https://img.shields.io/badge/Tests-82%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
@@ -15,8 +15,11 @@
 
 ---
 
+A fully client-side web app for managing home poker tournaments. No server, no account, no fuss — just open and play.
+
 Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. Kein Server, kein Account, kein Schnickschnack — einfach öffnen und losspielen.
 
+- **DE / EN** — Deutsch/Englisch umschaltbar im Setup
 - **Timer & Blindstruktur** mit Presets (Turbo, Standard, Deep Stack) oder eigener Konfiguration
 - **Spielerverwaltung** mit Eliminierungen, Rebuys, Bounties und automatischer Platzierung
 - **Auszahlungsrechner** mit prozentualer oder fester Verteilung
@@ -99,10 +102,11 @@ npm run build       # Production-Build nach ./dist
 
 | Feature | Beschreibung |
 |---------|-------------|
+| Sprache / Language | DE/EN-Umschalter im Setup, alle Texte zweisprachig |
 | Timer | Drift-freier Countdown mit Fortschrittsbalken und Countdown-Warnung (letzte 10 Sek.) |
 | Blindstruktur | Drei Presets + vollständig anpassbare Levels und Pausen |
 | Ante | Optional, automatische Vorbelegung (~12,5 % des Big Blind) |
-| Spielerverwaltung | Eliminierung mit Killer-Auswahl, automatische Platzierung |
+| Spielerverwaltung | Eliminierung mit Killer-Auswahl, automatische Platzierung, Zurück-Button bei versehentlicher Eliminierung |
 | Rebuys | Konfigurierbares Limit (nach Levels oder Zeit), separate Kosten und Chips |
 | Bounty | Optionales Kopfgeld pro Knockout mit Gesamtauswertung |
 | Auszahlung | Prozentual oder fest, automatischer Vorschlag je nach Spielerzahl |
@@ -124,6 +128,11 @@ src/
     sounds.ts           # Web Audio API Sounds
   hooks/
     useTimer.ts         # Timer-Hook mit drift-freier Berechnung
+  i18n/
+    translations.ts     # DE/EN Übersetzungen (~170 Keys)
+    LanguageContext.tsx  # React Context Provider
+    useTranslation.ts   # useTranslation() Hook
+    index.ts            # Barrel-Export
   components/
     TimerDisplay.tsx    # Timer-Anzeige mit Fortschrittsbalken
     ConfigEditor.tsx    # Blindstruktur-Editor
@@ -132,6 +141,7 @@ src/
     PayoutEditor.tsx    # Auszahlungsstruktur
     RebuyEditor.tsx     # Rebuy-Konfiguration
     BountyEditor.tsx    # Bounty-Konfiguration
+    LanguageSwitcher.tsx # DE/EN-Umschalter
     Controls.tsx        # Start/Pause/Next/Prev/Reset
     ...
 tests/
@@ -142,6 +152,7 @@ tests/
 
 - **Timer ohne Drift** — `startTimestamp` + `Date.now()` statt inkrementeller `setInterval`-Zählung
 - **Domain/UI-Trennung** — `domain/` enthält ausschließlich reine, testbare Funktionen ohne UI-Abhängigkeiten
+- **Eigenes i18n-System** — leichtgewichtiger React Context mit ~170 Keys, kein react-i18next nötig
 - **Keine externen Dependencies** außer React und Tailwind
 - **Sound via Web Audio API** — kein externes Audio-File nötig
 - **Backward-Kompatibilität** — alte localStorage-Daten werden mit Defaults ergänzt

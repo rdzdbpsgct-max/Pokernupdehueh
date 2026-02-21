@@ -2,6 +2,24 @@
 
 Alle wichtigen Änderungen an der Pokern up de Hüh App.
 
+## [1.1.0] – 2026-02-21
+
+### Features
+- **DE/EN Sprachumschaltung (i18n)** — Alle ~170 Texte der App sind in Deutsch und Englisch verfügbar. Im Setup kann zwischen DE und EN gewechselt werden. Die Sprachauswahl wird in localStorage gespeichert und bleibt nach Reload erhalten. Standardsprache ist Deutsch.
+- **Zurück-Button bei Eliminierung** — Der zuletzt eliminierte Spieler kann per „Zurück"-Button wieder ins Turnier aufgenommen werden (Undo bei versehentlicher Eliminierung).
+
+### Verbesserungen
+- **Größere Blinds-Anzeige** — Die aktuelle Blindstufe wird im Timer deutlich größer dargestellt (ca. 80% der Timer-Größe) und ist damit auch aus Entfernung gut lesbar.
+- **Default-Spielernamen sprachabhängig** — Beim Sprachwechsel werden Standard-Spielernamen automatisch angepasst (Spieler 1 ↔ Player 1). Benutzerdefinierte Namen bleiben unverändert.
+
+### Technisch
+- Eigenes leichtgewichtiges i18n-System mit React Context (kein react-i18next)
+- Neue Dateien: `src/i18n/translations.ts`, `LanguageContext.tsx`, `useTranslation.ts`, `index.ts`, `LanguageSwitcher.tsx`
+- Alle 17 Komponenten + `logic.ts` auf i18n umgestellt
+- TypeScript-Typsicherheit: `TranslationKey` als Union-Type, Tippfehler werden zur Compile-Time erkannt
+
+---
+
 ## [1.0.0] – 2026-02-21
 
 ### Features
@@ -33,7 +51,7 @@ Alle wichtigen Änderungen an der Pokern up de Hüh App.
 - Einklappbare Seitenleisten (links: Spieler, rechts: Einstellungen)
 - Anzeige des nächsten Levels unter dem aktuellen Level
 - Mobilfreundliches Layout mit responsiven Größen
-- Deutsche Benutzeroberfläche
+- Deutsche Benutzeroberfläche (ab v1.1.0 auch Englisch)
 
 ### Validierung
 - Prüfung aller Einstellungen vor Turnierstart
