@@ -76,7 +76,7 @@ function App() {
         case 'KeyN':
           timer.nextLevel();
           break;
-        case 'KeyP':
+        case 'KeyV':
           timer.previousLevel();
           break;
         case 'KeyR':

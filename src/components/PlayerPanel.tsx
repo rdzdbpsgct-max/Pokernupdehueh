@@ -121,7 +121,8 @@ export function PlayerPanel({
               <div className="flex items-center gap-1.5">
                 {/* Rebuy controls (only if rebuy enabled in setup) */}
                 {rebuyEnabled && (
-                  <div className="flex items-center gap-1 mr-1">
+                  <div className="flex items-center gap-1 mr-1" title="Rebuys">
+                    <span className="text-[10px] text-gray-500 mr-0.5">RB</span>
                     <button
                       onClick={() =>
                         onUpdateRebuys(player.id, Math.max(0, player.rebuys - 1))

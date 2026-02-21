@@ -426,7 +426,7 @@ export function defaultSettings(): Settings {
     soundEnabled: true,
     countdownEnabled: true,
     autoAdvance: true,
-    largeDisplay: false,
+    largeDisplay: true,
   };
 }
 

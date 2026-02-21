@@ -34,7 +34,7 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
           />
         </label>
         <label className="flex items-center justify-between cursor-pointer">
-          <span className="text-sm text-gray-300">Auto-Advance</span>
+          <span className="text-sm text-gray-300">Automatisch weiter</span>
           <input
             type="checkbox"
             checked={settings.autoAdvance}
@@ -65,7 +65,7 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
         <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-gray-500">
           <span><kbd className="px-1 py-0.5 bg-gray-800 rounded text-gray-400">Space</kbd> Start/Pause</span>
           <span><kbd className="px-1 py-0.5 bg-gray-800 rounded text-gray-400">N</kbd> Nächstes</span>
-          <span><kbd className="px-1 py-0.5 bg-gray-800 rounded text-gray-400">P</kbd> Vorheriges</span>
+          <span><kbd className="px-1 py-0.5 bg-gray-800 rounded text-gray-400">V</kbd> Vorheriges</span>
           <span><kbd className="px-1 py-0.5 bg-gray-800 rounded text-gray-400">R</kbd> Reset</span>
         </div>
       </div>
