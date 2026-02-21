@@ -177,6 +177,7 @@ const de = {
   'finished.paidPlaces': 'Bezahlte Plätze',
   'finished.paidIn': 'Eingezahlt',
   'finished.bountyEarned': 'Bounty',
+  'finished.balance': 'Bilanz',
   'finished.backToSetup': 'Zurück zum Setup',
 
   // --- Level Preview ---
@@ -379,6 +380,7 @@ const en: Record<TranslationKey, string> = {
   'finished.paidPlaces': 'Paid Places',
   'finished.paidIn': 'Paid in',
   'finished.bountyEarned': 'Bounty',
+  'finished.balance': 'Balance',
   'finished.backToSetup': 'Back to Setup',
 
   // --- Level Preview ---

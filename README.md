@@ -54,7 +54,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Rebuys | Konfigurierbares Limit (nach Levels oder Zeit), separate Kosten und Chips |
 | Bounty | Optionales Kopfgeld pro Knockout mit Gesamtauswertung |
 | Auszahlung | Prozentual oder fest, automatischer Vorschlag je nach Spielerzahl |
-| Ergebnis | Detaillierte Übersicht: Einzahlung (Buy-In + Rebuys), Gewinn und Bounty-Einnahmen pro Spieler |
+| Ergebnis | Detaillierte Übersicht: Einzahlung (Buy-In + Rebuys), Gewinn, Bounty-Einnahmen und Bilanz (Plus/Minus) pro Spieler |
 | Import / Export | Turnierkonfiguration als JSON speichern und laden |
 | Sound | Countdown-Beeps und Sieges-Melodie via Web Audio API |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
@@ -114,7 +114,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Rebuys | Configurable limit (by levels or time), separate cost and chips |
 | Bounty | Optional bounty per knockout with total overview |
 | Payout | Percentage or fixed, automatic suggestion based on player count |
-| Results | Detailed overview: paid in (buy-in + rebuys), winnings and bounty earnings per player |
+| Results | Detailed overview: paid in (buy-in + rebuys), winnings, bounty earnings and balance (profit/loss) per player |
 | Import / Export | Save and load tournament configuration as JSON |
 | Sound | Countdown beeps and victory melody via Web Audio API |
 | Fullscreen | Large timer mode for TV or projector display |

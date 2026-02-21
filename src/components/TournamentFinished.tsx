@@ -86,6 +86,10 @@ export function TournamentFinished({
               const rebuyCost = rebuy.enabled ? rebuy.rebuyCost : 0;
               const totalPaid = buyIn + player.rebuys * rebuyCost;
               const bountyEarnings = bounty.enabled ? player.knockouts * bounty.amount : 0;
+              const bountyEntryFee = bounty.enabled ? bounty.amount : 0;
+              const totalCost = totalPaid + bountyEntryFee;
+              const totalIncome = (amount ?? 0) + bountyEarnings;
+              const netBalance = totalIncome - totalCost;
 
               // Build paid-in label: "10 EUR" or "10 + 2×10 = 30 EUR"
               const paidInLabel = player.rebuys > 0
@@ -140,6 +144,12 @@ export function TournamentFinished({
                           {t('finished.bountyEarned')}: {bountyEarnings.toFixed(2)} {t('unit.eur')} ({player.knockouts} KO)
                         </span>
                       )}
+                    </div>
+                    {/* Row 3: Net balance */}
+                    <div className="ml-9 mt-0.5">
+                      <span className={`text-xs font-semibold ${netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-500'}`}>
+                        {t('finished.balance')}: {netBalance >= 0 ? '+' : ''}{netBalance.toFixed(2)} {t('unit.eur')}
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -15,8 +15,8 @@ All notable changes to the Pokern up de Hüh app.
 - **Zurück-Button bei Eliminierung** — Der zuletzt eliminierte Spieler kann per "Zurück"-Button wieder ins Turnier aufgenommen werden (Undo bei versehentlicher Eliminierung).
 - **Reinstate button for eliminations** — The most recently eliminated player can be reinstated via "Undo" button (undo accidental eliminations).
 
-- **Erweiterte Turnier-Ergebnisübersicht** — Pro Spieler werden Gesamteinzahlung (Buy-In + Rebuys mit Aufschlüsselung), Gewinn und Bounty-Einnahmen angezeigt.
-- **Extended tournament results** — Per player: total paid in (buy-in + rebuys with breakdown), winnings and bounty earnings.
+- **Erweiterte Turnier-Ergebnisübersicht** — Pro Spieler werden Gesamteinzahlung (Buy-In + Rebuys mit Aufschlüsselung), Gewinn, Bounty-Einnahmen und Bilanz (Plus/Minus mit Farbcodierung) angezeigt.
+- **Extended tournament results** — Per player: total paid in (buy-in + rebuys with breakdown), winnings, bounty earnings and balance (profit/loss with color coding).
 
 ### Verbesserungen / Improvements
 
