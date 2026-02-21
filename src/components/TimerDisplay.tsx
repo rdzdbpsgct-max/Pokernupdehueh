@@ -45,7 +45,6 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
   const progress = 1 - remaining / currentLevel.durationSeconds;
 
   const label = getLevelLabel(currentLevel, timerState.currentLevelIndex, levels);
-  const blindsText = getBlindsText(currentLevel);
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 sm:gap-4 select-none w-full">
@@ -63,19 +62,28 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       <div className="text-center">
         <p className={`font-bold uppercase tracking-wider ${
           isBreak ? 'text-amber-400' : 'text-emerald-400'
-        } ${largeDisplay ? 'text-2xl' : 'text-lg'}`}>
+        } ${largeDisplay ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}>
           {label}
         </p>
-        {blindsText && (
-          <p className={`text-gray-200 font-semibold mt-1 ${
-            largeDisplay ? 'text-2xl sm:text-4xl' : 'text-xl sm:text-2xl'
-          }`}>
-            {blindsText}
-          </p>
+        {currentLevel.type === 'level' && (
+          <div className={`mt-2 ${largeDisplay ? 'space-y-1' : 'space-y-0.5'}`}>
+            <p className={`text-white font-bold tabular-nums tracking-wide ${
+              largeDisplay ? 'text-3xl sm:text-5xl lg:text-6xl' : 'text-2xl sm:text-4xl'
+            }`}>
+              {currentLevel.smallBlind ?? 0} / {currentLevel.bigBlind ?? 0}
+            </p>
+            {currentLevel.ante != null && currentLevel.ante > 0 && (
+              <p className={`text-gray-400 font-semibold ${
+                largeDisplay ? 'text-lg sm:text-2xl' : 'text-base sm:text-lg'
+              }`}>
+                Ante {currentLevel.ante}
+              </p>
+            )}
+          </div>
         )}
         {isBreak && (
-          <p className={`text-amber-300 font-semibold mt-1 ${
-            largeDisplay ? 'text-3xl' : 'text-xl'
+          <p className={`text-amber-300 font-semibold mt-2 ${
+            largeDisplay ? 'text-3xl sm:text-5xl' : 'text-xl sm:text-2xl'
           }`}>
             Pause
           </p>
