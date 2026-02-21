@@ -15,7 +15,7 @@
 
 ---
 
-A fully client-side web app for managing home poker tournaments. No server, no account, no fuss — just open and play.
+## Deutsch
 
 Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. Kein Server, kein Account, kein Schnickschnack — einfach öffnen und losspielen.
 
@@ -25,59 +25,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 - **Auszahlungsrechner** mit prozentualer oder fester Verteilung
 - **Mobilfreundlich** und offline nutzbar (kein Backend nötig)
 
----
-
-## Technologien
-
-![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-82_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
-
-- **React 19** mit funktionalen Komponenten und Hooks
-- **TypeScript** mit strikter Typisierung
-- **Vite** als Build-Tool (< 260 KB Bundle)
-- **Tailwind CSS 4** für das gesamte Styling
-- **Vitest** für Unit-Tests
-- **GitHub Actions** CI/CD mit automatischem Deploy auf GitHub Pages
-
----
-
-## Quickstart
-
-### Voraussetzungen
-
-- Node.js 20+
-- npm
-
-### Installation
-
-```bash
-git clone https://github.com/rdzdbpsgct-max/Pokernupdehueh.git
-cd Pokernupdehueh
-npm install
-```
-
-### Entwicklung
-
-```bash
-npm run dev
-```
-
-Öffnet die App unter `http://localhost:5173/Pokernupdehueh/`.
-
-### Build & Test
-
-```bash
-npm run lint        # ESLint
-npm run test        # 82 Unit-Tests
-npm run build       # Production-Build nach ./dist
-```
-
----
-
-## Verwendung
+### Verwendung
 
 1. **Preset wählen** oder eigene Blindstruktur erstellen
 2. **Spieler hinzufügen** (2–20), Buy-In und Startchips festlegen
@@ -94,15 +42,11 @@ npm run build       # Production-Build nach ./dist
 | `V` | Vorheriges Level |
 | `R` | Level zurücksetzen |
 
-> **Live-Demo:** [rdzdbpsgct-max.github.io/Pokernupdehueh](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
-
----
-
-## Features
+### Features
 
 | Feature | Beschreibung |
 |---------|-------------|
-| Sprache / Language | DE/EN-Umschalter im Setup, alle Texte zweisprachig |
+| Sprache | DE/EN-Umschalter im Setup, alle Texte zweisprachig |
 | Timer | Drift-freier Countdown mit Fortschrittsbalken und Countdown-Warnung (letzte 10 Sek.) |
 | Blindstruktur | Drei Presets + vollständig anpassbare Levels und Pausen |
 | Ante | Optional, automatische Vorbelegung (~12,5 % des Big Blind) |
@@ -116,50 +60,7 @@ npm run build       # Production-Build nach ./dist
 | Persistenz | Automatische Speicherung im Browser (localStorage) |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
 
----
-
-## Projektstruktur
-
-```
-src/
-  domain/
-    types.ts            # TypeScript-Typen
-    logic.ts            # Geschäftslogik (Timer, Blinds, Payouts)
-    sounds.ts           # Web Audio API Sounds
-  hooks/
-    useTimer.ts         # Timer-Hook mit drift-freier Berechnung
-  i18n/
-    translations.ts     # DE/EN Übersetzungen (~170 Keys)
-    LanguageContext.tsx  # React Context Provider
-    useTranslation.ts   # useTranslation() Hook
-    index.ts            # Barrel-Export
-  components/
-    TimerDisplay.tsx    # Timer-Anzeige mit Fortschrittsbalken
-    ConfigEditor.tsx    # Blindstruktur-Editor
-    PlayerManager.tsx   # Spielerverwaltung
-    PlayerPanel.tsx     # Spieler-Panel während des Turniers
-    PayoutEditor.tsx    # Auszahlungsstruktur
-    RebuyEditor.tsx     # Rebuy-Konfiguration
-    BountyEditor.tsx    # Bounty-Konfiguration
-    LanguageSwitcher.tsx # DE/EN-Umschalter
-    Controls.tsx        # Start/Pause/Next/Prev/Reset
-    ...
-tests/
-  logic.test.ts         # 82 Unit-Tests
-```
-
-## Architektur-Entscheidungen
-
-- **Timer ohne Drift** — `startTimestamp` + `Date.now()` statt inkrementeller `setInterval`-Zählung
-- **Domain/UI-Trennung** — `domain/` enthält ausschließlich reine, testbare Funktionen ohne UI-Abhängigkeiten
-- **Eigenes i18n-System** — leichtgewichtiger React Context mit ~170 Keys, kein react-i18next nötig
-- **Keine externen Dependencies** außer React und Tailwind
-- **Sound via Web Audio API** — kein externes Audio-File nötig
-- **Backward-Kompatibilität** — alte localStorage-Daten werden mit Defaults ergänzt
-
----
-
-## Contributing
+### Mitwirken
 
 Beiträge sind willkommen!
 
@@ -173,10 +74,163 @@ Bitte stelle sicher, dass `npm run lint` und `npm run test` fehlerfrei durchlauf
 
 ---
 
+## English
+
+A fully client-side web app for managing home poker tournaments. No server, no account, no fuss — just open and play.
+
+- **DE / EN** — Switch between German and English in setup
+- **Timer & blind structure** with presets (Turbo, Standard, Deep Stack) or custom configuration
+- **Player management** with eliminations, rebuys, bounties and automatic placement
+- **Payout calculator** with percentage or fixed distribution
+- **Mobile-friendly** and works offline (no backend needed)
+
+### Usage
+
+1. **Choose a preset** or create your own blind structure
+2. **Add players** (2–20), set buy-in and starting chips
+3. **Start the tournament** — the timer runs, blinds increase automatically
+4. **Eliminate players** — placement and killer are tracked
+5. **Results** — payouts, bounties and placements at a glance
+
+### Keyboard shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Space` | Start / Pause |
+| `N` | Next level |
+| `V` | Previous level |
+| `R` | Reset level |
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| Language | DE/EN toggle in setup, all texts bilingual |
+| Timer | Drift-free countdown with progress bar and countdown warning (last 10 sec.) |
+| Blind structure | Three presets + fully customizable levels and breaks |
+| Ante | Optional, auto-populated (~12.5% of big blind) |
+| Player management | Elimination with killer selection, automatic placement, undo button for accidental eliminations |
+| Rebuys | Configurable limit (by levels or time), separate cost and chips |
+| Bounty | Optional bounty per knockout with total overview |
+| Payout | Percentage or fixed, automatic suggestion based on player count |
+| Import / Export | Save and load tournament configuration as JSON |
+| Sound | Countdown beeps and victory melody via Web Audio API |
+| Fullscreen | Large timer mode for TV or projector display |
+| Persistence | Automatic saving in browser (localStorage) |
+| Validation | Input validation before tournament start with clear error messages |
+
+### Contributing
+
+Contributions are welcome!
+
+1. Create a fork
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add feature'`)
+4. Push the branch (`git push origin feature/my-feature`)
+5. Open a pull request
+
+Please make sure `npm run lint` and `npm run test` pass without errors.
+
+---
+
+## Technologien / Tech Stack
+
+![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-82_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+
+- **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
+- **TypeScript** — Strikte Typisierung / Strict typing
+- **Vite** — Build-Tool (< 280 KB Bundle)
+- **Tailwind CSS 4** — Styling
+- **Vitest** — 82 Unit-Tests / Unit tests
+- **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
+
+---
+
+## Quickstart
+
+### Voraussetzungen / Prerequisites
+
+- Node.js 20+
+- npm
+
+### Installation
+
+```bash
+git clone https://github.com/rdzdbpsgct-max/Pokernupdehueh.git
+cd Pokernupdehueh
+npm install
+```
+
+### Entwicklung / Development
+
+```bash
+npm run dev
+```
+
+App: `http://localhost:5173/Pokernupdehueh/`
+
+### Build & Test
+
+```bash
+npm run lint        # ESLint
+npm run test        # 82 Unit-Tests
+npm run build       # Production-Build → ./dist
+```
+
+---
+
+## Projektstruktur / Project Structure
+
+```
+src/
+  domain/
+    types.ts            # TypeScript-Typen / Types
+    logic.ts            # Geschäftslogik / Business logic (Timer, Blinds, Payouts)
+    sounds.ts           # Web Audio API Sounds
+  hooks/
+    useTimer.ts         # Timer-Hook (drift-free)
+  i18n/
+    translations.ts     # DE/EN Übersetzungen / Translations (~170 Keys)
+    LanguageContext.tsx  # React Context Provider
+    useTranslation.ts   # useTranslation() Hook
+    index.ts            # Barrel-Export
+  components/
+    TimerDisplay.tsx    # Timer-Anzeige / Timer display
+    ConfigEditor.tsx    # Blindstruktur-Editor / Blind structure editor
+    PlayerManager.tsx   # Spielerverwaltung / Player management
+    PlayerPanel.tsx     # Spieler-Panel / Player panel (during tournament)
+    PayoutEditor.tsx    # Auszahlungsstruktur / Payout structure
+    RebuyEditor.tsx     # Rebuy-Konfiguration / Rebuy configuration
+    BountyEditor.tsx    # Bounty-Konfiguration / Bounty configuration
+    LanguageSwitcher.tsx # DE/EN-Umschalter / Language toggle
+    Controls.tsx        # Start/Pause/Next/Prev/Reset
+    ...
+tests/
+  logic.test.ts         # 82 Unit-Tests
+```
+
+## Architektur / Architecture
+
+- **Timer ohne Drift / Drift-free timer** — `startTimestamp` + `Date.now()` statt inkrementeller `setInterval`-Zählung / instead of incremental `setInterval` counting
+- **Domain/UI-Trennung / Separation** — `domain/` enthält reine, testbare Funktionen / contains pure, testable functions
+- **Eigenes i18n-System / Custom i18n** — Leichtgewichtiger React Context (~170 Keys), kein react-i18next / Lightweight React Context, no react-i18next
+- **Keine externen Dependencies / No external dependencies** — Nur React und Tailwind / Only React and Tailwind
+- **Sound via Web Audio API** — Keine externen Audio-Dateien / No external audio files
+- **Backward-Kompatibilität / Backward compatibility** — Alte localStorage-Daten werden mit Defaults ergänzt / Old localStorage data is augmented with defaults
+
+---
+
 <div align="center">
+
+> **Live-Demo / Live Demo:** [rdzdbpsgct-max.github.io/Pokernupdehueh](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 
 **[Live Demo](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)** · **[Issues](https://github.com/rdzdbpsgct-max/Pokernupdehueh/issues)**
 
 Gebaut mit React, TypeScript und viel Liebe zum Pokern.
+Built with React, TypeScript and a love for poker.
 
 </div>
