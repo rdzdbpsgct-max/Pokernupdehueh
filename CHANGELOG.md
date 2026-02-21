@@ -2,71 +2,38 @@
 
 Alle wichtigen Änderungen an der Pokern up de Hüh App.
 
-## [Unreleased]
-
-### Neu
-- Startchips im Setup konfigurierbar (Standard: 20.000)
-- Rebuy-Kosten separat vom Buy-In einstellbar (Standard: gleich wie Buy-In)
-- Rebuy-Chips separat von Startchips einstellbar (Standard: gleich wie Startchips)
-- Preisgeld-Berechnung berücksichtigt separate Rebuy-Kosten
-- Rebuy-Details in Turnier-Ergebnis und Spieler-Panel sichtbar
-- Globale Leveldauer: Alle Blindstufen auf einmal auf eine Dauer setzen
-- Globale Pausendauer: Alle Pausen auf einmal auf eine Dauer setzen
-- Ante-Vorbelegung: Beim Aktivieren von Ante werden Standard-Ante-Werte (ca. 12,5% des BB) automatisch pro Level gesetzt
-
-### Geändert
-- Ante ist standardmäßig deaktiviert
-- Ante-Toggle setzt/entfernt Ante-Werte automatisch bei allen Blindstufen
-- Buy-In und Startchips werden nebeneinander angezeigt
-- Rebuy-Kosten und -Chips passen sich automatisch an, wenn Buy-In oder Startchips geändert werden
-- Startchips und Rebuy-Chips in 1000er-Schritten einstellbar (Direkteingabe weiterhin möglich)
-- "Break" überall durch "Pause" ersetzt
-- Sound: AudioContext-Resume für bessere Browser-Kompatibilität
-
-### Behoben
-- ESLint-Fehler: setState in useEffect in PlayerManager und useTimer refactored
-- Alle npm-audit-Vulnerabilities (minimatch ReDoS) via overrides behoben
-- globalMinutes/globalBreakMinutes synchronisieren sich bei Preset-Wechsel
-
-### Verbessert
-- Duplizierter Code: loadConfig/importConfigJSON teilen sich parseConfigObject
-- Duplizierter Code: Spinner-Rounding-Logik in snapSpinnerValue() extrahiert
-- IIFE in TimerDisplay durch NextLevelInfo-Subkomponente ersetzt
-- CI-Workflow um Lint- und Test-Schritte erweitert
-- Leerer public/-Ordner entfernt
-- Tests für computeDefaultAnte/applyDefaultAntes hinzugefügt (82 Tests gesamt)
-
-### Entfernt
-- Start-Sound beim Turnierbeginn entfernt
-
-## [1.0.0] – Erste Version
+## [1.0.0] – 2026-02-21
 
 ### Features
 - Poker-Turnier-Timer mit konfigurierbaren Blind-Stufen und Pausen
-- Drei Presets: Turbo, Standard, Deep Stack
-- Benutzerdefinierte Blind-Strukturen (Levels hinzufügen, bearbeiten, löschen)
-- Ante-Unterstützung (optional pro Level)
+- Drei Presets: Turbo (6 Min), Standard (15 Min), Deep Stack (20 Min)
+- Benutzerdefinierte Blind-Strukturen (Levels hinzufügen, bearbeiten, löschen, duplizieren, verschieben)
+- Globale Leveldauer: Alle Blindstufen auf einmal auf eine Dauer setzen
+- Globale Pausendauer: Alle Pausen auf einmal auf eine Dauer setzen
+- Ante-Unterstützung (optional) mit automatischer Vorbelegung (~12,5% des BB)
+- Startchips im Setup konfigurierbar (Standard: 20.000)
 - Spielerverwaltung (2–20 Spieler, Namen editierbar)
-- Rebuy-System (optional, konfigurierbare Anzahl und Zeitfenster)
+- Spieler-Eliminierung mit Killer-Auswahl und automatischer Platzierung
+- Rebuy-System (optional, konfigurierbar nach Levels oder Zeit, separate Kosten und Chips)
 - Bounty-System (optional, konfigurierbarer Betrag pro Knockout)
 - Auszahlungsstruktur mit automatischem Vorschlag basierend auf Spieleranzahl
 - Auszahlung in Prozent oder festen Beträgen
 - Turnier-Timer mit Start/Pause, Level-Navigation, Zeit-Scrubbing
-- Countdown-Warnung (letzte 10 Sekunden)
+- Countdown-Warnung mit Beeps (letzte 10 Sekunden)
+- Level-Ende-Signalton
+- Sieges-Melodie bei Turniergewinn
 - Automatisches Weiterschalten zum nächsten Level
-- Spieler-Eliminierung mit Killer-Auswahl und Platzierung
 - Turnier-Ergebnisanzeige mit Platzierungen, Auszahlungen und Bounty-Übersicht
 - Import/Export der Turnierkonfiguration als JSON
 - Vollbild-Modus
 - Tastenkürzel (Space, N, V, R)
-- Sound-Unterstützung (optional)
 - Große Anzeige (standardmäßig aktiviert)
 
 ### UI & Layout
 - Einklappbare Seitenleisten (links: Spieler, rechts: Einstellungen)
 - Anzeige des nächsten Levels unter dem aktuellen Level
 - Mobilfreundliches Layout mit responsiven Größen
-- Deutsche Benutzeroberfläche mit korrekten Umlauten
+- Deutsche Benutzeroberfläche
 
 ### Validierung
 - Prüfung aller Einstellungen vor Turnierstart
@@ -76,6 +43,11 @@ Alle wichtigen Änderungen an der Pokern up de Hüh App.
 - Grüne „Bereit"-Anzeige wenn alles passt
 
 ### Technisch
-- React + TypeScript + Vite + Tailwind CSS
-- Deployment via GitHub Pages mit GitHub Actions
+- React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4
+- 82 Unit-Tests (Vitest)
+- CI/CD via GitHub Actions (Lint + Test + Build + Deploy)
+- Deployment auf GitHub Pages
 - Vollständig clientseitig, keine Serveranbindung nötig
+- Sound via Web Audio API (keine externen Audio-Dateien)
+- Persistenz via localStorage mit Backward-Kompatibilität
+- 0 npm-audit-Vulnerabilities
