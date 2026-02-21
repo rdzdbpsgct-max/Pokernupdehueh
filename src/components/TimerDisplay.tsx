@@ -68,7 +68,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         {currentLevel.type === 'level' && (
           <div className={`mt-2 ${largeDisplay ? 'space-y-1' : 'space-y-0.5'}`}>
             <p className={`text-white font-bold tabular-nums tracking-wide ${
-              largeDisplay ? 'text-3xl sm:text-5xl lg:text-6xl' : 'text-2xl sm:text-4xl'
+              largeDisplay ? 'text-[3rem] sm:text-[5.5rem] lg:text-[8rem]' : 'text-4xl sm:text-6xl'
             }`}>
               {currentLevel.smallBlind ?? 0} / {currentLevel.bigBlind ?? 0}
             </p>
