@@ -6,6 +6,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: '/Pokernupdehueh/',
+  build: {
+    // Support older iPads (iPadOS 15+) — Vite 7 defaults to safari16
+    target: ['es2020', 'safari14'],
+  },
   plugins: [
     react(),
     tailwindcss(),

@@ -10,7 +10,17 @@
     <title>Pokern up de Hüh - Tournament Timer</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Fallback shown until React mounts (replaced by React render) -->
+      <noscript>
+        <p style="color:#e5e7eb;text-align:center;padding:2rem;font-family:system-ui">
+          JavaScript muss aktiviert sein, um diese App zu nutzen.
+        </p>
+      </noscript>
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#9ca3af;font-family:system-ui;font-size:1.25rem">
+        ♠ Lade...
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
