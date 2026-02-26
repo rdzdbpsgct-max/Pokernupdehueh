@@ -171,6 +171,33 @@ const de = {
   'bountyEditor.perKnockout': 'Bounty pro Knockout',
   'bountyEditor.description': 'Jeder Spieler hat ein Bounty auf seinem Kopf. Wer einen Spieler eliminiert, erhält dessen Bounty-Betrag.',
 
+  // --- Chip Editor ---
+  'app.chips': 'Chip-Werte',
+  'chipEditor.enabled': '✓ Chip-Werte aktiviert',
+  'chipEditor.disabled': 'Chip-Werte deaktiviert',
+  'chipEditor.presets': 'Chip-Set wählen',
+  'chipEditor.preset4': '4 Farben',
+  'chipEditor.preset4Desc': 'Weiß, Rot, Grün, Schwarz',
+  'chipEditor.preset5': '5 Farben',
+  'chipEditor.preset5Desc': 'Weiß, Rot, Blau, Grün, Schwarz',
+  'chipEditor.preset6': '6 Farben',
+  'chipEditor.preset6Desc': 'Weiß, Rot, Blau, Grün, Schwarz, Lila',
+  'chipEditor.value': 'Wert',
+  'chipEditor.addDenomination': '+ Chip hinzufügen',
+  'chipEditor.colorUpPreview': 'Color-Up Vorschau',
+  'chipEditor.colorUpAtLevel': 'Level {level}: {chips} entfernen',
+  'chipEditor.noColorUps': 'Keine Color-Ups nötig',
+  'chipEditor.description': 'Definiere die Chip-Farben und -Werte. Color-Ups werden automatisch berechnet.',
+
+  // --- Chip Sidebar (Game) ---
+  'chipSidebar.title': 'Chips',
+  'chipSidebar.nextColorUp': 'Nächstes Color-Up',
+  'chipSidebar.atLevel': 'bei Level {level}',
+  'chipSidebar.noMore': 'Keine weiteren Color-Ups',
+
+  // --- Color-Up Banner ---
+  'colorUp.banner': 'Color-Up: {chips} entfernen!',
+
   // --- Tournament Finished ---
   'finished.congratulations': 'Herzlichen Glückwunsch',
   'finished.tournamentWinner': 'Turniersieger',
@@ -387,6 +414,33 @@ const en: Record<TranslationKey, string> = {
   'bountyEditor.disabled': 'Bounty disabled',
   'bountyEditor.perKnockout': 'Bounty per Knockout',
   'bountyEditor.description': 'Every player has a bounty on their head. Eliminating a player earns you their bounty.',
+
+  // --- Chip Editor ---
+  'app.chips': 'Chip Values',
+  'chipEditor.enabled': '✓ Chip values enabled',
+  'chipEditor.disabled': 'Chip values disabled',
+  'chipEditor.presets': 'Choose chip set',
+  'chipEditor.preset4': '4 Colors',
+  'chipEditor.preset4Desc': 'White, Red, Green, Black',
+  'chipEditor.preset5': '5 Colors',
+  'chipEditor.preset5Desc': 'White, Red, Blue, Green, Black',
+  'chipEditor.preset6': '6 Colors',
+  'chipEditor.preset6Desc': 'White, Red, Blue, Green, Black, Purple',
+  'chipEditor.value': 'Value',
+  'chipEditor.addDenomination': '+ Add chip',
+  'chipEditor.colorUpPreview': 'Color-Up Preview',
+  'chipEditor.colorUpAtLevel': 'Level {level}: remove {chips}',
+  'chipEditor.noColorUps': 'No color-ups needed',
+  'chipEditor.description': 'Define chip colors and values. Color-ups are calculated automatically.',
+
+  // --- Chip Sidebar (Game) ---
+  'chipSidebar.title': 'Chips',
+  'chipSidebar.nextColorUp': 'Next Color-Up',
+  'chipSidebar.atLevel': 'at Level {level}',
+  'chipSidebar.noMore': 'No more color-ups',
+
+  // --- Color-Up Banner ---
+  'colorUp.banner': 'Color-Up: Remove {chips}!',
 
   // --- Tournament Finished ---
   'finished.congratulations': 'Congratulations',

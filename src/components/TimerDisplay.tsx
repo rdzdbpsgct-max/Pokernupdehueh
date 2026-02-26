@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Level, TimerState } from '../domain/types';
+import type { Level, TimerState, ChipConfig, ChipDenomination } from '../domain/types';
 import { formatTime, getLevelLabel, getBlindsText } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
@@ -9,6 +9,8 @@ interface Props {
   largeDisplay: boolean;
   countdownEnabled: boolean;
   onScrub?: (seconds: number) => void;
+  chipConfig?: ChipConfig;
+  colorUpMap?: Map<number, ChipDenomination[]>;
 }
 
 function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Level[]; currentLevelIndex: number; largeDisplay: boolean }) {
@@ -35,7 +37,7 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
   );
 }
 
-export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub }: Props) {
+export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, chipConfig, colorUpMap }: Props) {
   const { t } = useTranslation();
   const [scrubbing, setScrubbing] = useState(false);
 
@@ -99,6 +101,30 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         currentLevelIndex={timerState.currentLevelIndex}
         largeDisplay={largeDisplay}
       />
+
+      {/* Color-Up Banner */}
+      {chipConfig?.enabled && (() => {
+        const currentColorUp = colorUpMap?.get(timerState.currentLevelIndex);
+        if (!currentColorUp || currentColorUp.length === 0) return null;
+        return (
+          <div className="w-full max-w-xl px-4 py-2 bg-amber-900/40 border border-amber-600 rounded-lg text-center">
+            <div className="flex items-center justify-center gap-2">
+              {currentColorUp.map((d) => (
+                <span
+                  key={d.id}
+                  className="w-5 h-5 rounded-full inline-block border border-amber-400"
+                  style={{ backgroundColor: d.color }}
+                />
+              ))}
+              <span className="text-amber-300 text-sm font-bold">
+                {t('colorUp.banner', {
+                  chips: currentColorUp.map((d) => d.label).join(', '),
+                })}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Timer */}
       <div

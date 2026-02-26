@@ -28,6 +28,7 @@ import {
   computePayouts,
   computeNextPlacement,
   computeAverageStack,
+  defaultChipConfig,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -40,6 +41,7 @@ function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels:
     rebuy: defaultRebuyConfig(),
     addOn: defaultAddOnConfig(),
     bounty: defaultBountyConfig(),
+    chips: defaultChipConfig(),
     buyIn: 10,
     startingChips: 20000,
     ...partial,
@@ -284,6 +286,7 @@ describe('import/export', () => {
       rebuy: defaultRebuyConfig(),
       addOn: defaultAddOnConfig(),
       bounty: defaultBountyConfig(),
+      chips: defaultChipConfig(),
       buyIn: 10,
       startingChips: 20000,
     };

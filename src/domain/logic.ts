@@ -8,6 +8,8 @@ import type {
   RebuyConfig,
   AddOnConfig,
   BountyConfig,
+  ChipConfig,
+  ChipDenomination,
 } from './types';
 import { t as moduleT } from '../i18n/translations';
 
@@ -23,6 +25,11 @@ export function generateId(): string {
 let playerIdCounter = 0;
 export function generatePlayerId(): string {
   return `player_${Date.now()}_${playerIdCounter++}`;
+}
+
+let chipIdCounter = 0;
+export function generateChipId(): string {
+  return `chip_${Date.now()}_${chipIdCounter++}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -344,6 +351,186 @@ export function computeNextPlacement(players: Player[]): number {
 }
 
 // ---------------------------------------------------------------------------
+// Chip Denominations & Color-Up
+// ---------------------------------------------------------------------------
+
+export const CHIP_COLORS = [
+  { hex: '#FFFFFF', de: 'Weiß', en: 'White' },
+  { hex: '#EF4444', de: 'Rot', en: 'Red' },
+  { hex: '#3B82F6', de: 'Blau', en: 'Blue' },
+  { hex: '#22C55E', de: 'Grün', en: 'Green' },
+  { hex: '#111827', de: 'Schwarz', en: 'Black' },
+  { hex: '#A855F7', de: 'Lila', en: 'Purple' },
+  { hex: '#EAB308', de: 'Gelb', en: 'Yellow' },
+  { hex: '#F97316', de: 'Orange', en: 'Orange' },
+  { hex: '#EC4899', de: 'Pink', en: 'Pink' },
+  { hex: '#6B7280', de: 'Grau', en: 'Gray' },
+] as const;
+
+export interface ChipPreset {
+  key: string;
+  denominations: Omit<ChipDenomination, 'id'>[];
+}
+
+export const chipPresets: ChipPreset[] = [
+  {
+    key: '4color',
+    denominations: [
+      { value: 25, color: '#FFFFFF', label: 'Weiß' },
+      { value: 50, color: '#EF4444', label: 'Rot' },
+      { value: 100, color: '#22C55E', label: 'Grün' },
+      { value: 500, color: '#111827', label: 'Schwarz' },
+    ],
+  },
+  {
+    key: '5color',
+    denominations: [
+      { value: 25, color: '#FFFFFF', label: 'Weiß' },
+      { value: 50, color: '#EF4444', label: 'Rot' },
+      { value: 100, color: '#3B82F6', label: 'Blau' },
+      { value: 500, color: '#22C55E', label: 'Grün' },
+      { value: 1000, color: '#111827', label: 'Schwarz' },
+    ],
+  },
+  {
+    key: '6color',
+    denominations: [
+      { value: 25, color: '#FFFFFF', label: 'Weiß' },
+      { value: 50, color: '#EF4444', label: 'Rot' },
+      { value: 100, color: '#3B82F6', label: 'Blau' },
+      { value: 500, color: '#22C55E', label: 'Grün' },
+      { value: 1000, color: '#111827', label: 'Schwarz' },
+      { value: 5000, color: '#A855F7', label: 'Lila' },
+    ],
+  },
+];
+
+export function applyChipPreset(preset: ChipPreset): ChipConfig {
+  return {
+    enabled: true,
+    denominations: preset.denominations.map((d) => ({
+      ...d,
+      id: generateChipId(),
+    })),
+  };
+}
+
+export function defaultChipConfig(): ChipConfig {
+  return { enabled: false, denominations: [] };
+}
+
+function gcd(a: number, b: number): number {
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while (b) {
+    [a, b] = [b, a % b];
+  }
+  return a;
+}
+
+function gcdOfArray(arr: number[]): number {
+  return arr.reduce((g, val) => gcd(g, val), 0);
+}
+
+/**
+ * Check whether a denomination is needed to represent any of the given values.
+ * A denomination is needed if removing it leaves the remaining denominations
+ * unable to represent all values (via GCD check).
+ */
+function isDenominationNeeded(
+  denomValue: number,
+  allDenoms: ChipDenomination[],
+  values: number[],
+): boolean {
+  const remaining = allDenoms.filter((d) => d.value !== denomValue);
+  if (remaining.length === 0) return true;
+
+  const remainingValues = remaining.map((d) => d.value);
+  const smallestRemaining = Math.min(...remainingValues);
+  const remainingGcd = gcdOfArray(remainingValues);
+
+  for (const val of values) {
+    if (val <= 0) continue;
+    if (val < smallestRemaining) return true;
+    if (val % remainingGcd !== 0) return true;
+  }
+  return false;
+}
+
+/**
+ * Compute color-up events for the blind structure.
+ * Returns a Map: levelIndex → denominations to remove at that level.
+ */
+export function computeColorUps(
+  levels: Level[],
+  denominations: ChipDenomination[],
+): Map<number, ChipDenomination[]> {
+  const result = new Map<number, ChipDenomination[]>();
+  if (denominations.length <= 1) return result;
+
+  const sorted = [...denominations].sort((a, b) => a.value - b.value);
+  const removedIds = new Set<string>();
+
+  for (const denom of sorted) {
+    for (let levelIdx = 0; levelIdx < levels.length; levelIdx++) {
+      const futureValues: number[] = [];
+      for (let j = levelIdx; j < levels.length; j++) {
+        const lvl = levels[j];
+        if (lvl.type === 'level') {
+          if (lvl.smallBlind) futureValues.push(lvl.smallBlind);
+          if (lvl.bigBlind) futureValues.push(lvl.bigBlind);
+          if (lvl.ante && lvl.ante > 0) futureValues.push(lvl.ante);
+        }
+      }
+
+      if (futureValues.length === 0) continue;
+
+      const activeDenoms = sorted.filter(
+        (d) => !removedIds.has(d.id) || d.id === denom.id,
+      );
+
+      if (!isDenominationNeeded(denom.value, activeDenoms, futureValues)) {
+        removedIds.add(denom.id);
+        const existing = result.get(levelIdx) ?? [];
+        existing.push(denom);
+        result.set(levelIdx, existing);
+        break;
+      }
+    }
+  }
+
+  return result;
+}
+
+/** Set of denomination IDs removed at or before the given level index. */
+export function getRemovedDenomIds(
+  colorUpMap: Map<number, ChipDenomination[]>,
+  currentLevelIndex: number,
+): Set<string> {
+  const removed = new Set<string>();
+  for (const [levelIdx, denoms] of colorUpMap) {
+    if (levelIdx <= currentLevelIndex) {
+      for (const d of denoms) removed.add(d.id);
+    }
+  }
+  return removed;
+}
+
+/** Next level index with a color-up event (strictly after currentLevelIndex). */
+export function getNextColorUpLevel(
+  colorUpMap: Map<number, ChipDenomination[]>,
+  currentLevelIndex: number,
+): number | null {
+  let next: number | null = null;
+  for (const levelIdx of colorUpMap.keys()) {
+    if (levelIdx > currentLevelIndex) {
+      if (next === null || levelIdx < next) next = levelIdx;
+    }
+  }
+  return next;
+}
+
+// ---------------------------------------------------------------------------
 // Prize Pool & Payouts
 // ---------------------------------------------------------------------------
 
@@ -444,6 +631,7 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
     rebuy: defaultRebuyConfig(10, 20000),
     addOn: defaultAddOnConfig(10, 20000),
     bounty: defaultBountyConfig(),
+    chips: defaultChipConfig(),
     buyIn: 10,
     startingChips: 20000,
   };
@@ -582,6 +770,7 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
     rebuy,
     addOn,
     bounty: (parsed.bounty as BountyConfig) ?? defaultBountyConfig(),
+    chips: (parsed.chips as ChipConfig) ?? defaultChipConfig(),
     buyIn,
     startingChips,
   };

@@ -17,6 +17,7 @@ import {
   validateConfig,
   snapSpinnerValue,
   computeAverageStack,
+  computeColorUps,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
@@ -35,6 +36,8 @@ import { RebuyStatus } from './components/RebuyStatus';
 import { PlayerPanel } from './components/PlayerPanel';
 import { AddOnEditor } from './components/AddOnEditor';
 import { BountyEditor } from './components/BountyEditor';
+import { ChipEditor } from './components/ChipEditor';
+import { ChipSidebar } from './components/ChipSidebar';
 import { TournamentFinished } from './components/TournamentFinished';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 
@@ -243,6 +246,14 @@ function App() {
         config.addOn.enabled ? config.addOn.chips : 0,
       ),
     [config.players, config.startingChips, config.rebuy.enabled, config.rebuy.rebuyChips, config.addOn.enabled, config.addOn.chips],
+  );
+
+  const colorUpMap = useMemo(
+    () =>
+      config.chips.enabled
+        ? computeColorUps(config.levels, config.chips.denominations)
+        : new Map(),
+    [config.chips.enabled, config.chips.denominations, config.levels],
   );
 
   const tournamentFinished = useMemo(() => {
@@ -567,6 +578,18 @@ function App() {
                 />
               </div>
 
+              {/* Chip Values */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  {t('app.chips')}
+                </h2>
+                <ChipEditor
+                  chips={config.chips}
+                  onChange={(chips) => setConfig((prev) => ({ ...prev, chips }))}
+                  levels={config.levels}
+                />
+              </div>
+
               {/* Validation + Start button */}
               <div className="pt-4 border-t border-gray-800 space-y-3">
                 {startErrors.length > 0 ? (
@@ -655,6 +678,8 @@ function App() {
                   largeDisplay={settings.largeDisplay}
                   countdownEnabled={settings.countdownEnabled}
                   onScrub={timer.setRemainingSeconds}
+                  chipConfig={config.chips}
+                  colorUpMap={colorUpMap}
                 />
                 <RebuyStatus
                   active={rebuyActive}
@@ -703,6 +728,14 @@ function App() {
             {showSidebar && (
               <aside className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-gray-800 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[50vh] lg:max-h-none">
                 <LevelPreview timerState={timer.timerState} levels={config.levels} />
+                {config.chips.enabled && (
+                  <ChipSidebar
+                    chipConfig={config.chips}
+                    colorUpMap={colorUpMap}
+                    currentLevelIndex={timer.timerState.currentLevelIndex}
+                    levels={config.levels}
+                  />
+                )}
                 <SettingsPanel
                   settings={settings}
                   onChange={setSettings}

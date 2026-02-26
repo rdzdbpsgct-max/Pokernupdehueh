@@ -59,6 +59,18 @@ export interface BountyConfig {
   amount: number;
 }
 
+export interface ChipDenomination {
+  id: string;
+  value: number;
+  color: string;
+  label: string;
+}
+
+export interface ChipConfig {
+  enabled: boolean;
+  denominations: ChipDenomination[];
+}
+
 export interface TournamentConfig {
   name: string;
   levels: Level[];
@@ -68,6 +80,7 @@ export interface TournamentConfig {
   rebuy: RebuyConfig;
   addOn: AddOnConfig;
   bounty: BountyConfig;
+  chips: ChipConfig;
   buyIn: number;
   startingChips: number;
 }
