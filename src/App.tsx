@@ -235,23 +235,18 @@ function App() {
   );
 
   // Detect when rebuy phase ends → open add-on window for that level only
+  // Add-On is a rebuy-tournament concept: only available when rebuy is enabled
   const prevRebuyActive = useRef(rebuyActive);
   useEffect(() => {
-    if (prevRebuyActive.current && !rebuyActive && config.addOn.enabled) {
+    if (prevRebuyActive.current && !rebuyActive && config.addOn.enabled && config.rebuy.enabled) {
       setAddOnEndLevelIndex(timer.timerState.currentLevelIndex);
     }
     prevRebuyActive.current = rebuyActive;
-  }, [rebuyActive, config.addOn.enabled, timer.timerState.currentLevelIndex]);
+  }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, timer.timerState.currentLevelIndex]);
 
-  // If rebuy is not enabled but add-on is, open add-on in level 0
-  useEffect(() => {
-    if (mode === 'game' && config.addOn.enabled && !config.rebuy.enabled && addOnEndLevelIndex === null) {
-      setAddOnEndLevelIndex(0);
-    }
-  }, [mode, config.addOn.enabled, config.rebuy.enabled, addOnEndLevelIndex]);
-
-  // Add-On window is open only in the level where it was activated
+  // Add-On window is open only in the level where rebuy ended
   const addOnWindowOpen = config.addOn.enabled
+    && config.rebuy.enabled
     && !rebuyActive
     && addOnEndLevelIndex !== null
     && timer.timerState.currentLevelIndex === addOnEndLevelIndex;
