@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.2.0
+**Version**: 1.3.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (148 tests, single run)
+npm run test         # Vitest run (177 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -53,13 +53,16 @@ src/
 │   ├── PlayerPanel.tsx          # Active players, elimination, bounty tracking
 │   ├── RebuyEditor.tsx          # Rebuy limit config
 │   ├── RebuyStatus.tsx          # Rebuy active indicator
+│   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
 │   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen
+│   ├── TemplateManager.tsx      # Save/load/delete tournament templates
 │   ├── TimerDisplay.tsx         # Main timer, blinds display, progress bar
-│   └── TournamentFinished.tsx   # Results & payout display
+│   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share
+│   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
-│   ├── logic.ts                 # Core logic (~750 lines): validation, payouts, blinds, chips, persistence
-│   └── sounds.ts                # Web Audio API sound effects (beeps, victory melody)
+│   ├── logic.ts                 # Core logic (~900 lines): validation, payouts, blinds, chips, templates, persistence
+│   └── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 ├── hooks/
 │   └── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
 └── i18n/                        # Lightweight custom i18n (no react-i18next)
@@ -70,7 +73,12 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 148 unit tests for domain/logic.ts
+└── logic.test.ts                # 177 unit tests for domain/logic.ts
+
+public/
+├── favicon.svg                  # Spade symbol favicon
+├── pwa-192x192.png              # PWA icon 192×192
+└── pwa-512x512.png              # PWA icon 512×512 (+ maskable)
 ```
 
 ## Architecture & Patterns
@@ -80,7 +88,7 @@ tests/
 - **useTimer** hook manages timer state with drift-free wall-clock computation
 - **Props drilling** for passing state and callbacks to child components
 - **React Context** used only for i18n (language selection)
-- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`
+- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`
 
 ### Component Conventions
 - Functional components with hooks only (no class components)
@@ -130,6 +138,11 @@ tests/
 - **Chip-blind compatibility**: `checkBlindChipCompatibility()` detects blind values not expressible with current chip denominations
 - **Duration estimates**: Factor in player count to estimate realistic tournament length
 - **Import/export**: Full config as JSON with backward compatibility for old formats
+- **Tournament templates**: Save/load/delete named configs via localStorage CRUD
+- **Bubble detection**: `isBubble()` and `isInTheMoney()` based on active players vs paid places
+- **Tournament stats**: Live display of players, prizepool, avg stack in BB, elapsed/remaining time
+- **Screenshot/share**: `html-to-image` capture → Web Share API (mobile) or PNG download (desktop)
+- **PWA**: `vite-plugin-pwa` with auto-update service worker, installable on mobile/desktop
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -160,6 +173,16 @@ tests/
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v1.3.0
+
+- **Turnier-Statistiken**: Live-Anzeige im Spielmodus — Spieleranzahl, Preisgeld, Ø Stack in BB, Spielzeit, geschätzte Restzeit
+- **Bubble-Anzeige**: Rot pulsierender "BUBBLE!"-Banner wenn activePlayers === paidPlaces + 1, grüner "In The Money!"-Flash beim Bubble-Burst (5 Sek)
+- **Bubble/ITM Sounds**: Spannungs-Sound (Sawtooth) bei Bubble, Fanfare (Triangle) bei In The Money
+- **Screenshot/Teilen**: Turnier-Ergebnisse als PNG capturen — Web Share API auf Mobile, Download-Fallback auf Desktop (html-to-image)
+- **PWA**: Progressive Web App mit Manifest, Service Worker, installierbar auf Mobile/Desktop (vite-plugin-pwa)
+- **Turnier-Templates**: Benannte Turnierkonfs speichern/laden/löschen via localStorage
+- **23 neue Tests**: formatElapsedTime, computeEstimatedRemainingSeconds, computeAverageStackInBB, isBubble, isInTheMoney, Template-CRUD (177 Tests gesamt)
 
 ### v1.2.0
 

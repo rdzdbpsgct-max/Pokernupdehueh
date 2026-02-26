@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   formatTime,
   computeRemaining,
@@ -39,6 +39,14 @@ import {
   estimateAllDurations,
   checkBlindChipCompatibility,
   computeColorUps,
+  formatElapsedTime,
+  computeEstimatedRemainingSeconds,
+  computeAverageStackInBB,
+  isBubble,
+  isInTheMoney,
+  loadTemplates,
+  saveTemplate,
+  deleteTemplate,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -1660,5 +1668,185 @@ describe('computeColorUps', () => {
 
     // 1000 (highest) must never be removed
     expect(removedIds.has('5')).toBe(false);
+  });
+});
+
+// ─── formatElapsedTime ────────────────────────────────────────────
+
+describe('formatElapsedTime', () => {
+  it('formats zero seconds as 0:00:00', () => {
+    expect(formatElapsedTime(0)).toBe('0:00:00');
+  });
+
+  it('formats seconds under one hour correctly', () => {
+    expect(formatElapsedTime(754)).toBe('0:12:34');
+  });
+
+  it('formats seconds over one hour correctly', () => {
+    expect(formatElapsedTime(5025)).toBe('1:23:45');
+  });
+
+  it('clamps negative values to 0:00:00', () => {
+    expect(formatElapsedTime(-100)).toBe('0:00:00');
+  });
+});
+
+// ─── computeEstimatedRemainingSeconds ─────────────────────────────
+
+describe('computeEstimatedRemainingSeconds', () => {
+  const levels: Level[] = [
+    { id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20, ante: 0 },
+    { id: '2', type: 'level', durationSeconds: 600, smallBlind: 20, bigBlind: 40, ante: 0 },
+    { id: '3', type: 'level', durationSeconds: 600, smallBlind: 30, bigBlind: 60, ante: 0 },
+  ];
+
+  it('sums remaining of current level plus all future levels', () => {
+    // On first level with 300s remaining + 600 + 600 = 1500
+    expect(computeEstimatedRemainingSeconds(levels, 0, 300)).toBe(1500);
+  });
+
+  it('returns only remaining seconds on the last level', () => {
+    expect(computeEstimatedRemainingSeconds(levels, 2, 120)).toBe(120);
+  });
+
+  it('returns 0 for negative remaining on last level', () => {
+    expect(computeEstimatedRemainingSeconds(levels, 2, -10)).toBe(0);
+  });
+});
+
+// ─── computeAverageStackInBB ──────────────────────────────────────
+
+describe('computeAverageStackInBB', () => {
+  it('returns average stack divided by big blind, rounded to 1 decimal', () => {
+    expect(computeAverageStackInBB(10000, 300)).toBe(33.3);
+  });
+
+  it('returns 0 when big blind is 0', () => {
+    expect(computeAverageStackInBB(10000, 0)).toBe(0);
+  });
+
+  it('rounds to one decimal place', () => {
+    // 10000 / 700 = 14.2857... → 14.3
+    expect(computeAverageStackInBB(10000, 700)).toBe(14.3);
+  });
+});
+
+// ─── isBubble ─────────────────────────────────────────────────────
+
+describe('isBubble', () => {
+  it('returns true when active players equals paid places + 1', () => {
+    expect(isBubble(4, 3)).toBe(true);
+  });
+
+  it('returns false when more players than bubble threshold', () => {
+    expect(isBubble(6, 3)).toBe(false);
+  });
+
+  it('returns false when already in the money', () => {
+    expect(isBubble(3, 3)).toBe(false);
+  });
+
+  it('returns false when paid places is 0', () => {
+    expect(isBubble(4, 0)).toBe(false);
+  });
+
+  it('returns false when only 1 player', () => {
+    expect(isBubble(1, 3)).toBe(false);
+  });
+});
+
+// ─── isInTheMoney ─────────────────────────────────────────────────
+
+describe('isInTheMoney', () => {
+  it('returns true when active players equals paid places', () => {
+    expect(isInTheMoney(3, 3)).toBe(true);
+  });
+
+  it('returns true when active players is fewer than paid places', () => {
+    expect(isInTheMoney(2, 3)).toBe(true);
+  });
+
+  it('returns false when more active players than paid places', () => {
+    expect(isInTheMoney(5, 3)).toBe(false);
+  });
+
+  it('returns false when only 1 player', () => {
+    expect(isInTheMoney(1, 3)).toBe(false);
+  });
+});
+
+// ─── Tournament Templates ─────────────────────────────────────────
+
+describe('Tournament Templates', () => {
+  let storage: Record<string, string>;
+
+  beforeEach(() => {
+    storage = {};
+    const mockStorage = {
+      getItem: (key: string) => storage[key] ?? null,
+      setItem: (key: string, value: string) => { storage[key] = value; },
+      removeItem: (key: string) => { delete storage[key]; },
+      clear: () => { storage = {}; },
+      get length() { return Object.keys(storage).length; },
+      key: (i: number) => Object.keys(storage)[i] ?? null,
+    };
+    vi.stubGlobal('localStorage', mockStorage);
+  });
+
+  it('returns empty array when no templates saved', () => {
+    expect(loadTemplates()).toEqual([]);
+  });
+
+  it('saves and loads a template', () => {
+    const players: Player[] = [
+      { id: 'p1', name: 'Spieler 1', rebuys: 0, addOn: false, eliminated: false, eliminatedOrder: null, seat: 1, bountyCount: 0 },
+      { id: 'p2', name: 'Spieler 2', rebuys: 0, addOn: false, eliminated: false, eliminatedOrder: null, seat: 2, bountyCount: 0 },
+    ];
+    const config: TournamentConfig = {
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20, ante: 0 }],
+      startingChips: 10000,
+      players,
+      payoutConfig: defaultPayoutConfig(),
+      rebuyConfig: defaultRebuyConfig(),
+      addOnConfig: defaultAddOnConfig(),
+      bountyConfig: defaultBountyConfig(),
+      chipConfig: defaultChipConfig(),
+    };
+
+    const saved = saveTemplate('My Tournament', config);
+    expect(saved.name).toBe('My Tournament');
+    expect(saved.id).toBeTruthy();
+    expect(saved.config.startingChips).toBe(10000);
+
+    const loaded = loadTemplates();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].name).toBe('My Tournament');
+  });
+
+  it('deletes a template', () => {
+    const players: Player[] = [
+      { id: 'p1', name: 'Spieler 1', rebuys: 0, addOn: false, eliminated: false, eliminatedOrder: null, seat: 1, bountyCount: 0 },
+    ];
+    const config: TournamentConfig = {
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20, ante: 0 }],
+      startingChips: 10000,
+      players,
+      payoutConfig: defaultPayoutConfig(),
+      rebuyConfig: defaultRebuyConfig(),
+      addOnConfig: defaultAddOnConfig(),
+      bountyConfig: defaultBountyConfig(),
+      chipConfig: defaultChipConfig(),
+    };
+
+    const saved = saveTemplate('To Delete', config);
+    expect(loadTemplates()).toHaveLength(1);
+
+    deleteTemplate(saved.id);
+    expect(loadTemplates()).toHaveLength(0);
+  });
+
+  it('handles corrupt localStorage data gracefully', () => {
+    localStorage.setItem('poker-timer-templates', 'not valid json!!!');
+    expect(loadTemplates()).toEqual([]);
   });
 });

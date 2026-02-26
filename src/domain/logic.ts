@@ -68,6 +68,14 @@ export function formatTime(totalSeconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+export function formatElapsedTime(totalSeconds: number): string {
+  const clamped = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(clamped / 3600);
+  const m = Math.floor((clamped % 3600) / 60);
+  const s = clamped % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 // ---------------------------------------------------------------------------
 // Drift-free remaining computation
 // ---------------------------------------------------------------------------
@@ -556,6 +564,18 @@ export function computeTournamentElapsedSeconds(
   return Math.max(0, elapsed);
 }
 
+export function computeEstimatedRemainingSeconds(
+  levels: Level[],
+  currentLevelIndex: number,
+  remainingSeconds: number,
+): number {
+  let remaining = remainingSeconds;
+  for (let i = currentLevelIndex + 1; i < levels.length; i++) {
+    remaining += levels[i].durationSeconds;
+  }
+  return Math.max(0, remaining);
+}
+
 // ---------------------------------------------------------------------------
 // Add-On
 // ---------------------------------------------------------------------------
@@ -825,6 +845,25 @@ export function computeAverageStack(
   return Math.round(totalChips / activePlayers);
 }
 
+export function computeAverageStackInBB(averageStack: number, currentBigBlind: number): number {
+  if (currentBigBlind <= 0) return 0;
+  return Math.round((averageStack / currentBigBlind) * 10) / 10;
+}
+
+// ---------------------------------------------------------------------------
+// Bubble detection
+// ---------------------------------------------------------------------------
+
+export function isBubble(activePlayers: number, paidPlaces: number): boolean {
+  if (paidPlaces <= 0 || activePlayers <= 1) return false;
+  return activePlayers === paidPlaces + 1;
+}
+
+export function isInTheMoney(activePlayers: number, paidPlaces: number): boolean {
+  if (paidPlaces <= 0 || activePlayers <= 1) return false;
+  return activePlayers <= paidPlaces;
+}
+
 // ---------------------------------------------------------------------------
 // Ante helpers
 // ---------------------------------------------------------------------------
@@ -999,6 +1038,55 @@ export function importConfigJSON(json: string): TournamentConfig | null {
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament Templates
+// ---------------------------------------------------------------------------
+
+export interface TournamentTemplate {
+  id: string;
+  name: string;
+  createdAt: string;
+  config: TournamentConfig;
+}
+
+const TEMPLATES_KEY = 'poker-timer-templates';
+
+export function loadTemplates(): TournamentTemplate[] {
+  const raw = localStorage.getItem(TEMPLATES_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (t: unknown) =>
+        t !== null &&
+        typeof t === 'object' &&
+        typeof (t as Record<string, unknown>).id === 'string' &&
+        typeof (t as Record<string, unknown>).name === 'string',
+    ) as TournamentTemplate[];
+  } catch {
+    return [];
+  }
+}
+
+export function saveTemplate(name: string, config: TournamentConfig): TournamentTemplate {
+  const templates = loadTemplates();
+  const template: TournamentTemplate = {
+    id: `tmpl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    createdAt: new Date().toISOString(),
+    config,
+  };
+  templates.push(template);
+  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  return template;
+}
+
+export function deleteTemplate(id: string): void {
+  const templates = loadTemplates().filter((t) => t.id !== id);
+  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
 }
 
 // ---------------------------------------------------------------------------

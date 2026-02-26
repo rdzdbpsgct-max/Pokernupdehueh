@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { toPng } from 'html-to-image';
 
 interface Props {
   players: Player[];
@@ -26,6 +27,44 @@ export function TournamentFinished({
 }: Props) {
   const { t } = useTranslation();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  const captureScreenshot = useCallback(async () => {
+    if (!resultsRef.current || capturing) return;
+    setCapturing(true);
+    try {
+      const dataUrl = await toPng(resultsRef.current, {
+        backgroundColor: '#111827',
+        pixelRatio: 2,
+      });
+
+      // Try Web Share API first (mobile)
+      if (navigator.share) {
+        try {
+          const blob = await (await fetch(dataUrl)).blob();
+          const file = new File([blob], 'tournament-results.png', { type: 'image/png' });
+          await navigator.share({
+            title: t('finished.shareTitle'),
+            files: [file],
+          });
+          return;
+        } catch {
+          // share cancelled or not supported with files — fall through to download
+        }
+      }
+
+      // Fallback: download as PNG
+      const link = document.createElement('a');
+      link.download = 'tournament-results.png';
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Screenshot failed:', err);
+    } finally {
+      setCapturing(false);
+    }
+  }, [capturing, t]);
   const totalRebuys = computeTotalRebuys(players);
   const totalAddOns = computeTotalAddOns(players);
   const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.enabled ? addOn.cost : 0);
@@ -61,7 +100,7 @@ export function TournamentFinished({
 
   return (
     <div className="flex-1 flex items-start justify-center p-6 overflow-y-auto">
-      <div className="w-full max-w-lg space-y-6 py-8">
+      <div ref={resultsRef} className="w-full max-w-lg space-y-6 py-8">
         {/* Winner celebration */}
         <div className="text-center space-y-3 py-6 px-4 rounded-2xl border-2 border-amber-500/30 bg-gradient-to-b from-amber-900/20 to-transparent">
           <div className="text-7xl animate-bounce">
@@ -285,8 +324,19 @@ export function TournamentFinished({
           </div>
         </div>
 
-        {/* Back to setup */}
+        {/* Share / Screenshot */}
         <div className="pt-2">
+          <button
+            onClick={captureScreenshot}
+            disabled={capturing}
+            className="w-full px-6 py-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-lg font-medium transition-colors disabled:opacity-50"
+          >
+            {capturing ? t('finished.capturing') : t('finished.shareResults')}
+          </button>
+        </div>
+
+        {/* Back to setup */}
+        <div>
           <button
             onClick={onBackToSetup}
             className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-lg font-medium transition-colors"

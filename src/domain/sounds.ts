@@ -49,3 +49,30 @@ export function playVictorySound() {
     // audio not available
   }
 }
+
+/** Tension sound for reaching the bubble */
+export function playBubbleSound() {
+  try {
+    const ctx = getAudioContext();
+    const t = ctx.currentTime;
+    playNote(ctx, 440, t, 0.3, 0.25, 'sawtooth');         // A4
+    playNote(ctx, 554, t + 0.35, 0.3, 0.25, 'sawtooth');  // C#5
+    playNote(ctx, 440, t + 0.70, 0.2, 0.2, 'sawtooth');   // A4
+    playNote(ctx, 554, t + 0.95, 0.5, 0.3, 'sawtooth');   // C#5 (held)
+  } catch {
+    // audio not available
+  }
+}
+
+/** Short celebratory fanfare for reaching In The Money */
+export function playInTheMoneySound() {
+  try {
+    const ctx = getAudioContext();
+    const t = ctx.currentTime;
+    playNote(ctx, 523, t, 0.15, 0.2, 'triangle');         // C5
+    playNote(ctx, 659, t + 0.15, 0.15, 0.2, 'triangle');  // E5
+    playNote(ctx, 784, t + 0.30, 0.4, 0.25, 'triangle');  // G5 (held)
+  } catch {
+    // audio not available
+  }
+}

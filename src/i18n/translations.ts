@@ -260,6 +260,39 @@ const de = {
   'blindGenerator.apply': 'Blindstruktur übernehmen',
   'blindGenerator.break': 'Pause',
 
+  // --- Tournament Stats ---
+  'stats.players': 'Spieler',
+  'stats.prizePool': 'Preisgeld',
+  'stats.avgStackBB': 'Ø Stack',
+  'stats.elapsed': 'Spielzeit',
+  'stats.remaining': 'Restzeit',
+
+  // --- Bubble ---
+  'bubble.bubble': 'BUBBLE!',
+  'bubble.bubbleHint': 'Nächste Eliminierung erreicht die Geldränge',
+  'bubble.inTheMoney': 'In The Money!',
+
+  // --- Templates ---
+  'app.templates': 'Vorlagen',
+  'templates.title': 'Turnier-Vorlagen',
+  'templates.saveCurrent': 'Aktuelle Konfiguration speichern',
+  'templates.nameLabel': 'Vorlagen-Name',
+  'templates.namePlaceholder': 'z.B. Freitagspoker-Standard',
+  'templates.save': 'Speichern',
+  'templates.noTemplates': 'Keine gespeicherten Vorlagen',
+  'templates.load': 'Laden',
+  'templates.delete': 'Löschen',
+  'templates.confirmDelete': 'Wirklich löschen?',
+  'templates.yes': 'Ja',
+  'templates.players': '{n} Spieler',
+  'templates.levels': '{n} Level',
+  'templates.close': 'Schließen',
+
+  // --- Screenshot/Share ---
+  'finished.shareResults': 'Ergebnis teilen / Screenshot',
+  'finished.capturing': 'Wird erstellt...',
+  'finished.shareTitle': 'Turnier-Ergebnis',
+
   // --- Units ---
   'unit.eur': 'EUR',
   'unit.chips': 'Chips',
@@ -526,6 +559,39 @@ const en: Record<TranslationKey, string> = {
   'blindGenerator.preview': 'Preview',
   'blindGenerator.apply': 'Apply Blind Structure',
   'blindGenerator.break': 'Break',
+
+  // --- Tournament Stats ---
+  'stats.players': 'Players',
+  'stats.prizePool': 'Prize Pool',
+  'stats.avgStackBB': 'Avg Stack',
+  'stats.elapsed': 'Elapsed',
+  'stats.remaining': 'Remaining',
+
+  // --- Bubble ---
+  'bubble.bubble': 'BUBBLE!',
+  'bubble.bubbleHint': 'Next elimination reaches the money',
+  'bubble.inTheMoney': 'In The Money!',
+
+  // --- Templates ---
+  'app.templates': 'Templates',
+  'templates.title': 'Tournament Templates',
+  'templates.saveCurrent': 'Save current configuration',
+  'templates.nameLabel': 'Template name',
+  'templates.namePlaceholder': 'e.g. Friday Poker Standard',
+  'templates.save': 'Save',
+  'templates.noTemplates': 'No saved templates',
+  'templates.load': 'Load',
+  'templates.delete': 'Delete',
+  'templates.confirmDelete': 'Really delete?',
+  'templates.yes': 'Yes',
+  'templates.players': '{n} players',
+  'templates.levels': '{n} levels',
+  'templates.close': 'Close',
+
+  // --- Screenshot/Share ---
+  'finished.shareResults': 'Share Results / Screenshot',
+  'finished.capturing': 'Capturing...',
+  'finished.shareTitle': 'Tournament Results',
 
   // --- Units ---
   'unit.eur': 'EUR',

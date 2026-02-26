@@ -11,18 +11,22 @@ import {
   applyDefaultAntes,
   isRebuyActive,
   computeTournamentElapsedSeconds,
+  computeEstimatedRemainingSeconds,
   computeNextPlacement,
   defaultPayoutForPlayerCount,
   validatePayoutConfig,
   validateConfig,
   snapSpinnerValue,
   computeAverageStack,
+  computePrizePool,
   computeColorUps,
   checkBlindChipCompatibility,
+  isBubble,
+  isInTheMoney,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
-import { playVictorySound } from './domain/sounds';
+import { playVictorySound, playBubbleSound, playInTheMoneySound } from './domain/sounds';
 import { TimerDisplay } from './components/TimerDisplay';
 import { Controls } from './components/Controls';
 import { LevelPreview } from './components/LevelPreview';
@@ -40,6 +44,9 @@ import { ChipEditor } from './components/ChipEditor';
 import { ChipSidebar } from './components/ChipSidebar';
 import { TournamentFinished } from './components/TournamentFinished';
 import { BlindGenerator } from './components/BlindGenerator';
+import { TournamentStats } from './components/TournamentStats';
+import { BubbleIndicator } from './components/BubbleIndicator';
+import { TemplateManager } from './components/TemplateManager';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 
 type Mode = 'setup' | 'game';
@@ -56,6 +63,8 @@ function App() {
   const [showImportExport, setShowImportExport] = useState(false);
   const [showPlayerPanel, setShowPlayerPanel] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showItmFlash, setShowItmFlash] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -286,6 +295,42 @@ function App() {
     [config.chips.enabled, config.chips.denominations, config.levels],
   );
 
+  const estimatedRemainingSeconds = useMemo(
+    () => computeEstimatedRemainingSeconds(
+      config.levels,
+      timer.timerState.currentLevelIndex,
+      timer.timerState.remainingSeconds,
+    ),
+    [config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds],
+  );
+
+  const prizePool = useMemo(
+    () => computePrizePool(
+      config.players,
+      config.buyIn,
+      config.rebuy.enabled ? config.rebuy.rebuyCost : undefined,
+      config.addOn.enabled ? config.addOn.cost : undefined,
+    ),
+    [config.players, config.buyIn, config.rebuy.enabled, config.rebuy.rebuyCost, config.addOn.enabled, config.addOn.cost],
+  );
+
+  const activePlayerCount = useMemo(
+    () => config.players.filter((p) => p.status === 'active').length,
+    [config.players],
+  );
+
+  const paidPlaces = config.payout.entries.length;
+
+  const bubbleActive = useMemo(
+    () => isBubble(activePlayerCount, paidPlaces),
+    [activePlayerCount, paidPlaces],
+  );
+
+  const inTheMoney = useMemo(
+    () => isInTheMoney(activePlayerCount, paidPlaces),
+    [activePlayerCount, paidPlaces],
+  );
+
   const tournamentFinished = useMemo(() => {
     if (config.players.length < 2) return false;
     return config.players.filter((p) => p.status === 'active').length === 1;
@@ -323,6 +368,28 @@ function App() {
       victorySoundPlayedRef.current = false;
     }
   }, [mode, tournamentFinished, timer, settings.soundEnabled]);
+
+  // Bubble & ITM sound/visual effects
+  const prevBubbleRef = useRef(false);
+  useEffect(() => {
+    if (mode !== 'game') return;
+
+    // Bubble just started
+    if (bubbleActive && !prevBubbleRef.current) {
+      if (settings.soundEnabled) playBubbleSound();
+    }
+
+    // Bubble just ended (burst) → show ITM flash
+    if (!bubbleActive && prevBubbleRef.current && inTheMoney) {
+      setShowItmFlash(true);
+      if (settings.soundEnabled) playInTheMoneySound();
+      const timeout = setTimeout(() => setShowItmFlash(false), 5000);
+      prevBubbleRef.current = bubbleActive;
+      return () => clearTimeout(timeout);
+    }
+
+    prevBubbleRef.current = bubbleActive;
+  }, [mode, bubbleActive, inTheMoney, settings.soundEnabled]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
@@ -410,6 +477,14 @@ function App() {
           >
             {mode === 'setup' ? t('app.startGame') : t('app.setup')}
           </button>
+          {mode === 'setup' && (
+            <button
+              onClick={() => setShowTemplates(true)}
+              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
+            >
+              {t('app.templates')}
+            </button>
+          )}
           <button
             onClick={() => setShowImportExport(true)}
             className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
@@ -735,6 +810,21 @@ function App() {
                   chipConfig={config.chips}
                   colorUpMap={colorUpMap}
                 />
+                <BubbleIndicator
+                  isBubble={bubbleActive}
+                  showItmFlash={showItmFlash}
+                />
+                {config.players.length > 0 && (
+                  <TournamentStats
+                    players={config.players}
+                    levels={config.levels}
+                    currentLevelIndex={timer.timerState.currentLevelIndex}
+                    averageStack={averageStack}
+                    elapsedSeconds={tournamentElapsed}
+                    estimatedRemainingSeconds={estimatedRemainingSeconds}
+                    prizePool={prizePool}
+                  />
+                )}
                 <RebuyStatus
                   active={rebuyActive}
                   rebuy={config.rebuy}
@@ -813,6 +903,15 @@ function App() {
           config={config}
           onImport={setConfig}
           onClose={() => setShowImportExport(false)}
+        />
+      )}
+
+      {/* Templates Modal */}
+      {showTemplates && (
+        <TemplateManager
+          config={config}
+          onLoad={setConfig}
+          onClose={() => setShowTemplates(false)}
         />
       )}
 
