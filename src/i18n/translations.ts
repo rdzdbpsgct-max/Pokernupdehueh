@@ -30,6 +30,8 @@ const de = {
   'app.hideSidebar': 'Sidebar ausblenden',
   'app.showSidebar': 'Sidebar einblenden',
   'app.cancel': 'Abbrechen',
+  'app.chipBlindConflict': 'Achtung: Die Blindstruktur enthält Werte ({values}), die nicht mit den aktuellen Chip-Werten darstellbar sind.',
+  'app.chipBlindConflictHint': 'Generiere die Blindstruktur neu, um sie an die Chip-Werte anzupassen.',
 
   // --- Confirm Dialogs ---
   'confirm.resetLevel.title': 'Level zurücksetzen?',
@@ -295,6 +297,8 @@ const en: Record<TranslationKey, string> = {
   'app.hideSidebar': 'Hide sidebar',
   'app.showSidebar': 'Show sidebar',
   'app.cancel': 'Cancel',
+  'app.chipBlindConflict': 'Warning: The blind structure contains values ({values}) that cannot be represented with the current chip denominations.',
+  'app.chipBlindConflictHint': 'Regenerate the blind structure to match the chip values.',
 
   // --- Confirm Dialogs ---
   'confirm.resetLevel.title': 'Reset level?',

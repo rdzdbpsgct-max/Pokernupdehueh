@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { Level } from '../domain/types';
+import type { Level, ChipConfig } from '../domain/types';
 import type { BlindSpeed } from '../domain/logic';
 import { generateBlindStructure, estimateAllDurations, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -8,22 +8,29 @@ interface Props {
   startingChips: number;
   anteEnabled: boolean;
   playerCount: number;
+  chipConfig: ChipConfig;
   onApply: (levels: Level[]) => void;
 }
 
-export function BlindGenerator({ startingChips, anteEnabled, playerCount, onApply }: Props) {
+export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipConfig, onApply }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedSpeed, setSelectedSpeed] = useState<BlindSpeed>('normal');
 
+  // When chips are enabled, use smallest denomination as rounding base
+  const smallestChip = useMemo(() => {
+    if (!chipConfig.enabled || chipConfig.denominations.length === 0) return undefined;
+    return Math.min(...chipConfig.denominations.map((d) => d.value));
+  }, [chipConfig.enabled, chipConfig.denominations]);
+
   const estimates = useMemo(
-    () => estimateAllDurations(startingChips, anteEnabled, playerCount),
-    [startingChips, anteEnabled, playerCount],
+    () => estimateAllDurations(startingChips, anteEnabled, playerCount, smallestChip),
+    [startingChips, anteEnabled, playerCount, smallestChip],
   );
 
   const preview = useMemo(
-    () => generateBlindStructure({ startingChips, speed: selectedSpeed, anteEnabled }),
-    [startingChips, selectedSpeed, anteEnabled],
+    () => generateBlindStructure({ startingChips, speed: selectedSpeed, anteEnabled, smallestChip }),
+    [startingChips, selectedSpeed, anteEnabled, smallestChip],
   );
 
   const previewPlayLevels = preview.filter((l) => l.type === 'level');

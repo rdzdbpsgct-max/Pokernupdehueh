@@ -32,10 +32,12 @@ import {
   movePlayer,
   shufflePlayers,
   roundToNice,
+  roundToChipMultiple,
   generateBlindStructure,
   estimateDuration,
   estimatePlayedLevels,
   estimateAllDurations,
+  checkBlindChipCompatibility,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -1414,5 +1416,121 @@ describe('estimateAllDurations', () => {
     const normal4 = est4.find((e) => e.speed === 'normal')!;
     const normal8 = est8.find((e) => e.speed === 'normal')!;
     expect(normal8.totalSeconds).toBeGreaterThanOrEqual(normal4.totalSeconds);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// roundToChipMultiple
+// ---------------------------------------------------------------------------
+describe('roundToChipMultiple', () => {
+  it('returns 0 for zero or negative value', () => {
+    expect(roundToChipMultiple(0, 25)).toBe(0);
+    expect(roundToChipMultiple(-10, 25)).toBe(0);
+  });
+
+  it('rounds to nearest multiple of chip denomination', () => {
+    expect(roundToChipMultiple(30, 25)).toBe(25);
+    expect(roundToChipMultiple(40, 25)).toBe(50);
+    expect(roundToChipMultiple(75, 50)).toBe(100);
+    expect(roundToChipMultiple(60, 50)).toBe(50);
+    expect(roundToChipMultiple(100, 100)).toBe(100);
+  });
+
+  it('never returns less than the smallest chip', () => {
+    expect(roundToChipMultiple(1, 25)).toBe(25);
+    expect(roundToChipMultiple(10, 50)).toBe(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// checkBlindChipCompatibility
+// ---------------------------------------------------------------------------
+describe('checkBlindChipCompatibility', () => {
+  const denoms25 = [
+    { id: '1', value: 25, color: '#fff', label: 'White' },
+    { id: '2', value: 100, color: '#f00', label: 'Red' },
+  ];
+  const denoms50 = [
+    { id: '1', value: 50, color: '#fff', label: 'White' },
+    { id: '2', value: 100, color: '#f00', label: 'Red' },
+  ];
+
+  it('returns empty when all blinds are multiples of smallest chip', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 },
+      { id: '2', type: 'level', durationSeconds: 600, smallBlind: 50, bigBlind: 100, ante: 0 },
+    ];
+    expect(checkBlindChipCompatibility(levels, denoms25)).toEqual([]);
+  });
+
+  it('detects incompatible blind values', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 },
+      { id: '2', type: 'level', durationSeconds: 600, smallBlind: 75, bigBlind: 150, ante: 0 },
+    ];
+    // With 50 as smallest chip, 25, 75, 150 are not multiples of 50
+    const conflicts = checkBlindChipCompatibility(levels, denoms50);
+    expect(conflicts).toContain(25);
+    expect(conflicts).toContain(75);
+  });
+
+  it('returns empty for empty denominations', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 33, bigBlind: 77, ante: 0 },
+    ];
+    expect(checkBlindChipCompatibility(levels, [])).toEqual([]);
+  });
+
+  it('ignores breaks', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'break', durationSeconds: 300, label: 'Pause' },
+    ];
+    expect(checkBlindChipCompatibility(levels, denoms25)).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateBlindStructure with smallestChip
+// ---------------------------------------------------------------------------
+describe('generateBlindStructure with chip constraint', () => {
+  it('all blind values are multiples of smallestChip when provided', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false, smallestChip: 25 });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    for (const level of playLevels) {
+      expect(level.smallBlind! % 25).toBe(0);
+      expect(level.bigBlind! % 25).toBe(0);
+    }
+  });
+
+  it('all blind values are multiples of 50 when smallestChip=50', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false, smallestChip: 50 });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    for (const level of playLevels) {
+      expect(level.smallBlind! % 50).toBe(0);
+      expect(level.bigBlind! % 50).toBe(0);
+    }
+  });
+
+  it('ante values are multiples of smallestChip when enabled', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: true, smallestChip: 25 });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    const withAnte = playLevels.filter((l) => (l.ante ?? 0) > 0);
+    for (const level of withAnte) {
+      expect(level.ante! % 25).toBe(0);
+    }
+  });
+
+  it('first level starts at 25/50 for 20k with smallestChip=25', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false, smallestChip: 25 });
+    const first = levels.filter((l) => l.type === 'level')[0];
+    expect(first.smallBlind).toBe(25);
+    expect(first.bigBlind).toBe(50);
+  });
+
+  it('first level starts at 50/100 for 20k with smallestChip=50', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false, smallestChip: 50 });
+    const first = levels.filter((l) => l.type === 'level')[0];
+    expect(first.smallBlind).toBe(50);
+    expect(first.bigBlind).toBe(100);
   });
 });

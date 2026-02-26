@@ -18,6 +18,7 @@ import {
   snapSpinnerValue,
   computeAverageStack,
   computeColorUps,
+  checkBlindChipCompatibility,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
@@ -276,6 +277,15 @@ function App() {
     [config.chips.enabled, config.chips.denominations, config.levels],
   );
 
+  // Detect blind values that are incompatible with current chip denominations
+  const blindChipConflicts = useMemo(
+    () =>
+      config.chips.enabled
+        ? checkBlindChipCompatibility(config.levels, config.chips.denominations)
+        : [],
+    [config.chips.enabled, config.chips.denominations, config.levels],
+  );
+
   const tournamentFinished = useMemo(() => {
     if (config.players.length < 2) return false;
     return config.players.filter((p) => p.status === 'active').length === 1;
@@ -524,6 +534,17 @@ function App() {
                   onChange={(chips) => setConfig((prev) => ({ ...prev, chips }))}
                   levels={config.levels}
                 />
+                {/* Chip-Blind compatibility warning */}
+                {blindChipConflicts.length > 0 && (
+                  <div className="mt-2 px-3 py-2 bg-amber-900/20 border border-amber-800 rounded-lg">
+                    <p className="text-amber-300 text-xs font-medium">
+                      {t('app.chipBlindConflict', { values: blindChipConflicts.join(', ') })}
+                    </p>
+                    <p className="text-amber-400/60 text-xs mt-1">
+                      {t('app.chipBlindConflictHint')}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Blind-Generator */}
@@ -531,6 +552,7 @@ function App() {
                 startingChips={config.startingChips}
                 anteEnabled={config.anteEnabled}
                 playerCount={config.players.length}
+                chipConfig={config.chips}
                 onApply={(levels) =>
                   setConfig((prev) => ({ ...prev, levels }))
                 }

@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, and payouts. No server required, all data persisted in localStorage.
+Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.1.0
+**Version**: 1.2.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (82 tests, single run)
+npm run test         # Vitest run (148 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -38,16 +38,19 @@ src/
 ├── main.tsx                     # React entry point, wraps app in LanguageProvider
 ├── index.css                    # Tailwind base imports
 ├── components/                  # UI components (one export per file)
+│   ├── AddOnEditor.tsx          # Add-On config (requires Rebuy, auto-disable)
+│   ├── BlindGenerator.tsx       # Blind structure generator (3 speeds, chip-aware)
 │   ├── BountyEditor.tsx         # Bounty amount configuration
+│   ├── ChipEditor.tsx           # Chip denomination management, color-up preview
+│   ├── ChipSidebar.tsx          # Game-mode chip info, next color-up display
 │   ├── ConfigEditor.tsx         # Blind level table editor
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
 │   ├── ImportExportModal.tsx    # JSON import/export dialog
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
 │   ├── LevelPreview.tsx         # Next-level sidebar
 │   ├── PayoutEditor.tsx         # Prize distribution config
-│   ├── PlayerManager.tsx        # Add/edit/delete players
+│   ├── PlayerManager.tsx        # Add/edit/delete/seat players with drag & drop
 │   ├── PlayerPanel.tsx          # Active players, elimination, bounty tracking
-│   ├── PresetPicker.tsx         # Turbo/Standard/Deep Stack presets
 │   ├── RebuyEditor.tsx          # Rebuy limit config
 │   ├── RebuyStatus.tsx          # Rebuy active indicator
 │   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen
@@ -55,7 +58,7 @@ src/
 │   └── TournamentFinished.tsx   # Results & payout display
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
-│   ├── logic.ts                 # Core logic (~595 lines): validation, payouts, presets, persistence
+│   ├── logic.ts                 # Core logic (~750 lines): validation, payouts, blinds, chips, persistence
 │   └── sounds.ts                # Web Audio API sound effects (beeps, victory melody)
 ├── hooks/
 │   └── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
@@ -63,11 +66,11 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~400+ keys)
+    ├── translations.ts          # DE/EN translation strings (~450+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 82 unit tests for domain/logic.ts
+└── logic.test.ts                # 148 unit tests for domain/logic.ts
 ```
 
 ## Architecture & Patterns
@@ -89,7 +92,7 @@ tests/
 ### Domain Logic Separation
 - `src/domain/` contains pure business logic with no React dependencies
 - `src/domain/types.ts` — all shared types (`Level`, `TournamentConfig`, `Player`, `Settings`, `TimerState`, etc.)
-- `src/domain/logic.ts` — grouped by responsibility: formatting, timing, navigation, validation, players, payouts, rebuys, bounties, antes, presets, persistence
+- `src/domain/logic.ts` — grouped by responsibility: formatting, timing, navigation, validation, players, payouts, rebuys, bounties, antes, blind generation, chip management, persistence
 - Tests cover `logic.ts` exclusively — UI tests are not currently present
 
 ### i18n
@@ -122,6 +125,10 @@ tests/
 - **Sound**: Web Audio API oscillators — no external audio files
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
+- **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
+- **Chip management**: Color-up events coupled with next break; duplicate color warnings; auto-sort by value
+- **Chip-blind compatibility**: `checkBlindChipCompatibility()` detects blind values not expressible with current chip denominations
+- **Duration estimates**: Factor in player count to estimate realistic tournament length
 - **Import/export**: Full config as JSON with backward compatibility for old formats
 - **Offline-first**: Zero network dependencies at runtime
 
@@ -149,3 +156,25 @@ tests/
 - ESLint uses flat config format (not `.eslintrc`) in `eslint.config.js`
 - The project language is bilingual — commit messages and docs are in German, code and comments are in English
 - Default player names change when the language is switched (DE: "Spieler 1", EN: "Player 1")
+- PresetPicker was removed in v1.2.0 — blind structures are now generated via BlindGenerator
+- When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
+
+## Changelog
+
+### v1.2.0
+
+- **Blindstruktur-Generator**: 3 Geschwindigkeiten (schnell/normal/langsam) mit eigener BB-Progression, chip-aware Rundung, geschätzte Turnierdauer basierend auf Spieleranzahl
+- **Chip-Blind-Kompatibilitätsprüfung**: Warnung wenn Chip-Werte geändert werden und die Blindstruktur nicht mehr darstellbar ist
+- **PresetPicker entfernt**: Blindstrukturen werden jetzt komplett über den Generator erstellt
+- **Add-On automatisch deaktiviert**: Wird Rebuy ausgeschaltet, wird Add-On automatisch zurückgesetzt
+- **Rebuy-Anzeige**: Nur während aktiver Rebuy-Phase sichtbar
+- **Chip-Duplikat-Warnung**: Warnung bei doppelten Chip-Farben
+- **Chip-Auto-Sort**: Automatische Sortierung nach Wertigkeit
+- **Color-Up gekoppelt mit Pause**: Chip-Race-Empfehlungen an nächste Pause gekoppelt
+
+### v1.1.0
+
+- Chip-Farben / Denomination-Management mit Color-Up Erinnerung
+- Sitzplatz-Zuordnung mit Drag & Drop, Shuffle und Dealer-Button
+- Add-On nur in Rebuy-Turnieren verfügbar
+- Shuffle-Bestätigung

@@ -275,27 +275,66 @@ export interface GenerateBlindParams {
   startingChips: number;
   speed: BlindSpeed;
   anteEnabled: boolean;
+  /** Smallest chip denomination — when provided, all blind values snap to its multiples. */
+  smallestChip?: number;
+}
+
+/**
+ * Round a value to the nearest multiple of the smallest chip denomination.
+ * Falls back to roundToNice() when no chip constraint is given.
+ */
+export function roundToChipMultiple(value: number, smallestChip: number): number {
+  if (value <= 0 || smallestChip <= 0) return 0;
+  return Math.max(smallestChip, Math.round(value / smallestChip) * smallestChip);
+}
+
+/**
+ * Check whether all blind values in a level array are compatible with the given
+ * chip denominations, i.e. every SB/BB/Ante is a multiple of the smallest chip.
+ * Returns list of incompatible blind values (empty = all compatible).
+ */
+export function checkBlindChipCompatibility(
+  levels: Level[],
+  denominations: ChipDenomination[],
+): number[] {
+  if (denominations.length === 0) return [];
+  const smallest = Math.min(...denominations.map((d) => d.value));
+  if (smallest <= 0) return [];
+
+  const bad = new Set<number>();
+  for (const level of levels) {
+    if (level.type !== 'level') continue;
+    if (level.smallBlind != null && level.smallBlind % smallest !== 0) bad.add(level.smallBlind);
+    if (level.bigBlind != null && level.bigBlind % smallest !== 0) bad.add(level.bigBlind);
+    if (level.ante != null && level.ante > 0 && level.ante % smallest !== 0) bad.add(level.ante);
+  }
+  return [...bad].sort((a, b) => a - b);
 }
 
 /**
  * Generate a complete blind structure based on starting chips and speed.
  * Each speed has its own BB progression (not just different durations).
  * Values are scaled from a 20k reference stack and rounded to nice poker numbers.
+ * When smallestChip is provided, all values snap to chip multiples.
  */
 export function generateBlindStructure(params: GenerateBlindParams): Level[] {
-  const { startingChips, speed, anteEnabled } = params;
+  const { startingChips, speed, anteEnabled, smallestChip } = params;
   const cfg = SPEED_CONFIGS[speed];
   const scale = startingChips / REFERENCE_STACKS;
+  const round = smallestChip != null && smallestChip > 0
+    ? (v: number) => roundToChipMultiple(v, smallestChip)
+    : roundToNice;
 
   const playLevels: Level[] = [];
   let lastBB = 0;
 
   for (const refBB of BB_SEQUENCES[speed]) {
-    const bb = roundToNice(refBB * scale);
+    const bb = round(refBB * scale);
     if (bb <= lastBB) continue; // skip duplicates after rounding
-    const sb = roundToNice(bb / 2);
+    const sb = round(bb / 2);
     if (sb >= bb) continue; // safety: SB must be < BB
-    const ante = anteEnabled ? computeDefaultAnte(bb) : 0;
+    const rawAnte = anteEnabled ? computeDefaultAnte(bb) : 0;
+    const ante = rawAnte > 0 && smallestChip ? round(rawAnte) : rawAnte;
 
     playLevels.push({
       id: generateId(),
@@ -369,10 +408,11 @@ export function estimateAllDurations(
   startingChips: number,
   anteEnabled: boolean,
   playerCount: number,
+  smallestChip?: number,
 ): DurationEstimate[] {
   const speeds: BlindSpeed[] = ['fast', 'normal', 'slow'];
   return speeds.map((speed) => {
-    const allLevels = generateBlindStructure({ startingChips, speed, anteEnabled });
+    const allLevels = generateBlindStructure({ startingChips, speed, anteEnabled, smallestChip });
     const playedLevels = playerCount >= 2
       ? estimatePlayedLevels(allLevels, playerCount, startingChips)
       : allLevels;
