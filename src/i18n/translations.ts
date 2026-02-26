@@ -83,6 +83,7 @@ const de = {
   'playerPanel.reinstateTooltip': 'Eliminierung rückgängig machen',
   'playerPanel.reinstate': 'Zurück',
   'playerPanel.by': 'von',
+  'playerPanel.addOnAvailable': 'Add-On jetzt verfügbar! (einmalig pro Spieler)',
 
   // --- Config Editor ---
   'config.allLevels': 'Alle Levels:',
@@ -333,6 +334,7 @@ const en: Record<TranslationKey, string> = {
   'playerPanel.reinstateTooltip': 'Undo elimination',
   'playerPanel.reinstate': 'Undo',
   'playerPanel.by': 'by',
+  'playerPanel.addOnAvailable': 'Add-On now available! (once per player)',
 
   // --- Config Editor ---
   'config.allLevels': 'All Levels:',

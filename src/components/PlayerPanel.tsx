@@ -127,6 +127,18 @@ export function PlayerPanel({
         </div>
       </div>
 
+      {/* Add-On info banner (shown after rebuy phase ends) */}
+      {addOnConfig.enabled && !rebuyActive && totalAddOns < activePlayers.length && (
+        <div className="px-3 py-2 bg-amber-900/30 border border-amber-700 rounded-lg">
+          <p className="text-amber-300 text-sm font-medium">
+            {t('playerPanel.addOnAvailable')}
+          </p>
+          <p className="text-amber-500/70 text-xs mt-0.5">
+            {addOnConfig.cost} {t('unit.eur')} → +{addOnConfig.chips.toLocaleString()} {t('unit.chips')}
+          </p>
+        </div>
+      )}
+
       {/* Active Players */}
       <div>
         <h3 className="text-xs text-gray-500 uppercase tracking-wider">
@@ -185,8 +197,8 @@ export function PlayerPanel({
                   </div>
                 )}
 
-                {/* Add-On toggle */}
-                {addOnConfig.enabled && (
+                {/* Add-On toggle (only after rebuy phase ends) */}
+                {addOnConfig.enabled && !rebuyActive && (
                   <button
                     onClick={() => onUpdateAddOn(player.id, !player.addOn)}
                     className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
