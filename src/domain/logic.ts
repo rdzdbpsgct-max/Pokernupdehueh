@@ -619,6 +619,16 @@ export const CHIP_COLORS = [
   { hex: '#F97316', de: 'Orange', en: 'Orange' },
   { hex: '#EC4899', de: 'Pink', en: 'Pink' },
   { hex: '#6B7280', de: 'Grau', en: 'Gray' },
+  { hex: '#92400E', de: 'Braun', en: 'Brown' },
+  { hex: '#06B6D4', de: 'Cyan', en: 'Cyan' },
+  { hex: '#B91C1C', de: 'Dunkelrot', en: 'Dark Red' },
+  { hex: '#14532D', de: 'Dunkelgrün', en: 'Dark Green' },
+  { hex: '#1E3A5F', de: 'Dunkelblau', en: 'Dark Blue' },
+  { hex: '#F5F5DC', de: 'Beige', en: 'Beige' },
+  { hex: '#D4AF37', de: 'Gold', en: 'Gold' },
+  { hex: '#C0C0C0', de: 'Silber', en: 'Silver' },
+  { hex: '#7C3AED', de: 'Violett', en: 'Violet' },
+  { hex: '#0EA5E9', de: 'Hellblau', en: 'Light Blue' },
 ] as const;
 
 export interface ChipPreset {
