@@ -298,6 +298,10 @@ const de = {
   'templates.players': '{n} Spieler',
   'templates.levels': '{n} Level',
   'templates.close': 'Schließen',
+  'templates.saveToFile': 'Als Datei speichern',
+  'templates.loadFromFile': 'Aus Datei laden',
+  'templates.invalidFile': 'Ungültige Vorlagendatei.',
+  'templates.browserTemplates': 'Browser-Vorlagen',
 
   // --- Clean View ---
   'game.cleanViewOn': 'Details einblenden',
@@ -613,6 +617,10 @@ const en: Record<TranslationKey, string> = {
   'templates.players': '{n} players',
   'templates.levels': '{n} levels',
   'templates.close': 'Close',
+  'templates.saveToFile': 'Save as File',
+  'templates.loadFromFile': 'Load from File',
+  'templates.invalidFile': 'Invalid template file.',
+  'templates.browserTemplates': 'Browser Templates',
 
   // --- Clean View ---
   'game.cleanViewOn': 'Show details',

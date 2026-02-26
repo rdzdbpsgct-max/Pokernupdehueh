@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (177 tests, single run)
+npm run test         # Vitest run (184 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -138,7 +138,7 @@ public/
 - **Chip-blind compatibility**: `checkBlindChipCompatibility()` detects blind values not expressible with current chip denominations
 - **Duration estimates**: Factor in player count to estimate realistic tournament length
 - **Import/export**: Full config as JSON with backward compatibility for old formats
-- **Tournament templates**: Save/load/delete named configs via localStorage CRUD
+- **Tournament templates**: Save/load/delete named configs via localStorage or local JSON files (File System Access API with download fallback)
 - **Clean View**: Toggle to hide stats, sidebars, and secondary controls during game (keyboard: F)
 - **Auto-start on level jump**: Timer automatically starts when pressing Next/Previous level
 - **Bubble detection**: `isBubble()` and `isInTheMoney()` based on active players vs paid places
@@ -183,7 +183,9 @@ public/
 - **Auto-Start bei Levelwechsel**: Timer startet automatisch bei Weiter/Zurück
 - **Timer-Zuverlässigkeit**: Fix für sporadisches Nicht-Starten bei Levelwechsel (eager interval restart)
 - **iPad-Kompatibilität**: Build-Target auf Safari 14 / ES2020 angepasst, Lade-Fallback in index.html
+- **Vorlagen-Dateien**: Turnier-Vorlagen als JSON-Datei speichern/laden mit nativem Dateidialog (File System Access API) oder Download-Fallback
 - **Text-Korrekturen**: "Nächstes: Pause" statt "Nächstes Pause", Color-Up Banner zeigt "(Chip Race)", lokalisierte Pause-Labels im Blindstruktur-Generator, aktualisierte Chip-Editor-Beschreibung
+- **7 neue Tests**: exportTemplateToJSON, parseTemplateFile Round-Trip und Fehlerbehandlung (184 Tests gesamt)
 
 ### v1.3.0
 

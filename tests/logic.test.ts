@@ -47,6 +47,8 @@ import {
   loadTemplates,
   saveTemplate,
   deleteTemplate,
+  exportTemplateToJSON,
+  parseTemplateFile,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -1848,5 +1850,78 @@ describe('Tournament Templates', () => {
   it('handles corrupt localStorage data gracefully', () => {
     localStorage.setItem('poker-timer-templates', 'not valid json!!!');
     expect(loadTemplates()).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Template File Export/Import
+// ---------------------------------------------------------------------------
+
+describe('exportTemplateToJSON', () => {
+  it('serializes a template with name and config', () => {
+    const config = makeConfig({
+      name: 'Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20, ante: 0 }],
+    });
+    const json = exportTemplateToJSON('My Template', config);
+    const parsed = JSON.parse(json);
+    expect(parsed.name).toBe('My Template');
+    expect(parsed.createdAt).toBeTruthy();
+    expect(parsed.config).toBeDefined();
+    expect(parsed.config.levels).toHaveLength(1);
+  });
+});
+
+describe('parseTemplateFile', () => {
+  it('parses template format (name + config wrapper)', () => {
+    const config = makeConfig({
+      name: 'Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20, ante: 0 }],
+    });
+    const json = JSON.stringify({ name: 'Friday Poker', config });
+    const result = parseTemplateFile(json);
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe('Friday Poker');
+    expect(result!.config.levels).toHaveLength(1);
+  });
+
+  it('parses direct config format (name + levels at top level)', () => {
+    const json = JSON.stringify({
+      name: 'Direct Config',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 }],
+      buyIn: 20,
+      startingChips: 10000,
+    });
+    const result = parseTemplateFile(json);
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe('Direct Config');
+    expect(result!.config.buyIn).toBe(20);
+  });
+
+  it('parses output of exportTemplateToJSON round-trip', () => {
+    const config = makeConfig({
+      name: 'Round Trip',
+      levels: [
+        { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 5 },
+        { id: '2', type: 'break', durationSeconds: 300, label: 'Pause' },
+      ],
+    });
+    const json = exportTemplateToJSON('Round Trip', config);
+    const result = parseTemplateFile(json);
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe('Round Trip');
+    expect(result!.config.levels).toHaveLength(2);
+  });
+
+  it('returns null for invalid JSON', () => {
+    expect(parseTemplateFile('not json')).toBeNull();
+  });
+
+  it('returns null for JSON without levels', () => {
+    expect(parseTemplateFile(JSON.stringify({ name: 'No levels' }))).toBeNull();
+  });
+
+  it('returns null for empty object', () => {
+    expect(parseTemplateFile(JSON.stringify({}))).toBeNull();
   });
 });

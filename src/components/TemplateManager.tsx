@@ -1,8 +1,20 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { TournamentConfig } from '../domain/types';
 import type { TournamentTemplate } from '../domain/logic';
-import { loadTemplates, saveTemplate, deleteTemplate } from '../domain/logic';
+import { loadTemplates, saveTemplate, deleteTemplate, exportTemplateToJSON, parseTemplateFile } from '../domain/logic';
 import { useTranslation } from '../i18n';
+
+// Minimal type for File System Access API (Chromium only)
+interface FilePickerHandle {
+  createWritable(): Promise<{ write(data: string): Promise<void>; close(): Promise<void> }>;
+}
+
+interface WindowWithFilePicker {
+  showSaveFilePicker?: (options: {
+    suggestedName: string;
+    types: { description: string; accept: Record<string, string[]> }[];
+  }) => Promise<FilePickerHandle>;
+}
 
 interface Props {
   config: TournamentConfig;
@@ -15,6 +27,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
   const [templates, setTemplates] = useState<TournamentTemplate[]>(() => loadTemplates());
   const [newName, setNewName] = useState(config.name || '');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [fileError, setFileError] = useState(false);
 
   const handleSave = () => {
     if (!newName.trim()) return;
@@ -33,6 +46,64 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
     onLoad(template.config);
     onClose();
   };
+
+  const handleSaveToFile = useCallback(async () => {
+    const name = newName.trim() || config.name || 'poker-template';
+    const json = exportTemplateToJSON(name, config);
+    const fileName = `${name.replace(/[^a-zA-Z0-9äöüÄÖÜß\-_ ]/g, '')}.json`;
+
+    // Try File System Access API (Chromium) for native save dialog with directory selection
+    const fsWindow = window as unknown as WindowWithFilePicker;
+    if (typeof fsWindow.showSaveFilePicker === 'function') {
+      try {
+        const handle = await fsWindow.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [{ description: 'Poker Template (JSON)', accept: { 'application/json': ['.json'] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        return;
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        // Fall through to download fallback
+      }
+    }
+
+    // Fallback: trigger download (Safari, Firefox)
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [newName, config]);
+
+  const handleLoadFromFile = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const result = parseTemplateFile(text);
+        if (result) {
+          onLoad(result.config);
+          onClose();
+        } else {
+          setFileError(true);
+          setTimeout(() => setFileError(false), 3000);
+        }
+      } catch {
+        setFileError(true);
+        setTimeout(() => setFileError(false), 3000);
+      }
+    };
+    input.click();
+  }, [onLoad, onClose]);
 
   const formatDate = (iso: string) => {
     try {
@@ -69,7 +140,33 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
               {t('templates.save')}
             </button>
           </div>
+          <button
+            onClick={handleSaveToFile}
+            className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <span>↓</span> {t('templates.saveToFile')}
+          </button>
         </div>
+
+        {/* Template list header with file load button */}
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-gray-400 uppercase tracking-wider">
+            {t('templates.browserTemplates')}
+          </label>
+          <button
+            onClick={handleLoadFromFile}
+            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 rounded text-xs font-medium transition-colors flex items-center gap-1"
+          >
+            <span>↑</span> {t('templates.loadFromFile')}
+          </button>
+        </div>
+
+        {/* File error message */}
+        {fileError && (
+          <div className="px-3 py-2 bg-red-900/40 border border-red-700 rounded-lg text-center">
+            <p className="text-red-300 text-xs font-medium">{t('templates.invalidFile')}</p>
+          </div>
+        )}
 
         {/* Template list */}
         <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
