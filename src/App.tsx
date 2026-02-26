@@ -11,14 +11,12 @@ import {
   applyDefaultAntes,
   isRebuyActive,
   computeTournamentElapsedSeconds,
-  computeEstimatedRemainingSeconds,
   computeNextPlacement,
   defaultPayoutForPlayerCount,
   validatePayoutConfig,
   validateConfig,
   snapSpinnerValue,
   computeAverageStack,
-  computePrizePool,
   computeColorUps,
   checkBlindChipCompatibility,
   isBubble,
@@ -44,7 +42,6 @@ import { ChipEditor } from './components/ChipEditor';
 import { ChipSidebar } from './components/ChipSidebar';
 import { TournamentFinished } from './components/TournamentFinished';
 import { BlindGenerator } from './components/BlindGenerator';
-import { TournamentStats } from './components/TournamentStats';
 import { BubbleIndicator } from './components/BubbleIndicator';
 import { TemplateManager } from './components/TemplateManager';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -299,24 +296,6 @@ function App() {
     [config.chips.enabled, config.chips.denominations, config.levels],
   );
 
-  const estimatedRemainingSeconds = useMemo(
-    () => computeEstimatedRemainingSeconds(
-      config.levels,
-      timer.timerState.currentLevelIndex,
-      timer.timerState.remainingSeconds,
-    ),
-    [config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds],
-  );
-
-  const prizePool = useMemo(
-    () => computePrizePool(
-      config.players,
-      config.buyIn,
-      config.rebuy.enabled ? config.rebuy.rebuyCost : undefined,
-      config.addOn.enabled ? config.addOn.cost : undefined,
-    ),
-    [config.players, config.buyIn, config.rebuy.enabled, config.rebuy.rebuyCost, config.addOn.enabled, config.addOn.cost],
-  );
 
   const activePlayerCount = useMemo(
     () => config.players.filter((p) => p.status === 'active').length,
@@ -867,17 +846,6 @@ function App() {
                   isBubble={bubbleActive}
                   showItmFlash={showItmFlash}
                 />
-                {!cleanView && config.players.length > 0 && (
-                  <TournamentStats
-                    players={config.players}
-                    levels={config.levels}
-                    currentLevelIndex={timer.timerState.currentLevelIndex}
-                    averageStack={averageStack}
-                    elapsedSeconds={tournamentElapsed}
-                    estimatedRemainingSeconds={estimatedRemainingSeconds}
-                    prizePool={prizePool}
-                  />
-                )}
                 {!cleanView && (
                   <RebuyStatus
                     active={rebuyActive}

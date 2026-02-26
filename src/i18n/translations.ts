@@ -13,8 +13,8 @@ const de = {
   'app.buyIn': 'Buy-In',
   'app.startingChips': 'Startchips',
   'app.blindStructure': 'Blind-Struktur',
-  'app.withAnte': '✓ mit Ante',
-  'app.withoutAnte': 'ohne Ante',
+  'app.withAnte': 'Ante deaktivieren',
+  'app.withoutAnte': 'Ante aktivieren',
   'app.payout': 'Auszahlung',
   'app.rebuy': 'Rebuy',
   'app.addOn': 'Add-On',
@@ -144,8 +144,8 @@ const de = {
   'payoutEditor.sum': 'Summe:',
 
   // --- Rebuy Editor ---
-  'rebuyEditor.enabled': '✓ Rebuy aktiviert',
-  'rebuyEditor.disabled': 'Rebuy deaktiviert',
+  'rebuyEditor.enabled': 'Rebuy deaktivieren',
+  'rebuyEditor.disabled': 'Rebuy aktivieren',
   'rebuyEditor.cost': 'Kosten',
   'rebuyEditor.chips': 'Chips',
   'rebuyEditor.byLevels': 'Nach Levels',
@@ -162,8 +162,8 @@ const de = {
   'rebuyStatus.ended': 'Rebuy beendet',
 
   // --- Add-On Editor ---
-  'addOnEditor.enabled': '✓ Add-On aktiviert',
-  'addOnEditor.disabled': 'Add-On deaktiviert',
+  'addOnEditor.enabled': 'Add-On deaktivieren',
+  'addOnEditor.disabled': 'Add-On aktivieren',
   'addOnEditor.cost': 'Kosten',
   'addOnEditor.chips': 'Chips',
   'addOnEditor.description': 'Jeder Spieler kann einmalig ein Add-On kaufen (zusätzliche Chips, unabhängig vom Bustout).',
@@ -171,15 +171,15 @@ const de = {
   'addOnEditor.enableRebuy': 'Rebuy aktivieren',
 
   // --- Bounty Editor ---
-  'bountyEditor.enabled': 'Bounty aktiviert',
-  'bountyEditor.disabled': 'Bounty deaktiviert',
+  'bountyEditor.enabled': 'Bounty deaktivieren',
+  'bountyEditor.disabled': 'Bounty aktivieren',
   'bountyEditor.perKnockout': 'Bounty pro Knockout',
   'bountyEditor.description': 'Jeder Spieler hat ein Bounty auf seinem Kopf. Wer einen Spieler eliminiert, erhält dessen Bounty-Betrag.',
 
   // --- Chip Editor ---
   'app.chips': 'Chip-Werte',
-  'chipEditor.enabled': '✓ Chip-Werte aktiviert',
-  'chipEditor.disabled': 'Chip-Werte deaktiviert',
+  'chipEditor.enabled': 'Chip-Werte deaktivieren',
+  'chipEditor.disabled': 'Chip-Werte aktivieren',
   'chipEditor.presets': 'Chip-Set wählen',
   'chipEditor.preset4': '4 Farben',
   'chipEditor.preset4Desc': 'Weiß, Rot, Grün, Schwarz',
@@ -195,8 +195,8 @@ const de = {
   'chipEditor.noColorUps': 'Keine Color-Ups nötig',
   'chipEditor.description': 'Definiere die Chip-Farben und -Werte. Color-Ups werden automatisch berechnet.',
   'chipEditor.duplicateColor': 'Achtung: Mehrere Chips mit gleicher Farbe!',
-  'chipEditor.colorUpEnabled': '✓ Color-Up aktiviert',
-  'chipEditor.colorUpDisabled': 'Color-Up deaktiviert',
+  'chipEditor.colorUpEnabled': 'Color-Up deaktivieren',
+  'chipEditor.colorUpDisabled': 'Color-Up aktivieren',
 
   // --- Chip Sidebar (Game) ---
   'chipSidebar.title': 'Chips',
@@ -291,8 +291,8 @@ const de = {
   'templates.close': 'Schließen',
 
   // --- Clean View ---
-  'game.cleanViewOn': '✓ Fokus (Details ausblenden)',
-  'game.cleanViewOff': '◎ Fokus (Details ausblenden)',
+  'game.cleanViewOn': 'Details einblenden',
+  'game.cleanViewOff': 'Details ausblenden',
 
   // --- Screenshot/Share ---
   'finished.shareResults': 'Ergebnis teilen / Screenshot',
@@ -319,8 +319,8 @@ const en: Record<TranslationKey, string> = {
   'app.buyIn': 'Buy-In',
   'app.startingChips': 'Starting Chips',
   'app.blindStructure': 'Blind Structure',
-  'app.withAnte': '✓ with Ante',
-  'app.withoutAnte': 'without Ante',
+  'app.withAnte': 'Disable Ante',
+  'app.withoutAnte': 'Enable Ante',
   'app.payout': 'Payout',
   'app.rebuy': 'Rebuy',
   'app.addOn': 'Add-On',
@@ -450,8 +450,8 @@ const en: Record<TranslationKey, string> = {
   'payoutEditor.sum': 'Total:',
 
   // --- Rebuy Editor ---
-  'rebuyEditor.enabled': '✓ Rebuy enabled',
-  'rebuyEditor.disabled': 'Rebuy disabled',
+  'rebuyEditor.enabled': 'Disable Rebuy',
+  'rebuyEditor.disabled': 'Enable Rebuy',
   'rebuyEditor.cost': 'Cost',
   'rebuyEditor.chips': 'Chips',
   'rebuyEditor.byLevels': 'By Levels',
@@ -468,8 +468,8 @@ const en: Record<TranslationKey, string> = {
   'rebuyStatus.ended': 'Rebuy ended',
 
   // --- Add-On Editor ---
-  'addOnEditor.enabled': '✓ Add-On enabled',
-  'addOnEditor.disabled': 'Add-On disabled',
+  'addOnEditor.enabled': 'Disable Add-On',
+  'addOnEditor.disabled': 'Enable Add-On',
   'addOnEditor.cost': 'Cost',
   'addOnEditor.chips': 'Chips',
   'addOnEditor.description': 'Each player can purchase one add-on (extra chips, regardless of bustout).',
@@ -477,15 +477,15 @@ const en: Record<TranslationKey, string> = {
   'addOnEditor.enableRebuy': 'Enable Rebuy',
 
   // --- Bounty Editor ---
-  'bountyEditor.enabled': 'Bounty enabled',
-  'bountyEditor.disabled': 'Bounty disabled',
+  'bountyEditor.enabled': 'Disable Bounty',
+  'bountyEditor.disabled': 'Enable Bounty',
   'bountyEditor.perKnockout': 'Bounty per Knockout',
   'bountyEditor.description': 'Every player has a bounty on their head. Eliminating a player earns you their bounty.',
 
   // --- Chip Editor ---
   'app.chips': 'Chip Values',
-  'chipEditor.enabled': '✓ Chip values enabled',
-  'chipEditor.disabled': 'Chip values disabled',
+  'chipEditor.enabled': 'Disable Chip Values',
+  'chipEditor.disabled': 'Enable Chip Values',
   'chipEditor.presets': 'Choose chip set',
   'chipEditor.preset4': '4 Colors',
   'chipEditor.preset4Desc': 'White, Red, Green, Black',
@@ -501,8 +501,8 @@ const en: Record<TranslationKey, string> = {
   'chipEditor.noColorUps': 'No color-ups needed',
   'chipEditor.description': 'Define chip colors and values. Color-ups are calculated automatically.',
   'chipEditor.duplicateColor': 'Warning: Multiple chips with the same color!',
-  'chipEditor.colorUpEnabled': '✓ Color-Up enabled',
-  'chipEditor.colorUpDisabled': 'Color-Up disabled',
+  'chipEditor.colorUpEnabled': 'Disable Color-Up',
+  'chipEditor.colorUpDisabled': 'Enable Color-Up',
 
   // --- Chip Sidebar (Game) ---
   'chipSidebar.title': 'Chips',
@@ -597,8 +597,8 @@ const en: Record<TranslationKey, string> = {
   'templates.close': 'Close',
 
   // --- Clean View ---
-  'game.cleanViewOn': '✓ Focus (hide details)',
-  'game.cleanViewOff': '◎ Focus (hide details)',
+  'game.cleanViewOn': 'Show details',
+  'game.cleanViewOff': 'Hide details',
 
   // --- Screenshot/Share ---
   'finished.shareResults': 'Share Results / Screenshot',
