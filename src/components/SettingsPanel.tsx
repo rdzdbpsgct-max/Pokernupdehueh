@@ -7,6 +7,28 @@ interface Props {
   onToggleFullscreen: () => void;
 }
 
+function CheckBox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className={`w-5 h-5 rounded flex items-center justify-center shrink-0 transition-colors ${
+        checked
+          ? 'bg-emerald-500'
+          : 'bg-gray-700 border border-gray-600'
+      }`}
+    >
+      {checked && (
+        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props) {
   const { t } = useTranslation();
 
@@ -18,42 +40,22 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
     <div className="space-y-3">
       <h3 className="text-xs text-gray-500 uppercase tracking-wider">{t('settings.title')}</h3>
       <div className="space-y-2">
-        <label className="flex items-center justify-between cursor-pointer">
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('soundEnabled')}>
           <span className="text-sm text-gray-300">{t('settings.sound')}</span>
-          <input
-            type="checkbox"
-            checked={settings.soundEnabled}
-            onChange={() => toggle('soundEnabled')}
-            className="w-4 h-4 accent-emerald-500"
-          />
-        </label>
-        <label className="flex items-center justify-between cursor-pointer">
+          <CheckBox checked={settings.soundEnabled} onChange={() => toggle('soundEnabled')} />
+        </div>
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('countdownEnabled')}>
           <span className="text-sm text-gray-300">{t('settings.countdown')}</span>
-          <input
-            type="checkbox"
-            checked={settings.countdownEnabled}
-            onChange={() => toggle('countdownEnabled')}
-            className="w-4 h-4 accent-emerald-500"
-          />
-        </label>
-        <label className="flex items-center justify-between cursor-pointer">
+          <CheckBox checked={settings.countdownEnabled} onChange={() => toggle('countdownEnabled')} />
+        </div>
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('autoAdvance')}>
           <span className="text-sm text-gray-300">{t('settings.autoAdvance')}</span>
-          <input
-            type="checkbox"
-            checked={settings.autoAdvance}
-            onChange={() => toggle('autoAdvance')}
-            className="w-4 h-4 accent-emerald-500"
-          />
-        </label>
-        <label className="flex items-center justify-between cursor-pointer">
+          <CheckBox checked={settings.autoAdvance} onChange={() => toggle('autoAdvance')} />
+        </div>
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('largeDisplay')}>
           <span className="text-sm text-gray-300">{t('settings.largeDisplay')}</span>
-          <input
-            type="checkbox"
-            checked={settings.largeDisplay}
-            onChange={() => toggle('largeDisplay')}
-            className="w-4 h-4 accent-emerald-500"
-          />
-        </label>
+          <CheckBox checked={settings.largeDisplay} onChange={() => toggle('largeDisplay')} />
+        </div>
         <button
           onClick={onToggleFullscreen}
           className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-sm font-medium transition-colors text-left"
