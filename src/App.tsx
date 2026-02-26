@@ -64,6 +64,9 @@ function App() {
 
   const timer = useTimer(config.levels, settings);
 
+  // Track the level where rebuy ended (for one-level add-on window)
+  const [addOnEndLevelIndex, setAddOnEndLevelIndex] = useState<number | null>(null);
+
   // Rename default player names when language changes
   const defaultNamePattern = /^(Spieler|Player) (\d+)$/;
   useEffect(() => {
@@ -231,6 +234,28 @@ function App() {
     [config.rebuy, timer.timerState.currentLevelIndex, config.levels, tournamentElapsed],
   );
 
+  // Detect when rebuy phase ends → open add-on window for that level only
+  const prevRebuyActive = useRef(rebuyActive);
+  useEffect(() => {
+    if (prevRebuyActive.current && !rebuyActive && config.addOn.enabled) {
+      setAddOnEndLevelIndex(timer.timerState.currentLevelIndex);
+    }
+    prevRebuyActive.current = rebuyActive;
+  }, [rebuyActive, config.addOn.enabled, timer.timerState.currentLevelIndex]);
+
+  // If rebuy is not enabled but add-on is, open add-on in level 0
+  useEffect(() => {
+    if (mode === 'game' && config.addOn.enabled && !config.rebuy.enabled && addOnEndLevelIndex === null) {
+      setAddOnEndLevelIndex(0);
+    }
+  }, [mode, config.addOn.enabled, config.rebuy.enabled, addOnEndLevelIndex]);
+
+  // Add-On window is open only in the level where it was activated
+  const addOnWindowOpen = config.addOn.enabled
+    && !rebuyActive
+    && addOnEndLevelIndex !== null
+    && timer.timerState.currentLevelIndex === addOnEndLevelIndex;
+
   const currentPlayLevel = useMemo(() => {
     return config.levels
       .slice(0, timer.timerState.currentLevelIndex + 1)
@@ -308,12 +333,14 @@ function App() {
         knockouts: 0,
       })),
     }));
+    setAddOnEndLevelIndex(null);
     setMode('game');
     timer.restart();
   };
 
   const switchToSetup = () => {
     timer.restart();
+    setAddOnEndLevelIndex(null);
     setMode('setup');
   };
 
@@ -643,6 +670,7 @@ function App() {
                   rebuyActive={rebuyActive}
                   rebuyConfig={config.rebuy}
                   addOnConfig={config.addOn}
+                  addOnWindowOpen={addOnWindowOpen}
                   bountyConfig={config.bounty}
                   averageStack={averageStack}
                   onUpdateRebuys={updatePlayerRebuys}

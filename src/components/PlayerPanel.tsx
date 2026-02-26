@@ -12,6 +12,7 @@ interface Props {
   rebuyActive: boolean;
   rebuyConfig: RebuyConfig;
   addOnConfig: AddOnConfig;
+  addOnWindowOpen: boolean;
   bountyConfig: BountyConfig;
   averageStack: number;
   onUpdateRebuys: (playerId: string, newCount: number) => void;
@@ -29,6 +30,7 @@ export function PlayerPanel({
   rebuyActive,
   rebuyConfig,
   addOnConfig,
+  addOnWindowOpen,
   bountyConfig,
   averageStack,
   onUpdateRebuys,
@@ -128,7 +130,7 @@ export function PlayerPanel({
       </div>
 
       {/* Add-On info banner (shown after rebuy phase ends) */}
-      {addOnConfig.enabled && !rebuyActive && totalAddOns < activePlayers.length && (
+      {addOnWindowOpen && totalAddOns < activePlayers.length && (
         <div className="px-3 py-2 bg-amber-900/30 border border-amber-700 rounded-lg">
           <p className="text-amber-300 text-sm font-medium">
             {t('playerPanel.addOnAvailable')}
@@ -198,7 +200,7 @@ export function PlayerPanel({
                 )}
 
                 {/* Add-On toggle (only after rebuy phase ends) */}
-                {addOnConfig.enabled && !rebuyActive && (
+                {addOnWindowOpen && (
                   <button
                     onClick={() => onUpdateAddOn(player.id, !player.addOn)}
                     className={`px-2 py-1 rounded text-xs font-medium transition-colors ${

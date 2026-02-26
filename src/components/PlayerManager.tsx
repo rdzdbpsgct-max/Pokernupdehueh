@@ -18,6 +18,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
   const [countInput, setCountInput] = useState(String(players.length));
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [showShuffleConfirm, setShowShuffleConfirm] = useState(false);
 
   const setPlayerCount = (count: number) => {
     const clamped = Math.max(2, Math.min(20, count));
@@ -205,14 +206,38 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
         </div>
       )}
 
-      {/* Shuffle button */}
-      {players.length >= 2 && (
+      {/* Shuffle button + confirmation */}
+      {players.length >= 2 && !showShuffleConfirm && (
         <button
-          onClick={handleShuffle}
+          onClick={() => setShowShuffleConfirm(true)}
           className="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded-lg text-sm font-medium transition-colors"
         >
           🔀 {t('playerManager.shuffle')}
         </button>
+      )}
+      {showShuffleConfirm && (
+        <div className="px-3 py-3 bg-amber-900/20 border border-amber-800 rounded-lg space-y-2">
+          <p className="text-sm text-amber-300 font-medium">
+            {t('playerManager.shuffleConfirm')}
+          </p>
+          <p className="text-xs text-amber-500/70">
+            {t('playerManager.shuffleWarning')}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowShuffleConfirm(false)}
+              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
+            >
+              {t('app.cancel')}
+            </button>
+            <button
+              onClick={() => { handleShuffle(); setShowShuffleConfirm(false); }}
+              className="flex-1 px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-medium transition-colors"
+            >
+              🔀 {t('playerManager.shuffleConfirmBtn')}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
