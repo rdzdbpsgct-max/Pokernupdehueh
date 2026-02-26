@@ -220,6 +220,130 @@ export function shufflePlayers(players: Player[]): { players: Player[]; dealerIn
 }
 
 // ---------------------------------------------------------------------------
+// Blind Structure Generator
+// ---------------------------------------------------------------------------
+
+/**
+ * Round a value to a "nice" poker-friendly number.
+ */
+export function roundToNice(value: number): number {
+  if (value <= 0) return 0;
+  if (value <= 10) return Math.max(1, Math.round(value));
+  if (value <= 50) return Math.round(value / 5) * 5;
+  if (value <= 200) return Math.round(value / 25) * 25;
+  if (value <= 1000) return Math.round(value / 50) * 50;
+  if (value <= 5000) return Math.round(value / 100) * 100;
+  return Math.round(value / 500) * 500;
+}
+
+/** BB multipliers relative to base unit (startingChips / 100) */
+const REFERENCE_BB_SEQUENCE = [
+  1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 40, 60, 80, 120, 160,
+];
+
+export type BlindSpeed = 'fast' | 'normal' | 'slow';
+
+interface SpeedConfig {
+  key: BlindSpeed;
+  levelDurationSeconds: number;
+  breakDurationSeconds: number;
+  breakEveryNLevels: number;
+}
+
+const SPEED_CONFIGS: Record<BlindSpeed, SpeedConfig> = {
+  fast:   { key: 'fast',   levelDurationSeconds: 360,  breakDurationSeconds: 300, breakEveryNLevels: 4 },
+  normal: { key: 'normal', levelDurationSeconds: 720,  breakDurationSeconds: 600, breakEveryNLevels: 4 },
+  slow:   { key: 'slow',   levelDurationSeconds: 1200, breakDurationSeconds: 600, breakEveryNLevels: 4 },
+};
+
+export interface GenerateBlindParams {
+  startingChips: number;
+  speed: BlindSpeed;
+  anteEnabled: boolean;
+}
+
+/**
+ * Generate a complete blind structure based on starting chips and speed.
+ */
+export function generateBlindStructure(params: GenerateBlindParams): Level[] {
+  const { startingChips, speed, anteEnabled } = params;
+  const cfg = SPEED_CONFIGS[speed];
+  const baseUnit = startingChips / 100;
+
+  // Build play levels from the reference sequence
+  const playLevels: Level[] = [];
+  let lastBB = 0;
+
+  for (const mult of REFERENCE_BB_SEQUENCE) {
+    const rawBB = baseUnit * mult;
+    const bb = roundToNice(rawBB);
+    if (bb <= lastBB) continue; // skip duplicates
+    const sb = roundToNice(bb / 2);
+    if (sb >= bb) continue; // safety: SB must be < BB
+    const ante = anteEnabled ? computeDefaultAnte(bb) : 0;
+
+    playLevels.push({
+      id: generateId(),
+      type: 'level',
+      durationSeconds: cfg.levelDurationSeconds,
+      smallBlind: sb,
+      bigBlind: bb,
+      ante,
+    });
+    lastBB = bb;
+  }
+
+  // Insert breaks every N play levels
+  const levels: Level[] = [];
+  let playCount = 0;
+  for (const level of playLevels) {
+    if (playCount > 0 && playCount % cfg.breakEveryNLevels === 0) {
+      levels.push({
+        id: generateId(),
+        type: 'break',
+        durationSeconds: cfg.breakDurationSeconds,
+        label: 'Pause',
+      });
+    }
+    levels.push(level);
+    playCount++;
+  }
+
+  return levels;
+}
+
+/**
+ * Estimate total duration of a level array in seconds.
+ */
+export function estimateDuration(levels: Level[]): number {
+  return levels.reduce((sum, l) => sum + l.durationSeconds, 0);
+}
+
+export interface DurationEstimate {
+  speed: BlindSpeed;
+  levels: Level[];
+  totalSeconds: number;
+}
+
+/**
+ * Estimate durations for all 3 speed configs.
+ */
+export function estimateAllDurations(
+  startingChips: number,
+  anteEnabled: boolean,
+): DurationEstimate[] {
+  const speeds: BlindSpeed[] = ['fast', 'normal', 'slow'];
+  return speeds.map((speed) => {
+    const levels = generateBlindStructure({ startingChips, speed, anteEnabled });
+    return {
+      speed,
+      levels,
+      totalSeconds: estimateDuration(levels),
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Payout
 // ---------------------------------------------------------------------------
 
@@ -487,7 +611,21 @@ function isDenominationNeeded(
 }
 
 /**
+ * Find the next break at or after the given level index.
+ * Returns the break's level index, or null if no break follows.
+ */
+function findNextBreak(levels: Level[], fromIndex: number): number | null {
+  for (let i = fromIndex; i < levels.length; i++) {
+    if (levels[i].type === 'break') return i;
+  }
+  return null;
+}
+
+/**
  * Compute color-up events for the blind structure.
+ * Color-ups are shifted to the next break (pause) after the level where
+ * a denomination becomes unnecessary — this matches real tournament practice
+ * where chip races happen during breaks.
  * Returns a Map: levelIndex → denominations to remove at that level.
  */
 export function computeColorUps(
@@ -520,9 +658,12 @@ export function computeColorUps(
 
       if (!isDenominationNeeded(denom.value, activeDenoms, futureValues)) {
         removedIds.add(denom.id);
-        const existing = result.get(levelIdx) ?? [];
+        // Shift color-up to the next break, or keep at the level if no break follows
+        const breakIdx = findNextBreak(levels, levelIdx);
+        const targetIdx = breakIdx ?? levelIdx;
+        const existing = result.get(targetIdx) ?? [];
         existing.push(denom);
-        result.set(levelIdx, existing);
+        result.set(targetIdx, existing);
         break;
       }
     }

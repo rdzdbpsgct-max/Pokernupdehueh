@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { AddOnConfig } from '../domain/types';
 import { snapSpinnerValue } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -7,15 +8,36 @@ interface Props {
   onChange: (addOn: AddOnConfig) => void;
   buyIn: number;
   startingChips: number;
+  rebuyEnabled: boolean;
+  onEnableRebuy: () => void;
 }
 
-export function AddOnEditor({ addOn, onChange, buyIn, startingChips }: Props) {
+export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnabled, onEnableRebuy }: Props) {
   const { t } = useTranslation();
+  const [showRebuyHint, setShowRebuyHint] = useState(false);
 
   const toggle = () => {
+    if (!addOn.enabled && !rebuyEnabled) {
+      // Trying to enable Add-On without Rebuy → show hint
+      setShowRebuyHint(true);
+      return;
+    }
+    setShowRebuyHint(false);
     onChange({
       ...addOn,
       enabled: !addOn.enabled,
+      cost: addOn.cost || buyIn,
+      chips: addOn.chips || startingChips,
+    });
+  };
+
+  const handleEnableRebuy = () => {
+    onEnableRebuy();
+    setShowRebuyHint(false);
+    // Now enable add-on too
+    onChange({
+      ...addOn,
+      enabled: true,
       cost: addOn.cost || buyIn,
       chips: addOn.chips || startingChips,
     });
@@ -34,6 +56,29 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips }: Props) {
       >
         {addOn.enabled ? t('addOnEditor.enabled') : t('addOnEditor.disabled')}
       </button>
+
+      {/* Rebuy required hint */}
+      {showRebuyHint && (
+        <div className="px-3 py-3 bg-amber-900/20 border border-amber-800 rounded-lg space-y-2">
+          <p className="text-sm text-amber-300 font-medium">
+            {t('addOnEditor.requiresRebuy')}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowRebuyHint(false)}
+              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
+            >
+              {t('app.cancel')}
+            </button>
+            <button
+              onClick={handleEnableRebuy}
+              className="flex-1 px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-medium transition-colors"
+            >
+              {t('addOnEditor.enableRebuy')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Settings (only when enabled) */}
       {addOn.enabled && (

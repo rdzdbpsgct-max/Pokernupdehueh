@@ -174,6 +174,8 @@ const de = {
   'addOnEditor.cost': 'Kosten',
   'addOnEditor.chips': 'Chips',
   'addOnEditor.description': 'Jeder Spieler kann einmalig ein Add-On kaufen (zusätzliche Chips, unabhängig vom Bustout).',
+  'addOnEditor.requiresRebuy': 'Add-On ist nur in Rebuy-Turnieren verfügbar. Soll Rebuy aktiviert werden?',
+  'addOnEditor.enableRebuy': 'Rebuy aktivieren',
 
   // --- Bounty Editor ---
   'bountyEditor.enabled': 'Bounty aktiviert',
@@ -196,13 +198,16 @@ const de = {
   'chipEditor.addDenomination': '+ Chip hinzufügen',
   'chipEditor.colorUpPreview': 'Color-Up Vorschau',
   'chipEditor.colorUpAtLevel': 'Level {level}: {chips} entfernen',
+  'chipEditor.colorUpAtBreak': 'Pause nach Level {level}: {chips} entfernen',
   'chipEditor.noColorUps': 'Keine Color-Ups nötig',
   'chipEditor.description': 'Definiere die Chip-Farben und -Werte. Color-Ups werden automatisch berechnet.',
+  'chipEditor.duplicateColor': 'Achtung: Mehrere Chips mit gleicher Farbe!',
 
   // --- Chip Sidebar (Game) ---
   'chipSidebar.title': 'Chips',
   'chipSidebar.nextColorUp': 'Nächstes Color-Up',
   'chipSidebar.atLevel': 'bei Level {level}',
+  'chipSidebar.atBreak': 'Pause nach Level {level}',
   'chipSidebar.noMore': 'Keine weiteren Color-Ups',
 
   // --- Color-Up Banner ---
@@ -246,6 +251,21 @@ const de = {
   'logic.maxPayoutPlaces': 'Maximal {max} Auszahlungsplätze möglich (Anzahl Spieler: {max})',
   'logic.valueMustNotBeNegative': 'Platz {place}: Wert darf nicht negativ sein',
   'logic.percentMustBe100': 'Prozente müssen 100% ergeben (aktuell: {sum}%)',
+
+  // --- Blind Generator ---
+  'blindGenerator.title': 'Blindstruktur generieren',
+  'blindGenerator.fast': 'Schnell',
+  'blindGenerator.normal': 'Normal',
+  'blindGenerator.slow': 'Langsam',
+  'blindGenerator.fastDesc': '6 Min/Level',
+  'blindGenerator.normalDesc': '12 Min/Level',
+  'blindGenerator.slowDesc': '20 Min/Level',
+  'blindGenerator.estimated': 'Geschätzte Dauer',
+  'blindGenerator.duration': 'ca. {h}h {m}min',
+  'blindGenerator.levels': '{n} Level + {b} Pausen',
+  'blindGenerator.preview': 'Vorschau',
+  'blindGenerator.apply': 'Blindstruktur übernehmen',
+  'blindGenerator.break': 'Pause',
 
   // --- Units ---
   'unit.eur': 'EUR',
@@ -428,6 +448,8 @@ const en: Record<TranslationKey, string> = {
   'addOnEditor.cost': 'Cost',
   'addOnEditor.chips': 'Chips',
   'addOnEditor.description': 'Each player can purchase one add-on (extra chips, regardless of bustout).',
+  'addOnEditor.requiresRebuy': 'Add-On is only available in rebuy tournaments. Enable Rebuy?',
+  'addOnEditor.enableRebuy': 'Enable Rebuy',
 
   // --- Bounty Editor ---
   'bountyEditor.enabled': 'Bounty enabled',
@@ -450,13 +472,16 @@ const en: Record<TranslationKey, string> = {
   'chipEditor.addDenomination': '+ Add chip',
   'chipEditor.colorUpPreview': 'Color-Up Preview',
   'chipEditor.colorUpAtLevel': 'Level {level}: remove {chips}',
+  'chipEditor.colorUpAtBreak': 'Break after Level {level}: remove {chips}',
   'chipEditor.noColorUps': 'No color-ups needed',
   'chipEditor.description': 'Define chip colors and values. Color-ups are calculated automatically.',
+  'chipEditor.duplicateColor': 'Warning: Multiple chips with the same color!',
 
   // --- Chip Sidebar (Game) ---
   'chipSidebar.title': 'Chips',
   'chipSidebar.nextColorUp': 'Next Color-Up',
   'chipSidebar.atLevel': 'at Level {level}',
+  'chipSidebar.atBreak': 'break after Level {level}',
   'chipSidebar.noMore': 'No more color-ups',
 
   // --- Color-Up Banner ---
@@ -500,6 +525,21 @@ const en: Record<TranslationKey, string> = {
   'logic.maxPayoutPlaces': 'Maximum {max} payout places allowed (players: {max})',
   'logic.valueMustNotBeNegative': 'Place {place}: Value must not be negative',
   'logic.percentMustBe100': 'Percentages must add up to 100% (currently: {sum}%)',
+
+  // --- Blind Generator ---
+  'blindGenerator.title': 'Generate Blind Structure',
+  'blindGenerator.fast': 'Fast',
+  'blindGenerator.normal': 'Normal',
+  'blindGenerator.slow': 'Slow',
+  'blindGenerator.fastDesc': '6 min/level',
+  'blindGenerator.normalDesc': '12 min/level',
+  'blindGenerator.slowDesc': '20 min/level',
+  'blindGenerator.estimated': 'Estimated Duration',
+  'blindGenerator.duration': '~{h}h {m}min',
+  'blindGenerator.levels': '{n} levels + {b} breaks',
+  'blindGenerator.preview': 'Preview',
+  'blindGenerator.apply': 'Apply Blind Structure',
+  'blindGenerator.break': 'Break',
 
   // --- Units ---
   'unit.eur': 'EUR',

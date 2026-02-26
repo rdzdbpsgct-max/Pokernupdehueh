@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { ChipConfig, ChipDenomination, Level } from '../domain/types';
 import {
   generateChipId,
@@ -15,21 +15,34 @@ interface Props {
   levels: Level[];
 }
 
+/** Sort denominations by value (ascending) and return new config. */
+function sortedChipConfig(config: ChipConfig): ChipConfig {
+  const sorted = [...config.denominations].sort((a, b) => a.value - b.value);
+  // Only create new object if order actually changed
+  const changed = sorted.some((d, i) => d.id !== config.denominations[i].id);
+  return changed ? { ...config, denominations: sorted } : config;
+}
+
 export function ChipEditor({ chips, onChange, levels }: Props) {
   const { t, language } = useTranslation();
   const [editingColorId, setEditingColorId] = useState<string | null>(null);
 
+  // Auto-sort wrapper: every change automatically sorts by value
+  const emitChange = (config: ChipConfig) => {
+    onChange(sortedChipConfig(config));
+  };
+
   const toggle = () => {
     const newEnabled = !chips.enabled;
     if (newEnabled && chips.denominations.length === 0) {
-      onChange(applyChipPreset(chipPresets[1]));
+      emitChange(applyChipPreset(chipPresets[1]));
     } else {
-      onChange({ ...chips, enabled: newEnabled });
+      emitChange({ ...chips, enabled: newEnabled });
     }
   };
 
   const updateDenomination = (id: string, partial: Partial<ChipDenomination>) => {
-    onChange({
+    emitChange({
       ...chips,
       denominations: chips.denominations.map((d) =>
         d.id === id ? { ...d, ...partial } : d,
@@ -38,7 +51,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
   };
 
   const removeDenomination = (id: string) => {
-    onChange({
+    emitChange({
       ...chips,
       denominations: chips.denominations.filter((d) => d.id !== id),
     });
@@ -50,7 +63,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
     const available = CHIP_COLORS.find((c) => !usedColors.has(c.hex));
     const color = available ?? CHIP_COLORS[0];
     const maxVal = chips.denominations.reduce((m, d) => Math.max(m, d.value), 0);
-    onChange({
+    emitChange({
       ...chips,
       denominations: [
         ...chips.denominations,
@@ -64,6 +77,21 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
     });
   };
 
+  // Detect duplicate colors
+  const duplicateColors = useMemo(() => {
+    const colorCount = new Map<string, number>();
+    for (const d of chips.denominations) {
+      colorCount.set(d.color, (colorCount.get(d.color) ?? 0) + 1);
+    }
+    const dupes = new Set<string>();
+    for (const [color, count] of colorCount) {
+      if (count > 1) dupes.add(color);
+    }
+    return dupes;
+  }, [chips.denominations]);
+
+  // Display sorted (chips.denominations is already sorted after emitChange, but
+  // on first render it may not be — use a sorted view just in case)
   const sorted = [...chips.denominations].sort((a, b) => a.value - b.value);
 
   const presetKeys = ['4', '5', '6'] as const;
@@ -94,7 +122,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
               {chipPresets.map((p, i) => (
                 <button
                   key={p.key}
-                  onClick={() => onChange(applyChipPreset(p))}
+                  onClick={() => emitChange(applyChipPreset(p))}
                   className="flex flex-col items-start px-3 py-2 bg-gray-800 hover:bg-gray-700
                              border border-gray-700 hover:border-emerald-600 rounded-lg
                              transition-colors text-left"
@@ -110,17 +138,32 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
             </div>
           </div>
 
+          {/* Duplicate color warning */}
+          {duplicateColors.size > 0 && (
+            <div className="px-3 py-2 bg-amber-900/20 border border-amber-800 rounded-lg">
+              <p className="text-amber-300 text-xs font-medium">
+                {t('chipEditor.duplicateColor')}
+              </p>
+            </div>
+          )}
+
           {/* Denomination list */}
           <div className="space-y-1">
-            {sorted.map((denom) => (
+            {sorted.map((denom) => {
+              const isDuplicate = duplicateColors.has(denom.color);
+              return (
               <div key={denom.id}>
-                <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-800/50 rounded">
+                <div className={`flex items-center gap-2 px-2 py-1.5 bg-gray-800/50 rounded ${
+                  isDuplicate ? 'ring-1 ring-amber-600/50' : ''
+                }`}>
                   {/* Color swatch */}
                   <button
                     onClick={() =>
                       setEditingColorId(editingColorId === denom.id ? null : denom.id)
                     }
-                    className="w-6 h-6 rounded-full border-2 border-gray-600 shrink-0 hover:border-gray-400 transition-colors"
+                    className={`w-6 h-6 rounded-full border-2 shrink-0 hover:border-gray-400 transition-colors ${
+                      isDuplicate ? 'border-amber-500' : 'border-gray-600'
+                    }`}
                     style={{ backgroundColor: denom.color }}
                     title={denom.label}
                   />
@@ -155,29 +198,37 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                 {/* Inline color palette */}
                 {editingColorId === denom.id && (
                   <div className="flex flex-wrap gap-1.5 pl-8 py-1">
-                    {CHIP_COLORS.map((c) => (
-                      <button
-                        key={c.hex}
-                        onClick={() => {
-                          updateDenomination(denom.id, {
-                            color: c.hex,
-                            label: language === 'de' ? c.de : c.en,
-                          });
-                          setEditingColorId(null);
-                        }}
-                        className={`w-7 h-7 rounded-full border-2 transition-colors ${
-                          denom.color === c.hex
-                            ? 'border-emerald-400 ring-1 ring-emerald-400'
-                            : 'border-gray-600 hover:border-gray-400'
-                        }`}
-                        style={{ backgroundColor: c.hex }}
-                        title={language === 'de' ? c.de : c.en}
-                      />
-                    ))}
+                    {CHIP_COLORS.map((c) => {
+                      const isUsedByOther = chips.denominations.some(
+                        (d) => d.id !== denom.id && d.color === c.hex,
+                      );
+                      return (
+                        <button
+                          key={c.hex}
+                          onClick={() => {
+                            updateDenomination(denom.id, {
+                              color: c.hex,
+                              label: language === 'de' ? c.de : c.en,
+                            });
+                            setEditingColorId(null);
+                          }}
+                          className={`w-7 h-7 rounded-full border-2 transition-colors relative ${
+                            denom.color === c.hex
+                              ? 'border-emerald-400 ring-1 ring-emerald-400'
+                              : isUsedByOther
+                                ? 'border-amber-500/50 opacity-50'
+                                : 'border-gray-600 hover:border-gray-400'
+                          }`}
+                          style={{ backgroundColor: c.hex }}
+                          title={language === 'de' ? c.de : c.en}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Add denomination button */}
@@ -225,6 +276,8 @@ function ColorUpPreview({
   return (
     <div className="space-y-1">
       {entries.map(([levelIdx, denoms]) => {
+        const targetLevel = levels[levelIdx];
+        const isBreak = targetLevel?.type === 'break';
         const playLevelNumber = levels
           .slice(0, levelIdx + 1)
           .filter((l) => l.type === 'level').length;
@@ -239,7 +292,9 @@ function ColorUpPreview({
               />
             ))}
             <span className="text-amber-400">
-              {t('chipEditor.colorUpAtLevel', { level: playLevelNumber, chips: chipNames })}
+              {isBreak
+                ? t('chipEditor.colorUpAtBreak', { level: playLevelNumber, chips: chipNames })
+                : t('chipEditor.colorUpAtLevel', { level: playLevelNumber, chips: chipNames })}
             </span>
           </div>
         );

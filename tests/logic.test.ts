@@ -31,6 +31,10 @@ import {
   defaultChipConfig,
   movePlayer,
   shufflePlayers,
+  roundToNice,
+  generateBlindStructure,
+  estimateDuration,
+  estimateAllDurations,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -1179,5 +1183,180 @@ describe('dealerIndex backward compatibility', () => {
     const json = exportConfigJSON(config);
     const imported = importConfigJSON(json);
     expect(imported?.dealerIndex).toBe(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// roundToNice
+// ---------------------------------------------------------------------------
+describe('roundToNice', () => {
+  it('returns 0 for zero or negative values', () => {
+    expect(roundToNice(0)).toBe(0);
+    expect(roundToNice(-5)).toBe(0);
+  });
+
+  it('rounds small values (1–10) to nearest integer, min 1', () => {
+    expect(roundToNice(1)).toBe(1);
+    expect(roundToNice(3)).toBe(3);
+    expect(roundToNice(7.4)).toBe(7);
+    expect(roundToNice(10)).toBe(10);
+    expect(roundToNice(0.3)).toBe(1);
+  });
+
+  it('rounds to 5s for values 11–50', () => {
+    expect(roundToNice(12)).toBe(10);
+    expect(roundToNice(13)).toBe(15);
+    expect(roundToNice(27)).toBe(25);
+    expect(roundToNice(48)).toBe(50);
+  });
+
+  it('rounds to 25s for values 51–200', () => {
+    expect(roundToNice(60)).toBe(50);
+    expect(roundToNice(75)).toBe(75);
+    expect(roundToNice(110)).toBe(100);
+    expect(roundToNice(190)).toBe(200);
+  });
+
+  it('rounds to 50s for values 201–1000', () => {
+    expect(roundToNice(225)).toBe(250);
+    expect(roundToNice(500)).toBe(500);
+    expect(roundToNice(975)).toBe(1000);
+  });
+
+  it('rounds to 100s for values 1001–5000', () => {
+    expect(roundToNice(1050)).toBe(1100);
+    expect(roundToNice(2500)).toBe(2500);
+    expect(roundToNice(4999)).toBe(5000);
+  });
+
+  it('rounds to 500s for values above 5000', () => {
+    expect(roundToNice(5100)).toBe(5000);
+    expect(roundToNice(7500)).toBe(7500);
+    expect(roundToNice(12300)).toBe(12500);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateBlindStructure
+// ---------------------------------------------------------------------------
+describe('generateBlindStructure', () => {
+  it('generates levels with ascending blinds', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    for (let i = 1; i < playLevels.length; i++) {
+      expect(playLevels[i].bigBlind!).toBeGreaterThan(playLevels[i - 1].bigBlind!);
+    }
+  });
+
+  it('SB < BB in every play level', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'fast', anteEnabled: false });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    for (const level of playLevels) {
+      expect(level.smallBlind!).toBeLessThan(level.bigBlind!);
+    }
+  });
+
+  it('inserts breaks every 4 play levels', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    let playCount = 0;
+    for (const level of levels) {
+      if (level.type === 'level') playCount++;
+      if (level.type === 'break') {
+        // Break should appear after every 4th play level
+        expect(playCount % 4).toBe(0);
+      }
+    }
+  });
+
+  it('includes ante when enabled', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: true });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    // At least some levels should have ante > 0
+    const withAnte = playLevels.filter((l) => (l.ante ?? 0) > 0);
+    expect(withAnte.length).toBeGreaterThan(0);
+  });
+
+  it('no ante when disabled', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    playLevels.forEach((l) => {
+      expect(l.ante).toBe(0);
+    });
+  });
+
+  it('has no duplicate BB values', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const bbs = levels.filter((l) => l.type === 'level').map((l) => l.bigBlind!);
+    const unique = [...new Set(bbs)];
+    expect(bbs).toEqual(unique);
+  });
+
+  it('works with different starting chips (5000)', () => {
+    const levels = generateBlindStructure({ startingChips: 5000, speed: 'normal', anteEnabled: false });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    expect(playLevels.length).toBeGreaterThanOrEqual(5);
+    expect(playLevels[0].bigBlind!).toBeGreaterThan(0);
+  });
+
+  it('works with large starting chips (50000)', () => {
+    const levels = generateBlindStructure({ startingChips: 50000, speed: 'normal', anteEnabled: false });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    expect(playLevels.length).toBeGreaterThanOrEqual(5);
+    expect(playLevels[0].bigBlind!).toBeGreaterThan(0);
+  });
+
+  it('uses correct level duration per speed', () => {
+    const fast = generateBlindStructure({ startingChips: 20000, speed: 'fast', anteEnabled: false });
+    const normal = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const slow = generateBlindStructure({ startingChips: 20000, speed: 'slow', anteEnabled: false });
+
+    expect(fast.filter((l) => l.type === 'level')[0].durationSeconds).toBe(360);
+    expect(normal.filter((l) => l.type === 'level')[0].durationSeconds).toBe(720);
+    expect(slow.filter((l) => l.type === 'level')[0].durationSeconds).toBe(1200);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// estimateDuration
+// ---------------------------------------------------------------------------
+describe('estimateDuration', () => {
+  it('sums all level durations', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 },
+      { id: '2', type: 'break', durationSeconds: 300, label: 'Pause' },
+      { id: '3', type: 'level', durationSeconds: 600, smallBlind: 50, bigBlind: 100, ante: 0 },
+    ];
+    expect(estimateDuration(levels)).toBe(1500);
+  });
+
+  it('returns 0 for empty levels', () => {
+    expect(estimateDuration([])).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// estimateAllDurations
+// ---------------------------------------------------------------------------
+describe('estimateAllDurations', () => {
+  it('returns 3 estimates', () => {
+    const estimates = estimateAllDurations(20000, false);
+    expect(estimates).toHaveLength(3);
+  });
+
+  it('returns estimates in order: fast < normal < slow', () => {
+    const estimates = estimateAllDurations(20000, false);
+    expect(estimates[0].speed).toBe('fast');
+    expect(estimates[1].speed).toBe('normal');
+    expect(estimates[2].speed).toBe('slow');
+    expect(estimates[0].totalSeconds).toBeLessThan(estimates[1].totalSeconds);
+    expect(estimates[1].totalSeconds).toBeLessThan(estimates[2].totalSeconds);
+  });
+
+  it('each estimate has non-empty levels', () => {
+    const estimates = estimateAllDurations(20000, false);
+    estimates.forEach((e) => {
+      expect(e.levels.length).toBeGreaterThan(0);
+      expect(e.totalSeconds).toBeGreaterThan(0);
+    });
   });
 });

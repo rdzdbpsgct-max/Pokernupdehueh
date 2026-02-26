@@ -39,6 +39,7 @@ import { BountyEditor } from './components/BountyEditor';
 import { ChipEditor } from './components/ChipEditor';
 import { ChipSidebar } from './components/ChipSidebar';
 import { TournamentFinished } from './components/TournamentFinished';
+import { BlindGenerator } from './components/BlindGenerator';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 
 type Mode = 'setup' | 'game';
@@ -541,6 +542,15 @@ function App() {
                 />
               </div>
 
+              {/* Blind-Generator */}
+              <BlindGenerator
+                startingChips={config.startingChips}
+                anteEnabled={config.anteEnabled}
+                onApply={(levels) =>
+                  setConfig((prev) => ({ ...prev, levels }))
+                }
+              />
+
               {/* Ante Toggle + Blind-Struktur */}
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -600,6 +610,13 @@ function App() {
                   onChange={(addOn) => setConfig((prev) => ({ ...prev, addOn }))}
                   buyIn={config.buyIn}
                   startingChips={config.startingChips}
+                  rebuyEnabled={config.rebuy.enabled}
+                  onEnableRebuy={() =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      rebuy: { ...prev.rebuy, enabled: true },
+                    }))
+                  }
                 />
               </div>
 
@@ -661,7 +678,6 @@ function App() {
                   dealerIndex={config.dealerIndex}
                   buyIn={config.buyIn}
                   payout={config.payout}
-                  rebuyEnabled={config.rebuy.enabled}
                   rebuyActive={rebuyActive}
                   rebuyConfig={config.rebuy}
                   addOnConfig={config.addOn}

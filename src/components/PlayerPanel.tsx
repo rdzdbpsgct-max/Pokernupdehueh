@@ -8,7 +8,6 @@ interface Props {
   dealerIndex: number;
   buyIn: number;
   payout: PayoutConfig;
-  rebuyEnabled: boolean;
   rebuyActive: boolean;
   rebuyConfig: RebuyConfig;
   addOnConfig: AddOnConfig;
@@ -26,7 +25,6 @@ export function PlayerPanel({
   dealerIndex,
   buyIn,
   payout,
-  rebuyEnabled,
   rebuyActive,
   rebuyConfig,
   addOnConfig,
@@ -171,8 +169,8 @@ export function PlayerPanel({
               </div>
 
               <div className="flex items-center gap-1.5">
-                {/* Rebuy controls (only if rebuy enabled in setup) */}
-                {rebuyEnabled && (
+                {/* Rebuy controls (only during active rebuy phase) */}
+                {rebuyActive && (
                   <div className="flex items-center gap-1 mr-1" title="Rebuys">
                     <span className="text-[10px] text-gray-500 mr-0.5">RB</span>
                     <button
@@ -191,8 +189,7 @@ export function PlayerPanel({
                       onClick={() =>
                         onUpdateRebuys(player.id, player.rebuys + 1)
                       }
-                      disabled={!rebuyActive}
-                      className="w-6 h-6 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="w-6 h-6 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
                     >
                       +
                     </button>
