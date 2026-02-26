@@ -175,16 +175,16 @@ public/
 
 ## Changelog
 
-### v1.4.0
+### v1.4.0 — Vorlagen, Clean View & Stabilität
 
-- **Editierbarer Color-Up Plan**: Color-Up Zeitpunkte können manuell angepasst oder automatisch generiert werden (Chip Race)
+- **Einheitlicher Vorlagen-Dialog**: Ein Button „Vorlagen" im Setup vereint alles — Browser-Vorlagen speichern/laden/löschen, als JSON-Datei exportieren/importieren (File System Access API mit nativem Dateidialog, Download-Fallback für Safari/Firefox), und aufklappbare JSON-Import/Export-Sektion für Power-User. Separates Import/Export-Modal entfernt.
+- **Safari-Hinweis**: Automatischer Tipp wenn der Browser keine native Ordnerauswahl beim Speichern unterstützt (Safari → Einstellungen → Download-Ort auf „Nachfragen")
+- **Editierbarer Color-Up Plan**: Color-Up Zeitpunkte manuell anpassen oder automatisch generieren (Chip Race)
 - **Clean View**: Umschalter im Spielmodus blendet Stats, Sidebars und sekundäre Buttons aus — nur Timer, Blinds und Bubble bleiben (Tastenkürzel: F)
 - **Auto-Start bei Levelwechsel**: Timer startet automatisch bei Weiter/Zurück
 - **Timer-Zuverlässigkeit**: Fix für sporadisches Nicht-Starten bei Levelwechsel (eager interval restart)
 - **iPad-Kompatibilität**: Build-Target auf Safari 14 / ES2020 angepasst, Lade-Fallback in index.html
-- **Vorlagen-Dateien**: Turnier-Vorlagen als JSON-Datei speichern/laden mit nativem Dateidialog (File System Access API) oder Download-Fallback
-- **Vereinheitlichter Vorlagen-Dialog**: Import/Export und Vorlagen zu einem Dialog zusammengeführt — ein Button "Vorlagen" für alles (Browser-Vorlagen, Datei-Speichern/Laden, JSON Import/Export als aufklappbare Sektion). ImportExportModal entfernt.
-- **Text-Korrekturen**: "Nächstes: Pause" statt "Nächstes Pause", Color-Up Banner zeigt "(Chip Race)", lokalisierte Pause-Labels im Blindstruktur-Generator, aktualisierte Chip-Editor-Beschreibung
+- **Text & i18n**: „Nächstes: Pause" (Grammatik-Fix), Color-Up Banner mit „(Chip Race)", lokalisierte Pause-Labels, aktualisierte Beschreibungen, unbenutzte Translation-Keys entfernt
 - **7 neue Tests**: exportTemplateToJSON, parseTemplateFile Round-Trip und Fehlerbehandlung (184 Tests gesamt)
 
 ### v1.3.0
