@@ -38,6 +38,7 @@ import {
   estimatePlayedLevels,
   estimateAllDurations,
   checkBlindChipCompatibility,
+  computeColorUps,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -1336,6 +1337,13 @@ describe('generateBlindStructure', () => {
     expect(fastBBs[0]).toBe(50);
     expect(slowBBs[0]).toBe(50);
   });
+
+  it('normal speed: level 5 is 200/400 for 20k chips', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    expect(playLevels[4].smallBlind).toBe(200);
+    expect(playLevels[4].bigBlind).toBe(400);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1532,5 +1540,125 @@ describe('generateBlindStructure with chip constraint', () => {
     const first = levels.filter((l) => l.type === 'level')[0];
     expect(first.smallBlind).toBe(50);
     expect(first.bigBlind).toBe(100);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeColorUps
+// ---------------------------------------------------------------------------
+describe('computeColorUps', () => {
+  // 5-color default: 25, 50, 100, 500, 1000
+  const chips5 = [
+    { id: '1', value: 25, color: '#fff', label: 'White' },
+    { id: '2', value: 50, color: '#f00', label: 'Red' },
+    { id: '3', value: 100, color: '#00f', label: 'Blue' },
+    { id: '4', value: 500, color: '#0f0', label: 'Green' },
+    { id: '5', value: 1000, color: '#000', label: 'Black' },
+  ];
+
+  // 6-color: adds 5000
+  const chips6 = [
+    ...chips5,
+    { id: '6', value: 5000, color: '#a0f', label: 'Purple' },
+  ];
+
+  it('1000 chip must NOT be removed when blinds include 3000/6000', () => {
+    // Structure that includes 3000/6000 blinds
+    const levels: Level[] = [
+      { id: 'l1', type: 'level', durationSeconds: 720, smallBlind: 25, bigBlind: 50, ante: 0 },
+      { id: 'l2', type: 'level', durationSeconds: 720, smallBlind: 50, bigBlind: 100, ante: 0 },
+      { id: 'l3', type: 'level', durationSeconds: 720, smallBlind: 100, bigBlind: 200, ante: 0 },
+      { id: 'l4', type: 'level', durationSeconds: 720, smallBlind: 200, bigBlind: 400, ante: 0 },
+      { id: 'b1', type: 'break', durationSeconds: 600, label: 'Pause' },
+      { id: 'l5', type: 'level', durationSeconds: 720, smallBlind: 300, bigBlind: 600, ante: 0 },
+      { id: 'l6', type: 'level', durationSeconds: 720, smallBlind: 500, bigBlind: 1000, ante: 0 },
+      { id: 'l7', type: 'level', durationSeconds: 720, smallBlind: 1000, bigBlind: 2000, ante: 0 },
+      { id: 'l8', type: 'level', durationSeconds: 720, smallBlind: 1500, bigBlind: 3000, ante: 0 },
+      { id: 'b2', type: 'break', durationSeconds: 600, label: 'Pause' },
+      { id: 'l9', type: 'level', durationSeconds: 720, smallBlind: 3000, bigBlind: 6000, ante: 0 },
+    ];
+    const colorUps = computeColorUps(levels, chips5);
+
+    // Collect all removed chip IDs across all events
+    const removedIds = new Set<string>();
+    for (const denoms of colorUps.values()) {
+      for (const d of denoms) removedIds.add(d.id);
+    }
+
+    // 1000 chip (id '5') must NOT be removed — it's the highest denomination
+    expect(removedIds.has('5')).toBe(false);
+  });
+
+  it('1000 chip is NOT removed at 3000/6000 with 6-color set', () => {
+    const levels: Level[] = [
+      { id: 'l1', type: 'level', durationSeconds: 720, smallBlind: 500, bigBlind: 1000, ante: 0 },
+      { id: 'l2', type: 'level', durationSeconds: 720, smallBlind: 1000, bigBlind: 2000, ante: 0 },
+      { id: 'l3', type: 'level', durationSeconds: 720, smallBlind: 1500, bigBlind: 3000, ante: 0 },
+      { id: 'b1', type: 'break', durationSeconds: 600, label: 'Pause' },
+      { id: 'l4', type: 'level', durationSeconds: 720, smallBlind: 3000, bigBlind: 6000, ante: 0 },
+    ];
+    const colorUps = computeColorUps(levels, chips6);
+
+    const removedIds = new Set<string>();
+    for (const denoms of colorUps.values()) {
+      for (const d of denoms) removedIds.add(d.id);
+    }
+
+    // 1000 chip NOT removed: 3000 and 6000 are not multiples of 5000
+    expect(removedIds.has('5')).toBe(false);
+  });
+
+  it('1000 chip IS removed when only 5000/10000 blinds remain (6-color)', () => {
+    const levels: Level[] = [
+      { id: 'l1', type: 'level', durationSeconds: 720, smallBlind: 500, bigBlind: 1000, ante: 0 },
+      { id: 'l2', type: 'level', durationSeconds: 720, smallBlind: 1000, bigBlind: 2000, ante: 0 },
+      { id: 'b1', type: 'break', durationSeconds: 600, label: 'Pause' },
+      { id: 'l3', type: 'level', durationSeconds: 720, smallBlind: 5000, bigBlind: 10000, ante: 0 },
+      { id: 'l4', type: 'level', durationSeconds: 720, smallBlind: 10000, bigBlind: 20000, ante: 0 },
+    ];
+    const colorUps = computeColorUps(levels, chips6);
+
+    const removedIds = new Set<string>();
+    for (const denoms of colorUps.values()) {
+      for (const d of denoms) removedIds.add(d.id);
+    }
+
+    // 1000 IS removed once all future values are multiples of 5000
+    expect(removedIds.has('5')).toBe(true);
+  });
+
+  it('25 chip is removed when all future blinds are multiples of 50', () => {
+    const levels: Level[] = [
+      { id: 'l1', type: 'level', durationSeconds: 720, smallBlind: 25, bigBlind: 50, ante: 0 },
+      { id: 'l2', type: 'level', durationSeconds: 720, smallBlind: 50, bigBlind: 100, ante: 0 },
+      { id: 'b1', type: 'break', durationSeconds: 600, label: 'Pause' },
+      { id: 'l3', type: 'level', durationSeconds: 720, smallBlind: 100, bigBlind: 200, ante: 0 },
+      { id: 'l4', type: 'level', durationSeconds: 720, smallBlind: 200, bigBlind: 400, ante: 0 },
+    ];
+    const colorUps = computeColorUps(levels, chips5);
+
+    const removedIds = new Set<string>();
+    for (const denoms of colorUps.values()) {
+      for (const d of denoms) removedIds.add(d.id);
+    }
+
+    // 25 chip (id '1') should be removed
+    expect(removedIds.has('1')).toBe(true);
+  });
+
+  it('highest denomination is never removed', () => {
+    const levels: Level[] = [
+      { id: 'l1', type: 'level', durationSeconds: 720, smallBlind: 500, bigBlind: 1000, ante: 0 },
+      { id: 'l2', type: 'level', durationSeconds: 720, smallBlind: 1000, bigBlind: 2000, ante: 0 },
+    ];
+    const colorUps = computeColorUps(levels, chips5);
+
+    const removedIds = new Set<string>();
+    for (const denoms of colorUps.values()) {
+      for (const d of denoms) removedIds.add(d.id);
+    }
+
+    // 1000 (highest) must never be removed
+    expect(removedIds.has('5')).toBe(false);
   });
 });

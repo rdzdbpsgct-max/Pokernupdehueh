@@ -249,7 +249,7 @@ const BB_SEQUENCES: Record<string, number[]> = {
     50, 100, 200, 400, 600, 800, 1200, 1600, 2000, 3000, 4000, 6000, 8000, 10000,
   ],
   normal: [
-    50, 100, 150, 200, 300, 400, 600, 800, 1000, 1500, 2000, 3000, 4000, 6000, 8000, 10000,
+    50, 100, 150, 200, 400, 600, 800, 1000, 1500, 2000, 3000, 4000, 6000, 8000, 10000,
   ],
   slow: [
     50, 100, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000,
@@ -653,40 +653,34 @@ export function defaultChipConfig(): ChipConfig {
   return applyChipPreset(chipPresets[1]); // 5-color preset, enabled by default
 }
 
-function gcd(a: number, b: number): number {
-  a = Math.abs(a);
-  b = Math.abs(b);
-  while (b) {
-    [a, b] = [b, a % b];
-  }
-  return a;
-}
-
-function gcdOfArray(arr: number[]): number {
-  return arr.reduce((g, val) => gcd(g, val), 0);
-}
-
 /**
  * Check whether a denomination is needed to represent any of the given values.
- * A denomination is needed if removing it leaves the remaining denominations
- * unable to represent all values (via GCD check).
+ * A denomination can only be removed (color-up) when ALL future blind values
+ * are multiples of the next-higher active denomination. This matches real
+ * tournament practice: you remove the smallest active chip when all future
+ * values are "clean" multiples of the next size up.
  */
 function isDenominationNeeded(
   denomValue: number,
   allDenoms: ChipDenomination[],
   values: number[],
 ): boolean {
-  const remaining = allDenoms.filter((d) => d.value !== denomValue);
-  if (remaining.length === 0) return true;
+  // Find the next higher denomination in the active set
+  const higherValues = allDenoms
+    .map((d) => d.value)
+    .filter((v) => v > denomValue)
+    .sort((a, b) => a - b);
 
-  const remainingValues = remaining.map((d) => d.value);
-  const smallestRemaining = Math.min(...remainingValues);
-  const remainingGcd = gcdOfArray(remainingValues);
+  // Highest denomination is always needed (nothing to replace it)
+  if (higherValues.length === 0) return true;
 
+  const nextHigher = higherValues[0];
+
+  // Denomination is needed if any future value cannot be represented
+  // purely with the next-higher denomination (i.e. is not a multiple of it)
   for (const val of values) {
     if (val <= 0) continue;
-    if (val < smallestRemaining) return true;
-    if (val % remainingGcd !== 0) return true;
+    if (val % nextHigher !== 0) return true;
   }
   return false;
 }
