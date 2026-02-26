@@ -20,11 +20,14 @@ import {
   computeTournamentElapsedSeconds,
   defaultPayoutConfig,
   defaultRebuyConfig,
+  defaultAddOnConfig,
   defaultBountyConfig,
   computeTotalRebuys,
+  computeTotalAddOns,
   computePrizePool,
   computePayouts,
   computeNextPlacement,
+  computeAverageStack,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -35,6 +38,7 @@ function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels:
     players: [],
     payout: defaultPayoutConfig(),
     rebuy: defaultRebuyConfig(),
+    addOn: defaultAddOnConfig(),
     bounty: defaultBountyConfig(),
     buyIn: 10,
     startingChips: 20000,
@@ -45,6 +49,7 @@ function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels:
 function makePlayer(partial: Partial<Player> & { id: string; name: string }): Player {
   return {
     rebuys: 0,
+    addOn: false,
     status: 'active',
     placement: null,
     eliminatedBy: null,
@@ -277,6 +282,7 @@ describe('import/export', () => {
       players: [makePlayer({ id: 'p1', name: 'Alice' })],
       payout: defaultPayoutConfig(),
       rebuy: defaultRebuyConfig(),
+      addOn: defaultAddOnConfig(),
       bounty: defaultBountyConfig(),
       buyIn: 10,
       startingChips: 20000,
@@ -874,5 +880,179 @@ describe('defaultBountyConfig', () => {
     const config = defaultBountyConfig();
     expect(config.enabled).toBe(false);
     expect(config.amount).toBe(5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// defaultAddOnConfig
+// ---------------------------------------------------------------------------
+describe('defaultAddOnConfig', () => {
+  it('returns disabled add-on with default cost and chips', () => {
+    const config = defaultAddOnConfig();
+    expect(config.enabled).toBe(false);
+    expect(config.cost).toBe(10);
+    expect(config.chips).toBe(20000);
+  });
+
+  it('uses provided buyIn and startingChips', () => {
+    const config = defaultAddOnConfig(20, 50000);
+    expect(config.cost).toBe(20);
+    expect(config.chips).toBe(50000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeTotalAddOns
+// ---------------------------------------------------------------------------
+describe('computeTotalAddOns', () => {
+  it('returns 0 when no players have add-ons', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B' }),
+    ];
+    expect(computeTotalAddOns(players)).toBe(0);
+  });
+
+  it('counts players with add-ons', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', addOn: true }),
+      makePlayer({ id: '2', name: 'B', addOn: false }),
+      makePlayer({ id: '3', name: 'C', addOn: true }),
+    ];
+    expect(computeTotalAddOns(players)).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computePrizePool with add-ons
+// ---------------------------------------------------------------------------
+describe('computePrizePool with add-ons', () => {
+  it('includes add-on costs in prize pool', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', addOn: true }),
+      makePlayer({ id: '2', name: 'B', addOn: true }),
+      makePlayer({ id: '3', name: 'C', addOn: false }),
+    ];
+    // 3 × 10 buy-in + 0 rebuys + 2 × 15 add-on = 30 + 30 = 60
+    expect(computePrizePool(players, 10, 10, 15)).toBe(60);
+  });
+
+  it('combines rebuys and add-ons', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', rebuys: 2, addOn: true }),
+      makePlayer({ id: '2', name: 'B', rebuys: 0, addOn: false }),
+    ];
+    // 2 × 10 buy-in + 2 × 10 rebuy + 1 × 10 add-on = 20 + 20 + 10 = 50
+    expect(computePrizePool(players, 10, 10, 10)).toBe(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeAverageStack
+// ---------------------------------------------------------------------------
+describe('computeAverageStack', () => {
+  it('computes basic average with no rebuys or add-ons', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B' }),
+    ];
+    // 2 × 20000 / 2 active = 20000
+    expect(computeAverageStack(players, 20000, 20000, 20000)).toBe(20000);
+  });
+
+  it('increases average when players are eliminated', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B', status: 'eliminated', placement: 3 }),
+      makePlayer({ id: '3', name: 'C' }),
+    ];
+    // 3 × 20000 / 2 active = 30000
+    expect(computeAverageStack(players, 20000, 20000, 20000)).toBe(30000);
+  });
+
+  it('includes rebuy chips in total', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', rebuys: 1 }),
+      makePlayer({ id: '2', name: 'B' }),
+    ];
+    // (2 × 20000 + 1 × 20000) / 2 = 30000
+    expect(computeAverageStack(players, 20000, 20000, 20000)).toBe(30000);
+  });
+
+  it('includes add-on chips in total', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', addOn: true }),
+      makePlayer({ id: '2', name: 'B' }),
+    ];
+    // (2 × 20000 + 1 × 10000) / 2 = 25000
+    expect(computeAverageStack(players, 20000, 20000, 10000)).toBe(25000);
+  });
+
+  it('combines rebuys, add-ons, and eliminations', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', rebuys: 1, addOn: true }),
+      makePlayer({ id: '2', name: 'B', status: 'eliminated', placement: 3, addOn: true }),
+      makePlayer({ id: '3', name: 'C' }),
+    ];
+    // total chips: 3 × 20000 + 1 × 20000 rebuy + 2 × 10000 add-on = 60000 + 20000 + 20000 = 100000
+    // active players: 2
+    // avg = 50000
+    expect(computeAverageStack(players, 20000, 20000, 10000)).toBe(50000);
+  });
+
+  it('returns 0 when no active players', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', status: 'eliminated', placement: 2 }),
+    ];
+    expect(computeAverageStack(players, 20000, 20000, 20000)).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// defaultPlayers includes addOn field
+// ---------------------------------------------------------------------------
+describe('defaultPlayers addOn field', () => {
+  it('creates players with addOn set to false', () => {
+    const players = defaultPlayers(3);
+    players.forEach((p) => {
+      expect(p.addOn).toBe(false);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// import/export backward compatibility with addOn
+// ---------------------------------------------------------------------------
+describe('import/export addOn backward compatibility', () => {
+  it('imports old config without addOn field, sets defaults', () => {
+    const oldJson = JSON.stringify({
+      name: 'Old Tournament',
+      levels: [{ id: 'l1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 }],
+      buyIn: 10,
+      startingChips: 20000,
+      players: [{ id: 'p1', name: 'Alice', rebuys: 0, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 }],
+    });
+    const imported = importConfigJSON(oldJson);
+    expect(imported).not.toBeNull();
+    expect(imported!.addOn.enabled).toBe(false);
+    expect(imported!.addOn.cost).toBe(10);
+    expect(imported!.addOn.chips).toBe(20000);
+    expect(imported!.players[0].addOn).toBe(false);
+  });
+
+  it('preserves addOn config through export/import round-trip', () => {
+    const config = makeConfig({
+      name: 'AddOn Test',
+      levels: [{ id: 'l1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 }],
+      addOn: { enabled: true, cost: 15, chips: 30000 },
+      players: [makePlayer({ id: 'p1', name: 'Alice', addOn: true })],
+    });
+    const json = exportConfigJSON(config);
+    const imported = importConfigJSON(json);
+    expect(imported).not.toBeNull();
+    expect(imported!.addOn.enabled).toBe(true);
+    expect(imported!.addOn.cost).toBe(15);
+    expect(imported!.addOn.chips).toBe(30000);
+    expect(imported!.players[0].addOn).toBe(true);
   });
 });

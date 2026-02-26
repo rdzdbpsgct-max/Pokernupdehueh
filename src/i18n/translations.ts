@@ -18,6 +18,7 @@ const de = {
   'app.withoutAnte': 'ohne Ante',
   'app.payout': 'Auszahlung',
   'app.rebuy': 'Rebuy',
+  'app.addOn': 'Add-On',
   'app.bounty': 'Bounty',
   'app.checkConfig': 'Konfiguration prüfen:',
   'app.allReady': '✓ Alles bereit – Turnier kann gestartet werden',
@@ -71,6 +72,7 @@ const de = {
   'playerPanel.prizePool': 'Preisgeld',
   'playerPanel.payout': 'Auszahlung',
   'playerPanel.place': 'Platz',
+  'playerPanel.avgStack': 'Ø Stack',
   'playerPanel.activePlayers': 'Aktive Spieler',
   'playerPanel.eliminate': 'Raus',
   'playerPanel.eliminateTooltip': 'Spieler ist ausgeschieden',
@@ -156,6 +158,13 @@ const de = {
   'rebuyStatus.timeRemaining': 'noch {time}',
   'rebuyStatus.ended': 'Rebuy beendet',
 
+  // --- Add-On Editor ---
+  'addOnEditor.enabled': '✓ Add-On aktiviert',
+  'addOnEditor.disabled': 'Add-On deaktiviert',
+  'addOnEditor.cost': 'Kosten',
+  'addOnEditor.chips': 'Chips',
+  'addOnEditor.description': 'Jeder Spieler kann einmalig ein Add-On kaufen (zusätzliche Chips, unabhängig vom Bustout).',
+
   // --- Bounty Editor ---
   'bountyEditor.enabled': 'Bounty aktiviert',
   'bountyEditor.disabled': 'Bounty deaktiviert',
@@ -175,6 +184,8 @@ const de = {
   'finished.buyIn': 'Buy-In',
   'finished.bountyLabel': 'Bounty',
   'finished.paidPlaces': 'Bezahlte Plätze',
+  'finished.addOn': 'Add-On',
+  'finished.addOns': 'Add-Ons',
   'finished.paidIn': 'Eingezahlt',
   'finished.bountyPaid': 'Bounty gezahlt',
   'finished.bountyEarned': 'Bounty erhalten',
@@ -224,6 +235,7 @@ const en: Record<TranslationKey, string> = {
   'app.withoutAnte': 'without Ante',
   'app.payout': 'Payout',
   'app.rebuy': 'Rebuy',
+  'app.addOn': 'Add-On',
   'app.bounty': 'Bounty',
   'app.checkConfig': 'Check configuration:',
   'app.allReady': '✓ All set – tournament is ready to start',
@@ -277,6 +289,7 @@ const en: Record<TranslationKey, string> = {
   'playerPanel.prizePool': 'Prize Pool',
   'playerPanel.payout': 'Payout',
   'playerPanel.place': 'Place',
+  'playerPanel.avgStack': 'Avg Stack',
   'playerPanel.activePlayers': 'Active Players',
   'playerPanel.eliminate': 'Out',
   'playerPanel.eliminateTooltip': 'Player is eliminated',
@@ -362,6 +375,13 @@ const en: Record<TranslationKey, string> = {
   'rebuyStatus.timeRemaining': '{time} remaining',
   'rebuyStatus.ended': 'Rebuy ended',
 
+  // --- Add-On Editor ---
+  'addOnEditor.enabled': '✓ Add-On enabled',
+  'addOnEditor.disabled': 'Add-On disabled',
+  'addOnEditor.cost': 'Cost',
+  'addOnEditor.chips': 'Chips',
+  'addOnEditor.description': 'Each player can purchase one add-on (extra chips, regardless of bustout).',
+
   // --- Bounty Editor ---
   'bountyEditor.enabled': 'Bounty enabled',
   'bountyEditor.disabled': 'Bounty disabled',
@@ -381,6 +401,8 @@ const en: Record<TranslationKey, string> = {
   'finished.buyIn': 'Buy-In',
   'finished.bountyLabel': 'Bounty',
   'finished.paidPlaces': 'Paid Places',
+  'finished.addOn': 'Add-On',
+  'finished.addOns': 'Add-Ons',
   'finished.paidIn': 'Paid in',
   'finished.bountyPaid': 'Bounty paid',
   'finished.bountyEarned': 'Bounty earned',

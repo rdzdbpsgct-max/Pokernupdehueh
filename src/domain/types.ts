@@ -12,6 +12,7 @@ export interface Player {
   id: string;
   name: string;
   rebuys: number;
+  addOn: boolean;
   status: 'active' | 'eliminated';
   placement: number | null;
   eliminatedBy: string | null;
@@ -45,6 +46,14 @@ export interface RebuyConfig {
   rebuyChips: number;
 }
 
+export interface AddOnConfig {
+  enabled: boolean;
+  /** Cost per add-on in EUR (defaults to buyIn) */
+  cost: number;
+  /** Chips received per add-on (defaults to startingChips) */
+  chips: number;
+}
+
 export interface BountyConfig {
   enabled: boolean;
   amount: number;
@@ -57,6 +66,7 @@ export interface TournamentConfig {
   players: Player[];
   payout: PayoutConfig;
   rebuy: RebuyConfig;
+  addOn: AddOnConfig;
   bounty: BountyConfig;
   buyIn: number;
   startingChips: number;

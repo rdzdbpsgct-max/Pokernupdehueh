@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { Player, PayoutConfig, BountyConfig, RebuyConfig } from '../domain/types';
-import { computeTotalRebuys, computePrizePool, computePayouts } from '../domain/logic';
+import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
@@ -10,8 +10,11 @@ interface Props {
   rebuyEnabled: boolean;
   rebuyActive: boolean;
   rebuyConfig: RebuyConfig;
+  addOnConfig: AddOnConfig;
   bountyConfig: BountyConfig;
+  averageStack: number;
   onUpdateRebuys: (playerId: string, newCount: number) => void;
+  onUpdateAddOn: (playerId: string, hasAddOn: boolean) => void;
   onEliminatePlayer: (playerId: string, eliminatedBy: string | null) => void;
   onReinstatePlayer: (playerId: string) => void;
 }
@@ -23,8 +26,11 @@ export function PlayerPanel({
   rebuyEnabled,
   rebuyActive,
   rebuyConfig,
+  addOnConfig,
   bountyConfig,
+  averageStack,
   onUpdateRebuys,
+  onUpdateAddOn,
   onEliminatePlayer,
   onReinstatePlayer,
 }: Props) {
@@ -33,7 +39,8 @@ export function PlayerPanel({
   const [selectedKiller, setSelectedKiller] = useState<string>('');
 
   const totalRebuys = computeTotalRebuys(players);
-  const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost);
+  const totalAddOns = computeTotalAddOns(players);
+  const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost, addOnConfig.enabled ? addOnConfig.cost : 0);
   const payoutAmounts = computePayouts(payout, prizePool);
 
   const activePlayers = players.filter((p) => p.status === 'active');
@@ -77,6 +84,9 @@ export function PlayerPanel({
             {totalRebuys > 0 && (
               <> + {totalRebuys} Rebuy{totalRebuys > 1 ? 's' : ''} &times; {rebuyConfig.rebuyCost} {t('unit.eur')}</>
             )}
+            {totalAddOns > 0 && (
+              <> + {totalAddOns} Add-On{totalAddOns > 1 ? 's' : ''} &times; {addOnConfig.cost} {t('unit.eur')}</>
+            )}
           </p>
           {bountyConfig.enabled && (
             <p className="text-amber-500/70 text-xs mt-0.5">
@@ -102,6 +112,16 @@ export function PlayerPanel({
               <span className="text-white font-medium">{p.amount.toFixed(2)} {t('unit.eur')}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Average Stack */}
+      <div className="px-3 py-2 bg-gray-800/50 rounded-lg">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-500 uppercase tracking-wider">{t('playerPanel.avgStack')}</span>
+          <span className="text-white text-sm font-mono font-bold">
+            {averageStack.toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -154,6 +174,21 @@ export function PlayerPanel({
                       +
                     </button>
                   </div>
+                )}
+
+                {/* Add-On toggle */}
+                {addOnConfig.enabled && (
+                  <button
+                    onClick={() => onUpdateAddOn(player.id, !player.addOn)}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      player.addOn
+                        ? 'bg-emerald-700/50 text-emerald-300'
+                        : 'bg-gray-700 hover:bg-gray-600 text-gray-400'
+                    }`}
+                    title="Add-On"
+                  >
+                    {player.addOn ? '✓ AO' : 'AO'}
+                  </button>
                 )}
 
                 {/* Eliminate button */}
