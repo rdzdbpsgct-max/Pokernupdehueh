@@ -65,6 +65,7 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showItmFlash, setShowItmFlash] = useState(false);
+  const [cleanView, setCleanView] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -129,6 +130,9 @@ function App() {
             confirmLabel: t('confirm.resetLevel.confirm'),
             onConfirm: timer.resetLevel,
           });
+          break;
+        case 'KeyF':
+          setCleanView((v) => !v);
           break;
       }
     };
@@ -371,6 +375,7 @@ function App() {
 
   // Bubble & ITM sound/visual effects
   const prevBubbleRef = useRef(false);
+  const itmFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (mode !== 'game') return;
 
@@ -383,9 +388,15 @@ function App() {
     if (!bubbleActive && prevBubbleRef.current && inTheMoney) {
       setShowItmFlash(true);
       if (settings.soundEnabled) playInTheMoneySound();
-      const timeout = setTimeout(() => setShowItmFlash(false), 5000);
+      if (itmFlashTimeoutRef.current) clearTimeout(itmFlashTimeoutRef.current);
+      itmFlashTimeoutRef.current = setTimeout(() => setShowItmFlash(false), 5000);
       prevBubbleRef.current = bubbleActive;
-      return () => clearTimeout(timeout);
+      return () => {
+        if (itmFlashTimeoutRef.current) {
+          clearTimeout(itmFlashTimeoutRef.current);
+          itmFlashTimeoutRef.current = null;
+        }
+      };
     }
 
     prevBubbleRef.current = bubbleActive;
@@ -413,6 +424,13 @@ function App() {
   const switchToSetup = () => {
     timer.restart();
     setAddOnEndLevelIndex(null);
+    setShowItmFlash(false);
+    prevBubbleRef.current = false;
+    victorySoundPlayedRef.current = false;
+    if (itmFlashTimeoutRef.current) {
+      clearTimeout(itmFlashTimeoutRef.current);
+      itmFlashTimeoutRef.current = null;
+    }
     setMode('setup');
   };
 
@@ -439,7 +457,31 @@ function App() {
       t('confirm.restartTournament.title'),
       t('confirm.restartTournament.message'),
       t('confirm.restartTournament.confirm'),
-      timer.restart,
+      () => {
+        timer.restart();
+        // Reset all players to active state
+        setConfig((prev) => ({
+          ...prev,
+          players: prev.players.map((p) => ({
+            ...p,
+            rebuys: 0,
+            addOn: false,
+            status: 'active' as const,
+            placement: null,
+            eliminatedBy: null,
+            knockouts: 0,
+          })),
+        }));
+        // Reset all game state
+        setAddOnEndLevelIndex(null);
+        setShowItmFlash(false);
+        prevBubbleRef.current = false;
+        victorySoundPlayedRef.current = false;
+        if (itmFlashTimeoutRef.current) {
+          clearTimeout(itmFlashTimeoutRef.current);
+          itmFlashTimeoutRef.current = null;
+        }
+      },
     );
   };
 
@@ -800,7 +842,18 @@ function App() {
               </button>
 
               {/* Timer + Controls */}
-              <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 gap-3 sm:gap-6">
+              <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 gap-3 sm:gap-6 relative">
+                <button
+                  onClick={() => setCleanView((v) => !v)}
+                  className={`absolute top-2 right-8 px-2 py-1 rounded text-xs font-medium transition-colors z-10 ${
+                    cleanView
+                      ? 'bg-emerald-700/50 text-emerald-300'
+                      : 'bg-gray-800/50 text-gray-500 hover:text-gray-300'
+                  }`}
+                  title={cleanView ? t('game.cleanViewOff') : t('game.cleanViewOn')}
+                >
+                  {cleanView ? t('game.cleanViewOn') : t('game.cleanViewOff')}
+                </button>
                 <TimerDisplay
                   timerState={timer.timerState}
                   levels={config.levels}
@@ -814,7 +867,7 @@ function App() {
                   isBubble={bubbleActive}
                   showItmFlash={showItmFlash}
                 />
-                {config.players.length > 0 && (
+                {!cleanView && config.players.length > 0 && (
                   <TournamentStats
                     players={config.players}
                     levels={config.levels}
@@ -825,12 +878,14 @@ function App() {
                     prizePool={prizePool}
                   />
                 )}
-                <RebuyStatus
-                  active={rebuyActive}
-                  rebuy={config.rebuy}
-                  currentPlayLevel={currentPlayLevel}
-                  elapsedSeconds={tournamentElapsed}
-                />
+                {!cleanView && (
+                  <RebuyStatus
+                    active={rebuyActive}
+                    rebuy={config.rebuy}
+                    currentPlayLevel={currentPlayLevel}
+                    elapsedSeconds={tournamentElapsed}
+                  />
+                )}
                 <Controls
                   timerState={timer.timerState}
                   onToggleStartPause={timer.toggleStartPause}
@@ -838,6 +893,7 @@ function App() {
                   onPrevious={timer.previousLevel}
                   onReset={handleResetLevel}
                   onRestart={handleRestart}
+                  hideSecondaryControls={cleanView}
                 />
               </div>
 

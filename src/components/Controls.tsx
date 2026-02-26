@@ -8,6 +8,7 @@ interface Props {
   onPrevious: () => void;
   onReset: () => void;
   onRestart: () => void;
+  hideSecondaryControls?: boolean;
 }
 
 export function Controls({
@@ -17,6 +18,7 @@ export function Controls({
   onPrevious,
   onReset,
   onRestart,
+  hideSecondaryControls,
 }: Props) {
   const { t } = useTranslation();
   const isRunning = timerState.status === 'running';
@@ -54,22 +56,24 @@ export function Controls({
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onReset}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs font-medium transition-colors"
-          title={t('controls.levelResetTooltip')}
-        >
-          {t('controls.levelReset')}
-        </button>
-        <button
-          onClick={onRestart}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-red-900 text-gray-300 hover:text-red-300 rounded text-xs font-medium transition-colors"
-          title={t('controls.tournamentRestartTooltip')}
-        >
-          {t('controls.tournamentRestart')}
-        </button>
-      </div>
+      {!hideSecondaryControls && (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onReset}
+            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs font-medium transition-colors"
+            title={t('controls.levelResetTooltip')}
+          >
+            {t('controls.levelReset')}
+          </button>
+          <button
+            onClick={onRestart}
+            className="px-3 py-1.5 bg-gray-800 hover:bg-red-900 text-gray-300 hover:text-red-300 rounded text-xs font-medium transition-colors"
+            title={t('controls.tournamentRestartTooltip')}
+          >
+            {t('controls.tournamentRestart')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

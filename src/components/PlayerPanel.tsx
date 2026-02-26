@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -44,6 +44,14 @@ export function PlayerPanel({
   const totalAddOns = computeTotalAddOns(players);
   const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost, addOnConfig.enabled ? addOnConfig.cost : 0);
   const payoutAmounts = computePayouts(payout, prizePool);
+
+  const nameSizeClass = useMemo(() => {
+    const maxLen = players.reduce((max, p) => Math.max(max, p.name.length), 0);
+    if (maxLen <= 8) return 'text-sm';
+    if (maxLen <= 12) return 'text-xs';
+    if (maxLen <= 18) return 'text-[11px]';
+    return 'text-[10px]';
+  }, [players]);
 
   const activePlayers = players.filter((p) => p.status === 'active');
   const eliminatedPlayers = [...players]
@@ -154,7 +162,7 @@ export function PlayerPanel({
               className="flex items-center justify-between px-3 py-1.5 bg-gray-800/50 rounded"
             >
               <div className="flex-1 mr-2 min-w-0">
-                <span className="text-sm text-gray-200 truncate block">
+                <span className={`${nameSizeClass} text-gray-200 truncate block`}>
                   <span className="text-gray-500 text-xs mr-1">#{seatIndex + 1}</span>
                   {isDealer && (
                     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold mr-1 align-text-bottom">D</span>
@@ -285,7 +293,7 @@ export function PlayerPanel({
                     <span className="text-xs text-gray-500 font-bold w-6 text-right shrink-0">
                       {player.placement}.
                     </span>
-                    <span className="text-sm text-gray-400 line-through truncate">
+                    <span className={`${nameSizeClass} text-gray-400 line-through truncate`}>
                       {player.name}
                     </span>
                   </div>

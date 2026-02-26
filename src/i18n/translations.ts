@@ -288,6 +288,10 @@ const de = {
   'templates.levels': '{n} Level',
   'templates.close': 'Schließen',
 
+  // --- Clean View ---
+  'game.cleanViewOn': '✓ Fokus',
+  'game.cleanViewOff': '◎ Fokus',
+
   // --- Screenshot/Share ---
   'finished.shareResults': 'Ergebnis teilen / Screenshot',
   'finished.capturing': 'Wird erstellt...',
@@ -587,6 +591,10 @@ const en: Record<TranslationKey, string> = {
   'templates.players': '{n} players',
   'templates.levels': '{n} levels',
   'templates.close': 'Close',
+
+  // --- Clean View ---
+  'game.cleanViewOn': '✓ Focus',
+  'game.cleanViewOff': '◎ Focus',
 
   // --- Screenshot/Share ---
   'finished.shareResults': 'Share Results / Screenshot',
