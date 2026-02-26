@@ -507,6 +507,18 @@ function App() {
                 </div>
               </div>
 
+              {/* Chip Values */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  {t('app.chips')}
+                </h2>
+                <ChipEditor
+                  chips={config.chips}
+                  onChange={(chips) => setConfig((prev) => ({ ...prev, chips }))}
+                  levels={config.levels}
+                />
+              </div>
+
               {/* Ante Toggle + Blind-Struktur */}
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -577,18 +589,6 @@ function App() {
                 <BountyEditor
                   bounty={config.bounty}
                   onChange={(bounty) => setConfig((prev) => ({ ...prev, bounty }))}
-                />
-              </div>
-
-              {/* Chip Values */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.chips')}
-                </h2>
-                <ChipEditor
-                  chips={config.chips}
-                  onChange={(chips) => setConfig((prev) => ({ ...prev, chips }))}
-                  levels={config.levels}
                 />
               </div>
 

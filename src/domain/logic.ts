@@ -445,7 +445,7 @@ export function applyChipPreset(preset: ChipPreset): ChipConfig {
 }
 
 export function defaultChipConfig(): ChipConfig {
-  return { enabled: false, denominations: [] };
+  return applyChipPreset(chipPresets[1]); // 5-color preset, enabled by default
 }
 
 function gcd(a: number, b: number): number {

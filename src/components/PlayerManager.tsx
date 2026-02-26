@@ -58,7 +58,12 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
 
   const handleShuffle = useCallback(() => {
     const result = shufflePlayers(players);
-    onChange(result.players, result.dealerIndex);
+    // Rotate so dealer is at index 0
+    const rotated = [
+      ...result.players.slice(result.dealerIndex),
+      ...result.players.slice(0, result.dealerIndex),
+    ];
+    onChange(rotated, 0);
   }, [players, onChange]);
 
   const handleSetDealer = useCallback((index: number) => {
