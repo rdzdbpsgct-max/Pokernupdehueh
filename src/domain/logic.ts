@@ -10,6 +10,7 @@ import type {
   BountyConfig,
   ChipConfig,
   ChipDenomination,
+  ColorUpEntry,
 } from './types';
 import { t as moduleT } from '../i18n/translations';
 
@@ -677,6 +678,7 @@ export function applyChipPreset(preset: ChipPreset): ChipConfig {
       ...d,
       id: generateChipId(),
     })),
+    colorUpSchedule: [],
   };
 }
 
@@ -804,6 +806,43 @@ export function getNextColorUpLevel(
     }
   }
   return next;
+}
+
+/**
+ * Generate a color-up suggestion by converting the auto-computed map to a flat schedule.
+ */
+export function generateColorUpSuggestion(
+  levels: Level[],
+  denominations: ChipDenomination[],
+): ColorUpEntry[] {
+  const map = computeColorUps(levels, denominations);
+  const entries: ColorUpEntry[] = [];
+  for (const [levelIndex, denoms] of map) {
+    for (const d of denoms) {
+      entries.push({ levelIndex, denomId: d.id });
+    }
+  }
+  return entries.sort((a, b) => a.levelIndex - b.levelIndex);
+}
+
+/**
+ * Convert a stored color-up schedule to the Map format used for display/game mode.
+ * Filters out entries referencing non-existent denominations.
+ */
+export function scheduleToColorUpMap(
+  schedule: ColorUpEntry[],
+  denominations: ChipDenomination[],
+): Map<number, ChipDenomination[]> {
+  const denomMap = new Map(denominations.map((d) => [d.id, d]));
+  const result = new Map<number, ChipDenomination[]>();
+  for (const entry of schedule) {
+    const denom = denomMap.get(entry.denomId);
+    if (!denom) continue;
+    const existing = result.get(entry.levelIndex) ?? [];
+    existing.push(denom);
+    result.set(entry.levelIndex, existing);
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -1014,6 +1053,9 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
           colorUpEnabled: typeof (parsed.chips as Record<string, unknown>).colorUpEnabled === 'boolean'
             ? (parsed.chips as ChipConfig).colorUpEnabled
             : true,
+          colorUpSchedule: Array.isArray((parsed.chips as Record<string, unknown>).colorUpSchedule)
+            ? (parsed.chips as ChipConfig).colorUpSchedule
+            : [],
         }
       : defaultChipConfig(),
     buyIn,

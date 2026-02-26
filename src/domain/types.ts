@@ -66,10 +66,16 @@ export interface ChipDenomination {
   label: string;
 }
 
+export interface ColorUpEntry {
+  levelIndex: number;
+  denomId: string;
+}
+
 export interface ChipConfig {
   enabled: boolean;
   colorUpEnabled: boolean;
   denominations: ChipDenomination[];
+  colorUpSchedule: ColorUpEntry[];
 }
 
 export interface TournamentConfig {

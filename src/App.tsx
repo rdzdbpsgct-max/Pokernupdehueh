@@ -17,7 +17,7 @@ import {
   validateConfig,
   snapSpinnerValue,
   computeAverageStack,
-  computeColorUps,
+  scheduleToColorUpMap,
   checkBlindChipCompatibility,
   isBubble,
   isInTheMoney,
@@ -281,10 +281,10 @@ function App() {
 
   const colorUpMap = useMemo(
     () =>
-      config.chips.enabled && config.chips.colorUpEnabled
-        ? computeColorUps(config.levels, config.chips.denominations)
+      config.chips.enabled && config.chips.colorUpEnabled && config.chips.colorUpSchedule.length > 0
+        ? scheduleToColorUpMap(config.chips.colorUpSchedule, config.chips.denominations)
         : new Map(),
-    [config.chips.enabled, config.chips.colorUpEnabled, config.chips.denominations, config.levels],
+    [config.chips.enabled, config.chips.colorUpEnabled, config.chips.colorUpSchedule, config.chips.denominations],
   );
 
   // Detect blind values that are incompatible with current chip denominations

@@ -195,14 +195,30 @@ export function useTimer(levels: Level[], settings: Settings) {
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
-    setTimerState((prev) => advanceLevel(prev, levels));
+    setTimerState((prev) => {
+      const next = advanceLevel(prev, levels);
+      // Auto-start the timer when jumping to a new level
+      if (next.remainingSeconds > 0) {
+        const now = Date.now();
+        return { ...next, status: 'running', startedAt: now, remainingAtStart: next.remainingSeconds };
+      }
+      return next;
+    });
   }, [levels, clearTick]);
 
   const previousLevel = useCallback(() => {
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
-    setTimerState((prev) => prevLevel(prev, levels));
+    setTimerState((prev) => {
+      const next = prevLevel(prev, levels);
+      // Auto-start the timer when jumping to a previous level
+      if (next.remainingSeconds > 0) {
+        const now = Date.now();
+        return { ...next, status: 'running', startedAt: now, remainingAtStart: next.remainingSeconds };
+      }
+      return next;
+    });
   }, [levels, clearTick]);
 
   const resetLevel = useCallback(() => {

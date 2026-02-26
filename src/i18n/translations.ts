@@ -197,6 +197,15 @@ const de = {
   'chipEditor.duplicateColor': 'Achtung: Mehrere Chips mit gleicher Farbe!',
   'chipEditor.colorUpEnabled': 'Color-Up deaktivieren',
   'chipEditor.colorUpDisabled': 'Color-Up aktivieren',
+  'chipEditor.colorUpSchedule': 'Color-Up Plan',
+  'chipEditor.generateSuggestion': '↻ Vorschlag generieren',
+  'chipEditor.addColorUp': '+ Color-Up hinzufügen',
+  'chipEditor.removeEntry': 'Entfernen',
+  'chipEditor.selectLevel': 'Level wählen',
+  'chipEditor.selectChip': 'Chip wählen',
+  'chipEditor.noSchedule': 'Kein Color-Up Plan. Klicke "Vorschlag generieren" um automatisch einen Plan zu erstellen.',
+  'chipEditor.levelLabel': 'Level {n}',
+  'chipEditor.breakLabel': 'Pause nach Lvl {n}',
 
   // --- Chip Sidebar (Game) ---
   'chipSidebar.title': 'Chips',
@@ -503,6 +512,15 @@ const en: Record<TranslationKey, string> = {
   'chipEditor.duplicateColor': 'Warning: Multiple chips with the same color!',
   'chipEditor.colorUpEnabled': 'Disable Color-Up',
   'chipEditor.colorUpDisabled': 'Enable Color-Up',
+  'chipEditor.colorUpSchedule': 'Color-Up Schedule',
+  'chipEditor.generateSuggestion': '↻ Generate Suggestion',
+  'chipEditor.addColorUp': '+ Add Color-Up',
+  'chipEditor.removeEntry': 'Remove',
+  'chipEditor.selectLevel': 'Select level',
+  'chipEditor.selectChip': 'Select chip',
+  'chipEditor.noSchedule': 'No color-up schedule. Click "Generate Suggestion" to auto-create a plan.',
+  'chipEditor.levelLabel': 'Level {n}',
+  'chipEditor.breakLabel': 'Break after Lvl {n}',
 
   // --- Chip Sidebar (Game) ---
   'chipSidebar.title': 'Chips',

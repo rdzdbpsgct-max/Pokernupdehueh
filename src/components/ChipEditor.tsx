@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import type { ChipConfig, ChipDenomination, Level } from '../domain/types';
+import type { ChipConfig, ChipDenomination, Level, ColorUpEntry } from '../domain/types';
 import {
   generateChipId,
   chipPresets,
   applyChipPreset,
   CHIP_COLORS,
-  computeColorUps,
+  generateColorUpSuggestion,
+  scheduleToColorUpMap,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
@@ -242,7 +243,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
             </button>
           )}
 
-          {/* Color-Up toggle + preview */}
+          {/* Color-Up toggle + editable schedule */}
           {chips.denominations.length >= 2 && (
             <div className="pt-2 border-t border-gray-700">
               <button
@@ -257,10 +258,11 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
               </button>
               {chips.colorUpEnabled && (
                 <div className="mt-2">
-                  <h4 className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                    {t('chipEditor.colorUpPreview')}
-                  </h4>
-                  <ColorUpPreview levels={levels} denominations={chips.denominations} />
+                  <ColorUpScheduleEditor
+                    levels={levels}
+                    chips={chips}
+                    onChange={emitChange}
+                  />
                 </div>
               )}
             </div>
@@ -271,48 +273,210 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
   );
 }
 
-function ColorUpPreview({
+function ColorUpScheduleEditor({
   levels,
-  denominations,
+  chips,
+  onChange,
 }: {
   levels: Level[];
-  denominations: ChipDenomination[];
+  chips: ChipConfig;
+  onChange: (config: ChipConfig) => void;
 }) {
   const { t } = useTranslation();
-  const colorUpMap = computeColorUps(levels, denominations);
+  const schedule = chips.colorUpSchedule;
 
-  if (colorUpMap.size === 0) {
-    return <p className="text-xs text-gray-500">{t('chipEditor.noColorUps')}</p>;
-  }
+  // Build level options for the dropdown
+  const levelOptions = useMemo(() => {
+    const opts: { index: number; label: string }[] = [];
+    let playCount = 0;
+    for (let i = 0; i < levels.length; i++) {
+      const lvl = levels[i];
+      if (lvl.type === 'level') {
+        playCount++;
+        opts.push({ index: i, label: t('chipEditor.levelLabel', { n: playCount }) });
+      } else {
+        opts.push({ index: i, label: t('chipEditor.breakLabel', { n: playCount }) });
+      }
+    }
+    return opts;
+  }, [levels, t]);
 
-  const entries = [...colorUpMap.entries()].sort(([a], [b]) => a - b);
+  // Available chips not yet in the schedule
+  const usedDenomIds = useMemo(
+    () => new Set(schedule.map((e) => e.denomId)),
+    [schedule],
+  );
+
+  const handleGenerate = () => {
+    const suggestion = generateColorUpSuggestion(levels, chips.denominations);
+    onChange({ ...chips, colorUpSchedule: suggestion });
+  };
+
+  const handleRemoveEntry = (idx: number) => {
+    const newSchedule = schedule.filter((_, i) => i !== idx);
+    onChange({ ...chips, colorUpSchedule: newSchedule });
+  };
+
+  const handleChangeLevelIndex = (entryIdx: number, newLevelIndex: number) => {
+    const newSchedule = schedule.map((e, i) =>
+      i === entryIdx ? { ...e, levelIndex: newLevelIndex } : e,
+    );
+    // Re-sort by levelIndex
+    newSchedule.sort((a, b) => a.levelIndex - b.levelIndex);
+    onChange({ ...chips, colorUpSchedule: newSchedule });
+  };
+
+  const handleAddEntry = (denomId: string, levelIndex: number) => {
+    const newEntry: ColorUpEntry = { levelIndex, denomId };
+    const newSchedule = [...schedule, newEntry].sort((a, b) => a.levelIndex - b.levelIndex);
+    onChange({ ...chips, colorUpSchedule: newSchedule });
+  };
+
+  // Group schedule entries by levelIndex for display
+  const grouped = useMemo(() => {
+    const map = scheduleToColorUpMap(schedule, chips.denominations);
+    return [...map.entries()].sort(([a], [b]) => a - b);
+  }, [schedule, chips.denominations]);
+
+  // Find the first break as default for new entries
+  const defaultLevelIndex = useMemo(() => {
+    const firstBreak = levels.findIndex((l) => l.type === 'break');
+    return firstBreak >= 0 ? firstBreak : 0;
+  }, [levels]);
 
   return (
-    <div className="space-y-1">
-      {entries.map(([levelIdx, denoms]) => {
-        const targetLevel = levels[levelIdx];
-        const isBreak = targetLevel?.type === 'break';
-        const playLevelNumber = levels
-          .slice(0, levelIdx + 1)
-          .filter((l) => l.type === 'level').length;
-        const chipNames = denoms.map((d) => d.label).join(', ');
-        return (
-          <div key={levelIdx} className="flex items-center gap-2 text-xs">
-            {denoms.map((d) => (
-              <span
-                key={d.id}
-                className="w-4 h-4 rounded-full inline-block border border-gray-600"
-                style={{ backgroundColor: d.color }}
-              />
-            ))}
-            <span className="text-amber-400">
-              {isBreak
-                ? t('chipEditor.colorUpAtBreak', { level: playLevelNumber, chips: chipNames })
-                : t('chipEditor.colorUpAtLevel', { level: playLevelNumber, chips: chipNames })}
-            </span>
-          </div>
-        );
-      })}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs text-gray-500 uppercase tracking-wider">
+          {t('chipEditor.colorUpSchedule')}
+        </h4>
+        <button
+          onClick={handleGenerate}
+          className="px-2 py-1 bg-amber-800/40 hover:bg-amber-800/60 text-amber-300 rounded text-xs font-medium transition-colors"
+        >
+          {t('chipEditor.generateSuggestion')}
+        </button>
+      </div>
+
+      {schedule.length === 0 ? (
+        <p className="text-xs text-gray-500">{t('chipEditor.noSchedule')}</p>
+      ) : (
+        <div className="space-y-1.5">
+          {grouped.map(([levelIdx, denoms]) => (
+            <div key={levelIdx} className="bg-gray-800/50 rounded px-2 py-1.5 space-y-1">
+              {denoms.map((denom) => {
+                const entryIdx = schedule.findIndex(
+                  (e) => e.levelIndex === levelIdx && e.denomId === denom.id,
+                );
+                return (
+                  <div key={denom.id} className="flex items-center gap-2 text-xs">
+                    <span
+                      className="w-4 h-4 rounded-full shrink-0 border border-gray-600"
+                      style={{ backgroundColor: denom.color }}
+                    />
+                    <span className="text-gray-300 w-12 truncate">{denom.label}</span>
+                    <span className="text-gray-500 font-mono">{denom.value.toLocaleString()}</span>
+                    <span className="text-gray-600 mx-1">→</span>
+                    <select
+                      value={levelIdx}
+                      onChange={(e) => handleChangeLevelIndex(entryIdx, Number(e.target.value))}
+                      className="flex-1 min-w-0 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded text-xs text-gray-300 focus:outline-none focus:border-amber-500"
+                    >
+                      {levelOptions.map((opt) => (
+                        <option key={opt.index} value={opt.index}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => handleRemoveEntry(entryIdx)}
+                      className="px-1.5 py-0.5 rounded bg-red-900/50 hover:bg-red-800 text-red-300 text-xs transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add new color-up entry */}
+      {chips.denominations.some((d) => !usedDenomIds.has(d.id)) && levelOptions.length > 0 && (
+        <AddColorUpRow
+          denominations={chips.denominations.filter((d) => !usedDenomIds.has(d.id))}
+          levelOptions={levelOptions}
+          defaultLevelIndex={defaultLevelIndex}
+          onAdd={handleAddEntry}
+        />
+      )}
+    </div>
+  );
+}
+
+function AddColorUpRow({
+  denominations,
+  levelOptions,
+  defaultLevelIndex,
+  onAdd,
+}: {
+  denominations: ChipDenomination[];
+  levelOptions: { index: number; label: string }[];
+  defaultLevelIndex: number;
+  onAdd: (denomId: string, levelIndex: number) => void;
+}) {
+  const { t } = useTranslation();
+  const sorted = useMemo(
+    () => [...denominations].sort((a, b) => a.value - b.value),
+    [denominations],
+  );
+  const [selectedDenom, setSelectedDenom] = useState(sorted[0]?.id ?? '');
+  const [selectedLevel, setSelectedLevel] = useState(defaultLevelIndex);
+
+  const handleAdd = () => {
+    if (!selectedDenom) return;
+    onAdd(selectedDenom, selectedLevel);
+    // Select next available denom
+    const remaining = sorted.filter((d) => d.id !== selectedDenom);
+    if (remaining.length > 0) {
+      setSelectedDenom(remaining[0].id);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs pt-1">
+      {/* Chip selector */}
+      <select
+        value={selectedDenom}
+        onChange={(e) => setSelectedDenom(e.target.value)}
+        className="px-1 py-1 bg-gray-700 border border-gray-600 rounded text-xs text-gray-300 focus:outline-none focus:border-amber-500"
+      >
+        {sorted.map((d) => (
+          <option key={d.id} value={d.id}>
+            {d.label} ({d.value.toLocaleString()})
+          </option>
+        ))}
+      </select>
+      <span className="text-gray-600">→</span>
+      {/* Level selector */}
+      <select
+        value={selectedLevel}
+        onChange={(e) => setSelectedLevel(Number(e.target.value))}
+        className="flex-1 min-w-0 px-1 py-1 bg-gray-700 border border-gray-600 rounded text-xs text-gray-300 focus:outline-none focus:border-amber-500"
+      >
+        {levelOptions.map((opt) => (
+          <option key={opt.index} value={opt.index}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={handleAdd}
+        className="px-2 py-1 bg-amber-800/40 hover:bg-amber-800/60 text-amber-300 rounded text-xs font-medium transition-colors whitespace-nowrap"
+      >
+        {t('chipEditor.addColorUp')}
+      </button>
     </div>
   );
 }
