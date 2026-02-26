@@ -284,10 +284,10 @@ function App() {
 
   const colorUpMap = useMemo(
     () =>
-      config.chips.enabled
+      config.chips.enabled && config.chips.colorUpEnabled
         ? computeColorUps(config.levels, config.chips.denominations)
         : new Map(),
-    [config.chips.enabled, config.chips.denominations, config.levels],
+    [config.chips.enabled, config.chips.colorUpEnabled, config.chips.denominations, config.levels],
   );
 
   // Detect blind values that are incompatible with current chip denominations

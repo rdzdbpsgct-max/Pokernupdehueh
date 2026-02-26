@@ -68,6 +68,7 @@ export interface ChipDenomination {
 
 export interface ChipConfig {
   enabled: boolean;
+  colorUpEnabled: boolean;
   denominations: ChipDenomination[];
 }
 

@@ -103,7 +103,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       />
 
       {/* Color-Up Banner */}
-      {chipConfig?.enabled && (() => {
+      {chipConfig?.enabled && chipConfig.colorUpEnabled && (() => {
         const currentColorUp = colorUpMap?.get(timerState.currentLevelIndex);
         if (!currentColorUp || currentColorUp.length === 0) return null;
         return (

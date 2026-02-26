@@ -195,6 +195,8 @@ const de = {
   'chipEditor.noColorUps': 'Keine Color-Ups nötig',
   'chipEditor.description': 'Definiere die Chip-Farben und -Werte. Color-Ups werden automatisch berechnet.',
   'chipEditor.duplicateColor': 'Achtung: Mehrere Chips mit gleicher Farbe!',
+  'chipEditor.colorUpEnabled': '✓ Color-Up aktiviert',
+  'chipEditor.colorUpDisabled': 'Color-Up deaktiviert',
 
   // --- Chip Sidebar (Game) ---
   'chipSidebar.title': 'Chips',
@@ -499,6 +501,8 @@ const en: Record<TranslationKey, string> = {
   'chipEditor.noColorUps': 'No color-ups needed',
   'chipEditor.description': 'Define chip colors and values. Color-ups are calculated automatically.',
   'chipEditor.duplicateColor': 'Warning: Multiple chips with the same color!',
+  'chipEditor.colorUpEnabled': '✓ Color-Up enabled',
+  'chipEditor.colorUpDisabled': 'Color-Up disabled',
 
   // --- Chip Sidebar (Game) ---
   'chipSidebar.title': 'Chips',

@@ -242,13 +242,27 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
             </button>
           )}
 
-          {/* Color-Up preview */}
+          {/* Color-Up toggle + preview */}
           {chips.denominations.length >= 2 && (
             <div className="pt-2 border-t border-gray-700">
-              <h4 className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                {t('chipEditor.colorUpPreview')}
-              </h4>
-              <ColorUpPreview levels={levels} denominations={chips.denominations} />
+              <button
+                onClick={() => emitChange({ ...chips, colorUpEnabled: !chips.colorUpEnabled })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  chips.colorUpEnabled
+                    ? 'bg-amber-700/50 hover:bg-amber-700/70 text-amber-200'
+                    : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                }`}
+              >
+                {chips.colorUpEnabled ? t('chipEditor.colorUpEnabled') : t('chipEditor.colorUpDisabled')}
+              </button>
+              {chips.colorUpEnabled && (
+                <div className="mt-2">
+                  <h4 className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                    {t('chipEditor.colorUpPreview')}
+                  </h4>
+                  <ColorUpPreview levels={levels} denominations={chips.denominations} />
+                </div>
+              )}
             </div>
           )}
         </div>

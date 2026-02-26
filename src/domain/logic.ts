@@ -672,6 +672,7 @@ export const chipPresets: ChipPreset[] = [
 export function applyChipPreset(preset: ChipPreset): ChipConfig {
   return {
     enabled: true,
+    colorUpEnabled: true,
     denominations: preset.denominations.map((d) => ({
       ...d,
       id: generateChipId(),
@@ -1006,7 +1007,15 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
     rebuy,
     addOn,
     bounty: (parsed.bounty as BountyConfig) ?? defaultBountyConfig(),
-    chips: (parsed.chips as ChipConfig) ?? defaultChipConfig(),
+    chips: parsed.chips
+      ? {
+          ...defaultChipConfig(),
+          ...(parsed.chips as ChipConfig),
+          colorUpEnabled: typeof (parsed.chips as Record<string, unknown>).colorUpEnabled === 'boolean'
+            ? (parsed.chips as ChipConfig).colorUpEnabled
+            : true,
+        }
+      : defaultChipConfig(),
     buyIn,
     startingChips,
   };
