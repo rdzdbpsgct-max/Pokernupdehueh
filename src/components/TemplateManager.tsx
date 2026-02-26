@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { TournamentConfig } from '../domain/types';
 import type { TournamentTemplate } from '../domain/logic';
-import { loadTemplates, saveTemplate, deleteTemplate, exportTemplateToJSON, parseTemplateFile } from '../domain/logic';
+import { loadTemplates, saveTemplate, deleteTemplate, exportTemplateToJSON, parseTemplateFile, exportConfigJSON, importConfigJSON } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 // Minimal type for File System Access API (Chromium only)
@@ -28,6 +28,9 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
   const [newName, setNewName] = useState(config.name || '');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [fileError, setFileError] = useState(false);
+  const [showJson, setShowJson] = useState(false);
+  const [jsonText, setJsonText] = useState('');
+  const [jsonError, setJsonError] = useState('');
 
   const handleSave = () => {
     if (!newName.trim()) return;
@@ -104,6 +107,28 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
     };
     input.click();
   }, [onLoad, onClose]);
+
+  const handleToggleJson = () => {
+    if (!showJson) {
+      setJsonText(exportConfigJSON(config));
+      setJsonError('');
+    }
+    setShowJson((v) => !v);
+  };
+
+  const handleJsonCopy = () => {
+    navigator.clipboard.writeText(exportConfigJSON(config));
+  };
+
+  const handleJsonImport = () => {
+    const parsed = importConfigJSON(jsonText);
+    if (!parsed) {
+      setJsonError(t('templates.jsonInvalid'));
+      return;
+    }
+    onLoad(parsed);
+    onClose();
+  };
 
   const formatDate = (iso: string) => {
     try {
@@ -213,6 +238,42 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
                 )}
               </div>
             ))
+          )}
+        </div>
+
+        {/* Collapsible JSON Import/Export */}
+        <div className="border-t border-gray-700 pt-3">
+          <button
+            onClick={handleToggleJson}
+            className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            <span className="uppercase tracking-wider">{t('templates.jsonSection')}</span>
+            <span>{showJson ? '▾' : '▸'}</span>
+          </button>
+          {showJson && (
+            <div className="mt-2 space-y-2">
+              <textarea
+                value={jsonText}
+                onChange={(e) => { setJsonText(e.target.value); setJsonError(''); }}
+                className="w-full h-32 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-xs font-mono focus:outline-none focus:border-emerald-500 resize-none"
+                spellCheck={false}
+              />
+              {jsonError && <p className="text-red-400 text-xs">{jsonError}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleJsonCopy}
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
+                >
+                  {t('templates.jsonCopy')}
+                </button>
+                <button
+                  onClick={handleJsonImport}
+                  className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-medium transition-colors"
+                >
+                  {t('templates.jsonImport')}
+                </button>
+              </div>
+            </div>
           )}
         </div>
 

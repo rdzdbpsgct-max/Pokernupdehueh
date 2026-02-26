@@ -5,7 +5,6 @@ const de = {
   'app.title': '♠ ♥ Pokern up de Hüh ♦ ♣',
   'app.startGame': '▶ Spiel starten',
   'app.setup': '⚙ Setup',
-  'app.importExport': '↕ Import/Export',
   'app.tournamentName': 'Turnier-Name',
   'app.tournamentNamePlaceholder': 'z.B. Freitagspoker',
   'app.players': 'Spieler',
@@ -113,13 +112,6 @@ const de = {
   'settings.shortcutNext': 'Nächstes',
   'settings.shortcutPrevious': 'Vorheriges',
   'settings.shortcutReset': 'Reset',
-
-  // --- Import/Export ---
-  'importExport.title': 'Import / Export',
-  'importExport.invalidJson': 'Ungültiges JSON-Format. Benötigt "name" und "levels".',
-  'importExport.copy': 'Kopieren',
-  'importExport.import': 'Importieren',
-  'importExport.close': 'Schließen',
 
   // --- Player Manager ---
   'playerManager.count': 'Anzahl Spieler',
@@ -302,6 +294,10 @@ const de = {
   'templates.loadFromFile': 'Aus Datei laden',
   'templates.invalidFile': 'Ungültige Vorlagendatei.',
   'templates.browserTemplates': 'Browser-Vorlagen',
+  'templates.jsonSection': 'JSON Import / Export',
+  'templates.jsonCopy': 'Kopieren',
+  'templates.jsonImport': 'Importieren',
+  'templates.jsonInvalid': 'Ungültiges JSON-Format.',
 
   // --- Clean View ---
   'game.cleanViewOn': 'Details einblenden',
@@ -324,7 +320,6 @@ const en: Record<TranslationKey, string> = {
   'app.title': '♠ ♥ Pokern up de Hüh ♦ ♣',
   'app.startGame': '▶ Start Game',
   'app.setup': '⚙ Setup',
-  'app.importExport': '↕ Import/Export',
   'app.tournamentName': 'Tournament Name',
   'app.tournamentNamePlaceholder': 'e.g. Friday Poker',
   'app.players': 'Players',
@@ -432,13 +427,6 @@ const en: Record<TranslationKey, string> = {
   'settings.shortcutNext': 'Next',
   'settings.shortcutPrevious': 'Previous',
   'settings.shortcutReset': 'Reset',
-
-  // --- Import/Export ---
-  'importExport.title': 'Import / Export',
-  'importExport.invalidJson': 'Invalid JSON format. Requires "name" and "levels".',
-  'importExport.copy': 'Copy',
-  'importExport.import': 'Import',
-  'importExport.close': 'Close',
 
   // --- Player Manager ---
   'playerManager.count': 'Number of Players',
@@ -621,6 +609,10 @@ const en: Record<TranslationKey, string> = {
   'templates.loadFromFile': 'Load from File',
   'templates.invalidFile': 'Invalid template file.',
   'templates.browserTemplates': 'Browser Templates',
+  'templates.jsonSection': 'JSON Import / Export',
+  'templates.jsonCopy': 'Copy',
+  'templates.jsonImport': 'Import',
+  'templates.jsonInvalid': 'Invalid JSON format.',
 
   // --- Clean View ---
   'game.cleanViewOn': 'Show details',

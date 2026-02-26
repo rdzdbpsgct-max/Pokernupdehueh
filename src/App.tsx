@@ -30,7 +30,6 @@ import { Controls } from './components/Controls';
 import { LevelPreview } from './components/LevelPreview';
 import { ConfigEditor } from './components/ConfigEditor';
 import { SettingsPanel } from './components/SettingsPanel';
-import { ImportExportModal } from './components/ImportExportModal';
 import { PlayerManager } from './components/PlayerManager';
 import { PayoutEditor } from './components/PayoutEditor';
 import { RebuyEditor } from './components/RebuyEditor';
@@ -57,7 +56,6 @@ function App() {
   const [settings, setSettings] = useState<Settings>(
     () => loadSettings() ?? defaultSettings(),
   );
-  const [showImportExport, setShowImportExport] = useState(false);
   const [showPlayerPanel, setShowPlayerPanel] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -527,12 +525,6 @@ function App() {
               {t('app.templates')}
             </button>
           )}
-          <button
-            onClick={() => setShowImportExport(true)}
-            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
-          >
-            {t('app.importExport')}
-          </button>
         </div>
       </header>
 
@@ -942,15 +934,6 @@ function App() {
           </div>
         )}
       </main>
-
-      {/* Import/Export Modal */}
-      {showImportExport && (
-        <ImportExportModal
-          config={config}
-          onImport={setConfig}
-          onClose={() => setShowImportExport(false)}
-        />
-      )}
 
       {/* Templates Modal */}
       {showTemplates && (

@@ -45,7 +45,6 @@ src/
 │   ├── ChipSidebar.tsx          # Game-mode chip info, next color-up display
 │   ├── ConfigEditor.tsx         # Blind level table editor
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
-│   ├── ImportExportModal.tsx    # JSON import/export dialog
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
 │   ├── LevelPreview.tsx         # Next-level sidebar
 │   ├── PayoutEditor.tsx         # Prize distribution config
@@ -55,7 +54,7 @@ src/
 │   ├── RebuyStatus.tsx          # Rebuy active indicator
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
 │   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen
-│   ├── TemplateManager.tsx      # Save/load/delete tournament templates
+│   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
 │   ├── TimerDisplay.tsx         # Main timer, blinds display, progress bar
 │   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
@@ -137,7 +136,7 @@ public/
 - **Chip management**: Editable color-up schedule with auto-suggestion; color-up events coupled with next break; duplicate color warnings; auto-sort by value
 - **Chip-blind compatibility**: `checkBlindChipCompatibility()` detects blind values not expressible with current chip denominations
 - **Duration estimates**: Factor in player count to estimate realistic tournament length
-- **Import/export**: Full config as JSON with backward compatibility for old formats
+- **Import/export**: Full config as JSON with backward compatibility for old formats (integrated into TemplateManager)
 - **Tournament templates**: Save/load/delete named configs via localStorage or local JSON files (File System Access API with download fallback)
 - **Clean View**: Toggle to hide stats, sidebars, and secondary controls during game (keyboard: F)
 - **Auto-start on level jump**: Timer automatically starts when pressing Next/Previous level
@@ -184,6 +183,7 @@ public/
 - **Timer-Zuverlässigkeit**: Fix für sporadisches Nicht-Starten bei Levelwechsel (eager interval restart)
 - **iPad-Kompatibilität**: Build-Target auf Safari 14 / ES2020 angepasst, Lade-Fallback in index.html
 - **Vorlagen-Dateien**: Turnier-Vorlagen als JSON-Datei speichern/laden mit nativem Dateidialog (File System Access API) oder Download-Fallback
+- **Vereinheitlichter Vorlagen-Dialog**: Import/Export und Vorlagen zu einem Dialog zusammengeführt — ein Button "Vorlagen" für alles (Browser-Vorlagen, Datei-Speichern/Laden, JSON Import/Export als aufklappbare Sektion). ImportExportModal entfernt.
 - **Text-Korrekturen**: "Nächstes: Pause" statt "Nächstes Pause", Color-Up Banner zeigt "(Chip Race)", lokalisierte Pause-Labels im Blindstruktur-Generator, aktualisierte Chip-Editor-Beschreibung
 - **7 neue Tests**: exportTemplateToJSON, parseTemplateFile Round-Trip und Fehlerbehandlung (184 Tests gesamt)
 
