@@ -11,6 +11,7 @@ interface Props {
   onScrub?: (seconds: number) => void;
   chipConfig?: ChipConfig;
   colorUpMap?: Map<number, ChipDenomination[]>;
+  cleanView?: boolean;
 }
 
 function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Level[]; currentLevelIndex: number; largeDisplay: boolean }) {
@@ -37,7 +38,7 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
   );
 }
 
-export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, chipConfig, colorUpMap }: Props) {
+export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, chipConfig, colorUpMap, cleanView }: Props) {
   const { t } = useTranslation();
   const [scrubbing, setScrubbing] = useState(false);
 
@@ -143,8 +144,8 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         {formatTime(remaining)}
       </div>
 
-      {/* Time-Scrub Controls */}
-      {onScrub && (
+      {/* Time-Scrub Controls (hidden in clean view) */}
+      {!cleanView && onScrub && (
         <div className="flex flex-col items-center gap-2 w-full max-w-xl">
           <button
             onClick={() => setScrubbing((v) => !v)}
@@ -176,16 +177,18 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         </div>
       )}
 
-      {/* Status */}
-      <p className="text-sm text-gray-500 uppercase tracking-widest">
-        {timerState.status === 'running'
-          ? t('timer.running')
-          : timerState.status === 'paused'
-          ? t('timer.paused')
-          : remaining <= 0
-          ? t('timer.finished')
-          : t('timer.stopped')}
-      </p>
+      {/* Status (hidden in clean view) */}
+      {!cleanView && (
+        <p className="text-sm text-gray-500 uppercase tracking-widest">
+          {timerState.status === 'running'
+            ? t('timer.running')
+            : timerState.status === 'paused'
+            ? t('timer.paused')
+            : remaining <= 0
+            ? t('timer.finished')
+            : t('timer.stopped')}
+        </p>
+      )}
     </div>
   );
 }

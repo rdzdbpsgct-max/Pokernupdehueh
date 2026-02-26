@@ -103,6 +103,23 @@ function App() {
     saveSettings(settings);
   }, [settings]);
 
+  // Toggle clean view: also controls both sidebars
+  const toggleCleanView = useCallback(() => {
+    setCleanView((prev) => {
+      const next = !prev;
+      if (next) {
+        // Hiding details → also hide both sidebars
+        setShowPlayerPanel(false);
+        setShowSidebar(false);
+      } else {
+        // Showing details → also show both sidebars
+        setShowPlayerPanel(true);
+        setShowSidebar(true);
+      }
+      return next;
+    });
+  }, []);
+
   // Keyboard shortcuts (only in game mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -129,13 +146,13 @@ function App() {
           });
           break;
         case 'KeyF':
-          setCleanView((v) => !v);
+          toggleCleanView();
           break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, timer, t]);
+  }, [mode, timer, t, toggleCleanView]);
 
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -396,6 +413,10 @@ function App() {
       })),
     }));
     setAddOnEndLevelIndex(null);
+    // Ensure all panels are visible when starting a game
+    setCleanView(false);
+    setShowPlayerPanel(true);
+    setShowSidebar(true);
     setMode('game');
     timer.restart();
   };
@@ -823,7 +844,7 @@ function App() {
               {/* Timer + Controls */}
               <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 gap-3 sm:gap-6 relative">
                 <button
-                  onClick={() => setCleanView((v) => !v)}
+                  onClick={toggleCleanView}
                   className={`absolute top-2 right-8 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors z-10 ${
                     cleanView
                       ? 'bg-emerald-700/60 text-emerald-200 hover:bg-emerald-700/80'
@@ -840,6 +861,7 @@ function App() {
                   countdownEnabled={settings.countdownEnabled}
                   onScrub={timer.setRemainingSeconds}
                   chipConfig={config.chips}
+                  cleanView={cleanView}
                   colorUpMap={colorUpMap}
                 />
                 <BubbleIndicator
