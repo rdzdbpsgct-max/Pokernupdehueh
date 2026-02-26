@@ -195,31 +195,35 @@ export function useTimer(levels: Level[], settings: Settings) {
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
+    const now = Date.now();
     setTimerState((prev) => {
       const next = advanceLevel(prev, levels);
-      // Auto-start the timer when jumping to a new level
       if (next.remainingSeconds > 0) {
-        const now = Date.now();
         return { ...next, status: 'running', startedAt: now, remainingAtStart: next.remainingSeconds };
       }
       return next;
     });
-  }, [levels, clearTick]);
+    // Eagerly restart the tick interval — when status was already 'running',
+    // the useEffect won't re-fire (no status change), so we must restart here.
+    // If the level has no time left, the tick is a no-op and useEffect cleans up.
+    intervalRef.current = setInterval(tick, TICK_INTERVAL_MS);
+  }, [levels, clearTick, tick]);
 
   const previousLevel = useCallback(() => {
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
+    const now = Date.now();
     setTimerState((prev) => {
       const next = prevLevel(prev, levels);
-      // Auto-start the timer when jumping to a previous level
       if (next.remainingSeconds > 0) {
-        const now = Date.now();
         return { ...next, status: 'running', startedAt: now, remainingAtStart: next.remainingSeconds };
       }
       return next;
     });
-  }, [levels, clearTick]);
+    // Eagerly restart the tick interval (same reason as nextLevel above)
+    intervalRef.current = setInterval(tick, TICK_INTERVAL_MS);
+  }, [levels, clearTick, tick]);
 
   const resetLevel = useCallback(() => {
     clearTick();
