@@ -12,6 +12,19 @@ function getAudioContext(): AudioContext {
   return audioCtx;
 }
 
+/**
+ * Pre-initialize audio context from a user gesture (required by Safari).
+ * Call this from click/touch handlers (e.g. Play button) so the AudioContext
+ * is unlocked before any programmatic sound playback.
+ */
+export function initAudio(): void {
+  try {
+    getAudioContext();
+  } catch {
+    // audio not available
+  }
+}
+
 function playNote(
   ctx: AudioContext,
   frequency: number,
@@ -30,6 +43,23 @@ function playNote(
   gain.connect(ctx.destination);
   osc.start(startTime);
   osc.stop(startTime + duration);
+}
+
+/** Simple beep for countdown and level-end (used by useTimer) */
+export function playBeep(frequency: number, durationMs: number): void {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = frequency;
+    gain.gain.value = 0.3;
+    osc.start();
+    osc.stop(ctx.currentTime + durationMs / 1000);
+  } catch {
+    // audio not available
+  }
 }
 
 /** Victory melody for tournament winner */

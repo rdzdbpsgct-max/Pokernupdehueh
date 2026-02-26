@@ -7,6 +7,7 @@ import {
   resetCurrentLevel,
   restartTournament,
 } from '../domain/logic';
+import { initAudio, playBeep } from '../domain/sounds';
 
 const TICK_INTERVAL_MS = 100;
 
@@ -16,7 +17,6 @@ export function useTimer(levels: Level[], settings: Settings) {
   );
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const countdownAudioRef = useRef<AudioContext | null>(null);
   const lastCountdownSecRef = useRef<number | null>(null);
   const levelEndAudioPlayedRef = useRef(false);
 
@@ -26,33 +26,6 @@ export function useTimer(levels: Level[], settings: Settings) {
       intervalRef.current = null;
     }
   }, []);
-
-  // Play a beep using Web Audio API
-  const playBeep = useCallback(
-    (frequency: number, durationMs: number) => {
-      if (!settings.soundEnabled) return;
-      try {
-        if (!countdownAudioRef.current) {
-          countdownAudioRef.current = new AudioContext();
-        }
-        const ctx = countdownAudioRef.current;
-        if (ctx.state === 'suspended') {
-          ctx.resume();
-        }
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = frequency;
-        gain.gain.value = 0.3;
-        osc.start();
-        osc.stop(ctx.currentTime + durationMs / 1000);
-      } catch {
-        // audio not available
-      }
-    },
-    [settings.soundEnabled],
-  );
 
   // Tick function: compute remaining from wall clock
   const tick = useCallback(() => {
@@ -77,7 +50,7 @@ export function useTimer(levels: Level[], settings: Settings) {
         // Level ended
         if (!levelEndAudioPlayedRef.current) {
           levelEndAudioPlayedRef.current = true;
-          playBeep(1000, 500);
+          if (settings.soundEnabled) playBeep(1000, 500);
         }
 
         if (settings.autoAdvance) {
@@ -107,7 +80,7 @@ export function useTimer(levels: Level[], settings: Settings) {
 
       return { ...prev, remainingSeconds: remaining };
     });
-  }, [levels, settings.autoAdvance, settings.countdownEnabled, settings.soundEnabled, playBeep]);
+  }, [levels, settings.autoAdvance, settings.countdownEnabled, settings.soundEnabled]);
 
   // Start the interval when running
   useEffect(() => {
@@ -130,6 +103,7 @@ export function useTimer(levels: Level[], settings: Settings) {
   }
 
   const start = useCallback(() => {
+    initAudio(); // Unlock AudioContext from user gesture (required by Safari)
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
     setTimerState((prev) => {
@@ -161,6 +135,7 @@ export function useTimer(levels: Level[], settings: Settings) {
   }, []);
 
   const toggleStartPause = useCallback(() => {
+    initAudio(); // Unlock AudioContext from user gesture (required by Safari)
     setTimerState((prev) => {
       if (prev.status === 'running') {
         // Pause
@@ -192,6 +167,7 @@ export function useTimer(levels: Level[], settings: Settings) {
   }, []);
 
   const nextLevel = useCallback(() => {
+    initAudio(); // Unlock AudioContext from user gesture
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
@@ -210,6 +186,7 @@ export function useTimer(levels: Level[], settings: Settings) {
   }, [levels, clearTick, tick]);
 
   const previousLevel = useCallback(() => {
+    initAudio(); // Unlock AudioContext from user gesture
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
