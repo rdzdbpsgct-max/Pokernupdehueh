@@ -365,7 +365,7 @@ export function generateBlindStructure(params: GenerateBlindParams): Level[] {
         id: generateId(),
         type: 'break',
         durationSeconds: cfg.breakDurationSeconds,
-        label: 'Pause',
+        label: moduleT('logic.defaultBreakLabel'),
       });
     }
     levels.push(level);

@@ -27,7 +27,7 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
       </p>
       {nextLvl.type === 'break' ? (
         <p className={`text-amber-500/70 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
-          {t('timer.break')} ({formatTime(nextLvl.durationSeconds)})
+          {formatTime(nextLvl.durationSeconds)}
         </p>
       ) : (
         <p className={`text-gray-400 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>

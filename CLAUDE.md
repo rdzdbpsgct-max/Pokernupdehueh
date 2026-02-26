@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.3.0
+**Version**: 1.4.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -41,7 +41,7 @@ src/
 │   ├── AddOnEditor.tsx          # Add-On config (requires Rebuy, auto-disable)
 │   ├── BlindGenerator.tsx       # Blind structure generator (3 speeds, chip-aware)
 │   ├── BountyEditor.tsx         # Bounty amount configuration
-│   ├── ChipEditor.tsx           # Chip denomination management, color-up preview
+│   ├── ChipEditor.tsx           # Chip denomination management, editable color-up schedule
 │   ├── ChipSidebar.tsx          # Game-mode chip info, next color-up display
 │   ├── ConfigEditor.tsx         # Blind level table editor
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
@@ -131,14 +131,16 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files
-- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset)
+- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), P (previous), R (reset), F (clean view toggle)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
-- **Chip management**: Color-up events coupled with next break; duplicate color warnings; auto-sort by value
+- **Chip management**: Editable color-up schedule with auto-suggestion; color-up events coupled with next break; duplicate color warnings; auto-sort by value
 - **Chip-blind compatibility**: `checkBlindChipCompatibility()` detects blind values not expressible with current chip denominations
 - **Duration estimates**: Factor in player count to estimate realistic tournament length
 - **Import/export**: Full config as JSON with backward compatibility for old formats
 - **Tournament templates**: Save/load/delete named configs via localStorage CRUD
+- **Clean View**: Toggle to hide stats, sidebars, and secondary controls during game (keyboard: F)
+- **Auto-start on level jump**: Timer automatically starts when pressing Next/Previous level
 - **Bubble detection**: `isBubble()` and `isInTheMoney()` based on active players vs paid places
 - **Tournament stats**: Live display of players, prizepool, avg stack in BB, elapsed/remaining time
 - **Screenshot/share**: `html-to-image` capture → Web Share API (mobile) or PNG download (desktop)
@@ -173,6 +175,15 @@ public/
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v1.4.0
+
+- **Editierbarer Color-Up Plan**: Color-Up Zeitpunkte können manuell angepasst oder automatisch generiert werden (Chip Race)
+- **Clean View**: Umschalter im Spielmodus blendet Stats, Sidebars und sekundäre Buttons aus — nur Timer, Blinds und Bubble bleiben (Tastenkürzel: F)
+- **Auto-Start bei Levelwechsel**: Timer startet automatisch bei Weiter/Zurück
+- **Timer-Zuverlässigkeit**: Fix für sporadisches Nicht-Starten bei Levelwechsel (eager interval restart)
+- **iPad-Kompatibilität**: Build-Target auf Safari 14 / ES2020 angepasst, Lade-Fallback in index.html
+- **Text-Korrekturen**: "Nächstes: Pause" statt "Nächstes Pause", Color-Up Banner zeigt "(Chip Race)", lokalisierte Pause-Labels im Blindstruktur-Generator, aktualisierte Chip-Editor-Beschreibung
 
 ### v1.3.0
 

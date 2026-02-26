@@ -45,7 +45,7 @@ const de = {
   'confirm.exitTournament.confirm': 'Turnier beenden',
 
   // --- Timer ---
-  'timer.next': 'Nächstes',
+  'timer.next': 'Nächstes:',
   'timer.break': 'Pause',
   'timer.closeSlider': 'Slider schließen',
   'timer.adjustTime': 'Zeit anpassen',
@@ -193,7 +193,7 @@ const de = {
   'chipEditor.colorUpAtLevel': 'Level {level}: {chips} entfernen',
   'chipEditor.colorUpAtBreak': 'Pause nach Level {level}: {chips} entfernen',
   'chipEditor.noColorUps': 'Keine Color-Ups nötig',
-  'chipEditor.description': 'Definiere die Chip-Farben und -Werte. Color-Ups werden automatisch berechnet.',
+  'chipEditor.description': 'Definiere die Chip-Farben und -Werte für das Turnier.',
   'chipEditor.duplicateColor': 'Achtung: Mehrere Chips mit gleicher Farbe!',
   'chipEditor.colorUpEnabled': 'Color-Up deaktivieren',
   'chipEditor.colorUpDisabled': 'Color-Up aktivieren',
@@ -215,7 +215,7 @@ const de = {
   'chipSidebar.noMore': 'Keine weiteren Color-Ups',
 
   // --- Color-Up Banner ---
-  'colorUp.banner': 'Color-Up: {chips} entfernen!',
+  'colorUp.banner': 'Color-Up (Chip Race): {chips} entfernen!',
 
   // --- Tournament Finished ---
   'finished.congratulations': 'Herzlichen Glückwunsch',
@@ -360,7 +360,7 @@ const en: Record<TranslationKey, string> = {
   'confirm.exitTournament.confirm': 'End Tournament',
 
   // --- Timer ---
-  'timer.next': 'Next',
+  'timer.next': 'Next:',
   'timer.break': 'Break',
   'timer.closeSlider': 'Close slider',
   'timer.adjustTime': 'Adjust time',
@@ -508,7 +508,7 @@ const en: Record<TranslationKey, string> = {
   'chipEditor.colorUpAtLevel': 'Level {level}: remove {chips}',
   'chipEditor.colorUpAtBreak': 'Break after Level {level}: remove {chips}',
   'chipEditor.noColorUps': 'No color-ups needed',
-  'chipEditor.description': 'Define chip colors and values. Color-ups are calculated automatically.',
+  'chipEditor.description': 'Define the chip colors and values for the tournament.',
   'chipEditor.duplicateColor': 'Warning: Multiple chips with the same color!',
   'chipEditor.colorUpEnabled': 'Disable Color-Up',
   'chipEditor.colorUpDisabled': 'Enable Color-Up',
@@ -530,7 +530,7 @@ const en: Record<TranslationKey, string> = {
   'chipSidebar.noMore': 'No more color-ups',
 
   // --- Color-Up Banner ---
-  'colorUp.banner': 'Color-Up: Remove {chips}!',
+  'colorUp.banner': 'Color-Up (Chip Race): Remove {chips}!',
 
   // --- Tournament Finished ---
   'finished.congratulations': 'Congratulations',
