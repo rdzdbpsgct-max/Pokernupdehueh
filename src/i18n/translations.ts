@@ -130,6 +130,12 @@ const de = {
   // --- Player Manager ---
   'playerManager.count': 'Anzahl Spieler',
   'playerManager.playerN': 'Spieler {n}',
+  'playerManager.moveUp': 'Nach oben',
+  'playerManager.moveDown': 'Nach unten',
+  'playerManager.shuffle': 'Plätze & Dealer mischen',
+  'playerManager.setDealer': 'Als Dealer setzen',
+  'playerManager.dealer': 'Dealer',
+  'playerManager.seat': 'Platz {n}',
 
   // --- Payout Editor ---
   'payoutEditor.percent': '% Prozent',
@@ -374,6 +380,12 @@ const en: Record<TranslationKey, string> = {
   // --- Player Manager ---
   'playerManager.count': 'Number of Players',
   'playerManager.playerN': 'Player {n}',
+  'playerManager.moveUp': 'Move up',
+  'playerManager.moveDown': 'Move down',
+  'playerManager.shuffle': 'Shuffle Seats & Dealer',
+  'playerManager.setDealer': 'Set as Dealer',
+  'playerManager.dealer': 'Dealer',
+  'playerManager.seat': 'Seat {n}',
 
   // --- Payout Editor ---
   'payoutEditor.percent': '% Percent',

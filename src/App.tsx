@@ -431,10 +431,12 @@ function App() {
                 </h2>
                 <PlayerManager
                   players={config.players}
-                  onChange={(players) =>
+                  dealerIndex={config.dealerIndex}
+                  onChange={(players, dealerIndex) =>
                     setConfig((prev) => ({
                       ...prev,
                       players,
+                      dealerIndex,
                       payout: defaultPayoutForPlayerCount(players.length),
                     }))
                   }
@@ -634,6 +636,7 @@ function App() {
               <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-gray-800 p-3 sm:p-4 overflow-y-auto max-h-[50vh] lg:max-h-none">
                 <PlayerPanel
                   players={config.players}
+                  dealerIndex={config.dealerIndex}
                   buyIn={config.buyIn}
                   payout={config.payout}
                   rebuyEnabled={config.rebuy.enabled}

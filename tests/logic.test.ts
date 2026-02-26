@@ -29,6 +29,8 @@ import {
   computeNextPlacement,
   computeAverageStack,
   defaultChipConfig,
+  movePlayer,
+  shufflePlayers,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -37,6 +39,7 @@ function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels:
   return {
     anteEnabled: false,
     players: [],
+    dealerIndex: 0,
     payout: defaultPayoutConfig(),
     rebuy: defaultRebuyConfig(),
     addOn: defaultAddOnConfig(),
@@ -282,6 +285,7 @@ describe('import/export', () => {
       ],
       anteEnabled: true,
       players: [makePlayer({ id: 'p1', name: 'Alice' })],
+      dealerIndex: 0,
       payout: defaultPayoutConfig(),
       rebuy: defaultRebuyConfig(),
       addOn: defaultAddOnConfig(),
@@ -1057,5 +1061,123 @@ describe('import/export addOn backward compatibility', () => {
     expect(imported!.addOn.cost).toBe(15);
     expect(imported!.addOn.chips).toBe(30000);
     expect(imported!.players[0].addOn).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// movePlayer
+// ---------------------------------------------------------------------------
+describe('movePlayer', () => {
+  const players = [
+    makePlayer({ id: '1', name: 'Alice' }),
+    makePlayer({ id: '2', name: 'Bob' }),
+    makePlayer({ id: '3', name: 'Carol' }),
+  ];
+
+  it('moves player up (swaps with previous)', () => {
+    const result = movePlayer(players, 1, -1);
+    expect(result[0].name).toBe('Bob');
+    expect(result[1].name).toBe('Alice');
+    expect(result[2].name).toBe('Carol');
+  });
+
+  it('moves player down (swaps with next)', () => {
+    const result = movePlayer(players, 0, 1);
+    expect(result[0].name).toBe('Bob');
+    expect(result[1].name).toBe('Alice');
+    expect(result[2].name).toBe('Carol');
+  });
+
+  it('returns same array when moving first player up', () => {
+    const result = movePlayer(players, 0, -1);
+    expect(result).toBe(players);
+  });
+
+  it('returns same array when moving last player down', () => {
+    const result = movePlayer(players, 2, 1);
+    expect(result).toBe(players);
+  });
+
+  it('returns new array (immutability) on valid move', () => {
+    const result = movePlayer(players, 1, -1);
+    expect(result).not.toBe(players);
+    expect(players[0].name).toBe('Alice');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// shufflePlayers
+// ---------------------------------------------------------------------------
+describe('shufflePlayers', () => {
+  it('returns array of same length', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B' }),
+      makePlayer({ id: '3', name: 'C' }),
+    ];
+    const { players: shuffled } = shufflePlayers(players);
+    expect(shuffled).toHaveLength(3);
+  });
+
+  it('contains all original players', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B' }),
+      makePlayer({ id: '3', name: 'C' }),
+    ];
+    const { players: shuffled } = shufflePlayers(players);
+    const ids = shuffled.map((p) => p.id).sort();
+    expect(ids).toEqual(['1', '2', '3']);
+  });
+
+  it('returns new array (immutability)', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B' }),
+    ];
+    const { players: shuffled } = shufflePlayers(players);
+    expect(shuffled).not.toBe(players);
+  });
+
+  it('returns dealerIndex within valid range', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B' }),
+      makePlayer({ id: '3', name: 'C' }),
+    ];
+    for (let i = 0; i < 20; i++) {
+      const { dealerIndex } = shufflePlayers(players);
+      expect(dealerIndex).toBeGreaterThanOrEqual(0);
+      expect(dealerIndex).toBeLessThan(players.length);
+    }
+  });
+
+  it('handles single player', () => {
+    const players = [makePlayer({ id: '1', name: 'A' })];
+    const { players: shuffled, dealerIndex } = shufflePlayers(players);
+    expect(shuffled).toHaveLength(1);
+    expect(dealerIndex).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// dealerIndex backward compatibility
+// ---------------------------------------------------------------------------
+describe('dealerIndex backward compatibility', () => {
+  it('fills in default dealerIndex when missing from import', () => {
+    const json = JSON.stringify({ name: 'Old', levels: [] });
+    const imported = importConfigJSON(json);
+    expect(imported?.dealerIndex).toBe(0);
+  });
+
+  it('preserves dealerIndex through export/import round-trip', () => {
+    const config = makeConfig({
+      name: 'Dealer Test',
+      levels: [],
+      dealerIndex: 3,
+    });
+    const json = exportConfigJSON(config);
+    const imported = importConfigJSON(json);
+    expect(imported?.dealerIndex).toBe(3);
   });
 });

@@ -76,6 +76,7 @@ export interface TournamentConfig {
   levels: Level[];
   anteEnabled: boolean;
   players: Player[];
+  dealerIndex: number;
   payout: PayoutConfig;
   rebuy: RebuyConfig;
   addOn: AddOnConfig;

@@ -5,6 +5,7 @@ import { useTranslation } from '../i18n';
 
 interface Props {
   players: Player[];
+  dealerIndex: number;
   buyIn: number;
   payout: PayoutConfig;
   rebuyEnabled: boolean;
@@ -21,6 +22,7 @@ interface Props {
 
 export function PlayerPanel({
   players,
+  dealerIndex,
   buyIn,
   payout,
   rebuyEnabled,
@@ -131,13 +133,20 @@ export function PlayerPanel({
           {t('playerPanel.activePlayers')} ({activePlayers.length})
         </h3>
         <div className="mt-1 space-y-1">
-          {activePlayers.map((player) => (
+          {activePlayers.map((player) => {
+            const seatIndex = players.indexOf(player);
+            const isDealer = seatIndex === dealerIndex;
+            return (
             <div
               key={player.id}
               className="flex items-center justify-between px-3 py-1.5 bg-gray-800/50 rounded"
             >
               <div className="flex-1 mr-2 min-w-0">
                 <span className="text-sm text-gray-200 truncate block">
+                  <span className="text-gray-500 text-xs mr-1">#{seatIndex + 1}</span>
+                  {isDealer && (
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold mr-1 align-text-bottom">D</span>
+                  )}
                   {player.name}
                 </span>
                 {bountyConfig.enabled && player.knockouts > 0 && (
@@ -203,7 +212,8 @@ export function PlayerPanel({
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

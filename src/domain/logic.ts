@@ -191,6 +191,35 @@ export function defaultPlayers(count: number, t = moduleT): Player[] {
 }
 
 // ---------------------------------------------------------------------------
+// Seating
+// ---------------------------------------------------------------------------
+
+/**
+ * Swaps a player with their neighbour (direction -1 = up, +1 = down).
+ * Returns the same array reference if the move is out of bounds.
+ */
+export function movePlayer(players: Player[], fromIndex: number, direction: -1 | 1): Player[] {
+  const toIndex = fromIndex + direction;
+  if (toIndex < 0 || toIndex >= players.length) return players;
+  const result = [...players];
+  [result[fromIndex], result[toIndex]] = [result[toIndex], result[fromIndex]];
+  return result;
+}
+
+/**
+ * Fisher-Yates shuffle — returns a new shuffled array plus a random dealer index.
+ */
+export function shufflePlayers(players: Player[]): { players: Player[]; dealerIndex: number } {
+  const result = [...players];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  const dealerIndex = Math.floor(Math.random() * result.length);
+  return { players: result, dealerIndex };
+}
+
+// ---------------------------------------------------------------------------
 // Payout
 // ---------------------------------------------------------------------------
 
@@ -627,6 +656,7 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
   const base = {
     anteEnabled: false,
     players: [] as Player[],
+    dealerIndex: 0,
     payout: defaultPayoutConfig(),
     rebuy: defaultRebuyConfig(10, 20000),
     addOn: defaultAddOnConfig(10, 20000),
@@ -766,6 +796,7 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
           knockouts: typeof p.knockouts === 'number' ? p.knockouts : 0,
         })) as Player[])
       : ([] as Player[]),
+    dealerIndex: typeof parsed.dealerIndex === 'number' ? parsed.dealerIndex : 0,
     payout: (parsed.payout as PayoutConfig) ?? defaultPayoutConfig(),
     rebuy,
     addOn,
