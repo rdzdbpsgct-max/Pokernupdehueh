@@ -845,10 +845,10 @@ function App() {
               <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 gap-3 sm:gap-6 relative">
                 <button
                   onClick={() => setCleanView((v) => !v)}
-                  className={`absolute top-2 right-8 px-2 py-1 rounded text-xs font-medium transition-colors z-10 ${
+                  className={`absolute top-2 right-8 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors z-10 ${
                     cleanView
-                      ? 'bg-emerald-700/50 text-emerald-300'
-                      : 'bg-gray-800/50 text-gray-500 hover:text-gray-300'
+                      ? 'bg-emerald-700/60 text-emerald-200 hover:bg-emerald-700/80'
+                      : 'bg-gray-700/70 text-gray-300 hover:bg-gray-600/80 hover:text-white'
                   }`}
                   title={cleanView ? t('game.cleanViewOff') : t('game.cleanViewOn')}
                 >

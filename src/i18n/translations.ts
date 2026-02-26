@@ -289,8 +289,8 @@ const de = {
   'templates.close': 'Schließen',
 
   // --- Clean View ---
-  'game.cleanViewOn': '✓ Fokus',
-  'game.cleanViewOff': '◎ Fokus',
+  'game.cleanViewOn': '✓ Fokus (Details ausblenden)',
+  'game.cleanViewOff': '◎ Fokus (Details ausblenden)',
 
   // --- Screenshot/Share ---
   'finished.shareResults': 'Ergebnis teilen / Screenshot',
@@ -593,8 +593,8 @@ const en: Record<TranslationKey, string> = {
   'templates.close': 'Close',
 
   // --- Clean View ---
-  'game.cleanViewOn': '✓ Focus',
-  'game.cleanViewOff': '◎ Focus',
+  'game.cleanViewOn': '✓ Focus (hide details)',
+  'game.cleanViewOff': '◎ Focus (hide details)',
 
   // --- Screenshot/Share ---
   'finished.shareResults': 'Share Results / Screenshot',
