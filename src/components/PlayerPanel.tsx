@@ -40,7 +40,7 @@ export function PlayerPanel({
 
   const totalRebuys = computeTotalRebuys(players);
   const totalAddOns = computeTotalAddOns(players);
-  const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost, addOnConfig.cost);
+  const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost, addOnConfig.enabled ? addOnConfig.cost : 0);
   const payoutAmounts = computePayouts(payout, prizePool);
 
   const activePlayers = players.filter((p) => p.status === 'active');

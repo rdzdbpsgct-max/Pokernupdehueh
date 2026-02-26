@@ -239,10 +239,10 @@ function App() {
       computeAverageStack(
         config.players,
         config.startingChips,
-        config.rebuy.rebuyChips,
-        config.addOn.chips,
+        config.rebuy.enabled ? config.rebuy.rebuyChips : 0,
+        config.addOn.enabled ? config.addOn.chips : 0,
       ),
-    [config.players, config.startingChips, config.rebuy.rebuyChips, config.addOn.chips],
+    [config.players, config.startingChips, config.rebuy.enabled, config.rebuy.rebuyChips, config.addOn.enabled, config.addOn.chips],
   );
 
   const tournamentFinished = useMemo(() => {

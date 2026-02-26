@@ -28,7 +28,7 @@ export function TournamentFinished({
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const totalRebuys = computeTotalRebuys(players);
   const totalAddOns = computeTotalAddOns(players);
-  const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.cost);
+  const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.enabled ? addOn.cost : 0);
   const payoutAmounts = computePayouts(payout, prizePool);
   const payoutMap = new Map(payoutAmounts.map((p) => [p.place, p.amount]));
   const maxPaidPlace = payoutAmounts.length > 0 ? Math.max(...payoutAmounts.map((p) => p.place)) : 0;
