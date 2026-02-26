@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { Player, PayoutConfig, BountyConfig, RebuyConfig } from '../domain/types';
-import { computeTotalRebuys, computePrizePool, computePayouts } from '../domain/logic';
+import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   payout: PayoutConfig;
   bounty: BountyConfig;
   rebuy: RebuyConfig;
+  addOn: AddOnConfig;
   onBackToSetup: () => void;
 }
 
@@ -20,12 +21,14 @@ export function TournamentFinished({
   payout,
   bounty,
   rebuy,
+  addOn,
   onBackToSetup,
 }: Props) {
   const { t } = useTranslation();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const totalRebuys = computeTotalRebuys(players);
-  const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost);
+  const totalAddOns = computeTotalAddOns(players);
+  const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.cost);
   const payoutAmounts = computePayouts(payout, prizePool);
   const payoutMap = new Map(payoutAmounts.map((p) => [p.place, p.amount]));
   const maxPaidPlace = payoutAmounts.length > 0 ? Math.max(...payoutAmounts.map((p) => p.place)) : 0;
@@ -94,7 +97,8 @@ export function TournamentFinished({
               const amount = payoutMap.get(player.finalPlace);
               const showDivider = idx > 0 && !isPaid && payoutMap.has(standings[idx - 1].finalPlace);
               const rebuyCost = rebuy.enabled ? rebuy.rebuyCost : 0;
-              const totalPaid = buyIn + player.rebuys * rebuyCost;
+              const addOnCost = addOn.enabled && player.addOn ? addOn.cost : 0;
+              const totalPaid = buyIn + player.rebuys * rebuyCost + addOnCost;
               const bountyEarnings = bounty.enabled ? player.knockouts * bounty.amount : 0;
               const bountyEntryFee = bounty.enabled ? bounty.amount : 0;
               const totalCost = totalPaid + bountyEntryFee;
@@ -152,6 +156,13 @@ export function TournamentFinished({
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-500">{t('finished.rebuys')} ({player.rebuys}×)</span>
                             <span className="text-gray-400">{(player.rebuys * rebuyCost).toFixed(2)} {t('unit.eur')}</span>
+                          </div>
+                        )}
+                        {/* Add-On */}
+                        {addOn.enabled && player.addOn && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">{t('finished.addOn')}</span>
+                            <span className="text-gray-400">{addOn.cost.toFixed(2)} {t('unit.eur')}</span>
                           </div>
                         )}
                         {/* Bounty paid */}
@@ -244,6 +255,14 @@ export function TournamentFinished({
                 <span className="text-gray-400">{t('finished.rebuys')}</span>
                 <span className="text-white">
                   {totalRebuys} &times; {rebuy.rebuyCost} {t('unit.eur')}
+                </span>
+              </div>
+            )}
+            {totalAddOns > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">{t('finished.addOns')}</span>
+                <span className="text-white">
+                  {totalAddOns} &times; {addOn.cost} {t('unit.eur')}
                 </span>
               </div>
             )}

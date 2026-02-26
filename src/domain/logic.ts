@@ -6,6 +6,7 @@ import type {
   Player,
   PayoutConfig,
   RebuyConfig,
+  AddOnConfig,
   BountyConfig,
 } from './types';
 import { t as moduleT } from '../i18n/translations';
@@ -174,6 +175,7 @@ export function defaultPlayers(count: number, t = moduleT): Player[] {
     id: generatePlayerId(),
     name: t('logic.defaultPlayerName', { n: i + 1 }),
     rebuys: 0,
+    addOn: false,
     status: 'active' as const,
     placement: null,
     eliminatedBy: null,
@@ -314,6 +316,22 @@ export function computeTournamentElapsedSeconds(
 }
 
 // ---------------------------------------------------------------------------
+// Add-On
+// ---------------------------------------------------------------------------
+
+export function defaultAddOnConfig(buyIn = 10, startingChips = 20000): AddOnConfig {
+  return {
+    enabled: false,
+    cost: buyIn,
+    chips: startingChips,
+  };
+}
+
+export function computeTotalAddOns(players: Player[]): number {
+  return players.filter((p) => p.addOn).length;
+}
+
+// ---------------------------------------------------------------------------
 // Bounty
 // ---------------------------------------------------------------------------
 
@@ -333,10 +351,12 @@ export function computeTotalRebuys(players: Player[]): number {
   return players.reduce((sum, p) => sum + p.rebuys, 0);
 }
 
-export function computePrizePool(players: Player[], buyIn: number, rebuyCost?: number): number {
+export function computePrizePool(players: Player[], buyIn: number, rebuyCost?: number, addOnCost?: number): number {
   const totalRebuys = computeTotalRebuys(players);
+  const totalAddOns = computeTotalAddOns(players);
   const costPerRebuy = rebuyCost ?? buyIn;
-  return (players.length * buyIn) + (totalRebuys * costPerRebuy);
+  const costPerAddOn = addOnCost ?? buyIn;
+  return (players.length * buyIn) + (totalRebuys * costPerRebuy) + (totalAddOns * costPerAddOn);
 }
 
 export function computePayouts(
@@ -350,6 +370,27 @@ export function computePayouts(
         ? Math.round((entry.value / 100) * prizePool * 100) / 100
         : entry.value,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Average stack
+// ---------------------------------------------------------------------------
+
+export function computeAverageStack(
+  players: Player[],
+  startingChips: number,
+  rebuyChips: number,
+  addOnChips: number,
+): number {
+  const activePlayers = players.filter((p) => p.status === 'active').length;
+  if (activePlayers === 0) return 0;
+  const totalRebuys = computeTotalRebuys(players);
+  const totalAddOns = computeTotalAddOns(players);
+  const totalChips =
+    players.length * startingChips +
+    totalRebuys * rebuyChips +
+    totalAddOns * addOnChips;
+  return Math.round(totalChips / activePlayers);
 }
 
 // ---------------------------------------------------------------------------
@@ -401,6 +442,7 @@ export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentCon
     players: [] as Player[],
     payout: defaultPayoutConfig(),
     rebuy: defaultRebuyConfig(10, 20000),
+    addOn: defaultAddOnConfig(10, 20000),
     bounty: defaultBountyConfig(),
     buyIn: 10,
     startingChips: 20000,
@@ -512,6 +554,15 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
         rebuyChips: typeof rebuyRaw.rebuyChips === 'number' ? rebuyRaw.rebuyChips : startingChips,
       }
     : defaultRebuyConfig(buyIn, startingChips);
+  const addOnRaw = parsed.addOn as Record<string, unknown> | undefined;
+  const addOn: AddOnConfig = addOnRaw
+    ? {
+        ...defaultAddOnConfig(buyIn, startingChips),
+        ...(addOnRaw as Partial<AddOnConfig>),
+        cost: typeof addOnRaw.cost === 'number' ? addOnRaw.cost : buyIn,
+        chips: typeof addOnRaw.chips === 'number' ? addOnRaw.chips : startingChips,
+      }
+    : defaultAddOnConfig(buyIn, startingChips);
   return {
     name: typeof parsed.name === 'string' ? parsed.name : 'Tournament',
     levels: parsed.levels as Level[],
@@ -520,6 +571,7 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
       ? ((parsed.players as Record<string, unknown>[]).map((p) => ({
           ...p,
           rebuys: typeof p.rebuys === 'number' ? p.rebuys : 0,
+          addOn: typeof p.addOn === 'boolean' ? p.addOn : false,
           status: p.status === 'eliminated' ? 'eliminated' : 'active',
           placement: typeof p.placement === 'number' ? p.placement : null,
           eliminatedBy: typeof p.eliminatedBy === 'string' ? p.eliminatedBy : null,
@@ -528,6 +580,7 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
       : ([] as Player[]),
     payout: (parsed.payout as PayoutConfig) ?? defaultPayoutConfig(),
     rebuy,
+    addOn,
     bounty: (parsed.bounty as BountyConfig) ?? defaultBountyConfig(),
     buyIn,
     startingChips,

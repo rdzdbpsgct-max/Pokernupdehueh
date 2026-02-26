@@ -16,6 +16,7 @@ import {
   validatePayoutConfig,
   validateConfig,
   snapSpinnerValue,
+  computeAverageStack,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
@@ -32,6 +33,7 @@ import { PayoutEditor } from './components/PayoutEditor';
 import { RebuyEditor } from './components/RebuyEditor';
 import { RebuyStatus } from './components/RebuyStatus';
 import { PlayerPanel } from './components/PlayerPanel';
+import { AddOnEditor } from './components/AddOnEditor';
 import { BountyEditor } from './components/BountyEditor';
 import { TournamentFinished } from './components/TournamentFinished';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -150,6 +152,16 @@ function App() {
     }));
   }, []);
 
+  // --- Add-on update handler ---
+  const updatePlayerAddOn = useCallback((playerId: string, hasAddOn: boolean) => {
+    setConfig((prev) => ({
+      ...prev,
+      players: prev.players.map((p) =>
+        p.id === playerId ? { ...p, addOn: hasAddOn } : p,
+      ),
+    }));
+  }, []);
+
   // --- Eliminate player handler ---
   const eliminatePlayer = useCallback((playerId: string, eliminatedBy: string | null) => {
     setConfig((prev) => {
@@ -222,6 +234,17 @@ function App() {
       .filter((l) => l.type === 'level').length;
   }, [config.levels, timer.timerState.currentLevelIndex]);
 
+  const averageStack = useMemo(
+    () =>
+      computeAverageStack(
+        config.players,
+        config.startingChips,
+        config.rebuy.rebuyChips,
+        config.addOn.chips,
+      ),
+    [config.players, config.startingChips, config.rebuy.rebuyChips, config.addOn.chips],
+  );
+
   const tournamentFinished = useMemo(() => {
     if (config.players.length < 2) return false;
     return config.players.filter((p) => p.status === 'active').length === 1;
@@ -267,6 +290,7 @@ function App() {
       players: prev.players.map((p) => ({
         ...p,
         rebuys: 0,
+        addOn: false,
         status: 'active' as const,
         placement: null,
         eliminatedBy: null,
@@ -428,6 +452,10 @@ function App() {
                             ...prev.rebuy,
                             rebuyCost: prev.rebuy.rebuyCost === prev.buyIn ? newBuyIn : prev.rebuy.rebuyCost,
                           },
+                          addOn: {
+                            ...prev.addOn,
+                            cost: prev.addOn.cost === prev.buyIn ? newBuyIn : prev.addOn.cost,
+                          },
                         }));
                       }}
                       className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
@@ -451,6 +479,10 @@ function App() {
                             rebuy: {
                               ...prev.rebuy,
                               rebuyChips: prev.rebuy.rebuyChips === prev.startingChips ? newChips : prev.rebuy.rebuyChips,
+                            },
+                            addOn: {
+                              ...prev.addOn,
+                              chips: prev.addOn.chips === prev.startingChips ? newChips : prev.addOn.chips,
                             },
                           };
                         });
@@ -511,6 +543,19 @@ function App() {
                 />
               </div>
 
+              {/* Add-On */}
+              <div>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  {t('app.addOn')}
+                </h2>
+                <AddOnEditor
+                  addOn={config.addOn}
+                  onChange={(addOn) => setConfig((prev) => ({ ...prev, addOn }))}
+                  buyIn={config.buyIn}
+                  startingChips={config.startingChips}
+                />
+              </div>
+
               {/* Bounty */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
@@ -555,6 +600,7 @@ function App() {
             payout={config.payout}
             bounty={config.bounty}
             rebuy={config.rebuy}
+            addOn={config.addOn}
             onBackToSetup={switchToSetup}
           />
         ) : (
@@ -570,8 +616,11 @@ function App() {
                   rebuyEnabled={config.rebuy.enabled}
                   rebuyActive={rebuyActive}
                   rebuyConfig={config.rebuy}
+                  addOnConfig={config.addOn}
                   bountyConfig={config.bounty}
+                  averageStack={averageStack}
                   onUpdateRebuys={updatePlayerRebuys}
+                  onUpdateAddOn={updatePlayerAddOn}
                   onEliminatePlayer={eliminatePlayer}
                   onReinstatePlayer={reinstatePlayer}
                 />

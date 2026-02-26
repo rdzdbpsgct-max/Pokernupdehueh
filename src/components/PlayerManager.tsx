@@ -21,7 +21,7 @@ function PlayerManagerInner({ players, onChange }: Props) {
     if (clamped > players.length) {
       const newPlayers = [...players];
       for (let i = players.length; i < clamped; i++) {
-        newPlayers.push({ id: generatePlayerId(), name: t('playerManager.playerN', { n: i + 1 }), rebuys: 0, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 });
+        newPlayers.push({ id: generatePlayerId(), name: t('playerManager.playerN', { n: i + 1 }), rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 });
       }
       onChange(newPlayers);
     } else if (clamped < players.length) {
