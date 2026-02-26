@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { TournamentConfig } from '../domain/types';
 import type { TournamentTemplate } from '../domain/logic';
 import { loadTemplates, saveTemplate, deleteTemplate, exportTemplateToJSON, parseTemplateFile, exportConfigJSON, importConfigJSON } from '../domain/logic';
@@ -31,6 +31,12 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
   const [showJson, setShowJson] = useState(false);
   const [jsonText, setJsonText] = useState('');
   const [jsonError, setJsonError] = useState('');
+
+  // Detect native save picker support (Chromium only)
+  const hasNativeSavePicker = useMemo(() => {
+    const w = window as unknown as WindowWithFilePicker;
+    return typeof w.showSaveFilePicker === 'function';
+  }, []);
 
   const handleSave = () => {
     if (!newName.trim()) return;
@@ -171,6 +177,11 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
           >
             <span>↓</span> {t('templates.saveToFile')}
           </button>
+          {!hasNativeSavePicker && (
+            <p className="text-gray-600 text-[10px] leading-tight">
+              {t('templates.saveHint')}
+            </p>
+          )}
         </div>
 
         {/* Template list header with file load button */}

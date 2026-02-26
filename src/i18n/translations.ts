@@ -298,6 +298,7 @@ const de = {
   'templates.jsonCopy': 'Kopieren',
   'templates.jsonImport': 'Importieren',
   'templates.jsonInvalid': 'Ungültiges JSON-Format.',
+  'templates.saveHint': 'Tipp: In Safari → Einstellungen → Allgemein → Download-Ort auf „Nachfragen" stellen, um den Speicherort zu wählen.',
 
   // --- Clean View ---
   'game.cleanViewOn': 'Details einblenden',
@@ -613,6 +614,7 @@ const en: Record<TranslationKey, string> = {
   'templates.jsonCopy': 'Copy',
   'templates.jsonImport': 'Import',
   'templates.jsonInvalid': 'Invalid JSON format.',
+  'templates.saveHint': 'Tip: In Safari → Settings → General, set download location to "Ask for each download" to choose where to save.',
 
   // --- Clean View ---
   'game.cleanViewOn': 'Show details',
