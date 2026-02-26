@@ -236,10 +236,25 @@ export function roundToNice(value: number): number {
   return Math.round(value / 500) * 500;
 }
 
-/** BB multipliers relative to base unit (startingChips / 100) */
-const REFERENCE_BB_SEQUENCE = [
-  1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 40, 60, 80, 120, 160,
-];
+/**
+ * Reference BB sequences for each speed, calibrated for 20 000 starting chips.
+ * Fast: aggressive jumps, fewer levels — turbo / multi-deck games.
+ * Normal: classic home-tournament progression.
+ * Slow: gradual increments, deep play.
+ */
+const REFERENCE_STACKS = 20000;
+
+const BB_SEQUENCES: Record<string, number[]> = {
+  fast: [
+    50, 100, 200, 400, 600, 800, 1200, 1600, 2000, 3000, 4000, 6000, 8000, 10000,
+  ],
+  normal: [
+    50, 100, 150, 200, 300, 400, 600, 800, 1000, 1500, 2000, 3000, 4000, 6000, 8000, 10000,
+  ],
+  slow: [
+    50, 100, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000,
+  ],
+};
 
 export type BlindSpeed = 'fast' | 'normal' | 'slow';
 
@@ -264,20 +279,20 @@ export interface GenerateBlindParams {
 
 /**
  * Generate a complete blind structure based on starting chips and speed.
+ * Each speed has its own BB progression (not just different durations).
+ * Values are scaled from a 20k reference stack and rounded to nice poker numbers.
  */
 export function generateBlindStructure(params: GenerateBlindParams): Level[] {
   const { startingChips, speed, anteEnabled } = params;
   const cfg = SPEED_CONFIGS[speed];
-  const baseUnit = startingChips / 100;
+  const scale = startingChips / REFERENCE_STACKS;
 
-  // Build play levels from the reference sequence
   const playLevels: Level[] = [];
   let lastBB = 0;
 
-  for (const mult of REFERENCE_BB_SEQUENCE) {
-    const rawBB = baseUnit * mult;
-    const bb = roundToNice(rawBB);
-    if (bb <= lastBB) continue; // skip duplicates
+  for (const refBB of BB_SEQUENCES[speed]) {
+    const bb = roundToNice(refBB * scale);
+    if (bb <= lastBB) continue; // skip duplicates after rounding
     const sb = roundToNice(bb / 2);
     if (sb >= bb) continue; // safety: SB must be < BB
     const ante = anteEnabled ? computeDefaultAnte(bb) : 0;
@@ -319,6 +334,27 @@ export function estimateDuration(levels: Level[]): number {
   return levels.reduce((sum, l) => sum + l.durationSeconds, 0);
 }
 
+/**
+ * Estimate how many levels a tournament will realistically play through,
+ * based on total chips in play and blind progression.
+ * Assumes tournament ends when the short stack at heads-up is ~10 BBs.
+ */
+export function estimatePlayedLevels(levels: Level[], playerCount: number, startingChips: number): Level[] {
+  if (playerCount < 2) return levels;
+  const totalChips = startingChips * playerCount;
+  // Estimate end: short stack at heads-up ≈ 40% of total chips = ~10 BBs
+  const endBB = Math.max(1, totalChips * 0.04);
+
+  const result: Level[] = [];
+  for (const level of levels) {
+    result.push(level);
+    if (level.type === 'level' && level.bigBlind != null && level.bigBlind >= endBB) {
+      break;
+    }
+  }
+  return result;
+}
+
 export interface DurationEstimate {
   speed: BlindSpeed;
   levels: Level[];
@@ -327,18 +363,23 @@ export interface DurationEstimate {
 
 /**
  * Estimate durations for all 3 speed configs.
+ * Uses player count and starting chips to estimate realistic tournament length.
  */
 export function estimateAllDurations(
   startingChips: number,
   anteEnabled: boolean,
+  playerCount: number,
 ): DurationEstimate[] {
   const speeds: BlindSpeed[] = ['fast', 'normal', 'slow'];
   return speeds.map((speed) => {
-    const levels = generateBlindStructure({ startingChips, speed, anteEnabled });
+    const allLevels = generateBlindStructure({ startingChips, speed, anteEnabled });
+    const playedLevels = playerCount >= 2
+      ? estimatePlayedLevels(allLevels, playerCount, startingChips)
+      : allLevels;
     return {
       speed,
-      levels,
-      totalSeconds: estimateDuration(levels),
+      levels: allLevels,
+      totalSeconds: estimateDuration(playedLevels),
     };
   });
 }
@@ -793,86 +834,26 @@ export function applyDefaultAntes(levels: Level[]): Level[] {
 // Presets
 // ---------------------------------------------------------------------------
 
-export function createPreset(name: 'turbo' | 'standard' | 'deep'): TournamentConfig {
-  const base = {
+/**
+ * Create a default tournament config with a generated "normal" blind structure.
+ */
+export function defaultConfig(): TournamentConfig {
+  const buyIn = 10;
+  const startingChips = 20000;
+  return {
+    name: '',
     anteEnabled: false,
+    levels: generateBlindStructure({ startingChips, speed: 'normal', anteEnabled: false }),
     players: [] as Player[],
     dealerIndex: 0,
     payout: defaultPayoutConfig(),
-    rebuy: defaultRebuyConfig(10, 20000),
-    addOn: defaultAddOnConfig(10, 20000),
+    rebuy: defaultRebuyConfig(buyIn, startingChips),
+    addOn: defaultAddOnConfig(buyIn, startingChips),
     bounty: defaultBountyConfig(),
     chips: defaultChipConfig(),
-    buyIn: 10,
-    startingChips: 20000,
+    buyIn,
+    startingChips,
   };
-
-  const presets: Record<string, TournamentConfig> = {
-    turbo: {
-      ...base,
-      name: 'Turbo Tournament',
-      levels: [
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 25, bigBlind: 50, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 50, bigBlind: 100, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 75, bigBlind: 150, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 300, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 100, bigBlind: 200, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 150, bigBlind: 300, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 200, bigBlind: 400, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 300, bigBlind: 600, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 300, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 400, bigBlind: 800, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 500, bigBlind: 1000, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 750, bigBlind: 1500, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 360, smallBlind: 1000, bigBlind: 2000, ante: 0 },
-      ],
-    },
-    standard: {
-      ...base,
-      name: 'Standard Tournament',
-      levels: [
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 25, bigBlind: 50, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 50, bigBlind: 100, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 75, bigBlind: 150, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 100, bigBlind: 200, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 600, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 150, bigBlind: 300, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 200, bigBlind: 400, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 300, bigBlind: 600, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 400, bigBlind: 800, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 600, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 500, bigBlind: 1000, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 750, bigBlind: 1500, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 1000, bigBlind: 2000, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 1500, bigBlind: 3000, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 900, smallBlind: 2000, bigBlind: 4000, ante: 0 },
-      ],
-    },
-    deep: {
-      ...base,
-      name: 'Deep Stack Tournament',
-      levels: [
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 25, bigBlind: 50, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 50, bigBlind: 100, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 75, bigBlind: 150, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 100, bigBlind: 200, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 125, bigBlind: 250, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 900, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 150, bigBlind: 300, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 200, bigBlind: 400, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 250, bigBlind: 500, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 300, bigBlind: 600, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 400, bigBlind: 800, ante: 0 },
-        { id: generateId(), type: 'break', durationSeconds: 900, label: 'Pause' },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 500, bigBlind: 1000, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 750, bigBlind: 1500, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 1000, bigBlind: 2000, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 1500, bigBlind: 3000, ante: 0 },
-        { id: generateId(), type: 'level', durationSeconds: 1200, smallBlind: 2000, bigBlind: 4000, ante: 0 },
-      ],
-    },
-  };
-  return presets[name];
 }
 
 // ---------------------------------------------------------------------------

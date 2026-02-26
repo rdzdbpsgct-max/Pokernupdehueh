@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { TournamentConfig, Settings } from './domain/types';
 import {
-  createPreset,
+  defaultConfig,
   defaultSettings,
   saveConfig,
   loadConfig,
@@ -26,7 +26,6 @@ import { TimerDisplay } from './components/TimerDisplay';
 import { Controls } from './components/Controls';
 import { LevelPreview } from './components/LevelPreview';
 import { ConfigEditor } from './components/ConfigEditor';
-import { PresetPicker } from './components/PresetPicker';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ImportExportModal } from './components/ImportExportModal';
 import { PlayerManager } from './components/PlayerManager';
@@ -48,7 +47,7 @@ function App() {
   const { t, language } = useTranslation();
   const [mode, setMode] = useState<Mode>('setup');
   const [config, setConfig] = useState<TournamentConfig>(
-    () => loadConfig() ?? createPreset('standard'),
+    () => loadConfig() ?? defaultConfig(),
   );
   const [settings, setSettings] = useState<Settings>(
     () => loadSettings() ?? defaultSettings(),
@@ -432,21 +431,6 @@ function App() {
                 />
               </div>
 
-              {/* Presets */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.loadPreset')}
-                </h2>
-                <PresetPicker onSelect={(preset) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    name: preset.name,
-                    levels: preset.levels,
-                    anteEnabled: preset.anteEnabled,
-                  }))
-                } />
-              </div>
-
               {/* Spieler */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
@@ -546,6 +530,7 @@ function App() {
               <BlindGenerator
                 startingChips={config.startingChips}
                 anteEnabled={config.anteEnabled}
+                playerCount={config.players.length}
                 onApply={(levels) =>
                   setConfig((prev) => ({ ...prev, levels }))
                 }
@@ -594,7 +579,12 @@ function App() {
                 </h2>
                 <RebuyEditor
                   rebuy={config.rebuy}
-                  onChange={(rebuy) => setConfig((prev) => ({ ...prev, rebuy }))}
+                  onChange={(rebuy) => setConfig((prev) => ({
+                    ...prev,
+                    rebuy,
+                    // Auto-disable add-on when rebuy is turned off
+                    addOn: !rebuy.enabled ? { ...prev.addOn, enabled: false } : prev.addOn,
+                  }))}
                   buyIn={config.buyIn}
                   startingChips={config.startingChips}
                 />

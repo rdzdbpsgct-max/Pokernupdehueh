@@ -8,7 +8,6 @@ const de = {
   'app.importExport': '↕ Import/Export',
   'app.tournamentName': 'Turnier-Name',
   'app.tournamentNamePlaceholder': 'z.B. Freitagspoker',
-  'app.loadPreset': 'Preset laden',
   'app.players': 'Spieler',
   'app.buyInAndChips': 'Buy-In & Startchips',
   'app.buyIn': 'Buy-In',
@@ -99,14 +98,6 @@ const de = {
   'config.addLevel': '+ Level',
   'config.addBreak': '+ Pause',
   'config.label': 'Label:',
-
-  // --- Preset Picker ---
-  'preset.turbo': 'Turbo',
-  'preset.turboDesc': '6 min Levels, schnelles Spiel',
-  'preset.standard': 'Standard',
-  'preset.standardDesc': '15 min Levels, klassisch',
-  'preset.deep': 'Deep Stack',
-  'preset.deepDesc': '20 min Levels, viel Spieltiefe',
 
   // --- Settings ---
   'settings.title': 'Einstellungen',
@@ -282,7 +273,6 @@ const en: Record<TranslationKey, string> = {
   'app.importExport': '↕ Import/Export',
   'app.tournamentName': 'Tournament Name',
   'app.tournamentNamePlaceholder': 'e.g. Friday Poker',
-  'app.loadPreset': 'Load Preset',
   'app.players': 'Players',
   'app.buyInAndChips': 'Buy-In & Starting Chips',
   'app.buyIn': 'Buy-In',
@@ -373,14 +363,6 @@ const en: Record<TranslationKey, string> = {
   'config.addLevel': '+ Level',
   'config.addBreak': '+ Break',
   'config.label': 'Label:',
-
-  // --- Preset Picker ---
-  'preset.turbo': 'Turbo',
-  'preset.turboDesc': '6 min levels, fast-paced',
-  'preset.standard': 'Standard',
-  'preset.standardDesc': '15 min levels, classic',
-  'preset.deep': 'Deep Stack',
-  'preset.deepDesc': '20 min levels, deep play',
 
   // --- Settings ---
   'settings.title': 'Settings',

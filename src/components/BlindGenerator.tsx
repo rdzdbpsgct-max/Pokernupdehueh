@@ -7,17 +7,18 @@ import { useTranslation } from '../i18n';
 interface Props {
   startingChips: number;
   anteEnabled: boolean;
+  playerCount: number;
   onApply: (levels: Level[]) => void;
 }
 
-export function BlindGenerator({ startingChips, anteEnabled, onApply }: Props) {
+export function BlindGenerator({ startingChips, anteEnabled, playerCount, onApply }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedSpeed, setSelectedSpeed] = useState<BlindSpeed>('normal');
 
   const estimates = useMemo(
-    () => estimateAllDurations(startingChips, anteEnabled),
-    [startingChips, anteEnabled],
+    () => estimateAllDurations(startingChips, anteEnabled, playerCount),
+    [startingChips, anteEnabled, playerCount],
   );
 
   const preview = useMemo(

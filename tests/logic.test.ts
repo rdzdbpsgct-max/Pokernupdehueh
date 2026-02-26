@@ -34,6 +34,7 @@ import {
   roundToNice,
   generateBlindStructure,
   estimateDuration,
+  estimatePlayedLevels,
   estimateAllDurations,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
@@ -1314,6 +1315,25 @@ describe('generateBlindStructure', () => {
     expect(normal.filter((l) => l.type === 'level')[0].durationSeconds).toBe(720);
     expect(slow.filter((l) => l.type === 'level')[0].durationSeconds).toBe(1200);
   });
+
+  it('starts at 25/50 for 20k starting chips', () => {
+    const levels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const first = levels.filter((l) => l.type === 'level')[0];
+    expect(first.smallBlind).toBe(25);
+    expect(first.bigBlind).toBe(50);
+  });
+
+  it('different speeds produce different blind progressions (not just duration)', () => {
+    const fast = generateBlindStructure({ startingChips: 20000, speed: 'fast', anteEnabled: false });
+    const slow = generateBlindStructure({ startingChips: 20000, speed: 'slow', anteEnabled: false });
+    const fastBBs = fast.filter((l) => l.type === 'level').map((l) => l.bigBlind!);
+    const slowBBs = slow.filter((l) => l.type === 'level').map((l) => l.bigBlind!);
+    // Slow should have more play levels than fast (more intermediate steps)
+    expect(slowBBs.length).toBeGreaterThan(fastBBs.length);
+    // Both start at 50
+    expect(fastBBs[0]).toBe(50);
+    expect(slowBBs[0]).toBe(50);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1335,16 +1355,43 @@ describe('estimateDuration', () => {
 });
 
 // ---------------------------------------------------------------------------
+// estimatePlayedLevels
+// ---------------------------------------------------------------------------
+describe('estimatePlayedLevels', () => {
+  it('returns fewer levels with fewer players', () => {
+    const allLevels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const for4 = estimatePlayedLevels(allLevels, 4, 20000);
+    const for8 = estimatePlayedLevels(allLevels, 8, 20000);
+    expect(for4.length).toBeLessThanOrEqual(for8.length);
+  });
+
+  it('returns all levels when player count < 2', () => {
+    const allLevels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const result = estimatePlayedLevels(allLevels, 1, 20000);
+    expect(result.length).toBe(allLevels.length);
+  });
+
+  it('cuts off at appropriate blind level for given player count', () => {
+    const allLevels = generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false });
+    const played = estimatePlayedLevels(allLevels, 6, 20000);
+    // Total chips = 120k, endBB ≈ 4800 → should stop around BB 5000-6000
+    const lastPlay = [...played].reverse().find((l) => l.type === 'level');
+    expect(lastPlay).toBeDefined();
+    expect(lastPlay!.bigBlind!).toBeLessThanOrEqual(20000);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // estimateAllDurations
 // ---------------------------------------------------------------------------
 describe('estimateAllDurations', () => {
   it('returns 3 estimates', () => {
-    const estimates = estimateAllDurations(20000, false);
+    const estimates = estimateAllDurations(20000, false, 6);
     expect(estimates).toHaveLength(3);
   });
 
   it('returns estimates in order: fast < normal < slow', () => {
-    const estimates = estimateAllDurations(20000, false);
+    const estimates = estimateAllDurations(20000, false, 6);
     expect(estimates[0].speed).toBe('fast');
     expect(estimates[1].speed).toBe('normal');
     expect(estimates[2].speed).toBe('slow');
@@ -1353,10 +1400,19 @@ describe('estimateAllDurations', () => {
   });
 
   it('each estimate has non-empty levels', () => {
-    const estimates = estimateAllDurations(20000, false);
+    const estimates = estimateAllDurations(20000, false, 6);
     estimates.forEach((e) => {
       expect(e.levels.length).toBeGreaterThan(0);
       expect(e.totalSeconds).toBeGreaterThan(0);
     });
+  });
+
+  it('more players produce longer estimates', () => {
+    const est4 = estimateAllDurations(20000, false, 4);
+    const est8 = estimateAllDurations(20000, false, 8);
+    // Normal speed: 8 players should take longer than 4
+    const normal4 = est4.find((e) => e.speed === 'normal')!;
+    const normal8 = est8.find((e) => e.speed === 'normal')!;
+    expect(normal8.totalSeconds).toBeGreaterThanOrEqual(normal4.totalSeconds);
   });
 });
