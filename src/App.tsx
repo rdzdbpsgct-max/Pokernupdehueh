@@ -101,6 +101,52 @@ function App() {
     saveSettings(settings);
   }, [settings]);
 
+  // Wake Lock: prevent screen from sleeping during active tournament
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  useEffect(() => {
+    const isActive = mode === 'game' && timer.timerState.status === 'running';
+
+    const requestWakeLock = async () => {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+      } catch {
+        // Wake lock request failed (e.g. low battery, tab hidden)
+      }
+    };
+
+    const releaseWakeLock = async () => {
+      if (wakeLockRef.current) {
+        try {
+          await wakeLockRef.current.release();
+        } catch {
+          // already released
+        }
+        wakeLockRef.current = null;
+      }
+    };
+
+    if (isActive) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+
+    // Re-acquire wake lock when tab becomes visible again
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && isActive) {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      releaseWakeLock();
+    };
+  }, [mode, timer.timerState.status]);
+
   // Toggle clean view: also controls both sidebars
   const toggleCleanView = useCallback(() => {
     setCleanView((prev) => {

@@ -33,6 +33,9 @@ All notable changes to the Pokern up de Hüh app.
 - **iPad-Kompatibilität** — Build-Target auf Safari 14 / ES2020 angepasst, Lade-Fallback in index.html.
 - **iPad compatibility** — Build target set to Safari 14 / ES2020, loading fallback in index.html.
 
+- **Wake Lock** — Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus). Wird bei Tab-Wechsel automatisch neu angefordert.
+- **Wake Lock** — Screen stays on during active timer (no sleep mode). Automatically re-acquired on tab focus.
+
 - **Text & i18n** — „Nächstes: Pause" (Grammatik-Fix), Color-Up Banner mit „(Chip Race)", lokalisierte Pause-Labels, aktualisierte Beschreibungen, unbenutzte Translation-Keys entfernt.
 - **Text & i18n** — "Next: Break" (grammar fix), color-up banner with "(Chip Race)", localized break labels, updated descriptions, unused translation keys removed.
 

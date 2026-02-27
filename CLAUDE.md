@@ -144,6 +144,7 @@ public/
 - **Tournament stats**: Live display of players, prizepool, avg stack in BB, elapsed/remaining time
 - **Screenshot/share**: `html-to-image` capture → Web Share API (mobile) or PNG download (desktop)
 - **PWA**: `vite-plugin-pwa` with auto-update service worker, installable on mobile/desktop
+- **Wake Lock**: Screen stays on during active tournament (Wake Lock API, re-acquired on tab focus)
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -193,6 +194,8 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Auto-Start bei Levelwechsel**: Timer startet automatisch bei Weiter/Zurück
 - **Timer-Zuverlässigkeit**: Fix für sporadisches Nicht-Starten bei Levelwechsel (eager interval restart)
 - **iPad-Kompatibilität**: Build-Target auf Safari 14 / ES2020 angepasst, Lade-Fallback in index.html
+- **Wake Lock**: Bildschirm bleibt während laufendem Timer an (Wake Lock API), wird bei Tab-Wechsel automatisch neu angefordert
+- **Sound-Fix für Safari**: Gemeinsamer AudioContext aus User-Geste initialisiert, Custom Checkboxen (grün/grau) statt native accent-color
 - **Text & i18n**: „Nächstes: Pause" (Grammatik-Fix), Color-Up Banner mit „(Chip Race)", lokalisierte Pause-Labels, aktualisierte Beschreibungen, unbenutzte Translation-Keys entfernt
 - **7 neue Tests**: exportTemplateToJSON, parseTemplateFile Round-Trip und Fehlerbehandlung (184 Tests gesamt)
 

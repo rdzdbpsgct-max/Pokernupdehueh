@@ -68,6 +68,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
+| Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
 | Persistenz | Automatische Speicherung im Browser (localStorage) |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
 
@@ -137,6 +138,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
+| Wake Lock | Screen stays on during active timer (no sleep mode) |
 | Persistence | Automatic saving in browser (localStorage) |
 | Validation | Input validation before tournament start with clear error messages |
 
