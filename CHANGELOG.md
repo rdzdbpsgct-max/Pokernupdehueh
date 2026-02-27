@@ -5,6 +5,24 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [1.5.0] – 2026-02-27
+
+### Usability & Progressive Disclosure
+
+- **Aufklappbare Setup-Sektionen** — Neue `CollapsibleSection`-Karten-Komponente: Essentielle Bereiche (Spieler, Buy-In, Blindstruktur) standardmäßig offen, optionale Bereiche (Chip-Werte, Auszahlung, Turnier-Format) eingeklappt mit kompaktem Summary-Text. Deutlich weniger Scrollen im Setup.
+- **Collapsible setup sections** — New `CollapsibleSection` card component: Essential sections (Players, Buy-In, Blind Structure) open by default, optional sections (Chip Values, Payout, Tournament Format) collapsed with compact summary text. Significantly less scrolling in setup.
+
+- **Turnier-Format-Gruppierung** — Rebuy, Add-On und Bounty in einer gemeinsamen „Turnier-Format"-Karte zusammengefasst — logische Gruppierung verwandter Turnierformat-Optionen.
+- **Tournament format grouping** — Rebuy, Add-On and Bounty combined into a single "Tournament Format" card — logical grouping of related tournament format options.
+
+- **Summary-Badges** — Eingeklappte Sektionen zeigen kompakte Zusammenfassung: „5 Chips, Color-Up aktiv", „3 Plätze, % Prozent", „Rebuy, Bounty: 5 €" oder „Alles deaktiviert".
+- **Summary badges** — Collapsed sections show compact summary: "5 Chips, Color-Up active", "3 places, % Percent", "Rebuy, Bounty: 5 €" or "All disabled".
+
+- **Clean View auf Mobile** — Clean-View-Toggle in der mobilen Button-Leiste im Spielmodus hinzugefügt (neben Spieler/Sidebar-Buttons).
+- **Clean view on mobile** — Clean view toggle added to mobile button bar in game mode (alongside Players/Sidebar buttons).
+
+---
+
 ## [1.4.0] – 2026-02-27
 
 ### Vorlagen, Clean View & Stabilität

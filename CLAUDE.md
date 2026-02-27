@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.4.0
+**Version**: 1.5.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -43,6 +43,7 @@ src/
 │   ├── BountyEditor.tsx         # Bounty amount configuration
 │   ├── ChipEditor.tsx           # Chip denomination management, editable color-up schedule
 │   ├── ChipSidebar.tsx          # Game-mode chip info, next color-up display
+│   ├── CollapsibleSection.tsx   # Reusable collapsible card for setup sections
 │   ├── ConfigEditor.tsx         # Blind level table editor
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
@@ -146,6 +147,7 @@ public/
 - **PWA**: `vite-plugin-pwa` with auto-update service worker, installable on mobile/desktop
 - **Wake Lock**: Screen stays on during active tournament (Wake Lock API, re-acquired on tab focus)
 - **Cross-device compatibility**: Safe area insets (notch/gesture-bar), `100dvh` viewport height, `inputmode="numeric"` on all number inputs, webkit fullscreen prefix, localStorage try-catch for private browsing, tablet breakpoint (`md:` at 768px), touch targets ≥32px
+- **Progressive disclosure in setup**: `CollapsibleSection` card component wraps each setup section; essential sections (Players, Buy-In, Blinds) open by default, optional sections (Chips, Payout, Tournament Format) collapsed with summary text; Rebuy/Add-On/Bounty grouped into one "Tournament Format" card
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -185,6 +187,13 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v1.5.0 — Usability & Progressive Disclosure
+
+- **Collapsible Setup-Sektionen**: Neue `CollapsibleSection`-Karten-Komponente — Setup-Bereiche sind in Karten mit klickbarem Header und Chevron-Indikator gewrappt. Essentielle Sektionen (Spieler, Buy-In, Blindstruktur) standardmäßig offen, optionale (Chip-Werte, Auszahlung, Turnier-Format) eingeklappt mit Summary-Text
+- **Turnier-Format-Gruppierung**: Rebuy, Add-On und Bounty in einer gemeinsamen „Turnier-Format"-Karte zusammengefasst (logische Gruppierung verwandter Optionen)
+- **Summary-Badges**: Eingeklappte Sektionen zeigen kompakte Zusammenfassung (z.B. „5 Chips, Color-Up aktiv", „3 Plätze, % Prozent", „Rebuy, Bounty: 5 €")
+- **Clean View auf Mobile**: Clean-View-Toggle in der mobilen Button-Leiste im Spielmodus hinzugefügt (neben Spieler/Sidebar)
 
 ### v1.4.0 — Vorlagen, Clean View & Stabilität
 

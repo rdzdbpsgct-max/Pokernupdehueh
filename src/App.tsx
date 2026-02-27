@@ -43,6 +43,7 @@ import { TournamentFinished } from './components/TournamentFinished';
 import { BlindGenerator } from './components/BlindGenerator';
 import { BubbleIndicator } from './components/BubbleIndicator';
 import { TemplateManager } from './components/TemplateManager';
+import { CollapsibleSection } from './components/CollapsibleSection';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 
 type Mode = 'setup' | 'game';
@@ -366,6 +367,26 @@ function App() {
     [config.chips.enabled, config.chips.denominations, config.levels],
   );
 
+  // Section summaries for collapsed CollapsibleSection cards
+  const chipsSummary = useMemo(() => {
+    if (!config.chips.enabled) return t('section.chipsDisabled');
+    const count = config.chips.denominations.length;
+    const colorUp = config.chips.colorUpEnabled ? `, ${t('section.colorUpActive')}` : '';
+    return `${count} Chips${colorUp}`;
+  }, [config.chips, t]);
+
+  const payoutSummary = useMemo(() => {
+    const mode = config.payout.mode === 'percent' ? t('payoutEditor.percent') : t('payoutEditor.euro');
+    return t('section.payoutSummary', { places: config.payout.entries.length, mode });
+  }, [config.payout, t]);
+
+  const formatSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (config.rebuy.enabled) parts.push('Rebuy');
+    if (config.addOn.enabled) parts.push('Add-On');
+    if (config.bounty.enabled) parts.push(`Bounty: ${config.bounty.amount} €`);
+    return parts.length > 0 ? parts.join(', ') : t('section.allDisabled');
+  }, [config.rebuy, config.addOn, config.bounty, t]);
 
   const activePlayerCount = useMemo(
     () => config.players.filter((p) => p.status === 'active').length,
@@ -606,10 +627,7 @@ function App() {
               </div>
 
               {/* Spieler */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.players')}
-                </h2>
+              <CollapsibleSection title={t('app.players')}>
                 <PlayerManager
                   players={config.players}
                   dealerIndex={config.dealerIndex}
@@ -622,13 +640,10 @@ function App() {
                     }))
                   }
                 />
-              </div>
+              </CollapsibleSection>
 
               {/* Buy-In & Startchips */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.buyInAndChips')}
-                </h2>
+              <CollapsibleSection title={t('app.buyInAndChips')}>
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <label className="text-xs text-gray-500">{t('app.buyIn')}</label>
@@ -688,13 +703,42 @@ function App() {
                     <span className="text-gray-400 text-sm">{t('unit.chips')}</span>
                   </div>
                 </div>
-              </div>
+              </CollapsibleSection>
 
-              {/* Chip Values */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.chips')}
-                </h2>
+              {/* Blind-Struktur (Generator + Ante Toggle + Editor) */}
+              <CollapsibleSection title={t('app.blindStructure')}>
+                <div className="space-y-4">
+                  <BlindGenerator
+                    startingChips={config.startingChips}
+                    anteEnabled={config.anteEnabled}
+                    playerCount={config.players.length}
+                    chipConfig={config.chips}
+                    onApply={(levels) =>
+                      setConfig((prev) => ({ ...prev, levels }))
+                    }
+                  />
+                  <div className="flex items-center justify-end">
+                    <button
+                      onClick={toggleAnte}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        config.anteEnabled
+                          ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                          : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                      }`}
+                    >
+                      {config.anteEnabled ? t('app.withAnte') : t('app.withoutAnte')}
+                    </button>
+                  </div>
+                  <ConfigEditor
+                    config={config}
+                    onChange={setConfig}
+                    anteEnabled={config.anteEnabled}
+                  />
+                </div>
+              </CollapsibleSection>
+
+              {/* Chip-Werte (collapsed by default) */}
+              <CollapsibleSection title={t('app.chips')} summary={chipsSummary} defaultOpen={false}>
                 <ChipEditor
                   chips={config.chips}
                   onChange={(chips) => setConfig((prev) => ({ ...prev, chips }))}
@@ -711,103 +755,68 @@ function App() {
                     </p>
                   </div>
                 )}
-              </div>
+              </CollapsibleSection>
 
-              {/* Blind-Generator */}
-              <BlindGenerator
-                startingChips={config.startingChips}
-                anteEnabled={config.anteEnabled}
-                playerCount={config.players.length}
-                chipConfig={config.chips}
-                onApply={(levels) =>
-                  setConfig((prev) => ({ ...prev, levels }))
-                }
-              />
-
-              {/* Ante Toggle + Blind-Struktur */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
-                    {t('app.blindStructure')}
-                  </h2>
-                  <button
-                    onClick={toggleAnte}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      config.anteEnabled
-                        ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
-                        : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
-                    }`}
-                  >
-                    {config.anteEnabled ? t('app.withAnte') : t('app.withoutAnte')}
-                  </button>
-                </div>
-                <ConfigEditor
-                  config={config}
-                  onChange={setConfig}
-                  anteEnabled={config.anteEnabled}
-                />
-              </div>
-
-              {/* Auszahlung */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.payout')}
-                </h2>
+              {/* Auszahlung (collapsed by default) */}
+              <CollapsibleSection title={t('app.payout')} summary={payoutSummary} defaultOpen={false}>
                 <PayoutEditor
                   payout={config.payout}
                   onChange={(payout) => setConfig((prev) => ({ ...prev, payout }))}
                   maxPlaces={config.players.length}
                 />
-              </div>
+              </CollapsibleSection>
 
-              {/* Rebuy */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.rebuy')}
-                </h2>
-                <RebuyEditor
-                  rebuy={config.rebuy}
-                  onChange={(rebuy) => setConfig((prev) => ({
-                    ...prev,
-                    rebuy,
-                    // Auto-disable add-on when rebuy is turned off
-                    addOn: !rebuy.enabled ? { ...prev.addOn, enabled: false } : prev.addOn,
-                  }))}
-                  buyIn={config.buyIn}
-                  startingChips={config.startingChips}
-                />
-              </div>
-
-              {/* Add-On */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.addOn')}
-                </h2>
-                <AddOnEditor
-                  addOn={config.addOn}
-                  onChange={(addOn) => setConfig((prev) => ({ ...prev, addOn }))}
-                  buyIn={config.buyIn}
-                  startingChips={config.startingChips}
-                  rebuyEnabled={config.rebuy.enabled}
-                  onEnableRebuy={() =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      rebuy: { ...prev.rebuy, enabled: true },
-                    }))
-                  }
-                />
-              </div>
-
-              {/* Bounty */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.bounty')}
-                </h2>
-                <BountyEditor
-                  bounty={config.bounty}
-                  onChange={(bounty) => setConfig((prev) => ({ ...prev, bounty }))}
-                />
-              </div>
+              {/* Turnier-Format: Rebuy + Add-On + Bounty (collapsed by default) */}
+              <CollapsibleSection title={t('app.tournamentFormat')} summary={formatSummary} defaultOpen={false}>
+                <div className="space-y-4">
+                  {/* Rebuy */}
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                      {t('app.rebuy')}
+                    </h3>
+                    <RebuyEditor
+                      rebuy={config.rebuy}
+                      onChange={(rebuy) => setConfig((prev) => ({
+                        ...prev,
+                        rebuy,
+                        // Auto-disable add-on when rebuy is turned off
+                        addOn: !rebuy.enabled ? { ...prev.addOn, enabled: false } : prev.addOn,
+                      }))}
+                      buyIn={config.buyIn}
+                      startingChips={config.startingChips}
+                    />
+                  </div>
+                  {/* Add-On */}
+                  <div className="border-t border-gray-700/50 pt-4">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                      {t('app.addOn')}
+                    </h3>
+                    <AddOnEditor
+                      addOn={config.addOn}
+                      onChange={(addOn) => setConfig((prev) => ({ ...prev, addOn }))}
+                      buyIn={config.buyIn}
+                      startingChips={config.startingChips}
+                      rebuyEnabled={config.rebuy.enabled}
+                      onEnableRebuy={() =>
+                        setConfig((prev) => ({
+                          ...prev,
+                          rebuy: { ...prev.rebuy, enabled: true },
+                        }))
+                      }
+                    />
+                  </div>
+                  {/* Bounty */}
+                  <div className="border-t border-gray-700/50 pt-4">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                      {t('app.bounty')}
+                    </h3>
+                    <BountyEditor
+                      bounty={config.bounty}
+                      onChange={(bounty) => setConfig((prev) => ({ ...prev, bounty }))}
+                    />
+                  </div>
+                </div>
+              </CollapsibleSection>
 
               {/* Validation + Start button */}
               <div className="pt-4 border-t border-gray-800 space-y-3">
@@ -959,6 +968,16 @@ function App() {
                   }`}
                 >
                   {showSidebar ? '✓ Sidebar' : 'Sidebar'}
+                </button>
+                <button
+                  onClick={toggleCleanView}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    cleanView
+                      ? 'bg-emerald-700 text-white'
+                      : 'bg-gray-800 text-gray-400'
+                  }`}
+                >
+                  {cleanView ? `✓ ${t('game.cleanViewOn')}` : t('game.cleanViewOff')}
                 </button>
               </div>
             </div>

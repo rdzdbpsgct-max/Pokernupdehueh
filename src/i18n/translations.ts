@@ -307,6 +307,13 @@ const de = {
   'finished.capturing': 'Wird erstellt...',
   'finished.shareTitle': 'Turnier-Ergebnis',
 
+  // --- Section Summaries ---
+  'app.tournamentFormat': 'Turnier-Format',
+  'section.chipsDisabled': 'Deaktiviert',
+  'section.colorUpActive': 'Color-Up aktiv',
+  'section.payoutSummary': '{places} Plätze, {mode}',
+  'section.allDisabled': 'Alles deaktiviert',
+
   // --- Units ---
   'unit.eur': 'EUR',
   'unit.chips': 'Chips',
@@ -620,6 +627,13 @@ const en: Record<TranslationKey, string> = {
   'finished.shareResults': 'Share Results / Screenshot',
   'finished.capturing': 'Capturing...',
   'finished.shareTitle': 'Tournament Results',
+
+  // --- Section Summaries ---
+  'app.tournamentFormat': 'Tournament Format',
+  'section.chipsDisabled': 'Disabled',
+  'section.colorUpActive': 'Color-Up active',
+  'section.payoutSummary': '{places} places, {mode}',
+  'section.allDisabled': 'All disabled',
 
   // --- Units ---
   'unit.eur': 'EUR',
