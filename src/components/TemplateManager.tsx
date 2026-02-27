@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { TournamentConfig } from '../domain/types';
 import type { TournamentTemplate } from '../domain/logic';
 import { loadTemplates, saveTemplate, deleteTemplate, exportTemplateToJSON, parseTemplateFile, exportConfigJSON, importConfigJSON } from '../domain/logic';
@@ -24,6 +24,7 @@ interface Props {
 
 export function TemplateManager({ config, onLoad, onClose }: Props) {
   const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [templates, setTemplates] = useState<TournamentTemplate[]>(() => loadTemplates());
   const [newName, setNewName] = useState(config.name || '');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -31,6 +32,19 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
   const [showJson, setShowJson] = useState(false);
   const [jsonText, setJsonText] = useState('');
   const [jsonError, setJsonError] = useState('');
+
+  // Auto-focus first focusable element & close on Escape
+  useEffect(() => {
+    const el = dialogRef.current;
+    if (!el) return;
+    const focusable = el.querySelector<HTMLElement>('button, input, [tabindex]');
+    focusable?.focus();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
 
   // Detect native save picker support (Chromium only)
   const hasNativeSavePicker = useMemo(() => {
@@ -150,8 +164,8 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full space-y-4 max-h-[80vh] flex flex-col">
-        <h3 className="text-lg font-bold text-white">{t('templates.title')}</h3>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="template-title" className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full space-y-4 max-h-[80vh] flex flex-col">
+        <h3 id="template-title" className="text-lg font-bold text-white">{t('templates.title')}</h3>
 
         {/* Save current config as template */}
         <div className="space-y-2">
@@ -260,6 +274,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
         <div className="border-t border-gray-700 pt-3">
           <button
             onClick={handleToggleJson}
+            aria-expanded={showJson}
             className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-gray-300 transition-colors"
           >
             <span className="uppercase tracking-wider">{t('templates.jsonSection')}</span>

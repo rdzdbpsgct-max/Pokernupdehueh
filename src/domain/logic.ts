@@ -1,6 +1,7 @@
 import type {
   Level,
   TournamentConfig,
+  TournamentCheckpoint,
   TimerState,
   Settings,
   Player,
@@ -1093,6 +1094,41 @@ export function loadSettings(): Settings | null {
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament Checkpoint (auto-save / restore)
+// ---------------------------------------------------------------------------
+
+const CHECKPOINT_KEY = 'poker-timer-checkpoint';
+
+export function saveCheckpoint(checkpoint: TournamentCheckpoint): void {
+  try {
+    localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(checkpoint));
+  } catch { /* private browsing or quota exceeded */ }
+}
+
+export function loadCheckpoint(): TournamentCheckpoint | null {
+  try {
+    const raw = localStorage.getItem(CHECKPOINT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.version !== 1) return null;
+    const levels = parsed.config?.levels;
+    if (!Array.isArray(levels) || levels.length === 0) return null;
+    // Clamp to valid ranges
+    parsed.timer.currentLevelIndex = Math.max(0, Math.min(
+      parsed.timer.currentLevelIndex, levels.length - 1,
+    ));
+    parsed.timer.remainingSeconds = Math.max(0, parsed.timer.remainingSeconds);
+    return parsed as TournamentCheckpoint;
+  } catch {
+    return null;
+  }
+}
+
+export function clearCheckpoint(): void {
+  try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
 }
 
 export function exportConfigJSON(config: TournamentConfig): string {

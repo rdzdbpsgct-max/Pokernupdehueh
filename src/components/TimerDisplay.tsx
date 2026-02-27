@@ -55,7 +55,13 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
   return (
     <div className="flex flex-col items-center justify-center gap-2 sm:gap-4 select-none w-full">
       {/* Progress bar */}
-      <div className="w-full max-w-xl h-2 bg-gray-700 rounded-full overflow-hidden">
+      <div
+        className="w-full max-w-xl h-2 bg-gray-700 rounded-full overflow-hidden"
+        role="progressbar"
+        aria-valuenow={Math.round(Math.min(100, progress * 100))}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
         <div
           className={`h-full transition-all duration-200 ${
             isBreak ? 'bg-amber-500' : 'bg-emerald-500'
@@ -65,7 +71,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       </div>
 
       {/* Level info */}
-      <div className="text-center">
+      <div className="text-center" aria-live="polite">
         <p className={`font-bold uppercase tracking-wider ${
           isBreak ? 'text-amber-400' : 'text-emerald-400'
         } ${largeDisplay ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}>
@@ -140,6 +146,8 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
             ? 'text-gray-500'
             : 'text-white'
         }`}
+        aria-live="assertive"
+        aria-label={formatTime(remaining)}
       >
         {formatTime(remaining)}
       </div>
@@ -168,6 +176,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
                 value={Math.round(remaining)}
                 onChange={(e) => onScrub(Number(e.target.value))}
                 className="flex-1 accent-emerald-500 h-2 cursor-pointer"
+                aria-label={t('timer.adjustTime')}
               />
               <span className="text-xs text-gray-500 w-12">
                 {formatTime(currentLevel.durationSeconds)}

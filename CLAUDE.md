@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.5.0
+**Version**: 1.6.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -61,7 +61,7 @@ src/
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
-│   ├── logic.ts                 # Core logic (~900 lines): validation, payouts, blinds, chips, templates, persistence
+│   ├── logic.ts                 # Core logic (~900 lines): validation, payouts, blinds, chips, templates, persistence, checkpoint
 │   └── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 ├── hooks/
 │   └── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
@@ -88,7 +88,7 @@ public/
 - **useTimer** hook manages timer state with drift-free wall-clock computation
 - **Props drilling** for passing state and callbacks to child components
 - **React Context** used only for i18n (language selection)
-- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`
+- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`
 
 ### Component Conventions
 - Functional components with hooks only (no class components)
@@ -131,7 +131,7 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files
-- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), P (previous), R (reset), F (clean view toggle)
+- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
 - **Chip management**: Editable color-up schedule with auto-suggestion; color-up events coupled with next break; duplicate color warnings; auto-sort by value
@@ -148,6 +148,8 @@ public/
 - **Wake Lock**: Screen stays on during active tournament (Wake Lock API, re-acquired on tab focus)
 - **Cross-device compatibility**: Safe area insets (notch/gesture-bar), `100dvh` viewport height, `inputmode="numeric"` on all number inputs, webkit fullscreen prefix, localStorage try-catch for private browsing, tablet breakpoint (`md:` at 768px), touch targets ≥32px
 - **Progressive disclosure in setup**: `CollapsibleSection` card component wraps each setup section; essential sections (Players, Buy-In, Blinds) open by default, optional sections (Chips, Payout, Tournament Format) collapsed with summary text; Rebuy/Add-On/Bounty grouped into one "Tournament Format" card
+- **Tournament checkpoint**: Auto-save game state to localStorage on every action in game mode; on restart, offer to resume with timer always paused (timestamps invalid after reload)
+- **Accessibility**: ARIA roles/labels on timer, controls, modals, collapsible sections; auto-focus and Escape-to-close on dialogs
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -194,6 +196,14 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Turnier-Format-Gruppierung**: Rebuy, Add-On und Bounty in einer gemeinsamen „Turnier-Format"-Karte zusammengefasst (logische Gruppierung verwandter Optionen)
 - **Summary-Badges**: Eingeklappte Sektionen zeigen kompakte Zusammenfassung (z.B. „5 Chips, Color-Up aktiv", „3 Plätze, % Prozent", „Rebuy, Bounty: 5 €")
 - **Clean View auf Mobile**: Clean-View-Toggle in der mobilen Button-Leiste im Spielmodus hinzugefügt (neben Spieler/Sidebar)
+
+### v1.6.0 — Bug-Fixes, Accessibility & Turnier-Checkpoint
+
+- **useTimer-Fix**: Render-Phase-State-Mutation durch `useRef` + `useEffect` ersetzt
+- **Tastenkürzel-Fix**: Dokumentation korrigiert (P → V für „Vorheriges Level")
+- **Accessibility**: ARIA-Labels auf Timer, Controls, Bubble/ITM, Collapsible-Sections; `role="dialog"` + `aria-modal` + Auto-Focus + Escape-to-Close auf Modals (TemplateManager, Confirm-Dialog)
+- **Turnier-Checkpoint**: Automatisches Speichern des Spielstands bei jeder Aktion im Spielmodus; bei App-Neustart Wiederherstellungs-Banner im Setup mit „Turnier fortsetzen" / „Verwerfen"; Timer wird immer pausiert wiederhergestellt
+- **8 neue Translation-Keys**: `checkpoint.*` (DE + EN)
 
 ### v1.4.0 — Vorlagen, Clean View & Stabilität
 

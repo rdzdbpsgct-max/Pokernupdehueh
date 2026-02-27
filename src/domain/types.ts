@@ -100,6 +100,17 @@ export interface Settings {
   largeDisplay: boolean;
 }
 
+export interface TournamentCheckpoint {
+  version: 1;
+  config: TournamentConfig;
+  settings: Settings;
+  timer: {
+    currentLevelIndex: number;
+    remainingSeconds: number;
+  };
+  savedAt: string; // ISO timestamp
+}
+
 export type TimerStatus = 'stopped' | 'running' | 'paused';
 
 export interface TimerState {

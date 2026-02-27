@@ -314,6 +314,12 @@ const de = {
   'section.payoutSummary': '{places} Plätze, {mode}',
   'section.allDisabled': 'Alles deaktiviert',
 
+  // --- Checkpoint ---
+  'checkpoint.found': 'Laufendes Turnier gefunden',
+  'checkpoint.details': '„{name}" — gespeichert am {date}',
+  'checkpoint.restore': 'Turnier fortsetzen',
+  'checkpoint.dismiss': 'Verwerfen',
+
   // --- Units ---
   'unit.eur': 'EUR',
   'unit.chips': 'Chips',
@@ -634,6 +640,12 @@ const en: Record<TranslationKey, string> = {
   'section.colorUpActive': 'Color-Up active',
   'section.payoutSummary': '{places} places, {mode}',
   'section.allDisabled': 'All disabled',
+
+  // --- Checkpoint ---
+  'checkpoint.found': 'Running tournament found',
+  'checkpoint.details': '"{name}" — saved at {date}',
+  'checkpoint.restore': 'Resume tournament',
+  'checkpoint.dismiss': 'Dismiss',
 
   // --- Units ---
   'unit.eur': 'EUR',

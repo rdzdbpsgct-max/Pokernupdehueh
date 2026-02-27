@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import type { TournamentConfig, Settings } from './domain/types';
+import type { TournamentConfig, Settings, TournamentCheckpoint } from './domain/types';
 import {
   defaultConfig,
   defaultSettings,
@@ -7,6 +7,9 @@ import {
   loadConfig,
   saveSettings,
   loadSettings,
+  saveCheckpoint,
+  loadCheckpoint,
+  clearCheckpoint,
   stripAnteFromLevels,
   applyDefaultAntes,
   isRebuyActive,
@@ -69,7 +72,25 @@ function App() {
     onConfirm: () => void;
   } | null>(null);
 
+  const [pendingCheckpoint, setPendingCheckpoint] = useState<TournamentCheckpoint | null>(() => loadCheckpoint());
+
   const timer = useTimer(config.levels, settings);
+  const confirmDialogRef = useRef<HTMLDivElement>(null);
+
+  // Auto-focus confirm dialog & close on Escape
+  useEffect(() => {
+    if (!confirmAction) return;
+    const el = confirmDialogRef.current;
+    if (el) {
+      const focusable = el.querySelector<HTMLElement>('button, input, [tabindex]');
+      focusable?.focus();
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setConfirmAction(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [confirmAction]);
 
   // Track the level where rebuy ended (for one-level add-on window)
   const [addOnEndLevelIndex, setAddOnEndLevelIndex] = useState<number | null>(null);
@@ -101,6 +122,21 @@ function App() {
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
+
+  // Auto-save tournament checkpoint in game mode
+  useEffect(() => {
+    if (mode !== 'game') return;
+    saveCheckpoint({
+      version: 1,
+      config,
+      settings,
+      timer: {
+        currentLevelIndex: timer.timerState.currentLevelIndex,
+        remainingSeconds: timer.timerState.remainingSeconds,
+      },
+      savedAt: new Date().toISOString(),
+    });
+  }, [mode, config, settings, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds]);
 
   // Wake Lock: prevent screen from sleeping during active tournament
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -410,6 +446,13 @@ function App() {
     return config.players.filter((p) => p.status === 'active').length === 1;
   }, [config.players]);
 
+  // Clear checkpoint when tournament finishes
+  useEffect(() => {
+    if (mode === 'game' && tournamentFinished) {
+      clearCheckpoint();
+    }
+  }, [mode, tournamentFinished]);
+
   const winner = useMemo(() => {
     if (!tournamentFinished) return null;
     return config.players.find((p) => p.status === 'active') ?? null;
@@ -505,8 +548,29 @@ function App() {
       clearTimeout(itmFlashTimeoutRef.current);
       itmFlashTimeoutRef.current = null;
     }
+    clearCheckpoint();
     setMode('setup');
   };
+
+  const restoreFromCheckpoint = useCallback(() => {
+    if (!pendingCheckpoint) return;
+    setConfig(pendingCheckpoint.config);
+    setSettings(pendingCheckpoint.settings);
+    timer.restoreLevel(
+      pendingCheckpoint.timer.currentLevelIndex,
+      pendingCheckpoint.timer.remainingSeconds,
+    );
+    setPendingCheckpoint(null);
+    setCleanView(false);
+    setShowPlayerPanel(true);
+    setShowSidebar(true);
+    setMode('game');
+  }, [pendingCheckpoint, timer]);
+
+  const dismissCheckpoint = useCallback(() => {
+    clearCheckpoint();
+    setPendingCheckpoint(null);
+  }, []);
 
   const confirmBeforeAction = (
     title: string,
@@ -610,6 +674,33 @@ function App() {
           /* Setup Mode */
           <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
             <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
+              {/* Checkpoint recovery banner */}
+              {pendingCheckpoint && (
+                <div className="bg-amber-900/20 border border-amber-800 rounded-xl p-4 space-y-2">
+                  <p className="text-amber-300 text-sm font-medium">{t('checkpoint.found')}</p>
+                  <p className="text-gray-400 text-xs">
+                    {t('checkpoint.details', {
+                      name: pendingCheckpoint.config.name || 'Tournament',
+                      date: new Date(pendingCheckpoint.savedAt).toLocaleString(),
+                    })}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={restoreFromCheckpoint}
+                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      {t('checkpoint.restore')}
+                    </button>
+                    <button
+                      onClick={dismissCheckpoint}
+                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      {t('checkpoint.dismiss')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Turnier-Name */}
               <div>
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
@@ -1023,8 +1114,8 @@ function App() {
       {/* Confirm Action Modal */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full space-y-4">
-            <h3 className="text-lg font-bold text-white">{confirmAction.title}</h3>
+          <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-labelledby="confirm-title" className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full space-y-4">
+            <h3 id="confirm-title" className="text-lg font-bold text-white">{confirmAction.title}</h3>
             <p className="text-gray-400 text-sm">{confirmAction.message}</p>
             <div className="flex gap-3 justify-end">
               <button

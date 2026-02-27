@@ -5,6 +5,24 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [1.6.0] – 2026-02-27
+
+### Bug-Fixes, Accessibility & Turnier-Checkpoint
+
+- **useTimer-Fix** — Render-Phase-State-Mutation durch `useRef` + `useEffect` ersetzt; vorher wurde `setState` während des Renderings aufgerufen (React-Regelverstoß).
+- **useTimer fix** — Render-phase state mutation replaced with `useRef` + `useEffect`; previously `setState` was called during rendering (React rules violation).
+
+- **Tastenkürzel-Fix** — CLAUDE.md dokumentierte falsches Tastenkürzel `P` (previous) statt korrektem `V` (Vorheriges). Korrigiert.
+- **Keyboard shortcut fix** — CLAUDE.md documented wrong shortcut `P` (previous) instead of correct `V`. Fixed.
+
+- **Accessibility (a11y)** — Umfassende ARIA-Verbesserungen: `role="progressbar"` auf Timer-Fortschrittsbalken, `aria-live` auf Blinds- und Countdown-Anzeige, `aria-label` auf allen Buttons, `aria-pressed` auf Start/Pause-Toggle, `role="alert"`/`role="status"` auf Bubble/ITM-Banner, `aria-expanded` auf Collapsible-Sections, `role="dialog"` + `aria-modal` + Auto-Focus + Escape-to-Close auf Modals (TemplateManager, Confirm-Dialog).
+- **Accessibility (a11y)** — Comprehensive ARIA improvements: `role="progressbar"` on timer progress bar, `aria-live` on blinds and countdown display, `aria-label` on all buttons, `aria-pressed` on start/pause toggle, `role="alert"`/`role="status"` on bubble/ITM banner, `aria-expanded` on collapsible sections, `role="dialog"` + `aria-modal` + auto-focus + escape-to-close on modals (TemplateManager, confirm dialog).
+
+- **Turnier-Checkpoint** — Automatisches Speichern des Spielstands bei jeder Aktion im Spielmodus (Level, Restzeit, Config, Settings). Bei App-Neustart erscheint ein Wiederherstellungs-Banner im Setup: „Turnier fortsetzen" lädt den Spielstand mit pausiertem Timer, „Verwerfen" löscht den Checkpoint. Checkpoint wird automatisch gelöscht wenn das Turnier endet oder der User zum Setup zurückkehrt.
+- **Tournament checkpoint** — Auto-save game state on every action in game mode (level, remaining time, config, settings). On app restart, a recovery banner appears in setup: "Resume tournament" loads the game state with paused timer, "Dismiss" clears the checkpoint. Checkpoint is automatically cleared when the tournament ends or the user returns to setup.
+
+---
+
 ## [1.5.0] – 2026-02-27
 
 ### Usability & Progressive Disclosure

@@ -6,7 +6,7 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-1.5.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-1.6.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Tests](https://img.shields.io/badge/Tests-184%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
@@ -70,6 +70,8 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
 | Persistenz | Automatische Speicherung im Browser (localStorage) |
+| Turnier-Checkpoint | Automatische Spielstandsicherung, Wiederherstellung nach Browser-Crash |
+| Barrierefreiheit | ARIA-Labels, Dialog-Rollen, Auto-Fokus, Escape-zum-Schließen |
 | Kompatibilität | Safe Area Insets, dynamische Viewport-Höhe, optimierte Touch-Targets, numerische Tastatur, Tablet-Layout |
 | Usability | Aufklappbare Setup-Sektionen, Progressive Disclosure, Turnier-Format-Gruppierung, Summary-Badges |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
@@ -142,6 +144,8 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
 | Persistence | Automatic saving in browser (localStorage) |
+| Tournament checkpoint | Auto-save game state, recovery after browser crash |
+| Accessibility | ARIA labels, dialog roles, auto-focus, escape-to-close |
 | Compatibility | Safe area insets, dynamic viewport height, optimized touch targets, numeric keyboard, tablet layout |
 | Usability | Collapsible setup sections, progressive disclosure, tournament format grouping, summary badges |
 | Validation | Input validation before tournament start with clear error messages |

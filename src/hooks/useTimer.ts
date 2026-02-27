@@ -94,13 +94,17 @@ export function useTimer(levels: Level[], settings: Settings) {
   }, [timerState.status, tick, clearTick]);
 
   // Reset timer state when levels change externally (e.g. preset switch)
-  const [prevLevels, setPrevLevels] = useState(levels);
-  if (levels !== prevLevels) {
-    setPrevLevels(levels);
-    setTimerState(restartTournament(levels));
-    // clearTick will happen via the status-based useEffect above
-    // since restartTournament returns status='stopped'
-  }
+  // This is a legitimate prop→state sync — setState is needed to reset the timer.
+  const prevLevelsRef = useRef(levels);
+  useEffect(() => {
+    if (levels !== prevLevelsRef.current) {
+      prevLevelsRef.current = levels;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTimerState(restartTournament(levels));
+      // clearTick will happen via the status-based useEffect above
+      // since restartTournament returns status='stopped'
+    }
+  }, [levels]);
 
   const start = useCallback(() => {
     initAudio(); // Unlock AudioContext from user gesture (required by Safari)
@@ -229,6 +233,20 @@ export function useTimer(levels: Level[], settings: Settings) {
     }));
   }, [levels, clearTick]);
 
+  const restoreLevel = useCallback((levelIndex: number, remaining: number) => {
+    clearTick();
+    lastCountdownSecRef.current = null;
+    levelEndAudioPlayedRef.current = false;
+    const clamped = Math.max(0, Math.min(levelIndex, levels.length - 1));
+    setTimerState({
+      currentLevelIndex: clamped,
+      remainingSeconds: Math.max(0, remaining),
+      status: 'paused',
+      startedAt: null,
+      remainingAtStart: null,
+    });
+  }, [levels, clearTick]);
+
   return {
     timerState,
     start,
@@ -239,5 +257,6 @@ export function useTimer(levels: Level[], settings: Settings) {
     resetLevel,
     restart,
     setRemainingSeconds,
+    restoreLevel,
   };
 }
