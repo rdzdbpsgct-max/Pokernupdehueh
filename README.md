@@ -6,10 +6,11 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-1.1.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-1.4.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
-[![Tests](https://img.shields.io/badge/Tests-82%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-184%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
+[![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
 </div>
 
@@ -17,21 +18,24 @@
 
 ## Deutsch
 
-Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. Kein Server, kein Account, kein Schnickschnack — einfach öffnen und losspielen.
+Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. Kein Server, kein Account, kein Schnickschnack — einfach öffnen und losspielen. Installierbar als PWA auf Mobile und Desktop.
 
 - **DE / EN** — Deutsch/Englisch umschaltbar im Setup
-- **Timer & Blindstruktur** mit Presets (Turbo, Standard, Deep Stack) oder eigener Konfiguration
-- **Spielerverwaltung** mit Eliminierungen, Rebuys, Bounties und automatischer Platzierung
-- **Auszahlungsrechner** mit prozentualer oder fester Verteilung
-- **Mobilfreundlich** und offline nutzbar (kein Backend nötig)
+- **Timer & Blindstruktur** mit Generator (3 Geschwindigkeiten) oder eigener Konfiguration
+- **Spielerverwaltung** mit Drag & Drop Sitzordnung, Eliminierungen, Rebuys, Add-Ons und Bounties
+- **Chip-Management** mit Color-Up Plan und Chip-Blind-Kompatibilitätsprüfung
+- **Turnier-Vorlagen** speichern/laden (Browser + Datei-Export/Import)
+- **Live-Statistiken** mit Bubble-Anzeige und In-The-Money-Erkennung
+- **Mobilfreundlich** und offline nutzbar (PWA, kein Backend nötig)
 
 ### Verwendung
 
-1. **Preset wählen** oder eigene Blindstruktur erstellen
+1. **Blindstruktur generieren** (schnell/normal/langsam) oder eigene erstellen
 2. **Spieler hinzufügen** (2–20), Buy-In und Startchips festlegen
-3. **Turnier starten** — der Timer läuft, Blinds steigen automatisch
-4. **Spieler eliminieren** — Platzierung und Killer werden erfasst
-5. **Ergebnis** — Auszahlungen, Bounties und Platzierungen auf einen Blick
+3. **Optional**: Chips, Rebuys, Add-Ons, Bounties, Auszahlung konfigurieren
+4. **Turnier starten** — Timer läuft, Blinds steigen automatisch, Color-Up-Banner bei Chip Race
+5. **Spieler eliminieren** — Platzierung, Killer und Bounties werden erfasst
+6. **Ergebnis** — Auszahlungen, Bounties und Platzierungen als Screenshot teilen
 
 ### Tastenkürzel
 
@@ -41,6 +45,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | `N` | Nächstes Level |
 | `V` | Vorheriges Level |
 | `R` | Level zurücksetzen |
+| `F` | Clean View ein/aus |
 
 ### Features
 
@@ -48,16 +53,21 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 |---------|-------------|
 | Sprache | DE/EN-Umschalter im Setup, alle Texte zweisprachig |
 | Timer | Drift-freier Countdown mit Fortschrittsbalken und Countdown-Warnung (letzte 10 Sek.) |
-| Blindstruktur | Drei Presets + vollständig anpassbare Levels und Pausen |
+| Blindstruktur | Generator mit 3 Geschwindigkeiten + vollständig anpassbare Levels und Pausen |
 | Ante | Optional, automatische Vorbelegung (~12,5 % des Big Blind) |
-| Spielerverwaltung | Eliminierung mit Killer-Auswahl, automatische Platzierung, Zurück-Button bei versehentlicher Eliminierung |
-| Rebuys | Konfigurierbares Limit (nach Levels oder Zeit), separate Kosten und Chips |
+| Chip-Management | Chip-Farben/-Werte verwalten, editierbarer Color-Up Plan, Chip-Blind-Kompatibilitätsprüfung |
+| Spielerverwaltung | Drag & Drop Sitzordnung, Shuffle, Dealer-Button, Eliminierung mit Killer-Auswahl |
+| Rebuys & Add-Ons | Konfigurierbares Limit (nach Levels oder Zeit), Add-On einmalig pro Spieler |
 | Bounty | Optionales Kopfgeld pro Knockout mit Gesamtauswertung |
 | Auszahlung | Prozentual oder fest, automatischer Vorschlag je nach Spielerzahl |
-| Ergebnis | Detaillierte Übersicht: Einzahlung (Buy-In + Rebuys), Gewinn, Bounty-Einnahmen und Bilanz (Plus/Minus) pro Spieler |
-| Import / Export | Turnierkonfiguration als JSON speichern und laden |
-| Sound | Countdown-Beeps und Sieges-Melodie via Web Audio API |
+| Vorlagen | Turnierkonfigurationen speichern/laden (Browser + JSON-Datei-Export/Import) |
+| Turnier-Statistiken | Live: Spieleranzahl, Preisgeld, Ø Stack in BB, Spielzeit, geschätzte Restzeit |
+| Bubble / ITM | Rot pulsierender BUBBLE!-Banner, grüner In-The-Money-Flash mit Sound |
+| Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
+| Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
+| Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
+| PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Persistenz | Automatische Speicherung im Browser (localStorage) |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
 
@@ -77,21 +87,24 @@ Bitte stelle sicher, dass `npm run lint` und `npm run test` fehlerfrei durchlauf
 
 ## English
 
-A fully client-side web app for managing home poker tournaments. No server, no account, no fuss — just open and play.
+A fully client-side web app for managing home poker tournaments. No server, no account, no fuss — just open and play. Installable as a PWA on mobile and desktop.
 
 - **DE / EN** — Switch between German and English in setup
-- **Timer & blind structure** with presets (Turbo, Standard, Deep Stack) or custom configuration
-- **Player management** with eliminations, rebuys, bounties and automatic placement
-- **Payout calculator** with percentage or fixed distribution
-- **Mobile-friendly** and works offline (no backend needed)
+- **Timer & blind structure** with generator (3 speeds) or custom configuration
+- **Player management** with drag & drop seating, eliminations, rebuys, add-ons and bounties
+- **Chip management** with color-up schedule and blind-chip compatibility check
+- **Tournament templates** save/load (browser + file export/import)
+- **Live statistics** with bubble indicator and in-the-money detection
+- **Mobile-friendly** and works offline (PWA, no backend needed)
 
 ### Usage
 
-1. **Choose a preset** or create your own blind structure
+1. **Generate blind structure** (fast/normal/slow) or create your own
 2. **Add players** (2–20), set buy-in and starting chips
-3. **Start the tournament** — the timer runs, blinds increase automatically
-4. **Eliminate players** — placement and killer are tracked
-5. **Results** — payouts, bounties and placements at a glance
+3. **Optional**: Configure chips, rebuys, add-ons, bounties, payout
+4. **Start the tournament** — timer runs, blinds increase automatically, color-up banner on chip race
+5. **Eliminate players** — placement, killer and bounties are tracked
+6. **Results** — share payouts, bounties and placements as screenshot
 
 ### Keyboard shortcuts
 
@@ -101,6 +114,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | `N` | Next level |
 | `V` | Previous level |
 | `R` | Reset level |
+| `F` | Clean view toggle |
 
 ### Features
 
@@ -108,16 +122,21 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 |---------|-------------|
 | Language | DE/EN toggle in setup, all texts bilingual |
 | Timer | Drift-free countdown with progress bar and countdown warning (last 10 sec.) |
-| Blind structure | Three presets + fully customizable levels and breaks |
+| Blind structure | Generator with 3 speeds + fully customizable levels and breaks |
 | Ante | Optional, auto-populated (~12.5% of big blind) |
-| Player management | Elimination with killer selection, automatic placement, undo button for accidental eliminations |
-| Rebuys | Configurable limit (by levels or time), separate cost and chips |
+| Chip management | Manage chip colors/values, editable color-up schedule, blind-chip compatibility check |
+| Player management | Drag & drop seating, shuffle, dealer button, elimination with killer selection |
+| Rebuys & add-ons | Configurable limit (by levels or time), add-on once per player |
 | Bounty | Optional bounty per knockout with total overview |
 | Payout | Percentage or fixed, automatic suggestion based on player count |
-| Results | Detailed overview: paid in (buy-in + rebuys), winnings, bounty earnings and balance (profit/loss) per player |
-| Import / Export | Save and load tournament configuration as JSON |
-| Sound | Countdown beeps and victory melody via Web Audio API |
+| Templates | Save/load tournament configurations (browser + JSON file export/import) |
+| Tournament stats | Live: player count, prize pool, avg stack in BB, elapsed time, estimated remaining |
+| Bubble / ITM | Red pulsing BUBBLE! banner, green In The Money flash with sound |
+| Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
+| Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
+| Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
 | Fullscreen | Large timer mode for TV or projector display |
+| PWA | Installable on mobile/desktop, works offline |
 | Persistence | Automatic saving in browser (localStorage) |
 | Validation | Input validation before tournament start with clear error messages |
 
@@ -141,14 +160,15 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-82_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-184_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 
 - **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
-- **TypeScript** — Strikte Typisierung / Strict typing
-- **Vite** — Build-Tool (< 280 KB Bundle)
-- **Tailwind CSS 4** — Styling
-- **Vitest** — 82 Unit-Tests / Unit tests
+- **TypeScript 5.9** — Strikte Typisierung / Strict typing
+- **Vite 7** — Build-Tool / Build tool
+- **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
+- **Vitest** — 184 Unit-Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
+- **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
 
 ---
 
@@ -179,7 +199,7 @@ App: `http://localhost:5173/Pokernupdehueh/`
 
 ```bash
 npm run lint        # ESLint
-npm run test        # 82 Unit-Tests
+npm run test        # 184 Unit-Tests
 npm run build       # Production-Build → ./dist
 ```
 
@@ -191,37 +211,49 @@ npm run build       # Production-Build → ./dist
 src/
   domain/
     types.ts            # TypeScript-Typen / Types
-    logic.ts            # Geschäftslogik / Business logic (Timer, Blinds, Payouts)
-    sounds.ts           # Web Audio API Sounds
+    logic.ts            # Geschäftslogik / Business logic (~1200 Zeilen)
+    sounds.ts           # Web Audio API Sounds (Beeps, Melodien)
   hooks/
-    useTimer.ts         # Timer-Hook (drift-free)
+    useTimer.ts         # Timer-Hook (drift-free, shared AudioContext)
   i18n/
-    translations.ts     # DE/EN Übersetzungen / Translations (~170 Keys)
+    translations.ts     # DE/EN Übersetzungen / Translations (~300 Keys)
     LanguageContext.tsx  # React Context Provider
     useTranslation.ts   # useTranslation() Hook
     index.ts            # Barrel-Export
   components/
-    TimerDisplay.tsx    # Timer-Anzeige / Timer display
-    ConfigEditor.tsx    # Blindstruktur-Editor / Blind structure editor
-    PlayerManager.tsx   # Spielerverwaltung / Player management
-    PlayerPanel.tsx     # Spieler-Panel / Player panel (during tournament)
-    PayoutEditor.tsx    # Auszahlungsstruktur / Payout structure
-    RebuyEditor.tsx     # Rebuy-Konfiguration / Rebuy configuration
-    BountyEditor.tsx    # Bounty-Konfiguration / Bounty configuration
+    TimerDisplay.tsx     # Timer-Anzeige / Timer display
+    ConfigEditor.tsx     # Blindstruktur-Editor / Blind structure editor
+    BlindGenerator.tsx   # Blindstruktur-Generator / Blind structure generator
+    PlayerManager.tsx    # Spielerverwaltung / Player management (Drag & Drop)
+    PlayerPanel.tsx      # Spieler-Panel / Player panel (during tournament)
+    PayoutEditor.tsx     # Auszahlungsstruktur / Payout structure
+    RebuyEditor.tsx      # Rebuy-Konfiguration / Rebuy configuration
+    AddOnEditor.tsx      # Add-On-Konfiguration / Add-on configuration
+    BountyEditor.tsx     # Bounty-Konfiguration / Bounty configuration
+    ChipEditor.tsx       # Chip-Werte & Color-Up / Chip values & color-up
+    ChipSidebar.tsx      # Chip-Info im Spiel / Chip info during game
+    TemplateManager.tsx  # Vorlagen + JSON Import/Export / Templates + JSON import/export
+    TournamentStats.tsx  # Live-Statistiken / Live statistics
+    BubbleIndicator.tsx  # Bubble / In The Money Banner
+    TournamentFinished.tsx # Ergebnisse & Screenshot / Results & screenshot
+    SettingsPanel.tsx    # Einstellungen / Settings (custom checkboxes)
+    Controls.tsx         # Start/Pause/Next/Prev/Reset
     LanguageSwitcher.tsx # DE/EN-Umschalter / Language toggle
-    Controls.tsx        # Start/Pause/Next/Prev/Reset
-    ...
+    LevelPreview.tsx     # Level-Vorschau / Level preview
+    RebuyStatus.tsx      # Rebuy-Anzeige / Rebuy indicator
 tests/
-  logic.test.ts         # 82 Unit-Tests
+  logic.test.ts         # 184 Unit-Tests
 ```
 
 ## Architektur / Architecture
 
 - **Timer ohne Drift / Drift-free timer** — `startTimestamp` + `Date.now()` statt inkrementeller `setInterval`-Zählung / instead of incremental `setInterval` counting
 - **Domain/UI-Trennung / Separation** — `domain/` enthält reine, testbare Funktionen / contains pure, testable functions
-- **Eigenes i18n-System / Custom i18n** — Leichtgewichtiger React Context (~170 Keys), kein react-i18next / Lightweight React Context, no react-i18next
-- **Keine externen Dependencies / No external dependencies** — Nur React und Tailwind / Only React and Tailwind
+- **Eigenes i18n-System / Custom i18n** — Leichtgewichtiger React Context (~300 Keys), kein react-i18next / Lightweight React Context, no react-i18next
+- **Shared AudioContext** — Alle Sounds teilen einen AudioContext, initialisiert aus User-Geste (Safari-kompatibel) / All sounds share one AudioContext, initialized from user gesture (Safari-compatible)
+- **Keine externen State-Libraries / No external state libraries** — React Hooks + Props + Context (nur i18n) / Only React hooks + props + Context (i18n only)
 - **Sound via Web Audio API** — Keine externen Audio-Dateien / No external audio files
+- **PWA** — Offline-fähig, installierbar / Offline-capable, installable
 - **Backward-Kompatibilität / Backward compatibility** — Alte localStorage-Daten werden mit Defaults ergänzt / Old localStorage data is augmented with defaults
 
 ---

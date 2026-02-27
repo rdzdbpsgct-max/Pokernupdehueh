@@ -5,6 +5,99 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [1.4.0] – 2026-02-27
+
+### Vorlagen, Clean View & Stabilität
+
+- **Einheitlicher Vorlagen-Dialog** — Ein Button „Vorlagen" im Setup vereint alles: Browser-Vorlagen speichern/laden/löschen, als JSON-Datei exportieren/importieren (File System Access API mit nativem Dateidialog, Download-Fallback für Safari/Firefox), und aufklappbare JSON-Import/Export-Sektion für Power-User. Separates Import/Export-Modal entfernt.
+- **Unified templates dialog** — One "Templates" button in setup covers everything: save/load/delete browser templates, export/import as JSON files (File System Access API with native dialog, download fallback for Safari/Firefox), and collapsible JSON import/export section for power users. Separate import/export modal removed.
+
+- **Safari-Hinweis** — Automatischer Tipp wenn der Browser keine native Ordnerauswahl beim Speichern unterstützt (Safari → Einstellungen → Download-Ort auf „Nachfragen").
+- **Safari hint** — Automatic tip when the browser doesn't support native directory picker for saving (Safari → Settings → download location to "Ask for each download").
+
+- **Editierbarer Color-Up Plan** — Color-Up Zeitpunkte manuell anpassen oder automatisch generieren (Chip Race).
+- **Editable color-up schedule** — Manually adjust or auto-generate color-up timing (chip race).
+
+- **Clean View** — Umschalter im Spielmodus blendet Stats, Sidebars und sekundäre Buttons aus — nur Timer, Blinds und Bubble bleiben (Tastenkürzel: F).
+- **Clean view** — Toggle in game mode hides stats, sidebars and secondary controls — only timer, blinds and bubble remain (key: F).
+
+- **Auto-Start bei Levelwechsel** — Timer startet automatisch bei Weiter/Zurück.
+- **Auto-start on level change** — Timer starts automatically on Next/Previous.
+
+- **Sound-Fix für Safari** — Gemeinsamer AudioContext, initialisiert aus User-Geste (Play/Start), damit Safari Audio nicht blockiert. Custom Checkboxen (grün/grau) statt native accent-color.
+- **Sound fix for Safari** — Shared AudioContext initialized from user gesture (Play/Start) so Safari doesn't block audio. Custom checkboxes (green/gray) instead of native accent-color.
+
+- **Timer-Zuverlässigkeit** — Fix für sporadisches Nicht-Starten bei Levelwechsel (eager interval restart).
+- **Timer reliability** — Fix for sporadic non-start on level change (eager interval restart).
+
+- **iPad-Kompatibilität** — Build-Target auf Safari 14 / ES2020 angepasst, Lade-Fallback in index.html.
+- **iPad compatibility** — Build target set to Safari 14 / ES2020, loading fallback in index.html.
+
+- **Text & i18n** — „Nächstes: Pause" (Grammatik-Fix), Color-Up Banner mit „(Chip Race)", lokalisierte Pause-Labels, aktualisierte Beschreibungen, unbenutzte Translation-Keys entfernt.
+- **Text & i18n** — "Next: Break" (grammar fix), color-up banner with "(Chip Race)", localized break labels, updated descriptions, unused translation keys removed.
+
+- **7 neue Tests** — exportTemplateToJSON, parseTemplateFile Round-Trip und Fehlerbehandlung (184 Tests gesamt).
+- **7 new tests** — exportTemplateToJSON, parseTemplateFile round-trip and error handling (184 tests total).
+
+---
+
+## [1.3.0] – 2026-02-24
+
+### Turnier-Statistiken, Bubble & PWA
+
+- **Turnier-Statistiken** — Live-Anzeige im Spielmodus: Spieleranzahl, Preisgeld, Ø Stack in BB, Spielzeit, geschätzte Restzeit.
+- **Tournament statistics** — Live display in game mode: player count, prize pool, avg stack in BB, elapsed time, estimated remaining time.
+
+- **Bubble-Anzeige** — Rot pulsierender „BUBBLE!"-Banner wenn activePlayers === paidPlaces + 1, grüner „In The Money!"-Flash beim Bubble-Burst (5 Sek).
+- **Bubble indicator** — Red pulsing "BUBBLE!" banner when activePlayers === paidPlaces + 1, green "In The Money!" flash on bubble burst (5 sec).
+
+- **Bubble/ITM Sounds** — Spannungs-Sound (Sawtooth) bei Bubble, Fanfare (Triangle) bei In The Money.
+- **Bubble/ITM sounds** — Tension sound (sawtooth) on bubble, fanfare (triangle) on In The Money.
+
+- **Screenshot/Teilen** — Turnier-Ergebnisse als PNG capturen: Web Share API auf Mobile, Download-Fallback auf Desktop (html-to-image).
+- **Screenshot/share** — Capture tournament results as PNG: Web Share API on mobile, download fallback on desktop (html-to-image).
+
+- **PWA** — Progressive Web App mit Manifest, Service Worker, installierbar auf Mobile/Desktop (vite-plugin-pwa).
+- **PWA** — Progressive Web App with manifest, service worker, installable on mobile/desktop (vite-plugin-pwa).
+
+- **Turnier-Templates** — Benannte Turnierkonfigurationen speichern/laden/löschen via localStorage.
+- **Tournament templates** — Save/load/delete named tournament configurations via localStorage.
+
+- **23 neue Tests** — formatElapsedTime, computeEstimatedRemainingSeconds, computeAverageStackInBB, isBubble, isInTheMoney, Template-CRUD (177 Tests gesamt).
+- **23 new tests** — formatElapsedTime, computeEstimatedRemainingSeconds, computeAverageStackInBB, isBubble, isInTheMoney, template CRUD (177 tests total).
+
+---
+
+## [1.2.0] – 2026-02-23
+
+### Blindstruktur-Generator & Chip-Management
+
+- **Blindstruktur-Generator** — 3 Geschwindigkeiten (schnell/normal/langsam) mit eigener BB-Progression, chip-aware Rundung, geschätzte Turnierdauer basierend auf Spieleranzahl.
+- **Blind structure generator** — 3 speeds (fast/normal/slow) with distinct BB progressions, chip-aware rounding, estimated tournament duration based on player count.
+
+- **Chip-Blind-Kompatibilitätsprüfung** — Warnung wenn Chip-Werte geändert werden und die Blindstruktur nicht mehr darstellbar ist.
+- **Chip-blind compatibility check** — Warning when chip values are changed and the blind structure can no longer be expressed.
+
+- **PresetPicker entfernt** — Blindstrukturen werden jetzt komplett über den Generator erstellt.
+- **PresetPicker removed** — Blind structures are now created entirely via the generator.
+
+- **Add-On automatisch deaktiviert** — Wird Rebuy ausgeschaltet, wird Add-On automatisch zurückgesetzt.
+- **Add-on auto-disabled** — Disabling rebuy automatically resets add-on.
+
+- **Rebuy-Anzeige** — Nur während aktiver Rebuy-Phase sichtbar.
+- **Rebuy indicator** — Only visible during active rebuy phase.
+
+- **Chip-Duplikat-Warnung** — Warnung bei doppelten Chip-Farben.
+- **Chip duplicate warning** — Warning for duplicate chip colors.
+
+- **Chip-Auto-Sort** — Automatische Sortierung nach Wertigkeit.
+- **Chip auto-sort** — Automatic sorting by value.
+
+- **Color-Up gekoppelt mit Pause** — Chip-Race-Empfehlungen an nächste Pause gekoppelt.
+- **Color-up coupled with break** — Chip race recommendations coupled with next break.
+
+---
+
 ## [1.1.0] – 2026-02-21
 
 ### Features
@@ -41,49 +134,22 @@ All notable changes to the Pokern up de Hüh app.
 - Poker-Turnier-Timer mit konfigurierbaren Blind-Stufen und Pausen / Poker tournament timer with configurable blind levels and breaks
 - Drei Presets: Turbo (6 Min), Standard (15 Min), Deep Stack (20 Min) / Three presets: Turbo (6 min), Standard (15 min), Deep Stack (20 min)
 - Benutzerdefinierte Blind-Strukturen (Levels hinzufügen, bearbeiten, löschen, duplizieren, verschieben) / Custom blind structures (add, edit, delete, duplicate, reorder levels)
-- Globale Leveldauer: Alle Blindstufen auf einmal auf eine Dauer setzen / Global level duration: Set all blind levels to one duration at once
-- Globale Pausendauer: Alle Pausen auf einmal auf eine Dauer setzen / Global break duration: Set all breaks to one duration at once
 - Ante-Unterstützung (optional) mit automatischer Vorbelegung (~12,5% des BB) / Ante support (optional) with auto-population (~12.5% of BB)
-- Startchips im Setup konfigurierbar (Standard: 20.000) / Starting chips configurable in setup (default: 20,000)
 - Spielerverwaltung (2–20 Spieler, Namen editierbar) / Player management (2–20 players, editable names)
 - Spieler-Eliminierung mit Killer-Auswahl und automatischer Platzierung / Player elimination with killer selection and automatic placement
-- Rebuy-System (optional, konfigurierbar nach Levels oder Zeit, separate Kosten und Chips) / Rebuy system (optional, configurable by levels or time, separate cost and chips)
+- Rebuy-System (optional, konfigurierbar nach Levels oder Zeit) / Rebuy system (optional, configurable by levels or time)
 - Bounty-System (optional, konfigurierbarer Betrag pro Knockout) / Bounty system (optional, configurable amount per knockout)
-- Auszahlungsstruktur mit automatischem Vorschlag basierend auf Spieleranzahl / Payout structure with automatic suggestion based on player count
-- Auszahlung in Prozent oder festen Beträgen / Payout in percentage or fixed amounts
-- Turnier-Timer mit Start/Pause, Level-Navigation, Zeit-Scrubbing / Tournament timer with start/pause, level navigation, time scrubbing
-- Countdown-Warnung mit Beeps (letzte 10 Sekunden) / Countdown warning with beeps (last 10 seconds)
-- Level-Ende-Signalton / Level end signal sound
-- Sieges-Melodie bei Turniergewinn / Victory melody when tournament is won
-- Automatisches Weiterschalten zum nächsten Level / Automatic advancing to next level
-- Turnier-Ergebnisanzeige mit Platzierungen, Auszahlungen und Bounty-Übersicht / Tournament results with placements, payouts and bounty overview
+- Auszahlungsstruktur mit automatischem Vorschlag / Payout structure with automatic suggestion
 - Import/Export der Turnierkonfiguration als JSON / Import/export tournament configuration as JSON
+- Countdown-Warnung mit Beeps (letzte 10 Sekunden) / Countdown warning with beeps (last 10 seconds)
+- Sieges-Melodie bei Turniergewinn / Victory melody when tournament is won
 - Vollbild-Modus / Fullscreen mode
 - Tastenkürzel (Space, N, V, R) / Keyboard shortcuts (Space, N, V, R)
-- Große Anzeige (standardmäßig aktiviert) / Large display (enabled by default)
-
-### UI & Layout
-
-- Einklappbare Seitenleisten (links: Spieler, rechts: Einstellungen) / Collapsible sidebars (left: players, right: settings)
-- Anzeige des nächsten Levels unter dem aktuellen Level / Next level displayed below current level
-- Mobilfreundliches Layout mit responsiven Größen / Mobile-friendly layout with responsive sizes
-- Deutsche Benutzeroberfläche (ab v1.1.0 auch Englisch) / German UI (English added in v1.1.0)
-
-### Validierung / Validation
-
-- Prüfung aller Einstellungen vor Turnierstart / All settings validated before tournament start
-- Spieleranzahl muss zu Auszahlungsplätzen passen / Player count must match payout places
-- Auszahlungsprozente müssen 100% ergeben / Payout percentages must equal 100%
-- Mindestens 2 Spieler und ein gültiges Level erforderlich / At least 2 players and one valid level required
-- Grüne "Bereit"-Anzeige wenn alles passt / Green "Ready" indicator when all checks pass
 
 ### Technisch / Technical
 
 - React 19 + TypeScript 5.9 + Vite 7 + Tailwind CSS 4
 - 82 Unit-Tests (Vitest) / 82 unit tests (Vitest)
 - CI/CD via GitHub Actions (Lint + Test + Build + Deploy)
-- Deployment auf GitHub Pages / Deployment to GitHub Pages
-- Vollständig clientseitig, keine Serveranbindung nötig / Fully client-side, no server needed
-- Sound via Web Audio API (keine externen Audio-Dateien / no external audio files)
-- Persistenz via localStorage mit Backward-Kompatibilität / Persistence via localStorage with backward compatibility
-- 0 npm-audit-Vulnerabilities
+- Sound via Web Audio API
+- Persistenz via localStorage / Persistence via localStorage

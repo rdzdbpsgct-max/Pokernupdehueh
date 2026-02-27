@@ -72,7 +72,7 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 177 unit tests for domain/logic.ts
+└── logic.test.ts                # 184 unit tests for domain/logic.ts
 
 public/
 ├── favicon.svg                  # Spade symbol favicon
@@ -162,6 +162,15 @@ public/
 4. `npm run lint` to check code style
 5. `npm run test` to verify logic
 6. `npm run build` to verify production build succeeds
+
+## Documentation Sync
+
+When making changes to the project, **always update all three documentation files**:
+- **CLAUDE.md** — Technical reference for AI-assisted development (this file)
+- **README.md** — Public-facing GitHub project page (features, badges, structure)
+- **CHANGELOG.md** — Human-readable changelog with all version history
+
+Version numbers, test counts, feature lists, and project structure must stay in sync.
 
 ## Gotchas
 
