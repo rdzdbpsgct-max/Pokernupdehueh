@@ -7,13 +7,21 @@ const LANGUAGE_KEY = 'poker-timer-language';
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
-    const stored = localStorage.getItem(LANGUAGE_KEY);
-    return stored === 'en' ? 'en' : 'de';
+    try {
+      const stored = localStorage.getItem(LANGUAGE_KEY);
+      return stored === 'en' ? 'en' : 'de';
+    } catch {
+      return 'de';
+    }
   });
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem(LANGUAGE_KEY, lang);
+    try {
+      localStorage.setItem(LANGUAGE_KEY, lang);
+    } catch {
+      // localStorage unavailable (e.g. private browsing)
+    }
     setCurrentLanguage(lang);
     document.documentElement.lang = lang;
   }, []);

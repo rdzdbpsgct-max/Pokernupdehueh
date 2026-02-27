@@ -60,6 +60,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               <label className="text-sm text-gray-300">{t('rebuyEditor.cost')}</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 step={1}
                 value={rebuy.rebuyCost}
@@ -74,6 +75,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               <label className="text-sm text-gray-300">{t('rebuyEditor.chips')}</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 step={1000}
                 value={rebuy.rebuyChips}
@@ -117,6 +119,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               <label className="text-sm text-gray-300">{t('rebuyEditor.untilLevel')}</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={20}
                 value={rebuy.levelLimit}
@@ -132,6 +135,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               <label className="text-sm text-gray-300">{t('rebuyEditor.timePeriod')}</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={0}
                 max={10}
                 value={hours}
@@ -143,6 +147,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               <span className="text-gray-500 text-xs">{t('rebuyEditor.hours')}</span>
               <input
                 type="number"
+                inputMode="numeric"
                 min={0}
                 max={59}
                 value={minutes}

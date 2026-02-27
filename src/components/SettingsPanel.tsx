@@ -14,14 +14,14 @@ function CheckBox({ checked, onChange }: { checked: boolean; onChange: () => voi
       role="switch"
       aria-checked={checked}
       onClick={onChange}
-      className={`w-5 h-5 rounded flex items-center justify-center shrink-0 transition-colors ${
+      className={`w-7 h-7 rounded flex items-center justify-center shrink-0 transition-colors ${
         checked
           ? 'bg-emerald-500'
           : 'bg-gray-700 border border-gray-600'
       }`}
     >
       {checked && (
-        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       )}

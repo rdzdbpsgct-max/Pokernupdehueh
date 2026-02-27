@@ -1000,7 +1000,11 @@ const CONFIG_KEY = 'poker-timer-config';
 const SETTINGS_KEY = 'poker-timer-settings';
 
 export function saveConfig(config: TournamentConfig): void {
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  try {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  } catch {
+    // localStorage unavailable (e.g. private browsing, quota exceeded)
+  }
 }
 
 /** Shared parser: normalizes a raw parsed object into a TournamentConfig. */
@@ -1074,7 +1078,11 @@ export function loadConfig(): TournamentConfig | null {
 }
 
 export function saveSettings(settings: Settings): void {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // localStorage unavailable (e.g. private browsing, quota exceeded)
+  }
 }
 
 export function loadSettings(): Settings | null {
@@ -1141,13 +1149,21 @@ export function saveTemplate(name: string, config: TournamentConfig): Tournament
     config,
   };
   templates.push(template);
-  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  try {
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  } catch {
+    // localStorage unavailable
+  }
   return template;
 }
 
 export function deleteTemplate(id: string): void {
   const templates = loadTemplates().filter((t) => t.id !== id);
-  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  try {
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  } catch {
+    // localStorage unavailable
+  }
 }
 
 /**

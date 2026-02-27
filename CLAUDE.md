@@ -145,6 +145,7 @@ public/
 - **Screenshot/share**: `html-to-image` capture → Web Share API (mobile) or PNG download (desktop)
 - **PWA**: `vite-plugin-pwa` with auto-update service worker, installable on mobile/desktop
 - **Wake Lock**: Screen stays on during active tournament (Wake Lock API, re-acquired on tab focus)
+- **Cross-device compatibility**: Safe area insets (notch/gesture-bar), `100dvh` viewport height, `inputmode="numeric"` on all number inputs, webkit fullscreen prefix, localStorage try-catch for private browsing, tablet breakpoint (`md:` at 768px), touch targets ≥32px
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -198,6 +199,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Sound-Fix für Safari**: Gemeinsamer AudioContext aus User-Geste initialisiert, Custom Checkboxen (grün/grau) statt native accent-color
 - **Text & i18n**: „Nächstes: Pause" (Grammatik-Fix), Color-Up Banner mit „(Chip Race)", lokalisierte Pause-Labels, aktualisierte Beschreibungen, unbenutzte Translation-Keys entfernt
 - **7 neue Tests**: exportTemplateToJSON, parseTemplateFile Round-Trip und Fehlerbehandlung (184 Tests gesamt)
+- **Cross-Device-Kompatibilität**: Safe Area Insets (viewport-fit=cover, env() Padding), 100dvh statt 100vh, größere Touch-Targets (Checkboxen, Rebuy-Buttons), inputmode="numeric" auf allen Zahleneingaben, Fullscreen API mit webkit-Prefix und try-catch, Clipboard API abgesichert, localStorage try-catch für Private Browsing, Tablet-Breakpoint (md: ab 768px)
 
 ### v1.3.0
 

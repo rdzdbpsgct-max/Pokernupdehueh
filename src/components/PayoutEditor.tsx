@@ -97,6 +97,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
         <label className="text-xs text-gray-400 uppercase tracking-wider">{t('payoutEditor.paidPlaces')}</label>
         <input
           type="number"
+          inputMode="numeric"
           min={1}
           max={maxPlaces}
           value={payout.entries.length}
@@ -112,6 +113,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
             <span className="text-gray-400 text-sm w-16">{t('payoutEditor.placeN', { n: entry.place })}</span>
             <input
               type="number"
+              inputMode="numeric"
               min={0}
               step={payout.mode === 'percent' ? 5 : 1}
               value={entry.value}

@@ -42,6 +42,9 @@ All notable changes to the Pokern up de Hüh app.
 - **7 neue Tests** — exportTemplateToJSON, parseTemplateFile Round-Trip und Fehlerbehandlung (184 Tests gesamt).
 - **7 new tests** — exportTemplateToJSON, parseTemplateFile round-trip and error handling (184 tests total).
 
+- **Cross-Device-Kompatibilität** — Safe Area Insets für Notch-Phones (viewport-fit=cover, env()-Padding), dynamische Viewport-Höhe (100dvh statt 100vh), größere Touch-Targets (Checkboxen 28px, Rebuy-Buttons 32px), numerische Tastatur auf Mobile (inputmode="numeric"), Fullscreen API mit Webkit-Prefix und Error-Guard, Clipboard API abgesichert, localStorage try-catch für Private Browsing, Tablet-Breakpoint (md: ab 768px statt lg: ab 1024px).
+- **Cross-device compatibility** — Safe area insets for notched phones (viewport-fit=cover, env() padding), dynamic viewport height (100dvh instead of 100vh), larger touch targets (checkboxes 28px, rebuy buttons 32px), numeric keyboard on mobile (inputmode="numeric"), fullscreen API with webkit prefix and error guard, clipboard API guarded, localStorage try-catch for private browsing, tablet breakpoint (md: from 768px instead of lg: from 1024px).
+
 ---
 
 ## [1.3.0] – 2026-02-24

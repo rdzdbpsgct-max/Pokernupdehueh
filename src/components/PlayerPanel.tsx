@@ -186,7 +186,7 @@ export function PlayerPanel({
                         onUpdateRebuys(player.id, Math.max(0, player.rebuys - 1))
                       }
                       disabled={player.rebuys <= 0}
-                      className="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="w-8 h-8 rounded bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       -
                     </button>
@@ -197,7 +197,7 @@ export function PlayerPanel({
                       onClick={() =>
                         onUpdateRebuys(player.id, player.rebuys + 1)
                       }
-                      className="w-6 h-6 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
+                      className="w-8 h-8 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
                     >
                       +
                     </button>
@@ -208,7 +208,7 @@ export function PlayerPanel({
                 {addOnWindowOpen && (
                   <button
                     onClick={() => onUpdateAddOn(player.id, !player.addOn)}
-                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                       player.addOn
                         ? 'bg-emerald-700/50 text-emerald-300'
                         : 'bg-gray-700 hover:bg-gray-600 text-gray-400'
@@ -223,7 +223,7 @@ export function PlayerPanel({
                 {activePlayers.length > 1 && (
                   <button
                     onClick={() => handleEliminate(player.id)}
-                    className="px-2 py-1 rounded bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-medium transition-colors"
+                    className="px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-medium transition-colors"
                     title={t('playerPanel.eliminateTooltip')}
                   >
                     {t('playerPanel.eliminate')}
@@ -315,7 +315,7 @@ export function PlayerPanel({
                     {isLastEliminated && (
                       <button
                         onClick={() => onReinstatePlayer(player.id)}
-                        className="px-2 py-0.5 rounded bg-blue-900/50 hover:bg-blue-800 text-blue-300 text-xs font-medium transition-colors"
+                        className="px-3 py-1.5 rounded bg-blue-900/50 hover:bg-blue-800 text-blue-300 text-xs font-medium transition-colors"
                         title={t('playerPanel.reinstateTooltip')}
                       >
                         {t('playerPanel.reinstate')}

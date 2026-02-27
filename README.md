@@ -70,6 +70,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
 | Persistenz | Automatische Speicherung im Browser (localStorage) |
+| Kompatibilität | Safe Area Insets, dynamische Viewport-Höhe, optimierte Touch-Targets, numerische Tastatur, Tablet-Layout |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
 
 ### Mitwirken
@@ -140,6 +141,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
 | Persistence | Automatic saving in browser (localStorage) |
+| Compatibility | Safe area insets, dynamic viewport height, optimized touch targets, numeric keyboard, tablet layout |
 | Validation | Input validation before tournament start with clear error messages |
 
 ### Contributing

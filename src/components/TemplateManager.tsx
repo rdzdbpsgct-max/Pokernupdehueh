@@ -122,8 +122,12 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
     setShowJson((v) => !v);
   };
 
-  const handleJsonCopy = () => {
-    navigator.clipboard.writeText(exportConfigJSON(config));
+  const handleJsonCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(exportConfigJSON(config));
+    } catch {
+      // Clipboard API not available (e.g. HTTP, older browser)
+    }
   };
 
   const handleJsonImport = () => {

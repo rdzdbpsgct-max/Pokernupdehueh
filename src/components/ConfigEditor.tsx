@@ -115,6 +115,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
           <label className="text-gray-400 text-xs whitespace-nowrap">{t('config.allLevels')}</label>
           <input
             type="number"
+            inputMode="numeric"
             min={1}
             value={globalMinutes}
             onChange={(e) => setGlobalMinutes(Math.max(1, Number(e.target.value)))}
@@ -132,6 +133,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
           <label className="text-amber-400/70 text-xs whitespace-nowrap">{t('config.allBreaks')}</label>
           <input
             type="number"
+            inputMode="numeric"
             min={1}
             value={globalBreakMinutes}
             onChange={(e) => setGlobalBreakMinutes(Math.max(1, Number(e.target.value)))}
@@ -177,6 +179,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               <label className="text-gray-500 text-xs">{t('config.min')}:</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 value={Math.round(level.durationSeconds / 60)}
                 onChange={(e) =>
@@ -194,6 +197,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                   <label className="text-gray-500 text-xs">SB:</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     value={level.smallBlind ?? 0}
                     onChange={(e) => updateLevel(i, { smallBlind: Number(e.target.value) })}
@@ -204,6 +208,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                   <label className="text-gray-500 text-xs">BB:</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     value={level.bigBlind ?? 0}
                     onChange={(e) => updateLevel(i, { bigBlind: Number(e.target.value) })}
@@ -215,6 +220,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                     <label className="text-gray-500 text-xs">{t('timer.ante')}:</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={0}
                       value={level.ante ?? 0}
                       onChange={(e) => updateLevel(i, { ante: Number(e.target.value) })}

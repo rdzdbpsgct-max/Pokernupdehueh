@@ -118,6 +118,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
         <label className="text-xs text-gray-400 uppercase tracking-wider">{t('playerManager.count')}</label>
         <input
           type="number"
+          inputMode="numeric"
           min={2}
           max={20}
           value={countInput}

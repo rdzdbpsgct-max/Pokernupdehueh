@@ -34,6 +34,7 @@ export function BountyEditor({ bounty, onChange }: Props) {
             <label className="text-sm text-gray-300">{t('bountyEditor.perKnockout')}</label>
             <input
               type="number"
+              inputMode="numeric"
               min={1}
               step={1}
               value={bounty.amount}

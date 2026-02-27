@@ -199,10 +199,19 @@ function App() {
   }, [mode, timer, t, toggleCleanView]);
 
   const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      document.documentElement.requestFullscreen();
+    try {
+      const doc = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void };
+      const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+
+      if (document.fullscreenElement || doc.webkitFullscreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+      } else {
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      }
+    } catch {
+      // Fullscreen not available
     }
   }, []);
 
@@ -625,6 +634,7 @@ function App() {
                     <label className="text-xs text-gray-500">{t('app.buyIn')}</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       step={1}
                       value={config.buyIn}
@@ -651,6 +661,7 @@ function App() {
                     <label className="text-xs text-gray-500">{t('app.startingChips')}</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       min={1}
                       step={1000}
                       value={config.startingChips}
@@ -836,10 +847,10 @@ function App() {
           />
         ) : (
           /* Game Mode */
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             {/* Player Panel (LEFT) */}
             {showPlayerPanel && config.players.length > 0 && (
-              <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-gray-800 p-3 sm:p-4 overflow-y-auto max-h-[50vh] lg:max-h-none">
+              <aside className="w-full md:w-60 lg:w-72 border-b md:border-b-0 md:border-r border-gray-800 p-3 sm:p-4 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
                 <PlayerPanel
                   players={config.players}
                   dealerIndex={config.dealerIndex}
@@ -865,7 +876,7 @@ function App() {
               {config.players.length > 0 && (
                 <button
                   onClick={() => setShowPlayerPanel((v) => !v)}
-                  className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-r-lg text-xs transition-colors"
+                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-r-lg text-xs transition-colors"
                   title={showPlayerPanel ? t('app.hidePlayers') : t('app.showPlayers')}
                 >
                   {showPlayerPanel ? '\u25C0' : '\u25B6'}
@@ -873,7 +884,7 @@ function App() {
               )}
               <button
                 onClick={() => setShowSidebar((v) => !v)}
-                className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-l-lg text-xs transition-colors"
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-l-lg text-xs transition-colors"
                 title={showSidebar ? t('app.hideSidebar') : t('app.showSidebar')}
               >
                 {showSidebar ? '\u25B6' : '\u25C0'}
@@ -926,7 +937,7 @@ function App() {
               </div>
 
               {/* Mobile: toggle buttons row at bottom */}
-              <div className="flex lg:hidden justify-center gap-2 px-3 pb-2">
+              <div className="flex md:hidden justify-center gap-2 px-3 pb-2">
                 {config.players.length > 0 && (
                   <button
                     onClick={() => setShowPlayerPanel((v) => !v)}
@@ -954,7 +965,7 @@ function App() {
 
             {/* Sidebar (RIGHT) */}
             {showSidebar && (
-              <aside className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-gray-800 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[50vh] lg:max-h-none">
+              <aside className="w-full md:w-60 lg:w-72 border-t md:border-t-0 md:border-l border-gray-800 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
                 <LevelPreview timerState={timer.timerState} levels={config.levels} />
                 {config.chips.enabled && (
                   <ChipSidebar

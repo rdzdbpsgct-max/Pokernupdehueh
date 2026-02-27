@@ -175,6 +175,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                   {/* Value input */}
                   <input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     value={denom.value}
                     onChange={(e) =>

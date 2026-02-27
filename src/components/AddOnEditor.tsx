@@ -89,6 +89,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
               <label className="text-sm text-gray-300">{t('addOnEditor.cost')}</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 step={1}
                 value={addOn.cost}
@@ -103,6 +104,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
               <label className="text-sm text-gray-300">{t('addOnEditor.chips')}</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 step={1000}
                 value={addOn.chips}

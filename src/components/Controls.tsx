@@ -60,14 +60,14 @@ export function Controls({
         <div className="flex items-center gap-3">
           <button
             onClick={onReset}
-            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs font-medium transition-colors"
+            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs font-medium transition-colors"
             title={t('controls.levelResetTooltip')}
           >
             {t('controls.levelReset')}
           </button>
           <button
             onClick={onRestart}
-            className="px-3 py-1.5 bg-gray-800 hover:bg-red-900 text-gray-300 hover:text-red-300 rounded text-xs font-medium transition-colors"
+            className="px-4 py-2 bg-gray-800 hover:bg-red-900 text-gray-300 hover:text-red-300 rounded text-xs font-medium transition-colors"
             title={t('controls.tournamentRestartTooltip')}
           >
             {t('controls.tournamentRestart')}
