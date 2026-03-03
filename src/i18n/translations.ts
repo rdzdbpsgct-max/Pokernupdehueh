@@ -339,18 +339,20 @@ const de = {
   'unit.chips': 'Chips',
 
   // --- Voice Announcements ---
-  // "Bleindz" = phonetic hint so German TTS pronounces "Blinds" in English
+  // Phonetic hints for German TTS to pronounce English poker terms correctly:
+  // Bleindz=Blinds, Riebai=Rebuy, Ädd-On=Add-On, Babbl=Bubble,
+  // Kaller-App=Color-Up, Inn se Manni=In The Money
   'voice.levelChange': 'Level {level} — Bleindz {sb} / {bb}',
   'voice.levelChangeWithAnte': 'Level {level} — Bleindz {sb} / {bb} — Ante {ante}',
   'voice.breakStart': 'Pause — {minutes} Minuten',
   'voice.breakWarning': 'Noch 30 Sekunden Pause',
-  'voice.bubble': 'Wir sind auf der Bubble!',
-  'voice.inTheMoney': 'In The Money! Herzlichen Glückwunsch!',
+  'voice.bubble': 'Wir sind auf der Babbl!',
+  'voice.inTheMoney': 'Inn se Manni! Herzlichen Glückwunsch!',
   'voice.playerEliminated': '{name} ausgeschieden auf Platz {place}',
   'voice.tournamentWinner': '{name} gewinnt das Turnier!',
-  'voice.addOnAvailable': 'Add-On jetzt verfügbar!',
-  'voice.rebuyEnded': 'Die Rebuy-Phase ist beendet',
-  'voice.colorUp': 'Color-Up: {chips} Chips werden eingetauscht',
+  'voice.addOnAvailable': 'Ädd-On jetzt verfügbar!',
+  'voice.rebuyEnded': 'Die Riebai-Phase ist beendet',
+  'voice.colorUp': 'Kaller-App: {chips} Chips werden eingetauscht',
 } as const;
 
 export type TranslationKey = keyof typeof de;
