@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.0.1
+**Version**: 2.1.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (184 tests, single run)
+npm run test         # Vitest run (192 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -66,7 +66,8 @@ src/
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
 │   ├── logic.ts                 # Core logic (~900 lines): validation, payouts, blinds, chips, templates, persistence, checkpoint
-│   └── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
+│   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
+│   └── speech.ts                # Web Speech API voice announcements (level, break, bubble, ITM, elimination, winner)
 ├── hooks/
 │   └── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
 ├── theme/                       # Dark/Light mode system
@@ -78,7 +79,7 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~460+ keys)
+    ├── translations.ts          # DE/EN translation strings (~480+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
@@ -149,6 +150,7 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files
+- **Voice announcements**: Web Speech API (`speechSynthesis`) — offline, zero sound files, zero cost. Voice selection by app language (DE/EN, prefers local voices). Cancel-before-speak queue prevents overlapping. Toggle via `settings.voiceEnabled`. Announces: level changes, breaks (start + 30s warning), bubble, ITM, eliminations, tournament winner, add-on, rebuy end, color-up. Verbal countdown for last 5 seconds.
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
@@ -212,6 +214,14 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.1.0 — Sprachansagen (Web Speech API)
+
+- **Voice Announcements**: Web Speech API Sprachansagen für Level-Wechsel, Pausen (Start + 30s-Warnung), Bubble, ITM, Eliminierungen, Turniersieger, Add-On, Rebuy-Ende, Color-Up. Verbaler Countdown letzte 5 Sekunden. Offline-fähig, keine Sounddateien.
+- **Neue Datei**: `src/domain/speech.ts` — Voice-Engine mit DE/EN-Sprachauswahl, Cancel-before-speak Queue, 11 Convenience-Funktionen
+- **Settings**: `voiceEnabled: boolean` in Settings, Toggle „Sprachansagen" im Einstellungspanel
+- **13 neue Translation-Keys**: `settings.voice` + 11× `voice.*` (DE + EN)
+- **5 neue Tests**: Speech-Modul Degradation + Announcement-Builder (192 Tests gesamt)
 
 ### v2.0.1 — Light-Mode-Fixes, Sektionsumbenennung & Clean-View-Button
 

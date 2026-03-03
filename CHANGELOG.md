@@ -5,6 +5,24 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.1.0] – 2026-03-03
+
+### Sprachansagen / Voice Announcements
+
+- **Web Speech API Sprachansagen** — Neue Funktion: der Timer spricht Level-Wechsel, Pausen, Bubble, In-The-Money, Eliminierungen, Turniersieger, Add-On, Rebuy-Ende und Color-Up an. Komplett offline-fähig, keine Sounddateien, keine Kosten. Aktivierbar über neuen Toggle „Sprachansagen" in den Einstellungen.
+- **Web Speech API voice announcements** — New feature: the timer announces level changes, breaks, bubble, in-the-money, eliminations, tournament winner, add-on, rebuy end, and color-up. Fully offline, no sound files, no cost. Enable via new "Voice Announcements" toggle in settings.
+
+- **Neue Datei**: `src/domain/speech.ts` — Voice-Engine mit Sprachauswahl (DE/EN), Ankündigungs-Queue (cancel-before-speak), 11 Convenience-Funktionen.
+- **New file**: `src/domain/speech.ts` — Voice engine with language selection (DE/EN), announcement queue (cancel-before-speak), 11 convenience functions.
+
+- **13 neue Translation-Keys**: `settings.voice`, `voice.levelChange`, `voice.levelChangeWithAnte`, `voice.breakStart`, `voice.breakWarning`, `voice.bubble`, `voice.inTheMoney`, `voice.playerEliminated`, `voice.tournamentWinner`, `voice.addOnAvailable`, `voice.rebuyEnded`, `voice.colorUp` (DE + EN).
+- **13 new translation keys**: `settings.voice`, `voice.levelChange`, `voice.levelChangeWithAnte`, `voice.breakStart`, `voice.breakWarning`, `voice.bubble`, `voice.inTheMoney`, `voice.playerEliminated`, `voice.tournamentWinner`, `voice.addOnAvailable`, `voice.rebuyEnded`, `voice.colorUp` (DE + EN).
+
+- **5 neue Tests**: Speech-Modul Degradation (kein speechSynthesis in jsdom), Announcement-Builder (192 Tests gesamt).
+- **5 new tests**: Speech module degradation (no speechSynthesis in jsdom), announcement builders (192 tests total).
+
+---
+
 ## [2.0.1] – 2026-03-03
 
 ### Light-Mode-Fixes, Sektionsumbenennung & Clean-View-Button

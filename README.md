@@ -6,7 +6,7 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.0.1-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.1.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Tests](https://img.shields.io/badge/Tests-187%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
@@ -67,6 +67,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
+| Sprachansagen | Level-Wechsel, Pausen, Bubble, ITM, Eliminierungen, Sieger — Web Speech API (offline, kostenlos) |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
@@ -145,6 +146,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
+| Voice announcements | Level changes, breaks, bubble, ITM, eliminations, winner — Web Speech API (offline, free) |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
@@ -231,6 +233,7 @@ src/
     types.ts            # TypeScript-Typen / Types
     logic.ts            # Geschäftslogik / Business logic (~1200 Zeilen)
     sounds.ts           # Web Audio API Sounds (Beeps, Melodien)
+    speech.ts           # Web Speech API Sprachansagen
   hooks/
     useTimer.ts         # Timer-Hook (drift-free, shared AudioContext)
   theme/

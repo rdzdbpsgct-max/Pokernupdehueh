@@ -1959,3 +1959,57 @@ describe('computeBlindStructureSummary', () => {
     expect(result.avgMinutes).toBe(0);
   });
 });
+
+describe('speech module', () => {
+  // Import speech functions — speechSynthesis is not available in jsdom,
+  // so these tests verify graceful degradation (no errors thrown)
+
+  it('announce does not throw without speechSynthesis', async () => {
+    const { announce } = await import('../src/domain/speech');
+    expect(() => announce('test')).not.toThrow();
+  });
+
+  it('cancelSpeech does not throw without speechSynthesis', async () => {
+    const { cancelSpeech } = await import('../src/domain/speech');
+    expect(() => cancelSpeech()).not.toThrow();
+  });
+
+  it('initSpeech does not throw without speechSynthesis', async () => {
+    const { initSpeech } = await import('../src/domain/speech');
+    expect(() => initSpeech()).not.toThrow();
+  });
+
+  it('setSpeechLanguage does not throw', async () => {
+    const { setSpeechLanguage } = await import('../src/domain/speech');
+    expect(() => setSpeechLanguage('de')).not.toThrow();
+    expect(() => setSpeechLanguage('en')).not.toThrow();
+  });
+
+  it('announcement builders do not throw without speechSynthesis', async () => {
+    const {
+      announceLevelChange, announceBreakStart, announceBreakWarning,
+      announceCountdown, announceBubble, announceInTheMoney,
+      announceElimination, announceWinner, announceAddOn,
+      announceRebuyEnded, announceColorUp,
+    } = await import('../src/domain/speech');
+
+    const mockT = ((key: string, params?: Record<string, string | number>) => {
+      let text = key;
+      if (params) for (const [k, v] of Object.entries(params)) text += ` ${k}=${v}`;
+      return text;
+    }) as Parameters<typeof announceLevelChange>[4];
+
+    expect(() => announceLevelChange(5, 200, 400, 50, mockT)).not.toThrow();
+    expect(() => announceLevelChange(3, 100, 200, undefined, mockT)).not.toThrow();
+    expect(() => announceBreakStart(10, mockT)).not.toThrow();
+    expect(() => announceBreakWarning(mockT)).not.toThrow();
+    expect(() => announceCountdown(5)).not.toThrow();
+    expect(() => announceBubble(mockT)).not.toThrow();
+    expect(() => announceInTheMoney(mockT)).not.toThrow();
+    expect(() => announceElimination('Alice', 3, mockT)).not.toThrow();
+    expect(() => announceWinner('Bob', mockT)).not.toThrow();
+    expect(() => announceAddOn(mockT)).not.toThrow();
+    expect(() => announceRebuyEnded(mockT)).not.toThrow();
+    expect(() => announceColorUp('500, 1000', mockT)).not.toThrow();
+  });
+});

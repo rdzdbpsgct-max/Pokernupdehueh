@@ -48,6 +48,10 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.countdown')}</span>
           <CheckBox checked={settings.countdownEnabled} onChange={() => toggle('countdownEnabled')} />
         </div>
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('voiceEnabled')}>
+          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.voice')}</span>
+          <CheckBox checked={settings.voiceEnabled} onChange={() => toggle('voiceEnabled')} />
+        </div>
         <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('autoAdvance')}>
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.autoAdvance')}</span>
           <CheckBox checked={settings.autoAdvance} onChange={() => toggle('autoAdvance')} />

@@ -106,6 +106,7 @@ const de = {
   'settings.title': 'Einstellungen',
   'settings.sound': 'Sound',
   'settings.countdown': 'Countdown (letzte 10s)',
+  'settings.voice': 'Sprachansagen',
   'settings.autoAdvance': 'Automatisch weiter',
   'settings.largeDisplay': 'Große Anzeige',
   'settings.fullscreen': '⛶ Vollbild',
@@ -336,6 +337,19 @@ const de = {
   // --- Units ---
   'unit.eur': 'EUR',
   'unit.chips': 'Chips',
+
+  // --- Voice Announcements ---
+  'voice.levelChange': 'Level {level} — Blinds {sb} / {bb}',
+  'voice.levelChangeWithAnte': 'Level {level} — Blinds {sb} / {bb} — Ante {ante}',
+  'voice.breakStart': 'Pause — {minutes} Minuten',
+  'voice.breakWarning': 'Noch 30 Sekunden Pause',
+  'voice.bubble': 'Wir sind auf der Bubble!',
+  'voice.inTheMoney': 'In The Money! Herzlichen Glückwunsch!',
+  'voice.playerEliminated': '{name} ausgeschieden auf Platz {place}',
+  'voice.tournamentWinner': '{name} gewinnt das Turnier!',
+  'voice.addOnAvailable': 'Add-On jetzt verfügbar!',
+  'voice.rebuyEnded': 'Die Rebuy-Phase ist beendet',
+  'voice.colorUp': 'Color-Up: {chips} Chips werden eingetauscht',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -446,6 +460,7 @@ const en: Record<TranslationKey, string> = {
   'settings.title': 'Settings',
   'settings.sound': 'Sound',
   'settings.countdown': 'Countdown (last 10s)',
+  'settings.voice': 'Voice Announcements',
   'settings.autoAdvance': 'Auto-advance',
   'settings.largeDisplay': 'Large display',
   'settings.fullscreen': '⛶ Fullscreen',
@@ -676,6 +691,19 @@ const en: Record<TranslationKey, string> = {
   // --- Units ---
   'unit.eur': 'EUR',
   'unit.chips': 'Chips',
+
+  // --- Voice Announcements ---
+  'voice.levelChange': 'Level {level} — Blinds {sb} / {bb}',
+  'voice.levelChangeWithAnte': 'Level {level} — Blinds {sb} / {bb} — Ante {ante}',
+  'voice.breakStart': 'Break — {minutes} minutes',
+  'voice.breakWarning': '30 seconds remaining in break',
+  'voice.bubble': 'We are on the bubble!',
+  'voice.inTheMoney': 'In the money! Congratulations!',
+  'voice.playerEliminated': '{name} eliminated in place {place}',
+  'voice.tournamentWinner': '{name} wins the tournament!',
+  'voice.addOnAvailable': 'Add-on now available!',
+  'voice.rebuyEnded': 'The rebuy phase has ended',
+  'voice.colorUp': 'Color-up: exchange {chips} chips',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

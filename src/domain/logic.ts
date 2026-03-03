@@ -1017,6 +1017,7 @@ export function defaultSettings(): Settings {
     countdownEnabled: true,
     autoAdvance: true,
     largeDisplay: true,
+    voiceEnabled: false,
   };
 }
 
@@ -1117,7 +1118,8 @@ export function loadSettings(): Settings | null {
   const raw = localStorage.getItem(SETTINGS_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as Settings;
+    const parsed = JSON.parse(raw);
+    return { ...defaultSettings(), ...parsed } as Settings;
   } catch {
     return null;
   }

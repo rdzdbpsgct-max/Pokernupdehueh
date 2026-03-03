@@ -29,6 +29,21 @@ import {
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
 import { playVictorySound, playBubbleSound, playInTheMoneySound } from './domain/sounds';
+import {
+  setSpeechLanguage,
+  initSpeech,
+  cancelSpeech,
+  announceLevelChange,
+  announceBreakStart,
+  announceBreakWarning,
+  announceBubble,
+  announceInTheMoney,
+  announceElimination,
+  announceWinner,
+  announceAddOn,
+  announceRebuyEnded,
+  announceColorUp,
+} from './domain/speech';
 // Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
 import { PlayerManager } from './components/PlayerManager';
@@ -60,6 +75,12 @@ type Mode = 'setup' | 'game';
 
 function App() {
   const { t, language } = useTranslation();
+
+  // Sync speech language with app language
+  useEffect(() => {
+    setSpeechLanguage(language);
+  }, [language]);
+
   const [mode, setMode] = useState<Mode>('setup');
   const [config, setConfig] = useState<TournamentConfig>(
     () => loadConfig() ?? defaultConfig(),
@@ -392,9 +413,13 @@ function App() {
   useEffect(() => {
     if (prevRebuyActive.current && !rebuyActive && config.addOn.enabled && config.rebuy.enabled) {
       setAddOnEndLevelIndex(timer.timerState.currentLevelIndex);
+      if (settings.voiceEnabled) {
+        announceRebuyEnded(t);
+        setTimeout(() => announceAddOn(t), 2500);
+      }
     }
     prevRebuyActive.current = rebuyActive;
-  }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, timer.timerState.currentLevelIndex]);
+  }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, timer.timerState.currentLevelIndex, settings.voiceEnabled, t]);
 
   const addOnWindowOpen = useMemo(() => {
     if (!config.addOn.enabled || !config.rebuy.enabled) return false;
@@ -543,8 +568,9 @@ function App() {
     return errors;
   }, [config, t]);
 
-  // Auto-pause timer and play victory sound when tournament finishes
+  // Auto-pause timer and play victory sound/voice when tournament finishes
   const victorySoundPlayedRef = useRef(false);
+  const victoryVoicePlayedRef = useRef(false);
   useEffect(() => {
     if (mode === 'game' && tournamentFinished) {
       timer.pause();
@@ -552,13 +578,18 @@ function App() {
         victorySoundPlayedRef.current = true;
         playVictorySound();
       }
+      if (settings.voiceEnabled && winner && !victoryVoicePlayedRef.current) {
+        victoryVoicePlayedRef.current = true;
+        setTimeout(() => announceWinner(winner.name, t), 1500);
+      }
     }
     if (!tournamentFinished) {
       victorySoundPlayedRef.current = false;
+      victoryVoicePlayedRef.current = false;
     }
-  }, [mode, tournamentFinished, timer, settings.soundEnabled]);
+  }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled, winner, t]);
 
-  // Bubble & ITM sound/visual effects
+  // Bubble & ITM sound/voice/visual effects
   const prevBubbleRef = useRef(false);
   const itmFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -567,12 +598,14 @@ function App() {
     // Bubble just started
     if (bubbleActive && !prevBubbleRef.current) {
       if (settings.soundEnabled) playBubbleSound();
+      if (settings.voiceEnabled) announceBubble(t);
     }
 
     // Bubble just ended (burst) → show ITM flash
     if (!bubbleActive && prevBubbleRef.current && inTheMoney) {
       setShowItmFlash(true);
       if (settings.soundEnabled) playInTheMoneySound();
+      if (settings.voiceEnabled) setTimeout(() => announceInTheMoney(t), 500);
       if (itmFlashTimeoutRef.current) clearTimeout(itmFlashTimeoutRef.current);
       itmFlashTimeoutRef.current = setTimeout(() => setShowItmFlash(false), 5000);
       prevBubbleRef.current = bubbleActive;
@@ -585,7 +618,72 @@ function App() {
     }
 
     prevBubbleRef.current = bubbleActive;
-  }, [mode, bubbleActive, inTheMoney, settings.soundEnabled]);
+  }, [mode, bubbleActive, inTheMoney, settings.soundEnabled, settings.voiceEnabled, t]);
+
+  // Voice: Level change announcement
+  const prevLevelIdxVoiceRef = useRef(timer.timerState.currentLevelIndex);
+  useEffect(() => {
+    if (mode !== 'game' || !settings.voiceEnabled) return;
+    const idx = timer.timerState.currentLevelIndex;
+    if (idx === prevLevelIdxVoiceRef.current) return;
+    prevLevelIdxVoiceRef.current = idx;
+
+    const level = config.levels[idx];
+    if (!level) return;
+
+    if (level.type === 'break') {
+      const minutes = Math.round(level.durationSeconds / 60);
+      announceBreakStart(minutes, t);
+    } else {
+      const playLevelNum = config.levels.slice(0, idx + 1).filter(l => l.type === 'level').length;
+      announceLevelChange(playLevelNum, level.smallBlind ?? 0, level.bigBlind ?? 0, level.ante, t);
+    }
+
+    // Color-up announcement (delayed to not overlap with level announcement)
+    if (config.chips.enabled && config.chips.colorUpEnabled) {
+      const colorUpChips = colorUpMap.get(idx);
+      if (colorUpChips && colorUpChips.length > 0) {
+        const labels = colorUpChips.map((d: { label: string }) => d.label).join(', ');
+        setTimeout(() => announceColorUp(labels, t), 3000);
+      }
+    }
+  }, [mode, timer.timerState.currentLevelIndex, config.levels, config.chips, colorUpMap, settings.voiceEnabled, t]);
+
+  // Voice: Break warning (30 seconds remaining in break)
+  const breakWarningRef = useRef(false);
+  useEffect(() => {
+    if (mode !== 'game' || !settings.voiceEnabled) return;
+    const level = config.levels[timer.timerState.currentLevelIndex];
+    if (!level || level.type !== 'break') {
+      breakWarningRef.current = false;
+      return;
+    }
+    const remaining = timer.timerState.remainingSeconds;
+    if (remaining <= 30 && remaining > 28 && !breakWarningRef.current) {
+      breakWarningRef.current = true;
+      announceBreakWarning(t);
+    }
+    if (remaining > 30) {
+      breakWarningRef.current = false;
+    }
+  }, [mode, settings.voiceEnabled, config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, t]);
+
+  // Voice: Player elimination
+  const prevPlayersRef = useRef(config.players);
+  useEffect(() => {
+    if (mode !== 'game' || !settings.voiceEnabled) return;
+    const prev = prevPlayersRef.current;
+    prevPlayersRef.current = config.players;
+    for (const player of config.players) {
+      if (player.status === 'eliminated' && player.placement !== null) {
+        const prevPlayer = prev.find(p => p.id === player.id);
+        if (prevPlayer && prevPlayer.status === 'active') {
+          announceElimination(player.name, player.placement, t);
+          break;
+        }
+      }
+    }
+  }, [mode, config.players, settings.voiceEnabled, t]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
@@ -608,9 +706,11 @@ function App() {
     setShowSidebar(true);
     setMode('game');
     timer.restart();
+    initSpeech();
   };
 
   const switchToSetup = () => {
+    cancelSpeech();
     timer.restart();
     setAddOnEndLevelIndex(null);
     setShowItmFlash(false);

@@ -98,6 +98,7 @@ export interface Settings {
   countdownEnabled: boolean;
   autoAdvance: boolean;
   largeDisplay: boolean;
+  voiceEnabled: boolean;
 }
 
 export interface TournamentCheckpoint {
