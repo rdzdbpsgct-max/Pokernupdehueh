@@ -159,7 +159,7 @@ public/
 - **Tournament templates**: Save/load/delete named configs via localStorage or local JSON files (File System Access API with download fallback)
 - **Clean View**: Toggle to hide stats, sidebars, and secondary controls during game (keyboard: F)
 - **Auto-start on level jump**: Timer automatically starts when pressing Next/Previous level
-- **Bubble detection**: `isBubble()` and `isInTheMoney()` based on active players vs paid places; `BubbleIndicator` also shows Add-On announcement banner (amber, center-screen) when rebuy phase ends
+- **Bubble detection**: `isBubble()` and `isInTheMoney()` based on active players vs paid places; `BubbleIndicator` also shows Add-On announcement banner (amber, center-screen) when rebuy phase ends — with break: shown during break + next level (timer runs); without break: timer pauses automatically for add-on
 - **Tournament stats**: Live display of players, prizepool, avg stack in BB, elapsed/remaining time
 - **Dark/Light mode**: 3-way toggle (System/Light/Dark) in header; `ThemeProvider` manages mode + system preference listener + `dark` class on `<html>`; `useTheme()` hook; `poker-timer-theme` in localStorage; PWA `theme-color` meta tag updated dynamically
 - **Code splitting**: Game-mode components lazy-loaded via `React.lazy()` + `Suspense`; `html-to-image` dynamically imported only when capturing screenshots; main bundle ~302KB + ~30KB game chunks
@@ -222,6 +222,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Theme/Sprache im Spielmodus**: Theme-Switcher und Language-Switcher auch im Spielmodus verfügbar
 - **Chips standardmäßig deaktiviert**: `defaultChipConfig()` gibt `enabled: false` zurück; ChipSidebar nur bei aktivierten Chips
 - **Color-Up realistischer**: Chips werden erst bei der übernächsten Pause entfernt (nicht bei der ersten möglichen)
+- **Add-On-Timing**: Ankündigung erscheint nach Ende der Rebuy-Phase — mit Pause: Banner in Pause + nächstem Level, Timer läuft weiter; ohne Pause: Timer pausiert automatisch für Add-On. `useTimer` akzeptiert optionalen `pauseAtLevelIndex`-Parameter.
 
 ### v2.0.0 — Dark/Light Mode, SVG-Chevrons, NumberStepper & Performance
 

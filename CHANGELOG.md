@@ -30,6 +30,9 @@ All notable changes to the Pokern up de Hüh app.
 - **Color-Up realistischer** — Chips werden nicht mehr bei der ersten möglichen Pause entfernt, sondern erst bei der übernächsten. Z.B. bleiben 500er-Chips länger im Spiel, wie in echten Turnieren üblich.
 - **Color-up more realistic** — Chips are no longer removed at the first possible break but at the one after that. E.g. 500-value chips stay in play longer, as is common in real tournaments.
 
+- **Add-On-Timing korrigiert** — Die Add-On-Ankündigung erscheint jetzt zum richtigen Zeitpunkt: Wenn eine Pause nach der letzten Rebuy-Stufe folgt, läuft der Timer weiter und das Banner wird in der Pause + nächstem Level angezeigt. Ohne Pause wird der Timer automatisch angehalten, damit Spieler ihr Add-On nehmen können.
+- **Add-on timing fixed** — The add-on announcement now appears at the correct time: When a break follows the last rebuy level, the timer keeps running and the banner shows during the break + next level. Without a break, the timer pauses automatically so players can take their add-on.
+
 ---
 
 ## [2.0.0] – 2026-03-03
