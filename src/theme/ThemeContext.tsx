@@ -17,7 +17,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {
       // localStorage unavailable
     }
-    return 'system';
+    return 'dark';
   });
 
   const [systemPref, setSystemPref] = useState<'light' | 'dark'>(getSystemPreference);

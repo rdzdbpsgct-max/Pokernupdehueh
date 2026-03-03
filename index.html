@@ -15,8 +15,8 @@
         try { stored = localStorage.getItem('poker-timer-theme'); } catch(e) {}
         var mode = (stored === 'light' || stored === 'dark') ? stored : null;
         if (!mode) {
-          // 'system' or no preference → use OS setting
-          mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          // No explicit preference → default to dark
+          mode = 'dark';
         }
         if (mode === 'dark') {
           document.documentElement.classList.add('dark');
