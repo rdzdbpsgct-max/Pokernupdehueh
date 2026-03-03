@@ -657,8 +657,8 @@ function App() {
           {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
         </h1>
         <div className="flex items-center gap-2">
-          {mode === 'setup' && <ThemeSwitcher />}
-          {mode === 'setup' && <LanguageSwitcher />}
+          <ThemeSwitcher />
+          <LanguageSwitcher />
           <button
             onClick={() => {
               if (mode === 'game') {
