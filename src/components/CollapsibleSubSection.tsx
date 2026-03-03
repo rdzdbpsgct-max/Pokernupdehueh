@@ -22,7 +22,7 @@ export function CollapsibleSubSection({ title, summary, defaultOpen = false, chi
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</span>
         <div className="flex items-center gap-2 shrink-0">
           {!isOpen && summary && (
-            <span className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
+            <span className="text-xs text-gray-600 dark:text-gray-500 truncate max-w-[200px]">
               {summary}
             </span>
           )}

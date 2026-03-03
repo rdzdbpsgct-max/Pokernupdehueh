@@ -24,14 +24,14 @@ export function CollapsibleSection({ title, summary, defaultOpen = true, childre
             {title}
           </h2>
           {isOpen && summary && (
-            <span className="text-xs text-gray-300 dark:text-gray-600 font-normal normal-case tracking-normal">
+            <span className="text-xs text-gray-500 dark:text-gray-600 font-normal normal-case tracking-normal">
               {summary}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!isOpen && summary && (
-            <span className="text-sm text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
+            <span className="text-sm text-gray-600 dark:text-gray-500 truncate max-w-[200px]">
               {summary}
             </span>
           )}
