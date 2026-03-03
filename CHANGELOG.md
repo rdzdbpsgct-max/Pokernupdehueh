@@ -5,6 +5,21 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.0.1] – 2026-03-03
+
+### Light-Mode-Fixes, Sektionsumbenennung & Clean-View-Button
+
+- **Light-Mode Lesbarkeit** — Alle farbigen UI-Elemente (rot/grün/amber) waren im Light Mode schlecht lesbar (dunkle Hintergründe mit niedrigen Opacities, helle Textfarben aus dem Dark-Mode-Design). Jetzt: helle Basis-Farben für Light Mode + bisherige Werte als `dark:`-Varianten. 14 Dateien gefixt.
+- **Light mode readability** — All colored UI elements (red/green/amber) were hard to read in light mode (dark backgrounds with low opacities, bright text colors from dark mode design). Now: light base colors for light mode + previous values as `dark:` variants. 14 files fixed.
+
+- **Sektionsumbenennung** — „Turnier-Format" → „Rebuy / Add-On / Bounty" — direkter und verständlicher.
+- **Section rename** — "Tournament Format" → "Rebuy / Add-On / Bounty" — more direct and understandable.
+
+- **Clean-View-Button verschoben** — Der „Details einblenden/ausblenden"-Button war als Overlay über dem Fortschrittsbalken positioniert. Jetzt in der Button-Leiste am unteren Rand des Timer-Bereichs, sichtbar auf allen Bildschirmgrößen.
+- **Clean view button moved** — The "Show/hide details" button was positioned as overlay on top of the progress bar. Now in the button bar at the bottom of the timer area, visible on all screen sizes.
+
+---
+
 ## [2.0.0] – 2026-03-03
 
 ### Dark/Light Mode, SVG-Chevrons, NumberStepper & Performance

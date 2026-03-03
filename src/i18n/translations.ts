@@ -310,7 +310,7 @@ const de = {
   'finished.shareTitle': 'Turnier-Ergebnis',
 
   // --- Section Summaries ---
-  'app.tournamentFormat': 'Turnier-Format',
+  'app.tournamentFormat': 'Rebuy / Add-On / Bounty',
   'section.chipsDisabled': 'Deaktiviert',
   'section.colorUpActive': 'Color-Up aktiv',
   'section.payoutSummary': '{places} Plätze, {mode}',
@@ -650,7 +650,7 @@ const en: Record<TranslationKey, string> = {
   'finished.shareTitle': 'Tournament Results',
 
   // --- Section Summaries ---
-  'app.tournamentFormat': 'Tournament Format',
+  'app.tournamentFormat': 'Rebuy / Add-On / Bounty',
   'section.chipsDisabled': 'Disabled',
   'section.colorUpActive': 'Color-Up active',
   'section.payoutSummary': '{places} places, {mode}',

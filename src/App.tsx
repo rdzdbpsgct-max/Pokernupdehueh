@@ -1007,17 +1007,6 @@ function App() {
 
               {/* Timer + Controls */}
               <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 gap-3 sm:gap-6 relative">
-                <button
-                  onClick={toggleCleanView}
-                  className={`absolute top-2 right-8 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors z-10 ${
-                    cleanView
-                      ? 'bg-emerald-700/60 text-emerald-200 hover:bg-emerald-700/80'
-                      : 'bg-gray-200/80 dark:bg-gray-700/70 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600/80 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                  title={cleanView ? t('game.cleanViewOff') : t('game.cleanViewOn')}
-                >
-                  {cleanView ? t('game.cleanViewOn') : t('game.cleanViewOff')}
-                </button>
                 <TimerDisplay
                   timerState={timer.timerState}
                   levels={config.levels}
@@ -1055,12 +1044,12 @@ function App() {
                 />
               </div>
 
-              {/* Mobile: toggle buttons row at bottom */}
-              <div className="flex md:hidden justify-center gap-2 px-3 pb-2">
+              {/* Toggle buttons row at bottom */}
+              <div className="flex justify-center gap-2 px-3 pb-2">
                 {config.players.length > 0 && (
                   <button
                     onClick={() => setShowPlayerPanel((v) => !v)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`md:hidden px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       showPlayerPanel
                         ? 'bg-emerald-700 text-white'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
@@ -1071,7 +1060,7 @@ function App() {
                 )}
                 <button
                   onClick={() => setShowSidebar((v) => !v)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`md:hidden px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     showSidebar
                       ? 'bg-emerald-700 text-white'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
