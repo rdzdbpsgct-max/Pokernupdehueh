@@ -1022,6 +1022,7 @@ function App() {
                   largeDisplay={settings.largeDisplay}
                   countdownEnabled={settings.countdownEnabled}
                   onScrub={timer.setRemainingSeconds}
+                  onScrubEnd={timer.start}
                   chipConfig={config.chips}
                   cleanView={cleanView}
                   colorUpMap={colorUpMap}

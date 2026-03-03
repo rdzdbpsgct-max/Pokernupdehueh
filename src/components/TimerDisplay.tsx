@@ -9,6 +9,7 @@ interface Props {
   largeDisplay: boolean;
   countdownEnabled: boolean;
   onScrub?: (seconds: number) => void;
+  onScrubEnd?: () => void;
   chipConfig?: ChipConfig;
   colorUpMap?: Map<number, ChipDenomination[]>;
   cleanView?: boolean;
@@ -38,7 +39,7 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
   );
 }
 
-export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, chipConfig, colorUpMap, cleanView }: Props) {
+export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, onScrubEnd, chipConfig, colorUpMap, cleanView }: Props) {
   const { t } = useTranslation();
   const [scrubbing, setScrubbing] = useState(false);
 
@@ -175,6 +176,8 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
                 step={1}
                 value={Math.round(remaining)}
                 onChange={(e) => onScrub(Number(e.target.value))}
+                onPointerUp={() => onScrubEnd?.()}
+                onTouchEnd={() => onScrubEnd?.()}
                 className="flex-1 accent-emerald-500 h-2 cursor-pointer"
                 aria-label={t('timer.adjustTime')}
               />
