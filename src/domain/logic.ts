@@ -706,7 +706,8 @@ export function applyChipPreset(preset: ChipPreset): ChipConfig {
 }
 
 export function defaultChipConfig(): ChipConfig {
-  return applyChipPreset(chipPresets[1]); // 5-color preset, enabled by default
+  const preset = applyChipPreset(chipPresets[1]); // 5-color preset, disabled by default
+  return { ...preset, enabled: false };
 }
 
 /**
