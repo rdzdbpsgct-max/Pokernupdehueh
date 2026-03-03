@@ -38,12 +38,15 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
       const now = Date.now();
       const remaining = computeRemaining(prev.startedAt, prev.remainingAtStart, now);
 
-      // Countdown for last 10 seconds
+      // Countdown for last 10 seconds — uses Math.floor to match the
+      // displayed time (formatTime also uses Math.floor)
       if (settings.countdownEnabled) {
-        const sec = Math.ceil(remaining);
-        if (sec <= 10 && sec > 0 && sec !== lastCountdownSecRef.current) {
+        const sec = Math.floor(remaining);
+        if (sec <= 10 && sec >= 0 && sec !== lastCountdownSecRef.current) {
           lastCountdownSecRef.current = sec;
-          if (settings.voiceEnabled && sec <= 5) {
+          if (sec === 0) {
+            // Don't announce zero — level end beep handles this
+          } else if (settings.voiceEnabled && sec <= 5) {
             // Voice countdown replaces beep for last 5 seconds
             announceCountdown(sec);
           } else if (settings.soundEnabled) {

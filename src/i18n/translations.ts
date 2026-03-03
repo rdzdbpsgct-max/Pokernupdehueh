@@ -339,8 +339,9 @@ const de = {
   'unit.chips': 'Chips',
 
   // --- Voice Announcements ---
-  'voice.levelChange': 'Level {level} — Blinds {sb} / {bb}',
-  'voice.levelChangeWithAnte': 'Level {level} — Blinds {sb} / {bb} — Ante {ante}',
+  // "Bleindz" = phonetic hint so German TTS pronounces "Blinds" in English
+  'voice.levelChange': 'Level {level} — Bleindz {sb} / {bb}',
+  'voice.levelChangeWithAnte': 'Level {level} — Bleindz {sb} / {bb} — Ante {ante}',
   'voice.breakStart': 'Pause — {minutes} Minuten',
   'voice.breakWarning': 'Noch 30 Sekunden Pause',
   'voice.bubble': 'Wir sind auf der Bubble!',
