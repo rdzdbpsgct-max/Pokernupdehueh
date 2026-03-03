@@ -159,39 +159,41 @@ export function PlayerPanel({
             return (
             <div
               key={player.id}
-              className="flex items-center justify-between px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/40 rounded-lg border border-gray-200 dark:border-gray-700/20 transition-colors hover:bg-gray-200/60 dark:hover:bg-gray-800/60 hover:border-gray-300 dark:hover:border-gray-600/40"
+              className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/40 rounded-lg border border-gray-200 dark:border-gray-700/20 transition-colors hover:bg-gray-200/60 dark:hover:bg-gray-800/60 hover:border-gray-300 dark:hover:border-gray-600/40"
             >
-              <div className="flex-1 mr-2 min-w-0">
-                <span className={`${nameSizeClass} text-gray-800 dark:text-gray-200 truncate block`}>
-                  <span className="text-gray-400 dark:text-gray-500 text-xs mr-1">#{seatIndex + 1}</span>
-                  {isDealer && (
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold mr-1 align-text-bottom ring-2 ring-red-500/30">D</span>
-                  )}
+              {/* Name row — full width */}
+              <div className="flex items-center gap-1">
+                <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">#{seatIndex + 1}</span>
+                {isDealer && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold shrink-0 ring-2 ring-red-500/30">D</span>
+                )}
+                <span className={`${nameSizeClass} text-gray-800 dark:text-gray-200 truncate`}>
                   {player.name}
                 </span>
                 {bountyConfig.enabled && player.knockouts > 0 && (
-                  <span className="text-xs text-amber-600 dark:text-amber-400">
-                    {player.knockouts} KO ({(player.knockouts * bountyConfig.amount).toFixed(0)} {t('unit.eur')})
+                  <span className="text-xs text-amber-600 dark:text-amber-400 shrink-0 ml-auto">
+                    {player.knockouts} KO
                   </span>
                 )}
                 {!rebuyActive && player.rebuys > 0 && (
-                  <span className="inline-block bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full px-1.5 text-xs font-medium">
+                  <span className="inline-block bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full px-1.5 text-xs font-medium shrink-0">
                     {player.rebuys} RB
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-1.5">
+              {/* Controls row — below name */}
+              <div className="flex items-center gap-1.5 mt-1">
                 {/* Rebuy controls (only during active rebuy phase) */}
                 {rebuyActive && (
-                  <div className="flex items-center gap-1 mr-1" title="Rebuys">
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 mr-0.5">RB</span>
+                  <div className="flex items-center gap-1" title="Rebuys">
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">RB</span>
                     <button
                       onClick={() =>
                         onUpdateRebuys(player.id, Math.max(0, player.rebuys - 1))
                       }
                       disabled={player.rebuys <= 0}
-                      className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       -
                     </button>
@@ -202,7 +204,7 @@ export function PlayerPanel({
                       onClick={() =>
                         onUpdateRebuys(player.id, player.rebuys + 1)
                       }
-                      className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
+                      className="w-7 h-7 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
                     >
                       +
                     </button>
@@ -213,7 +215,7 @@ export function PlayerPanel({
                 {addOnWindowOpen && (
                   <button
                     onClick={() => onUpdateAddOn(player.id, !player.addOn)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                       player.addOn
                         ? 'bg-emerald-100 dark:bg-emerald-700/50 text-emerald-700 dark:text-emerald-300'
                         : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400'
@@ -224,11 +226,13 @@ export function PlayerPanel({
                   </button>
                 )}
 
-                {/* Eliminate button */}
+                <div className="flex-1" />
+
+                {/* Eliminate button — right-aligned */}
                 {activePlayers.length > 1 && (
                   <button
                     onClick={() => handleEliminate(player.id)}
-                    className="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs font-medium transition-all duration-200 border border-red-300 dark:border-red-800/30 hover:border-red-400 dark:hover:border-red-700/50"
+                    className="px-2.5 py-1 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs font-medium transition-all duration-200 border border-red-300 dark:border-red-800/30 hover:border-red-400 dark:hover:border-red-700/50"
                     title={t('playerPanel.eliminateTooltip')}
                   >
                     {t('playerPanel.eliminate')}

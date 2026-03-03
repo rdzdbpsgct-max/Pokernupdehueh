@@ -341,13 +341,13 @@ const de = {
   // --- Voice Announcements ---
   // Phonetic hints for German TTS to pronounce English poker terms correctly:
   // Bleindz=Blinds, Riebai=Rebuy, Ädd-On=Add-On, Babbl=Bubble,
-  // Kaller-App=Color-Up, Inn se Manni=In The Money
+  // Kaller-App=Color-Up, In de Manni=In The Money
   'voice.levelChange': 'Level {level} — Bleindz {sb} / {bb}',
   'voice.levelChangeWithAnte': 'Level {level} — Bleindz {sb} / {bb} — Ante {ante}',
   'voice.breakStart': 'Pause — {minutes} Minuten',
   'voice.breakWarning': 'Noch 30 Sekunden Pause',
   'voice.bubble': 'Wir sind auf der Babbl!',
-  'voice.inTheMoney': 'Inn se Manni! Herzlichen Glückwunsch!',
+  'voice.inTheMoney': 'In de Manni! Herzlichen Glückwunsch!',
   'voice.playerEliminated': '{name} ausgeschieden auf Platz {place}',
   'voice.tournamentWinner': '{name} gewinnt das Turnier!',
   'voice.addOnAvailable': 'Ädd-On ist einmalig verfügbar!',

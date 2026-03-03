@@ -40,28 +40,31 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
 
       // Countdown for last 10 seconds — uses Math.floor to match the
       // displayed time (formatTime also uses Math.floor)
+      const displaySec = Math.floor(remaining);
+
       if (settings.countdownEnabled) {
-        const sec = Math.floor(remaining);
-        if (sec <= 10 && sec >= 0 && sec !== lastCountdownSecRef.current) {
-          lastCountdownSecRef.current = sec;
-          if (sec === 0) {
-            // Don't announce zero — level end beep handles this
+        if (displaySec <= 10 && displaySec >= 0 && displaySec !== lastCountdownSecRef.current) {
+          lastCountdownSecRef.current = displaySec;
+          if (displaySec === 0) {
+            // Don't announce zero — level end beep handles this (below)
           } else if (settings.voiceEnabled) {
             // Voice countdown replaces beep for all 10 seconds
-            announceCountdown(sec);
+            announceCountdown(displaySec);
           } else if (settings.soundEnabled) {
             // Beep only when voice is off
-            playBeep(sec <= 3 ? 880 : 660, 100);
+            playBeep(displaySec <= 3 ? 880 : 660, 100);
           }
         }
       }
 
+      // Level-end beep: play when display shows 0:00 (not when remaining
+      // actually crosses zero — that can be up to 1 second later)
+      if (displaySec <= 0 && !levelEndAudioPlayedRef.current) {
+        levelEndAudioPlayedRef.current = true;
+        if (settings.soundEnabled) playBeep(1000, 500);
+      }
+
       if (remaining <= 0) {
-        // Level ended
-        if (!levelEndAudioPlayedRef.current) {
-          levelEndAudioPlayedRef.current = true;
-          if (settings.soundEnabled) playBeep(1000, 500);
-        }
 
         if (settings.autoAdvance) {
           const next = advanceLevel(prev, levels);
