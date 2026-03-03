@@ -219,6 +219,9 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Sektionsumbenennung**: „Turnier-Format" → „Rebuy / Add-On / Bounty" (DE + EN)
 - **Clean-View-Button**: In Controls-Komponente integriert, mittig unter Start-Button (über Reset/Restart), prominenter mit Border + Shadow, immer sichtbar
 - **Theme ohne Flash**: Inline-Script in `index.html` setzt Dark/Light-Modus vor dem ersten Paint (localStorage oder `prefers-color-scheme`)
+- **Theme/Sprache im Spielmodus**: Theme-Switcher und Language-Switcher auch im Spielmodus verfügbar
+- **Chips standardmäßig deaktiviert**: `defaultChipConfig()` gibt `enabled: false` zurück; ChipSidebar nur bei aktivierten Chips
+- **Color-Up realistischer**: Chips werden erst bei der übernächsten Pause entfernt (nicht bei der ersten möglichen)
 
 ### v2.0.0 — Dark/Light Mode, SVG-Chevrons, NumberStepper & Performance
 

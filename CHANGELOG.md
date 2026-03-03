@@ -21,6 +21,15 @@ All notable changes to the Pokern up de Hüh app.
 - **Theme ohne Flash** — Inline-Script in `index.html` setzt den Dark/Light-Modus vor dem ersten Paint anhand von localStorage oder `prefers-color-scheme`. Kein Flash of Wrong Theme mehr beim App-Start.
 - **Theme without flash** — Inline script in `index.html` applies dark/light mode before first paint based on localStorage or `prefers-color-scheme`. No more flash of wrong theme on app start.
 
+- **Theme/Sprache im Spielmodus** — Theme-Switcher und Language-Switcher im Header sind jetzt in beiden Modi verfügbar (Setup + Spiel), nicht mehr nur im Setup.
+- **Theme/language in game mode** — Theme switcher and language switcher in header are now available in both modes (setup + game), not just setup.
+
+- **Chips standardmäßig deaktiviert** — Chip-Farben/-Denominations sind bei neuen Turnieren deaktiviert. ChipSidebar im Spielmodus wird nur angezeigt wenn Chips im Setup aktiviert wurden.
+- **Chips disabled by default** — Chip colors/denominations are disabled for new tournaments. Chip sidebar in game mode only shown when chips are enabled in setup.
+
+- **Color-Up realistischer** — Chips werden nicht mehr bei der ersten möglichen Pause entfernt, sondern erst bei der übernächsten. Z.B. bleiben 500er-Chips länger im Spiel, wie in echten Turnieren üblich.
+- **Color-up more realistic** — Chips are no longer removed at the first possible break but at the one after that. E.g. 500-value chips stay in play longer, as is common in real tournaments.
+
 ---
 
 ## [2.0.0] – 2026-03-03
