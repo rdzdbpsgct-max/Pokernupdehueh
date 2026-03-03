@@ -163,8 +163,8 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="template-title" className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full space-y-4 max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="template-title" className="bg-gray-900/95 border border-gray-700/50 rounded-2xl p-6 max-w-md w-full space-y-4 max-h-[80vh] flex flex-col shadow-2xl shadow-black/40 animate-scale-in">
         <h3 id="template-title" className="text-lg font-bold text-white">{t('templates.title')}</h3>
 
         {/* Save current config as template */}
@@ -179,7 +179,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               placeholder={t('templates.namePlaceholder')}
-              className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
+              className="flex-1 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
             />
             <button
               onClick={handleSave}
@@ -232,7 +232,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
             templates.map((tmpl) => (
               <div
                 key={tmpl.id}
-                className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 rounded-lg"
+                className="flex items-center gap-2 px-3 py-2.5 bg-gray-800/40 rounded-lg border border-gray-700/20 transition-colors hover:bg-gray-800/60"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-medium truncate">{tmpl.name}</p>
@@ -310,7 +310,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
         {/* Close button */}
         <button
           onClick={onClose}
-          className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+          className="w-full px-4 py-2 bg-gray-700/80 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-all duration-200 border border-gray-600/30"
         >
           {t('templates.close')}
         </button>

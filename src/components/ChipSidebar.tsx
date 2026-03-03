@@ -39,7 +39,7 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
               <div
                 key={denom.id}
                 className={`flex items-center gap-2 px-2 py-1 rounded text-sm ${
-                  isRemoved ? 'opacity-40' : 'bg-gray-800/50'
+                  isRemoved ? 'opacity-40' : 'bg-gray-800/40 border border-gray-700/20'
                 }`}
               >
                 <span

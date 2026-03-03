@@ -85,7 +85,7 @@ export function PlayerPanel({
       {/* Prize Pool */}
       <div>
         <h3 className="text-xs text-gray-500 uppercase tracking-wider">{t('playerPanel.prizePool')}</h3>
-        <div className="mt-1 px-3 py-2 bg-emerald-900/30 border border-emerald-800 rounded-lg">
+        <div className="mt-1 px-3 py-2 bg-emerald-900/20 border border-emerald-700/50 rounded-xl shadow-md shadow-emerald-900/10">
           <p className="text-emerald-300 text-lg font-bold">
             {prizePool.toFixed(2)} {t('unit.eur')}
           </p>
@@ -159,7 +159,7 @@ export function PlayerPanel({
             return (
             <div
               key={player.id}
-              className="flex items-center justify-between px-3 py-1.5 bg-gray-800/50 rounded"
+              className="flex items-center justify-between px-3 py-1.5 bg-gray-800/40 rounded-lg border border-gray-700/20 transition-colors hover:bg-gray-800/60"
             >
               <div className="flex-1 mr-2 min-w-0">
                 <span className={`${nameSizeClass} text-gray-200 truncate block`}>
@@ -223,7 +223,7 @@ export function PlayerPanel({
                 {activePlayers.length > 1 && (
                   <button
                     onClick={() => handleEliminate(player.id)}
-                    className="px-3 py-1.5 rounded bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-medium transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-800 text-red-300 text-xs font-medium transition-all duration-200 border border-red-800/30 hover:border-red-700/50"
                     title={t('playerPanel.eliminateTooltip')}
                   >
                     {t('playerPanel.eliminate')}
@@ -287,7 +287,7 @@ export function PlayerPanel({
               return (
                 <div
                   key={player.id}
-                  className="flex items-center justify-between px-3 py-1.5 bg-gray-800/30 rounded opacity-60"
+                  className="flex items-center justify-between px-3 py-1.5 bg-gray-800/20 rounded-lg opacity-50"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className="text-xs text-gray-500 font-bold w-6 text-right shrink-0">
@@ -315,7 +315,7 @@ export function PlayerPanel({
                     {isLastEliminated && (
                       <button
                         onClick={() => onReinstatePlayer(player.id)}
-                        className="px-3 py-1.5 rounded bg-blue-900/50 hover:bg-blue-800 text-blue-300 text-xs font-medium transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-blue-900/40 hover:bg-blue-800 text-blue-300 text-xs font-medium transition-all duration-200 border border-blue-800/30"
                         title={t('playerPanel.reinstateTooltip')}
                       >
                         {t('playerPanel.reinstate')}

@@ -6,7 +6,7 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-1.7.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-1.8.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Tests](https://img.shields.io/badge/Tests-187%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
@@ -74,6 +74,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Barrierefreiheit | ARIA-Labels, Dialog-Rollen, Auto-Fokus, Escape-zum-Schließen |
 | Kompatibilität | Safe Area Insets, dynamische Viewport-Höhe, optimierte Touch-Targets, numerische Tastatur, Tablet-Layout |
 | Usability | Aufklappbare Sektionen mit Summary-Badges, ausklappbare Blindstruktur, Sticky Start-Button auf Mobile |
+| Premium UI | Glassmorphism, Gradient-Buttons, Timer-Glow, benutzerdefinierte Animationen, taktile Interaktionen |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
 
 ### Mitwirken
@@ -148,6 +149,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Accessibility | ARIA labels, dialog roles, auto-focus, escape-to-close |
 | Compatibility | Safe area insets, dynamic viewport height, optimized touch targets, numeric keyboard, tablet layout |
 | Usability | Collapsible sections with summary badges, collapsible blind structure, sticky start button on mobile |
+| Premium UI | Glassmorphism, gradient buttons, timer glow, custom animations, tactile interactions |
 | Validation | Input validation before tournament start with clear error messages |
 
 ### Contributing

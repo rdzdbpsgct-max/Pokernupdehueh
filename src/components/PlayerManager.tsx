@@ -127,7 +127,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
-          className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+          className="w-20 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
         />
       </div>
 
@@ -161,7 +161,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
               {/* Dealer badge */}
               {i === dealerIndex ? (
                 <span
-                  className="w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0"
+                  className="w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm shadow-red-500/30"
                   title={t('playerManager.dealer')}
                 >
                   D
@@ -182,7 +182,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
                 value={player.name}
                 onChange={(e) => updateName(i, e.target.value)}
                 placeholder={t('playerManager.playerN', { n: i + 1 })}
-                className="flex-1 min-w-0 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="flex-1 min-w-0 px-2 py-1 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
               />
 
               {/* Arrow buttons */}
@@ -211,7 +211,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
       {players.length >= 2 && !showShuffleConfirm && (
         <button
           onClick={() => setShowShuffleConfirm(true)}
-          className="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded-lg text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-200 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-700/30"
         >
           🔀 {t('playerManager.shuffle')}
         </button>

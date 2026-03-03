@@ -119,7 +119,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             min={1}
             value={globalMinutes}
             onChange={(e) => setGlobalMinutes(Math.max(1, Number(e.target.value)))}
-            className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+            className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
           />
           <span className="text-gray-500 text-xs">{t('config.min')}</span>
           <button
@@ -137,7 +137,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             min={1}
             value={globalBreakMinutes}
             onChange={(e) => setGlobalBreakMinutes(Math.max(1, Number(e.target.value)))}
-            className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-amber-500"
+            className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-all duration-200"
           />
           <span className="text-gray-500 text-xs">{t('config.min')}</span>
           <button
@@ -156,8 +156,8 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             key={level.id}
             className={`flex flex-wrap items-center gap-2 p-3 rounded-lg border ${
               level.type === 'break'
-                ? 'bg-amber-900/20 border-amber-800'
-                : 'bg-gray-800/50 border-gray-700'
+                ? 'bg-amber-900/15 border-amber-800/60'
+                : 'bg-gray-800/40 border-gray-700/50'
             }`}
           >
             {/* Index */}
@@ -185,7 +185,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 onChange={(e) =>
                   updateLevel(i, { durationSeconds: Math.max(60, Number(e.target.value) * 60) })
                 }
-                className="w-16 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
               />
               <span className="text-gray-600 text-xs font-mono">{formatTime(level.durationSeconds)}</span>
             </div>
@@ -201,7 +201,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                     min={1}
                     value={level.smallBlind ?? 0}
                     onChange={(e) => updateLevel(i, { smallBlind: Number(e.target.value) })}
-                    className="w-20 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                    className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
                   />
                 </div>
                 <div className="flex items-center gap-1">
@@ -212,7 +212,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                     min={1}
                     value={level.bigBlind ?? 0}
                     onChange={(e) => updateLevel(i, { bigBlind: Number(e.target.value) })}
-                    className="w-20 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                    className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
                   />
                 </div>
                 {anteEnabled && (
@@ -224,7 +224,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                       min={0}
                       value={level.ante ?? 0}
                       onChange={(e) => updateLevel(i, { ante: Number(e.target.value) })}
-                      className="w-20 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                      className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
                     />
                   </div>
                 )}
@@ -239,7 +239,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                   type="text"
                   value={level.label ?? t('logic.defaultBreakLabel')}
                   onChange={(e) => updateLevel(i, { label: e.target.value })}
-                  className="w-24 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-emerald-500"
+                  className="w-24 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
                 />
               </div>
             )}
@@ -286,13 +286,13 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
       <div className="flex gap-2">
         <button
           onClick={addLevel}
-          className="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded-lg text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-200 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-700/30"
         >
           {t('config.addLevel')}
         </button>
         <button
           onClick={addBreak}
-          className="px-4 py-2 bg-amber-800 hover:bg-amber-700 text-amber-200 rounded-lg text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-amber-800/80 hover:bg-amber-700 text-amber-200 rounded-lg text-sm font-medium transition-all duration-200 border border-amber-700/30"
         >
           {t('config.addBreak')}
         </button>

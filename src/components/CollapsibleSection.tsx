@@ -11,12 +11,12 @@ export function CollapsibleSection({ title, summary, defaultOpen = true, childre
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl overflow-hidden">
+    <div className="bg-gray-800/40 backdrop-blur-sm border border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-black/20">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/50 transition-colors text-left"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 transition-all duration-200 text-left"
       >
         <div>
           <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
@@ -40,7 +40,7 @@ export function CollapsibleSection({ title, summary, defaultOpen = true, childre
         </div>
       </button>
       {isOpen && (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 animate-fade-in">
           {children}
         </div>
       )}

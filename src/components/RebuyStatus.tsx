@@ -24,7 +24,7 @@ export function RebuyStatus({ active, rebuy, currentPlayLevel, elapsedSeconds }:
     }
 
     return (
-      <div className="px-4 py-2 bg-emerald-900/40 border border-emerald-700 rounded-lg text-center">
+      <div className="px-4 py-2 bg-emerald-900/30 border border-emerald-700/60 rounded-xl text-center backdrop-blur-sm shadow-sm shadow-emerald-900/10">
         <span className="text-emerald-400 text-sm font-medium">
           {t('rebuyStatus.active')}
         </span>

@@ -647,7 +647,7 @@ function App() {
   return (
     <div className="min-h-full flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-700/30 bg-gray-900/50 backdrop-blur-sm">
         <h1 className="text-lg font-bold text-white tracking-tight">
           {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
         </h1>
@@ -661,10 +661,10 @@ function App() {
                 setMode('game');
               }
             }}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               mode === 'game'
-                ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-                : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                ? 'bg-gray-700/80 hover:bg-gray-600 text-gray-200 border border-gray-600/30'
+                : 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-md shadow-emerald-900/20'
             }`}
           >
             {mode === 'setup' ? t('app.startGame') : t('app.setup')}
@@ -672,7 +672,7 @@ function App() {
           {mode === 'setup' && (
             <button
               onClick={() => setShowTemplates(true)}
-              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
+              className="px-3 py-1.5 bg-gray-800/80 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-700/30"
             >
               {t('app.templates')}
             </button>
@@ -688,7 +688,7 @@ function App() {
             <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
               {/* Checkpoint recovery banner */}
               {pendingCheckpoint && (
-                <div className="bg-amber-900/20 border border-amber-800 rounded-xl p-4 space-y-2">
+                <div className="bg-amber-900/20 border border-amber-700/50 rounded-xl p-4 space-y-2 shadow-md shadow-amber-900/10 backdrop-blur-sm">
                   <p className="text-amber-300 text-sm font-medium">{t('checkpoint.found')}</p>
                   <p className="text-gray-400 text-xs">
                     {t('checkpoint.details', {
@@ -723,7 +723,7 @@ function App() {
                       setConfig((prev) => ({ ...prev, name: e.target.value }))
                     }
                     placeholder={t('app.tournamentNamePlaceholder')}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
                   />
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
@@ -749,7 +749,7 @@ function App() {
                             },
                           }));
                         }}
-                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                        className="w-20 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
                       />
                       <span className="text-gray-400 text-sm">{t('unit.eur')}</span>
                     </div>
@@ -779,7 +779,7 @@ function App() {
                             };
                           });
                         }}
-                        className="w-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                        className="w-24 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
                       />
                       <span className="text-gray-400 text-sm">{t('unit.chips')}</span>
                     </div>
@@ -939,7 +939,7 @@ function App() {
                 <button
                   onClick={switchToGame}
                   disabled={startErrors.length > 0}
-                  className="w-full px-6 py-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-lg font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-700"
+                  className="w-full px-6 py-3 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl text-lg font-bold transition-all duration-200 shadow-lg shadow-emerald-900/30 active:scale-[0.98] active:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:from-emerald-600 disabled:hover:to-emerald-700 disabled:active:scale-100"
                 >
                   {t('app.startTournament')}
                 </button>
@@ -989,7 +989,7 @@ function App() {
               {config.players.length > 0 && (
                 <button
                   onClick={() => setShowPlayerPanel((v) => !v)}
-                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-r-lg text-xs transition-colors"
+                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/70 hover:bg-gray-700/80 text-gray-500 hover:text-white rounded-r-lg text-xs transition-all duration-200 border-r border-y border-gray-700/30 shadow-md shadow-black/10"
                   title={showPlayerPanel ? t('app.hidePlayers') : t('app.showPlayers')}
                 >
                   {showPlayerPanel ? '\u25C0' : '\u25B6'}
@@ -997,7 +997,7 @@ function App() {
               )}
               <button
                 onClick={() => setShowSidebar((v) => !v)}
-                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-l-lg text-xs transition-colors"
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/70 hover:bg-gray-700/80 text-gray-500 hover:text-white rounded-l-lg text-xs transition-all duration-200 border-l border-y border-gray-700/30 shadow-md shadow-black/10"
                 title={showSidebar ? t('app.hideSidebar') : t('app.showSidebar')}
               >
                 {showSidebar ? '\u25B6' : '\u25C0'}
@@ -1126,14 +1126,14 @@ function App() {
 
       {/* Confirm Action Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-labelledby="confirm-title" className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full space-y-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-labelledby="confirm-title" className="bg-gray-900/95 border border-gray-700/50 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl shadow-black/40 animate-scale-in">
             <h3 id="confirm-title" className="text-lg font-bold text-white">{confirmAction.title}</h3>
             <p className="text-gray-400 text-sm">{confirmAction.message}</p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-gray-700/80 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-all duration-200 border border-gray-600/30"
               >
                 {t('app.cancel')}
               </button>
@@ -1142,7 +1142,7 @@ function App() {
                   confirmAction.onConfirm();
                   setConfirmAction(null);
                 }}
-                className="px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-gradient-to-b from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-red-900/30"
               >
                 {confirmAction.confirmLabel}
               </button>

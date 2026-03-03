@@ -62,8 +62,8 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
                 onClick={() => setSelectedSpeed(speed.key)}
                 className={`flex flex-col items-start px-3 py-2 rounded-lg text-left transition-colors flex-1 min-w-[100px] ${
                   isSelected
-                    ? 'bg-emerald-700/50 border border-emerald-600 text-white'
-                    : 'bg-gray-800 border border-gray-700 hover:border-gray-600 text-gray-300'
+                    ? 'bg-emerald-700/40 border border-emerald-500/60 text-white shadow-md shadow-emerald-900/20'
+                    : 'bg-gray-800/60 border border-gray-700/50 hover:border-gray-600/70 text-gray-300 hover:bg-gray-800/80'
                 }`}
               >
                 <span className="text-sm font-medium">{speed.label}</span>
@@ -96,7 +96,7 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
                   return (
                     <div
                       key={level.id || idx}
-                      className="flex items-center px-2 py-1 bg-amber-900/20 rounded text-xs"
+                      className="flex items-center px-2 py-1 bg-amber-900/15 rounded-lg text-xs border border-amber-800/20"
                     >
                       <span className="text-amber-400 font-medium w-12">
                         {t('blindGenerator.break')}
@@ -111,7 +111,7 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
                 return (
                   <div
                     key={level.id || idx}
-                    className="flex items-center px-2 py-1 bg-gray-800/50 rounded text-xs"
+                    className="flex items-center px-2 py-1 bg-gray-800/40 rounded-lg text-xs border border-gray-700/20"
                   >
                     <span className="text-gray-500 w-12">L{playNum}</span>
                     <span className="text-white font-mono">
@@ -135,7 +135,7 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
         {/* Apply button */}
         <button
           onClick={() => onApply(preview)}
-          className="w-full px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors"
+          className="w-full px-4 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-emerald-900/20 active:scale-[0.98]"
         >
           {t('blindGenerator.apply')}
         </button>

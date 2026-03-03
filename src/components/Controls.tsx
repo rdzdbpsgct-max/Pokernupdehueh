@@ -29,7 +29,7 @@ export function Controls({
       <div className="flex items-center gap-3">
         <button
           onClick={onPrevious}
-          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-gray-700/80 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-black/20 active:scale-[0.97] active:shadow-sm border border-gray-600/30"
           title={t('controls.previousTooltip')}
           aria-label={t('controls.previousTooltip')}
         >
@@ -38,10 +38,10 @@ export function Controls({
 
         <button
           onClick={onToggleStartPause}
-          className={`px-8 py-3 rounded-xl text-lg font-bold transition-colors ${
+          className={`px-8 py-3 rounded-xl text-lg font-bold transition-all duration-200 active:scale-[0.97] active:shadow-md ${
             isRunning
-              ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
-              : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              ? 'bg-gradient-to-b from-yellow-500 to-yellow-700 hover:from-yellow-400 hover:to-yellow-600 text-white shadow-lg shadow-yellow-900/30'
+              : 'bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white shadow-lg shadow-emerald-900/30'
           }`}
           title={t('controls.startPauseTooltip')}
           aria-label={isRunning ? t('controls.pause') : t('controls.start')}
@@ -52,7 +52,7 @@ export function Controls({
 
         <button
           onClick={onNext}
-          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-gray-700/80 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-black/20 active:scale-[0.97] active:shadow-sm border border-gray-600/30"
           title={t('controls.nextTooltip')}
           aria-label={t('controls.nextTooltip')}
         >
@@ -64,7 +64,7 @@ export function Controls({
         <div className="flex items-center gap-3">
           <button
             onClick={onReset}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs font-medium transition-colors"
+            className="px-4 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium transition-all duration-200 border border-gray-700/30"
             title={t('controls.levelResetTooltip')}
             aria-label={t('controls.levelResetTooltip')}
           >
@@ -72,7 +72,7 @@ export function Controls({
           </button>
           <button
             onClick={onRestart}
-            className="px-4 py-2 bg-gray-800 hover:bg-red-900 text-gray-300 hover:text-red-300 rounded text-xs font-medium transition-colors"
+            className="px-4 py-2 bg-gray-800/80 hover:bg-red-900/80 text-gray-300 hover:text-red-300 rounded-lg text-xs font-medium transition-all duration-200 border border-gray-700/30 hover:border-red-800/50"
             title={t('controls.tournamentRestartTooltip')}
             aria-label={t('controls.tournamentRestartTooltip')}
           >

@@ -5,6 +5,51 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [1.8.0] – 2026-03-03
+
+### Premium UI — Glassmorphism, Animationen & taktiles Design
+
+- **Glassmorphic Cards** — Setup-Sektionen (`CollapsibleSection`, `CollapsibleSubSection`) mit `backdrop-blur-sm`, weichen Schatten (`shadow-lg shadow-black/20`) und halbtransparenten Backgrounds (`bg-gray-800/40`). Content-Bereiche mit `animate-fade-in`.
+- **Glassmorphic cards** — Setup sections (`CollapsibleSection`, `CollapsibleSubSection`) with `backdrop-blur-sm`, soft shadows (`shadow-lg shadow-black/20`) and semi-transparent backgrounds (`bg-gray-800/40`). Content areas with `animate-fade-in`.
+
+- **Timer-Glow** — Signatur-Effekt: Laufender Timer mit pulsierendem `text-shadow` (`animate-timer-glow`). Fortschrittsbalken als Gradient (`from-emerald-600 to-emerald-400`) mit Glow-Shadow. Countdown in Rot mit `animate-countdown-pulse` (ersetzt `animate-pulse`). Blinds mit dezenter `drop-shadow`.
+- **Timer glow** — Signature effect: Running timer with pulsing `text-shadow` (`animate-timer-glow`). Progress bar as gradient (`from-emerald-600 to-emerald-400`) with glow shadow. Countdown in red with `animate-countdown-pulse` (replaces `animate-pulse`). Blinds with subtle `drop-shadow`.
+
+- **Taktile Buttons** — Primär-Buttons (Play/Pause) mit `bg-gradient-to-b`, `shadow-lg` und `active:scale-[0.97]`. Sekundär-Buttons mit `shadow-md` und Borders. Tertiär-Buttons mit weicheren Borders und `rounded-lg`.
+- **Tactile buttons** — Primary buttons (play/pause) with `bg-gradient-to-b`, `shadow-lg` and `active:scale-[0.97]`. Secondary buttons with `shadow-md` and borders. Tertiary buttons with softer borders and `rounded-lg`.
+
+- **Custom Animationen** — 8 neue `@keyframes` in `index.css`: `fade-in`, `timer-glow`, `countdown-pulse`, `bubble-pulse`, `itm-flash`, `scale-in`, `slide-in-left`, `slide-in-right`. Entsprechende `@utility`-Klassen für Tailwind CSS 4.
+- **Custom animations** — 8 new `@keyframes` in `index.css`: `fade-in`, `timer-glow`, `countdown-pulse`, `bubble-pulse`, `itm-flash`, `scale-in`, `slide-in-left`, `slide-in-right`. Corresponding `@utility` classes for Tailwind CSS 4.
+
+- **Modal-Polish** — Confirm-Dialog und TemplateManager: `backdrop-blur-sm`, `animate-scale-in`, `shadow-2xl`, `rounded-2xl`. Sanftere Overlay-Transparenz (`bg-black/60`).
+- **Modal polish** — Confirm dialog and TemplateManager: `backdrop-blur-sm`, `animate-scale-in`, `shadow-2xl`, `rounded-2xl`. Softer overlay transparency (`bg-black/60`).
+
+- **Bubble/ITM-Animationen** — `animate-pulse` durch `animate-bubble-pulse` / `animate-itm-flash` ersetzt (custom box-shadow pulsieren). `backdrop-blur-sm`, `rounded-xl`.
+- **Bubble/ITM animations** — `animate-pulse` replaced with `animate-bubble-pulse` / `animate-itm-flash` (custom box-shadow pulsing). `backdrop-blur-sm`, `rounded-xl`.
+
+- **Spielmodus-Polishing** — `TournamentStats` mit `backdrop-blur-sm` und Shadows. `PlayerPanel` mit weicheren Borders, Hover-States und `rounded-xl`. `LevelPreview`, `ChipSidebar`, `RebuyStatus` mit dezenten Verbesserungen.
+- **Game mode polishing** — `TournamentStats` with `backdrop-blur-sm` and shadows. `PlayerPanel` with softer borders, hover states and `rounded-xl`. `LevelPreview`, `ChipSidebar`, `RebuyStatus` with subtle refinements.
+
+- **Globales Input-Pattern** — Alle Inputs: `bg-gray-800/80`, `border-gray-700/60`, `focus:ring-1 focus:ring-emerald-500/20`, `rounded-lg`, `transition-all duration-200`. Betrifft 10 Komponenten.
+- **Global input pattern** — All inputs: `bg-gray-800/80`, `border-gray-700/60`, `focus:ring-1 focus:ring-emerald-500/20`, `rounded-lg`, `transition-all duration-200`. Applies to 10 components.
+
+- **Settings-Polish** — Checkbox-Gradient (`from-emerald-400 to-emerald-600 shadow-sm`). Tastenkürzel-Anzeige mit Keycap-Look (`border shadow-sm`).
+- **Settings polish** — Checkbox gradient (`from-emerald-400 to-emerald-600 shadow-sm`). Keyboard shortcuts display with keycap look (`border shadow-sm`).
+
+- **Ergebnisseite** — Winner-Card mit `shadow-xl`, Standings und Info-Boxen mit `shadow-lg`, Share-Button als Gradient mit `active:scale-[0.97]`.
+- **Results screen** — Winner card with `shadow-xl`, standings and info boxes with `shadow-lg`, share button as gradient with `active:scale-[0.97]`.
+
+- **Body-Gradient** — Dezenter emerald `radial-gradient` am oberen Bildschirmrand auf `#0a0a0f`-Hintergrund.
+- **Body gradient** — Subtle emerald `radial-gradient` at top of screen on `#0a0a0f` background.
+
+- **Header-Redesign** — `bg-gray-900/50 backdrop-blur-sm border-gray-700/30`, Buttons mit Gradients und Shadows.
+- **Header redesign** — `bg-gray-900/50 backdrop-blur-sm border-gray-700/30`, buttons with gradients and shadows.
+
+- **23 Dateien geändert** — Rein visuelle/CSS-Änderungen, keine Logik-Modifikationen, keine neuen Dateien.
+- **23 files modified** — Purely visual/CSS changes, no logic modifications, no new files.
+
+---
+
 ## [1.7.0] – 2026-03-03
 
 ### Setup UX: Blindstruktur ausklappbar + Cleanup

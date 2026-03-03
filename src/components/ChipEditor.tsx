@@ -183,8 +183,8 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                         value: Math.max(1, Number(e.target.value)),
                       })
                     }
-                    className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded
-                               text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                    className="w-20 px-2 py-1 bg-gray-800/80 border border-gray-700/60 rounded-lg
+                               text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
                   />
 
                   {/* Remove button */}

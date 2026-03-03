@@ -56,15 +56,15 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
     <div className="flex flex-col items-center justify-center gap-2 sm:gap-4 select-none w-full">
       {/* Progress bar */}
       <div
-        className="w-full max-w-xl h-2 bg-gray-700 rounded-full overflow-hidden"
+        className="w-full max-w-xl h-2.5 bg-gray-800 rounded-full overflow-hidden"
         role="progressbar"
         aria-valuenow={Math.round(Math.min(100, progress * 100))}
         aria-valuemin={0}
         aria-valuemax={100}
       >
         <div
-          className={`h-full transition-all duration-200 ${
-            isBreak ? 'bg-amber-500' : 'bg-emerald-500'
+          className={`h-full rounded-full transition-all duration-500 ${
+            isBreak ? 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
           }`}
           style={{ width: `${Math.min(100, progress * 100)}%` }}
         />
@@ -79,7 +79,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         </p>
         {currentLevel.type === 'level' && (
           <div className={`mt-2 ${largeDisplay ? 'space-y-1' : 'space-y-0.5'}`}>
-            <p className={`text-white font-bold tabular-nums tracking-wide ${
+            <p className={`text-white font-bold tabular-nums tracking-wide drop-shadow-[0_0_12px_rgba(255,255,255,0.1)] ${
               largeDisplay ? 'text-[3rem] sm:text-[5.5rem] lg:text-[8rem]' : 'text-4xl sm:text-6xl'
             }`}>
               {currentLevel.smallBlind ?? 0} / {currentLevel.bigBlind ?? 0}
@@ -139,12 +139,12 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
           largeDisplay ? 'text-[4rem] sm:text-[7rem] lg:text-[10rem] leading-none' : 'text-5xl sm:text-8xl'
         } ${
           isCountdown
-            ? 'text-red-500 animate-pulse'
+            ? 'text-red-500 animate-countdown-pulse'
             : timerState.status === 'paused'
-            ? 'text-yellow-400'
+            ? 'text-yellow-400 opacity-80'
             : remaining <= 0
             ? 'text-gray-500'
-            : 'text-white'
+            : 'text-white animate-timer-glow'
         }`}
         aria-live="assertive"
         aria-label={formatTime(remaining)}

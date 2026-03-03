@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.7.0
+**Version**: 1.8.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -15,7 +15,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 - **Vitest** — unit testing with `@testing-library/react` and `jsdom`
 - **ESLint 9** — flat config with typescript-eslint, react-hooks, react-refresh plugins
 - **No external state library** — React hooks + props + Context (i18n only)
-- **No CSS-in-JS** — pure Tailwind utility classes
+- **No CSS-in-JS** — pure Tailwind utility classes + custom `@keyframes` and `@utility` in `index.css`
 
 ## Commands
 
@@ -36,7 +36,7 @@ npm run preview      # Preview production build locally
 src/
 ├── App.tsx                      # Root component: setup/game mode switching, central state
 ├── main.tsx                     # React entry point, wraps app in LanguageProvider
-├── index.css                    # Tailwind base imports
+├── index.css                    # Tailwind base imports, @keyframes animations, @utility classes, body gradient
 ├── components/                  # UI components (one export per file)
 │   ├── AddOnEditor.tsx          # Add-On config (requires Rebuy, auto-disable)
 │   ├── BlindGenerator.tsx       # Blind structure generator (3 speeds, chip-aware)
@@ -111,9 +111,13 @@ public/
 - All user-facing strings must go through `t()` — no hardcoded UI text
 
 ### Styling
-- Tailwind utility classes exclusively — no custom CSS classes, no CSS modules
-- Dark theme: `gray-900` bg, `gray-800`/`gray-700` panels
+- Tailwind utility classes + custom `@keyframes` and `@utility` in `index.css` — no CSS modules, no CSS-in-JS
+- Dark theme: `#0a0a0f` body with subtle emerald radial-gradient, `gray-800/40` glassmorphic panels
 - Color palette: emerald (active/success), amber (breaks/warnings), red (danger/elimination)
+- Glassmorphism: `backdrop-blur-sm`, soft shadows (`shadow-lg shadow-black/20`), semi-transparent backgrounds
+- Buttons: `bg-gradient-to-b` for tactile feel, `active:scale-[0.97]` feedback, `shadow-lg` depth
+- Animations: `animate-fade-in` (content), `animate-timer-glow` (running timer), `animate-countdown-pulse`, `animate-scale-in` (modals), `animate-bubble-pulse`/`animate-itm-flash`
+- Inputs: Global pattern — `bg-gray-800/80`, `border-gray-700/60`, `focus:ring-1 focus:ring-emerald-500/20`, `rounded-lg`
 - Responsive: mobile-first, `sm:` and `lg:` breakpoints, flex layouts
 - No component library (fully custom UI)
 
@@ -151,6 +155,7 @@ public/
 - **Progressive disclosure in setup**: `CollapsibleSection` card component wraps each setup section; essential sections (Tournament Basics, Players, Blinds) open by default, optional sections (Chips, Payout, Tournament Format) collapsed with summary text; `CollapsibleSubSection` for nested collapsibles inside cards (BlindGenerator, Level Table); Tournament Name + Buy-In merged into "Turnier-Grundlagen" card; Rebuy/Add-On/Bounty grouped into one "Tournament Format" card; Summary badges visible as subtitles even on open sections
 - **Tournament checkpoint**: Auto-save game state to localStorage on every action in game mode; on restart, offer to resume with timer always paused (timestamps invalid after reload)
 - **Accessibility**: ARIA roles/labels on timer, controls, modals, collapsible sections; auto-focus and Escape-to-close on dialogs
+- **Premium UI**: Glassmorphism (`backdrop-blur-sm`, soft shadows), gradient buttons (`bg-gradient-to-b`), custom animations (8 `@keyframes` in `index.css`), tactile feedback (`active:scale-[0.97]`), timer glow (`animate-timer-glow`), body gradient, focus rings on all inputs
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -190,6 +195,19 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v1.8.0 — Premium UI: Glassmorphism, Animationen & taktiles Design
+
+- **Glassmorphic Cards**: `CollapsibleSection` und `CollapsibleSubSection` mit `backdrop-blur-sm`, weichen Schatten und halbtransparenten Backgrounds; Content mit `animate-fade-in`
+- **Timer-Glow**: Signatur-Effekt — pulsierender `text-shadow` auf laufendem Timer, Gradient-Fortschrittsbalken mit Glow-Shadow, `animate-countdown-pulse` für Countdown
+- **Taktile Buttons**: Gradient-Buttons mit `active:scale-[0.97]`, Shadows und weicheren Borders durchgehend
+- **8 Custom Animationen**: `fade-in`, `timer-glow`, `countdown-pulse`, `bubble-pulse`, `itm-flash`, `scale-in`, `slide-in-left`, `slide-in-right` als `@keyframes` + `@utility` in `index.css`
+- **Modal-Polish**: `backdrop-blur-sm`, `animate-scale-in`, `shadow-2xl`, `rounded-2xl` auf Confirm-Dialog und TemplateManager
+- **Bubble/ITM**: Custom Pulse-Animationen statt `animate-pulse`
+- **Globales Input-Pattern**: `bg-gray-800/80`, `border-gray-700/60`, Focus-Ring, `rounded-lg`, Transition auf allen Inputs (10 Komponenten)
+- **Settings-Polish**: Checkbox-Gradient, Keycap-Look auf Tastenkürzel-Anzeige
+- **Header & Body**: `backdrop-blur-sm` Header, Body-Gradient (`radial-gradient` emerald), Gradient-Buttons
+- **23 Dateien geändert**: Rein visuelle/CSS-Änderungen, keine Logik, keine neuen Dateien, keine neuen Translation-Keys
 
 ### v1.5.0 — Usability & Progressive Disclosure
 

@@ -102,7 +102,7 @@ export function TournamentFinished({
     <div className="flex-1 flex items-start justify-center p-6 overflow-y-auto">
       <div ref={resultsRef} className="w-full max-w-lg space-y-6 py-8">
         {/* Winner celebration */}
-        <div className="text-center space-y-3 py-6 px-4 rounded-2xl border-2 border-amber-500/30 bg-gradient-to-b from-amber-900/20 to-transparent">
+        <div className="text-center space-y-3 py-6 px-4 rounded-2xl border-2 border-amber-500/30 bg-gradient-to-b from-amber-900/20 to-transparent shadow-xl shadow-amber-900/10">
           <div className="text-7xl animate-bounce">
             &#127942;
           </div>
@@ -130,7 +130,7 @@ export function TournamentFinished({
               {detailsExpanded ? `▲ ${t('finished.collapse')}` : `▼ ${t('finished.expand')}`}
             </button>
           </div>
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="bg-gray-900/50 border border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-black/20">
             {standings.map((player, idx) => {
               const isPaid = payoutMap.has(player.finalPlace);
               const amount = payoutMap.get(player.finalPlace);
@@ -244,7 +244,7 @@ export function TournamentFinished({
             <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
               {t('finished.bounty')}
             </h3>
-            <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="bg-gray-900/50 border border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-black/20">
               {bountyResults.map((player, idx) => (
                 <div
                   key={player.id}
@@ -280,7 +280,7 @@ export function TournamentFinished({
           <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
             {t('finished.tournamentInfo')}
           </h3>
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-3 space-y-1">
+          <div className="bg-gray-900/50 border border-gray-700/40 rounded-xl px-4 py-3 space-y-1 shadow-lg shadow-black/20">
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">{t('finished.prizePool')}</span>
               <span className="text-white font-medium">{prizePool.toFixed(2)} {t('unit.eur')}</span>
@@ -329,7 +329,7 @@ export function TournamentFinished({
           <button
             onClick={captureScreenshot}
             disabled={capturing}
-            className="w-full px-6 py-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-lg font-medium transition-colors disabled:opacity-50"
+            className="w-full px-6 py-3 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl text-lg font-medium transition-all duration-200 shadow-lg shadow-emerald-900/30 active:scale-[0.98] disabled:opacity-50"
           >
             {capturing ? t('finished.capturing') : t('finished.shareResults')}
           </button>
@@ -339,7 +339,7 @@ export function TournamentFinished({
         <div>
           <button
             onClick={onBackToSetup}
-            className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-lg font-medium transition-colors"
+            className="w-full px-6 py-3 bg-gray-700/80 hover:bg-gray-600 text-white rounded-xl text-lg font-medium transition-all duration-200 border border-gray-600/30"
           >
             {t('finished.backToSetup')}
           </button>
