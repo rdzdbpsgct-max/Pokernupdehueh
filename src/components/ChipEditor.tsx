@@ -142,8 +142,8 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
 
           {/* Duplicate color warning */}
           {duplicateColors.size > 0 && (
-            <div className="px-3 py-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
-              <p className="text-amber-300 text-xs font-medium">
+            <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg">
+              <p className="text-amber-700 dark:text-amber-300 text-xs font-medium">
                 {t('chipEditor.duplicateColor')}
               </p>
             </div>
@@ -187,7 +187,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                   {/* Remove button */}
                   <button
                     onClick={() => removeDenomination(denom.id)}
-                    className="px-2 py-1 rounded bg-red-900/50 hover:bg-red-800 text-red-300
+                    className="px-2 py-1 rounded bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300
                                text-xs font-medium transition-colors"
                   >
                     ✕
@@ -388,7 +388,7 @@ function ColorUpScheduleEditor({
                     </select>
                     <button
                       onClick={() => handleRemoveEntry(entryIdx)}
-                      className="px-1.5 py-0.5 rounded bg-red-900/50 hover:bg-red-800 text-red-300 text-xs transition-colors"
+                      className="px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs transition-colors"
                     >
                       ✕
                     </button>

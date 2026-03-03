@@ -85,11 +85,11 @@ export function PlayerPanel({
       {/* Prize Pool */}
       <div>
         <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('playerPanel.prizePool')}</h3>
-        <div className="mt-1 px-3 py-2 bg-emerald-900/20 border border-emerald-700/50 rounded-xl shadow-md shadow-emerald-900/10">
-          <p className="text-emerald-300 text-lg font-bold">
+        <div className="mt-1 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700/50 rounded-xl shadow-md shadow-emerald-200/30 dark:shadow-emerald-900/10">
+          <p className="text-emerald-700 dark:text-emerald-300 text-lg font-bold">
             {prizePool.toFixed(2)} {t('unit.eur')}
           </p>
-          <p className="text-emerald-500/70 text-xs">
+          <p className="text-emerald-600 dark:text-emerald-500/70 text-xs">
             {players.length} &times; {buyIn} {t('unit.eur')}
             {totalRebuys > 0 && (
               <> + {totalRebuys} Rebuy{totalRebuys > 1 ? 's' : ''} &times; {rebuyConfig.rebuyCost} {t('unit.eur')}</>
@@ -99,7 +99,7 @@ export function PlayerPanel({
             )}
           </p>
           {bountyConfig.enabled && (
-            <p className="text-amber-500/70 text-xs mt-0.5">
+            <p className="text-amber-600 dark:text-amber-500/70 text-xs mt-0.5">
               + Bounty-Pool: {(players.length * bountyConfig.amount).toFixed(2)} {t('unit.eur')}
               ({players.length} &times; {bountyConfig.amount} {t('unit.eur')})
             </p>
@@ -137,11 +137,11 @@ export function PlayerPanel({
 
       {/* Add-On info banner (shown after rebuy phase ends) */}
       {addOnWindowOpen && totalAddOns < activePlayers.length && (
-        <div className="px-3 py-2 bg-amber-900/30 border border-amber-700/40 rounded-lg">
-          <p className="text-amber-300 text-sm font-medium">
+        <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/40 rounded-lg">
+          <p className="text-amber-700 dark:text-amber-300 text-sm font-medium">
             {t('playerPanel.addOnAvailable')}
           </p>
-          <p className="text-amber-500/70 text-xs mt-0.5">
+          <p className="text-amber-600 dark:text-amber-500/70 text-xs mt-0.5">
             {addOnConfig.cost} {t('unit.eur')} → +{addOnConfig.chips.toLocaleString()} {t('unit.chips')}
           </p>
         </div>
@@ -170,12 +170,12 @@ export function PlayerPanel({
                   {player.name}
                 </span>
                 {bountyConfig.enabled && player.knockouts > 0 && (
-                  <span className="text-xs text-amber-400">
+                  <span className="text-xs text-amber-600 dark:text-amber-400">
                     {player.knockouts} KO ({(player.knockouts * bountyConfig.amount).toFixed(0)} {t('unit.eur')})
                   </span>
                 )}
                 {!rebuyActive && player.rebuys > 0 && (
-                  <span className="inline-block bg-emerald-900/30 text-emerald-400 rounded-full px-1.5 text-xs font-medium">
+                  <span className="inline-block bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full px-1.5 text-xs font-medium">
                     {player.rebuys} RB
                   </span>
                 )}
@@ -215,7 +215,7 @@ export function PlayerPanel({
                     onClick={() => onUpdateAddOn(player.id, !player.addOn)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       player.addOn
-                        ? 'bg-emerald-700/50 text-emerald-300'
+                        ? 'bg-emerald-100 dark:bg-emerald-700/50 text-emerald-700 dark:text-emerald-300'
                         : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400'
                     }`}
                     title="Add-On"
@@ -228,7 +228,7 @@ export function PlayerPanel({
                 {activePlayers.length > 1 && (
                   <button
                     onClick={() => handleEliminate(player.id)}
-                    className="px-3 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-800 text-red-300 text-xs font-medium transition-all duration-200 border border-red-800/30 hover:border-red-700/50"
+                    className="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs font-medium transition-all duration-200 border border-red-300 dark:border-red-800/30 hover:border-red-400 dark:hover:border-red-700/50"
                     title={t('playerPanel.eliminateTooltip')}
                   >
                     {t('playerPanel.eliminate')}
@@ -243,8 +243,8 @@ export function PlayerPanel({
 
       {/* Bounty elimination dialog */}
       {eliminatingId && bountyConfig.enabled && (
-        <div className="px-3 py-3 bg-amber-900/20 border border-amber-700/40 rounded-lg space-y-2">
-          <p className="text-sm text-amber-300 font-medium">
+        <div className="px-3 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg space-y-2">
+          <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
             {t('playerPanel.whoEliminated', { name: players.find((p) => p.id === eliminatingId)?.name ?? '?' })}
           </p>
           <select

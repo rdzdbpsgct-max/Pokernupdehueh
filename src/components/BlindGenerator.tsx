@@ -96,12 +96,12 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
                   return (
                     <div
                       key={level.id || idx}
-                      className="flex items-center px-2 py-1 bg-amber-900/15 rounded-lg text-xs border border-amber-800/20"
+                      className="flex items-center px-2 py-1 bg-amber-50 dark:bg-amber-900/15 rounded-lg text-xs border border-amber-300 dark:border-amber-800/20"
                     >
-                      <span className="text-amber-400 font-medium w-12">
+                      <span className="text-amber-600 dark:text-amber-400 font-medium w-12">
                         {t('blindGenerator.break')}
                       </span>
-                      <span className="text-amber-500/70 ml-auto">
+                      <span className="text-amber-600 dark:text-amber-500/70 ml-auto">
                         {formatTime(level.durationSeconds)}
                       </span>
                     </div>

@@ -145,9 +145,9 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
 
       {/* Validation */}
       {errors.length > 0 && (
-        <div className="bg-red-900/30 border border-red-700 rounded-lg p-2">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg p-2">
           {errors.map((e, i) => (
-            <p key={i} className="text-red-400 text-xs">{e}</p>
+            <p key={i} className="text-red-700 dark:text-red-400 text-xs">{e}</p>
           ))}
         </div>
       )}

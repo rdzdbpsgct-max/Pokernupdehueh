@@ -694,8 +694,8 @@ function App() {
             <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
               {/* Checkpoint recovery banner */}
               {pendingCheckpoint && (
-                <div className="bg-amber-900/20 border-2 border-amber-600/50 rounded-xl p-4 space-y-2 shadow-lg shadow-amber-900/20 backdrop-blur-sm animate-fade-in">
-                  <p className="text-amber-300 text-sm font-medium">{t('checkpoint.found')}</p>
+                <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-600/50 rounded-xl p-4 space-y-2 shadow-lg shadow-amber-200/30 dark:shadow-amber-900/20 backdrop-blur-sm animate-fade-in">
+                  <p className="text-amber-700 dark:text-amber-300 text-sm font-medium">{t('checkpoint.found')}</p>
                   <p className="text-gray-500 dark:text-gray-400 text-xs">
                     {t('checkpoint.details', {
                       name: pendingCheckpoint.config.name || 'Tournament',
@@ -906,11 +906,11 @@ function App() {
                 />
                 {/* Chip-Blind compatibility warning */}
                 {blindChipConflicts.length > 0 && (
-                  <div className="mt-2 px-3 py-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
-                    <p className="text-amber-300 text-xs font-medium">
+                  <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg">
+                    <p className="text-amber-700 dark:text-amber-300 text-xs font-medium">
                       {t('app.chipBlindConflict', { values: blindChipConflicts.join(', ') })}
                     </p>
-                    <p className="text-amber-400/60 text-xs mt-1">
+                    <p className="text-amber-600 dark:text-amber-400/60 text-xs mt-1">
                       {t('app.chipBlindConflictHint')}
                     </p>
                   </div>
@@ -920,15 +920,15 @@ function App() {
               {/* Validation */}
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700/40">
                 {startErrors.length > 0 ? (
-                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-3">
-                    <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">{t('app.checkConfig')}</p>
+                  <div className="bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg p-3">
+                    <p className="text-red-700 dark:text-red-400 text-xs font-bold uppercase tracking-wider mb-1">{t('app.checkConfig')}</p>
                     {startErrors.map((e, i) => (
-                      <p key={i} className="text-red-400 text-sm">• {e}</p>
+                      <p key={i} className="text-red-700 dark:text-red-400 text-sm">• {e}</p>
                     ))}
                   </div>
                 ) : (
-                  <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
-                    <p className="text-emerald-400 text-sm">{t('app.allReady')}</p>
+                  <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 rounded-lg p-3">
+                    <p className="text-emerald-700 dark:text-emerald-400 text-sm">{t('app.allReady')}</p>
                   </div>
                 )}
               </div>

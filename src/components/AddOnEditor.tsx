@@ -60,8 +60,8 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
 
       {/* Rebuy required hint */}
       {showRebuyHint && (
-        <div className="px-3 py-3 bg-amber-900/20 border border-amber-700/40 rounded-lg space-y-2">
-          <p className="text-sm text-amber-300 font-medium">
+        <div className="px-3 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg space-y-2">
+          <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
             {t('addOnEditor.requiresRebuy')}
           </p>
           <div className="flex gap-2">

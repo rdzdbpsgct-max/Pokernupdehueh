@@ -45,7 +45,7 @@ export function TournamentStats({
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-gray-400 dark:text-gray-500">{label}:</span>
+      <span className="text-gray-500 dark:text-gray-500">{label}:</span>
       <span className="text-gray-800 dark:text-gray-100 font-medium font-mono">{value}</span>
     </div>
   );

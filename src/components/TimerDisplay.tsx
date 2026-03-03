@@ -216,7 +216,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         const currentColorUp = colorUpMap?.get(timerState.currentLevelIndex);
         if (!currentColorUp || currentColorUp.length === 0) return null;
         return (
-          <div className="w-full max-w-xl px-4 py-2 bg-amber-900/40 border border-amber-600 rounded-lg text-center">
+          <div className="w-full max-w-xl px-4 py-2 bg-amber-50 dark:bg-amber-900/40 border border-amber-400 dark:border-amber-600 rounded-lg text-center">
             <div className="flex items-center justify-center gap-2">
               {currentColorUp.map((d) => (
                 <span
@@ -225,7 +225,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
                   style={{ backgroundColor: d.color }}
                 />
               ))}
-              <span className="text-amber-300 text-sm font-bold">
+              <span className="text-amber-700 dark:text-amber-300 text-sm font-bold">
                 {t('colorUp.banner', {
                   chips: currentColorUp.map((d) => d.label).join(', '),
                 })}

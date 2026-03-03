@@ -103,9 +103,9 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
     <div className="w-full max-w-2xl space-y-4">
       {/* Validation errors */}
       {errors.length > 0 && (
-        <div className="bg-red-900/30 border border-red-700/60 rounded-lg p-3">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700/60 rounded-lg p-3">
           {errors.map((e, i) => (
-            <p key={i} className="text-red-400 text-xs">{e}</p>
+            <p key={i} className="text-red-700 dark:text-red-400 text-xs">{e}</p>
           ))}
         </div>
       )}
@@ -129,8 +129,8 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             {t('config.apply')}
           </button>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
-          <label className="text-amber-400/70 text-xs whitespace-nowrap">{t('config.allBreaks')}</label>
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg">
+          <label className="text-amber-600 dark:text-amber-400/70 text-xs whitespace-nowrap">{t('config.allBreaks')}</label>
           <NumberStepper
             value={globalBreakMinutes}
             onChange={(v) => setGlobalBreakMinutes(Math.max(1, v))}
@@ -155,7 +155,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             key={level.id}
             className={`flex flex-wrap items-center gap-2 p-3 rounded-lg border hover:bg-gray-200/30 dark:hover:bg-gray-800/30 transition-colors ${
               level.type === 'break'
-                ? 'bg-amber-900/15 border-amber-800/60'
+                ? 'bg-amber-50 dark:bg-amber-900/15 border-amber-300 dark:border-amber-800/60'
                 : 'bg-gray-100/80 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700/40'
             }`}
           >

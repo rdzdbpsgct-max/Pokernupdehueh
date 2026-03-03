@@ -200,17 +200,17 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
       {players.length >= 2 && !showShuffleConfirm && (
         <button
           onClick={() => setShowShuffleConfirm(true)}
-          className="px-4 py-2 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-200 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-700/30"
+          className="px-4 py-2 bg-emerald-600 dark:bg-emerald-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-700 text-white dark:text-emerald-200 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-500 dark:border-emerald-700/30"
         >
           🔀 {t('playerManager.shuffle')}
         </button>
       )}
       {showShuffleConfirm && (
-        <div className="px-3 py-3 bg-amber-900/20 border border-amber-700/40 rounded-lg space-y-2">
-          <p className="text-sm text-amber-300 font-medium">
+        <div className="px-3 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg space-y-2">
+          <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
             {t('playerManager.shuffleConfirm')}
           </p>
-          <p className="text-xs text-amber-500/70">
+          <p className="text-xs text-amber-600 dark:text-amber-500/70">
             {t('playerManager.shuffleWarning')}
           </p>
           <div className="flex gap-2">
