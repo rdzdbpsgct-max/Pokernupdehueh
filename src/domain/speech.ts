@@ -187,9 +187,9 @@ export function announceBreakWarning(t: TranslateFn): void {
   announce(t('voice.breakWarning'));
 }
 
-/** Tier 1: Countdown number (last 5 seconds) — uses immediate mode */
+/** Tier 1: Countdown number (last 10 seconds) — uses immediate mode */
 export function announceCountdown(second: number): void {
-  announceImmediate(String(second), { rate: 1.2 });
+  announceImmediate(String(second), { rate: 0.85 });
 }
 
 /** Tier 2: Bubble — "Wir sind auf der Bubble!" */

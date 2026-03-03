@@ -430,7 +430,8 @@ function App() {
       const nextIdx = lastRebuyLevelIndex + 1;
       if (nextIdx >= config.levels.length) return false;
       if (config.levels[nextIdx]?.type === 'break') {
-        return idx === nextIdx || idx === nextIdx + 1;
+        // Show only during the break — not in the level after the break
+        return idx === nextIdx;
       }
       // No break — show during the next play level only
       return idx === nextIdx;
