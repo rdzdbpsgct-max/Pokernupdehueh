@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import type { TournamentConfig, Settings, TournamentCheckpoint } from './domain/types';
 import {
   defaultConfig,
@@ -29,27 +29,31 @@ import {
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
 import { playVictorySound, playBubbleSound, playInTheMoneySound } from './domain/sounds';
-import { TimerDisplay } from './components/TimerDisplay';
-import { Controls } from './components/Controls';
-import { LevelPreview } from './components/LevelPreview';
+// Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
-import { SettingsPanel } from './components/SettingsPanel';
 import { PlayerManager } from './components/PlayerManager';
 import { PayoutEditor } from './components/PayoutEditor';
 import { RebuyEditor } from './components/RebuyEditor';
-import { RebuyStatus } from './components/RebuyStatus';
-import { PlayerPanel } from './components/PlayerPanel';
 import { AddOnEditor } from './components/AddOnEditor';
 import { BountyEditor } from './components/BountyEditor';
 import { ChipEditor } from './components/ChipEditor';
-import { ChipSidebar } from './components/ChipSidebar';
-import { TournamentFinished } from './components/TournamentFinished';
 import { BlindGenerator } from './components/BlindGenerator';
-import { BubbleIndicator } from './components/BubbleIndicator';
 import { TemplateManager } from './components/TemplateManager';
 import { CollapsibleSection } from './components/CollapsibleSection';
 import { CollapsibleSubSection } from './components/CollapsibleSubSection';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { NumberStepper } from './components/NumberStepper';
+
+// Game-mode components (lazy — only needed after tournament starts)
+const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
+const Controls = lazy(() => import('./components/Controls').then(m => ({ default: m.Controls })));
+const LevelPreview = lazy(() => import('./components/LevelPreview').then(m => ({ default: m.LevelPreview })));
+const PlayerPanel = lazy(() => import('./components/PlayerPanel').then(m => ({ default: m.PlayerPanel })));
+const ChipSidebar = lazy(() => import('./components/ChipSidebar').then(m => ({ default: m.ChipSidebar })));
+const RebuyStatus = lazy(() => import('./components/RebuyStatus').then(m => ({ default: m.RebuyStatus })));
+const BubbleIndicator = lazy(() => import('./components/BubbleIndicator').then(m => ({ default: m.BubbleIndicator })));
+const SettingsPanel = lazy(() => import('./components/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
+const TournamentFinished = lazy(() => import('./components/TournamentFinished').then(m => ({ default: m.TournamentFinished })));
 
 type Mode = 'setup' | 'game';
 
@@ -728,14 +732,9 @@ function App() {
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
                       <label className="text-xs text-gray-500">{t('app.buyIn')}</label>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        step={1}
+                      <NumberStepper
                         value={config.buyIn}
-                        onChange={(e) => {
-                          const newBuyIn = Math.max(1, Number(e.target.value));
+                        onChange={(newBuyIn) => {
                           setConfig((prev) => ({
                             ...prev,
                             buyIn: newBuyIn,
@@ -749,20 +748,16 @@ function App() {
                             },
                           }));
                         }}
-                        className="w-20 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                        min={1}
+                        step={1}
                       />
                       <span className="text-gray-400 text-sm">{t('unit.eur')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <label className="text-xs text-gray-500">{t('app.startingChips')}</label>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        step={1000}
+                      <NumberStepper
                         value={config.startingChips}
-                        onChange={(e) => {
-                          const raw = Number(e.target.value);
+                        onChange={(raw) => {
                           setConfig((prev) => {
                             const newChips = snapSpinnerValue(raw, prev.startingChips, 1000);
                             return {
@@ -779,7 +774,9 @@ function App() {
                             };
                           });
                         }}
-                        className="w-24 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                        min={1}
+                        step={1000}
+                        inputClassName="w-24"
                       />
                       <span className="text-gray-400 text-sm">{t('unit.chips')}</span>
                     </div>
@@ -948,18 +945,21 @@ function App() {
           </div>
         ) : tournamentFinished && winner ? (
           /* Tournament Finished */
-          <TournamentFinished
-            players={config.players}
-            winner={winner}
-            buyIn={config.buyIn}
-            payout={config.payout}
-            bounty={config.bounty}
-            rebuy={config.rebuy}
-            addOn={config.addOn}
-            onBackToSetup={switchToSetup}
-          />
+          <Suspense fallback={null}>
+            <TournamentFinished
+              players={config.players}
+              winner={winner}
+              buyIn={config.buyIn}
+              payout={config.payout}
+              bounty={config.bounty}
+              rebuy={config.rebuy}
+              addOn={config.addOn}
+              onBackToSetup={switchToSetup}
+            />
+          </Suspense>
         ) : (
           /* Game Mode */
+          <Suspense fallback={null}>
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             {/* Player Panel (LEFT) */}
             {showPlayerPanel && config.players.length > 0 && (
@@ -1116,6 +1116,7 @@ function App() {
               </aside>
             )}
           </div>
+          </Suspense>
         )}
       </main>
 

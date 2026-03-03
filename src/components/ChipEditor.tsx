@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { ChipConfig, ChipDenomination, Level, ColorUpEntry } from '../domain/types';
+import { NumberStepper } from './NumberStepper';
 import {
   generateChipId,
   chipPresets,
@@ -173,18 +174,14 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                   <span className="text-xs text-gray-400 w-14 truncate">{denom.label}</span>
 
                   {/* Value input */}
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
+                  <NumberStepper
                     value={denom.value}
-                    onChange={(e) =>
-                      updateDenomination(denom.id, {
-                        value: Math.max(1, Number(e.target.value)),
-                      })
+                    onChange={(v) =>
+                      updateDenomination(denom.id, { value: Math.max(1, v) })
                     }
-                    className="w-20 px-2 py-1 bg-gray-800/80 border border-gray-700/60 rounded-lg
-                               text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                    min={1}
+                    step={1}
+                    inputClassName="w-20"
                   />
 
                   {/* Remove button */}

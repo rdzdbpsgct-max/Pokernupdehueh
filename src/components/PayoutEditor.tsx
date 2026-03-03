@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PayoutConfig, PayoutMode } from '../domain/types';
 import { validatePayoutConfig } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { NumberStepper } from './NumberStepper';
 
 interface Props {
   payout: PayoutConfig;
@@ -95,14 +96,13 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
       {/* Place count */}
       <div className="flex items-center gap-3">
         <label className="text-xs text-gray-400 uppercase tracking-wider">{t('payoutEditor.paidPlaces')}</label>
-        <input
-          type="number"
-          inputMode="numeric"
+        <NumberStepper
+          value={payout.entries.length}
+          onChange={(v) => setPlaceCount(v)}
           min={1}
           max={maxPlaces}
-          value={payout.entries.length}
-          onChange={(e) => setPlaceCount(Number(e.target.value))}
-          className="w-16 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+          step={1}
+          inputClassName="w-16"
         />
       </div>
 
@@ -111,14 +111,12 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
         {payout.entries.map((entry, i) => (
           <div key={entry.place} className="flex items-center gap-2">
             <span className="text-gray-400 text-sm w-16">{t('payoutEditor.placeN', { n: entry.place })}</span>
-            <input
-              type="number"
-              inputMode="numeric"
+            <NumberStepper
+              value={entry.value}
+              onChange={(v) => updateEntry(i, v)}
               min={0}
               step={payout.mode === 'percent' ? 5 : 1}
-              value={entry.value}
-              onChange={(e) => updateEntry(i, Number(e.target.value))}
-              className="w-24 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+              inputClassName="w-24"
             />
             <span className="text-gray-500 text-sm">
               {payout.mode === 'percent' ? '%' : '€'}
