@@ -415,8 +415,9 @@ function App() {
     if (prevRebuyActive.current && !rebuyActive && config.addOn.enabled && config.rebuy.enabled) {
       setAddOnEndLevelIndex(timer.timerState.currentLevelIndex);
       if (settings.voiceEnabled) {
+        // Queue both — the speech queue plays them sequentially
         announceRebuyEnded(t);
-        setTimeout(() => announceAddOn(t), 2500);
+        announceAddOn(t);
       }
     }
     prevRebuyActive.current = rebuyActive;
@@ -581,7 +582,8 @@ function App() {
       }
       if (settings.voiceEnabled && winner && !victoryVoicePlayedRef.current) {
         victoryVoicePlayedRef.current = true;
-        setTimeout(() => announceWinner(winner.name, t), 1500);
+        // Voice after victory melody finishes (~1800ms)
+        setTimeout(() => announceWinner(winner.name, t), settings.soundEnabled ? 1800 : 0);
       }
     }
     if (!tournamentFinished) {
@@ -599,14 +601,16 @@ function App() {
     // Bubble just started
     if (bubbleActive && !prevBubbleRef.current) {
       if (settings.soundEnabled) playBubbleSound();
-      if (settings.voiceEnabled) announceBubble(t);
+      // Voice after bubble sound finishes (~1500ms)
+      if (settings.voiceEnabled) setTimeout(() => announceBubble(t), settings.soundEnabled ? 1500 : 0);
     }
 
     // Bubble just ended (burst) → show ITM flash
     if (!bubbleActive && prevBubbleRef.current && inTheMoney) {
       setShowItmFlash(true);
       if (settings.soundEnabled) playInTheMoneySound();
-      if (settings.voiceEnabled) setTimeout(() => announceInTheMoney(t), 500);
+      // Voice after ITM fanfare finishes (~750ms)
+      if (settings.voiceEnabled) setTimeout(() => announceInTheMoney(t), settings.soundEnabled ? 750 : 0);
       if (itmFlashTimeoutRef.current) clearTimeout(itmFlashTimeoutRef.current);
       itmFlashTimeoutRef.current = setTimeout(() => setShowItmFlash(false), 5000);
       prevBubbleRef.current = bubbleActive;
@@ -640,12 +644,12 @@ function App() {
       announceLevelChange(playLevelNum, level.smallBlind ?? 0, level.bigBlind ?? 0, level.ante, t);
     }
 
-    // Color-up announcement (delayed to not overlap with level announcement)
+    // Color-up announcement — queued after the level/break announcement
     if (config.chips.enabled && config.chips.colorUpEnabled) {
       const colorUpChips = colorUpMap.get(idx);
       if (colorUpChips && colorUpChips.length > 0) {
         const labels = colorUpChips.map((d: { label: string }) => d.label).join(', ');
-        setTimeout(() => announceColorUp(labels, t), 3000);
+        announceColorUp(labels, t);
       }
     }
   }, [mode, timer.timerState.currentLevelIndex, config.levels, config.chips, colorUpMap, settings.voiceEnabled, t]);

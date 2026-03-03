@@ -38,15 +38,17 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
       const now = Date.now();
       const remaining = computeRemaining(prev.startedAt, prev.remainingAtStart, now);
 
-      // Countdown beeps for last 10 seconds
-      if (settings.countdownEnabled && settings.soundEnabled) {
+      // Countdown for last 10 seconds
+      if (settings.countdownEnabled) {
         const sec = Math.ceil(remaining);
         if (sec <= 10 && sec > 0 && sec !== lastCountdownSecRef.current) {
           lastCountdownSecRef.current = sec;
-          playBeep(sec <= 3 ? 880 : 660, 100);
-          // Voice countdown for last 5 seconds (shorter to avoid overlapping speech)
           if (settings.voiceEnabled && sec <= 5) {
+            // Voice countdown replaces beep for last 5 seconds
             announceCountdown(sec);
+          } else if (settings.soundEnabled) {
+            // Beep only when voice is off or for seconds 6-10
+            playBeep(sec <= 3 ? 880 : 660, 100);
           }
         }
       }
