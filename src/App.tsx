@@ -846,26 +846,6 @@ function App() {
                 </div>
               </CollapsibleSection>
 
-              {/* Chip-Werte (collapsed by default) */}
-              <CollapsibleSection title={t('app.chips')} summary={chipsSummary} defaultOpen={false}>
-                <ChipEditor
-                  chips={config.chips}
-                  onChange={(chips) => setConfig((prev) => ({ ...prev, chips }))}
-                  levels={config.levels}
-                />
-                {/* Chip-Blind compatibility warning */}
-                {blindChipConflicts.length > 0 && (
-                  <div className="mt-2 px-3 py-2 bg-amber-900/20 border border-amber-800 rounded-lg">
-                    <p className="text-amber-300 text-xs font-medium">
-                      {t('app.chipBlindConflict', { values: blindChipConflicts.join(', ') })}
-                    </p>
-                    <p className="text-amber-400/60 text-xs mt-1">
-                      {t('app.chipBlindConflictHint')}
-                    </p>
-                  </div>
-                )}
-              </CollapsibleSection>
-
               {/* Turnier-Format: Rebuy + Add-On + Bounty (collapsed by default) */}
               <CollapsibleSection title={t('app.tournamentFormat')} summary={formatSummary} defaultOpen={false}>
                 <div className="space-y-4">
@@ -916,6 +896,26 @@ function App() {
                     />
                   </div>
                 </div>
+              </CollapsibleSection>
+
+              {/* Chip-Werte (collapsed by default) */}
+              <CollapsibleSection title={t('app.chips')} summary={chipsSummary} defaultOpen={false}>
+                <ChipEditor
+                  chips={config.chips}
+                  onChange={(chips) => setConfig((prev) => ({ ...prev, chips }))}
+                  levels={config.levels}
+                />
+                {/* Chip-Blind compatibility warning */}
+                {blindChipConflicts.length > 0 && (
+                  <div className="mt-2 px-3 py-2 bg-amber-900/20 border border-amber-800 rounded-lg">
+                    <p className="text-amber-300 text-xs font-medium">
+                      {t('app.chipBlindConflict', { values: blindChipConflicts.join(', ') })}
+                    </p>
+                    <p className="text-amber-400/60 text-xs mt-1">
+                      {t('app.chipBlindConflictHint')}
+                    </p>
+                  </div>
+                )}
               </CollapsibleSection>
 
               {/* Validation */}
