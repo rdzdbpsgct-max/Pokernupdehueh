@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme';
 import { ChevronIcon } from './ChevronIcon';
 
 interface Props {
@@ -26,6 +27,7 @@ export function TournamentFinished({
   onBackToSetup,
 }: Props) {
   const { t } = useTranslation();
+  const { resolved: theme } = useTheme();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -36,7 +38,7 @@ export function TournamentFinished({
     try {
       const { toPng } = await import('html-to-image');
       const dataUrl = await toPng(resultsRef.current, {
-        backgroundColor: '#111827',
+        backgroundColor: theme === 'dark' ? '#111827' : '#f9fafb',
         pixelRatio: 2,
       });
 
@@ -65,7 +67,7 @@ export function TournamentFinished({
     } finally {
       setCapturing(false);
     }
-  }, [capturing, t]);
+  }, [capturing, t, theme]);
   const totalRebuys = computeTotalRebuys(players);
   const totalAddOns = computeTotalAddOns(players);
   const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.enabled ? addOn.cost : 0);

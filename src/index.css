@@ -10,8 +10,8 @@
 }
 
 @keyframes timer-glow {
-  0%, 100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.15); }
-  50%      { text-shadow: 0 0 40px rgba(255, 255, 255, 0.3); }
+  0%, 100% { text-shadow: 0 0 20px var(--timer-glow-color, rgba(255, 255, 255, 0.15)); }
+  50%      { text-shadow: 0 0 40px var(--timer-glow-color-strong, rgba(255, 255, 255, 0.3)); }
 }
 
 @keyframes countdown-pulse {
@@ -85,6 +85,18 @@
 
 @utility animate-slide-in-right {
   animation: slide-in-right 0.2s ease-out;
+}
+
+/* === Theme Variables === */
+
+:root {
+  --timer-glow-color: rgba(0, 0, 0, 0.1);
+  --timer-glow-color-strong: rgba(0, 0, 0, 0.2);
+}
+
+.dark {
+  --timer-glow-color: rgba(255, 255, 255, 0.15);
+  --timer-glow-color-strong: rgba(255, 255, 255, 0.3);
 }
 
 /* === Global Styles === */
