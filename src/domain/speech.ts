@@ -5,8 +5,12 @@ import type { Language, TranslationKey } from '../i18n/translations';
 type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
 let preferredVoice: SpeechSynthesisVoice | null = null;
+let englishVoice: SpeechSynthesisVoice | null = null;
 let voiceLanguage: Language = 'de';
 let voicesLoaded = false;
+
+// English poker terms that should be pronounced in English even in German mode
+const ENGLISH_POKER_TERMS = /\b(Level|Blinds|Blind|Ante|Bubble|Add-On|Rebuy|Color-Up|In The Money)\b/gi;
 
 // ---------------------------------------------------------------------------
 // Voice selection
@@ -29,6 +33,12 @@ function findVoice(lang: Language): SpeechSynthesisVoice | null {
 function ensureVoice(): void {
   if (voicesLoaded) return;
   preferredVoice = findVoice(voiceLanguage);
+  // Also find an English voice for poker terms when in German mode
+  if (voiceLanguage === 'de') {
+    englishVoice = findVoice('en');
+  } else {
+    englishVoice = null;
+  }
   voicesLoaded = true;
 }
 
@@ -39,6 +49,7 @@ export function setSpeechLanguage(lang: Language): void {
   voiceLanguage = lang;
   voicesLoaded = false;
   preferredVoice = null;
+  englishVoice = null;
 }
 
 /**
@@ -68,9 +79,70 @@ export function initSpeech(): void {
 // ---------------------------------------------------------------------------
 
 /**
+ * Create a configured utterance for the given text and language.
+ */
+function createUtterance(
+  text: string,
+  lang: 'primary' | 'english',
+  options?: { rate?: number; pitch?: number; volume?: number },
+): SpeechSynthesisUtterance {
+  const utterance = new SpeechSynthesisUtterance(text);
+  if (lang === 'english' && englishVoice) {
+    utterance.voice = englishVoice;
+    utterance.lang = englishVoice.lang;
+  } else if (preferredVoice) {
+    utterance.voice = preferredVoice;
+    utterance.lang = preferredVoice.lang;
+  } else {
+    utterance.lang = voiceLanguage === 'de' ? 'de-DE' : 'en-US';
+  }
+  utterance.rate = options?.rate ?? 1.0;
+  utterance.pitch = options?.pitch ?? 1.0;
+  utterance.volume = options?.volume ?? 0.8;
+  return utterance;
+}
+
+/**
+ * Split text into segments, alternating between the primary language
+ * and English for known poker terms. Only applies when voiceLanguage is 'de'.
+ */
+function splitForMixedLang(text: string): Array<{ text: string; lang: 'primary' | 'english' }> {
+  if (voiceLanguage !== 'de' || !englishVoice) {
+    return [{ text, lang: 'primary' }];
+  }
+
+  const segments: Array<{ text: string; lang: 'primary' | 'english' }> = [];
+  let lastIndex = 0;
+
+  // Reset regex state
+  ENGLISH_POKER_TERMS.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = ENGLISH_POKER_TERMS.exec(text)) !== null) {
+    // Add preceding German text
+    if (match.index > lastIndex) {
+      const preceding = text.slice(lastIndex, match.index).trim();
+      if (preceding) segments.push({ text: preceding, lang: 'primary' });
+    }
+    // Add English term
+    segments.push({ text: match[0], lang: 'english' });
+    lastIndex = match.index + match[0].length;
+  }
+  // Add remaining German text
+  if (lastIndex < text.length) {
+    const remaining = text.slice(lastIndex).trim();
+    if (remaining) segments.push({ text: remaining, lang: 'primary' });
+  }
+
+  return segments.length > 0 ? segments : [{ text, lang: 'primary' }];
+}
+
+/**
  * Speak an announcement. Cancels any currently speaking utterance first
  * to prevent overlapping. Silently does nothing if speechSynthesis is
  * unavailable.
+ *
+ * When in German mode, English poker terms (Level, Blinds, Ante, etc.)
+ * are spoken with an English voice for correct pronunciation.
  */
 export function announce(
   text: string,
@@ -84,18 +156,11 @@ export function announce(
 
     ensureVoice();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-      utterance.lang = preferredVoice.lang;
-    } else {
-      utterance.lang = voiceLanguage === 'de' ? 'de-DE' : 'en-US';
+    const segments = splitForMixedLang(text);
+    for (const segment of segments) {
+      const utterance = createUtterance(segment.text, segment.lang, options);
+      window.speechSynthesis.speak(utterance);
     }
-    utterance.rate = options?.rate ?? 1.0;
-    utterance.pitch = options?.pitch ?? 1.0;
-    utterance.volume = options?.volume ?? 0.8;
-
-    window.speechSynthesis.speak(utterance);
   } catch {
     // speechSynthesis not available — silent degradation
   }

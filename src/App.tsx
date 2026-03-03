@@ -59,6 +59,7 @@ import { CollapsibleSubSection } from './components/CollapsibleSubSection';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { NumberStepper } from './components/NumberStepper';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
+import { VoiceSwitcher } from './components/VoiceSwitcher';
 
 // Game-mode components (lazy — only needed after tournament starts)
 const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
@@ -814,6 +815,7 @@ function App() {
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
           <LanguageSwitcher />
+          <VoiceSwitcher settings={settings} onChange={setSettings} />
           <button
             onClick={() => {
               if (mode === 'game') {
