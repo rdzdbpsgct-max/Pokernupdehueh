@@ -81,7 +81,33 @@ function App() {
 
   const [pendingCheckpoint, setPendingCheckpoint] = useState<TournamentCheckpoint | null>(() => loadCheckpoint());
 
-  const timer = useTimer(config.levels, settings);
+  // When add-on is enabled and no break follows the last rebuy level,
+  // the timer should pause at that level so players can take their add-on.
+  const addOnPauseLevelIndex = useMemo(() => {
+    if (!config.addOn.enabled || !config.rebuy.enabled) return undefined;
+    if (config.rebuy.limitType === 'levels') {
+      let playCount = 0;
+      let lastRebuyLevelIdx = -1;
+      for (let i = 0; i < config.levels.length; i++) {
+        if (config.levels[i].type === 'level') {
+          playCount++;
+          if (playCount === config.rebuy.levelLimit) {
+            lastRebuyLevelIdx = i;
+            break;
+          }
+        }
+      }
+      if (lastRebuyLevelIdx < 0) return undefined;
+      const nextIdx = lastRebuyLevelIdx + 1;
+      if (nextIdx >= config.levels.length) return undefined;
+      // Only pause if there's NO break — breaks already give players time
+      if (config.levels[nextIdx]?.type === 'break') return undefined;
+      return nextIdx;
+    }
+    return undefined;
+  }, [config.addOn.enabled, config.rebuy, config.levels]);
+
+  const timer = useTimer(config.levels, settings, addOnPauseLevelIndex);
   const confirmDialogRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus confirm dialog & close on Escape
@@ -359,8 +385,9 @@ function App() {
     [config.rebuy, timer.timerState.currentLevelIndex, config.levels, tournamentElapsed],
   );
 
-  // Detect when rebuy phase ends → open add-on window for that level only
-  // Add-On is a rebuy-tournament concept: only available when rebuy is enabled
+  // Compute add-on window: show announcement at the break/level immediately after rebuy ends
+  // For level-based rebuy: after the last rebuy level, show during the break (if any) + next play level
+  // For time-based rebuy: detect transition reactively
   const prevRebuyActive = useRef(rebuyActive);
   useEffect(() => {
     if (prevRebuyActive.current && !rebuyActive && config.addOn.enabled && config.rebuy.enabled) {
@@ -369,12 +396,40 @@ function App() {
     prevRebuyActive.current = rebuyActive;
   }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, timer.timerState.currentLevelIndex]);
 
-  // Add-On window is open only in the level where rebuy ended
-  const addOnWindowOpen = config.addOn.enabled
-    && config.rebuy.enabled
-    && !rebuyActive
-    && addOnEndLevelIndex !== null
-    && timer.timerState.currentLevelIndex === addOnEndLevelIndex;
+  const addOnWindowOpen = useMemo(() => {
+    if (!config.addOn.enabled || !config.rebuy.enabled) return false;
+    const idx = timer.timerState.currentLevelIndex;
+
+    if (config.rebuy.limitType === 'levels') {
+      // Find the index of the last rebuy level (the N-th play level)
+      let playCount = 0;
+      let lastRebuyLevelIdx = -1;
+      for (let i = 0; i < config.levels.length; i++) {
+        if (config.levels[i].type === 'level') {
+          playCount++;
+          if (playCount === config.rebuy.levelLimit) {
+            lastRebuyLevelIdx = i;
+            break;
+          }
+        }
+      }
+      if (lastRebuyLevelIdx < 0) return false;
+      // Add-on window: the break after the last rebuy level (if any) + the next play level
+      const nextIdx = lastRebuyLevelIdx + 1;
+      if (nextIdx >= config.levels.length) return false;
+      if (config.levels[nextIdx]?.type === 'break') {
+        // Show during break and the level after it
+        return idx === nextIdx || idx === nextIdx + 1;
+      }
+      // No break — show during the next play level only
+      return idx === nextIdx;
+    }
+
+    // Time-based: use reactive detection (addOnEndLevelIndex)
+    return !rebuyActive
+      && addOnEndLevelIndex !== null
+      && idx === addOnEndLevelIndex;
+  }, [config.addOn.enabled, config.rebuy, config.levels, timer.timerState.currentLevelIndex, rebuyActive, addOnEndLevelIndex]);
 
   const currentPlayLevel = useMemo(() => {
     return config.levels

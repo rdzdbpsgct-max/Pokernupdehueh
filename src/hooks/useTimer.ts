@@ -11,7 +11,7 @@ import { initAudio, playBeep } from '../domain/sounds';
 
 const TICK_INTERVAL_MS = 100;
 
-export function useTimer(levels: Level[], settings: Settings) {
+export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?: number) {
   const [timerState, setTimerState] = useState<TimerState>(() =>
     restartTournament(levels),
   );
@@ -58,6 +58,10 @@ export function useTimer(levels: Level[], settings: Settings) {
           lastCountdownSecRef.current = null;
           levelEndAudioPlayedRef.current = false;
           if (next.status === 'stopped' && next.currentLevelIndex > prev.currentLevelIndex) {
+            // Pause instead of auto-start when reaching add-on level (no break)
+            if (pauseAtLevelIndex !== undefined && next.currentLevelIndex === pauseAtLevelIndex) {
+              return { ...next, status: 'paused' };
+            }
             // Auto-start the next level
             return {
               ...next,
@@ -80,7 +84,7 @@ export function useTimer(levels: Level[], settings: Settings) {
 
       return { ...prev, remainingSeconds: remaining };
     });
-  }, [levels, settings.autoAdvance, settings.countdownEnabled, settings.soundEnabled]);
+  }, [levels, settings.autoAdvance, settings.countdownEnabled, settings.soundEnabled, pauseAtLevelIndex]);
 
   // Start the interval when running
   useEffect(() => {
