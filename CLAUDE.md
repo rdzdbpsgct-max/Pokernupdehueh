@@ -217,7 +217,8 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 - **Light-Mode Lesbarkeit**: Alle farbigen UI-Elemente (rot/grün/amber) mit Light-Mode-Basis-Farben + `dark:`-Varianten versehen (14 Dateien)
 - **Sektionsumbenennung**: „Turnier-Format" → „Rebuy / Add-On / Bounty" (DE + EN)
-- **Clean-View-Button**: Von Overlay über Fortschrittsbalken in Button-Leiste am unteren Timer-Rand verschoben, sichtbar auf allen Bildschirmgrößen
+- **Clean-View-Button**: In Controls-Komponente integriert, mittig unter Start-Button (über Reset/Restart), prominenter mit Border + Shadow, immer sichtbar
+- **Theme ohne Flash**: Inline-Script in `index.html` setzt Dark/Light-Modus vor dem ersten Paint (localStorage oder `prefers-color-scheme`)
 
 ### v2.0.0 — Dark/Light Mode, SVG-Chevrons, NumberStepper & Performance
 

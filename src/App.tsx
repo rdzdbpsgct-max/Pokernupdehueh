@@ -1041,15 +1041,17 @@ function App() {
                   onReset={handleResetLevel}
                   onRestart={handleRestart}
                   hideSecondaryControls={cleanView}
+                  cleanView={cleanView}
+                  onToggleCleanView={toggleCleanView}
                 />
               </div>
 
-              {/* Toggle buttons row at bottom */}
-              <div className="flex justify-center gap-2 px-3 pb-2">
+              {/* Mobile: sidebar toggle buttons */}
+              <div className="flex md:hidden justify-center gap-2 px-3 pb-2">
                 {config.players.length > 0 && (
                   <button
                     onClick={() => setShowPlayerPanel((v) => !v)}
-                    className={`md:hidden px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       showPlayerPanel
                         ? 'bg-emerald-700 text-white'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
@@ -1060,23 +1062,13 @@ function App() {
                 )}
                 <button
                   onClick={() => setShowSidebar((v) => !v)}
-                  className={`md:hidden px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     showSidebar
                       ? 'bg-emerald-700 text-white'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                   }`}
                 >
                   {showSidebar ? '✓ Sidebar' : 'Sidebar'}
-                </button>
-                <button
-                  onClick={toggleCleanView}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    cleanView
-                      ? 'bg-emerald-700 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                  }`}
-                >
-                  {cleanView ? `✓ ${t('game.cleanViewOn')}` : t('game.cleanViewOff')}
                 </button>
               </div>
             </div>

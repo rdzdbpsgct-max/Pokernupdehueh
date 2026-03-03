@@ -15,8 +15,11 @@ All notable changes to the Pokern up de Hüh app.
 - **Sektionsumbenennung** — „Turnier-Format" → „Rebuy / Add-On / Bounty" — direkter und verständlicher.
 - **Section rename** — "Tournament Format" → "Rebuy / Add-On / Bounty" — more direct and understandable.
 
-- **Clean-View-Button verschoben** — Der „Details einblenden/ausblenden"-Button war als Overlay über dem Fortschrittsbalken positioniert. Jetzt in der Button-Leiste am unteren Rand des Timer-Bereichs, sichtbar auf allen Bildschirmgrößen.
-- **Clean view button moved** — The "Show/hide details" button was positioned as overlay on top of the progress bar. Now in the button bar at the bottom of the timer area, visible on all screen sizes.
+- **Clean-View-Button in Controls** — Der „Details einblenden/ausblenden"-Button sitzt jetzt mittig unter dem Start-Button in der Controls-Komponente (über Level-Reset / Turnier-Restart). Prominenter gestaltet mit Border und Shadow, immer sichtbar (auch bei eingeblendeten Details).
+- **Clean view button in controls** — The "Show/hide details" button now sits centered below the start button in the Controls component (above level reset / tournament restart). More prominent with border and shadow, always visible (even when details are shown).
+
+- **Theme ohne Flash** — Inline-Script in `index.html` setzt den Dark/Light-Modus vor dem ersten Paint anhand von localStorage oder `prefers-color-scheme`. Kein Flash of Wrong Theme mehr beim App-Start.
+- **Theme without flash** — Inline script in `index.html` applies dark/light mode before first paint based on localStorage or `prefers-color-scheme`. No more flash of wrong theme on app start.
 
 ---
 

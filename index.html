@@ -8,6 +8,23 @@
     <meta name="theme-color" content="#111827" />
     <meta name="description" content="Poker tournament timer for home games" />
     <title>Pokern up de Hüh - Tournament Timer</title>
+    <script>
+      // Apply theme before first paint to prevent flash of wrong theme
+      (function() {
+        var stored = null;
+        try { stored = localStorage.getItem('poker-timer-theme'); } catch(e) {}
+        var mode = (stored === 'light' || stored === 'dark') ? stored : null;
+        if (!mode) {
+          // 'system' or no preference → use OS setting
+          mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        if (mode === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', mode === 'dark' ? '#111827' : '#ffffff');
+      })();
+    </script>
   </head>
   <body>
     <div id="root">

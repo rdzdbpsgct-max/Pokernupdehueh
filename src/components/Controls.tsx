@@ -9,6 +9,8 @@ interface Props {
   onReset: () => void;
   onRestart: () => void;
   hideSecondaryControls?: boolean;
+  cleanView?: boolean;
+  onToggleCleanView?: () => void;
 }
 
 export function Controls({
@@ -19,6 +21,8 @@ export function Controls({
   onReset,
   onRestart,
   hideSecondaryControls,
+  cleanView,
+  onToggleCleanView,
 }: Props) {
   const { t } = useTranslation();
   const isRunning = timerState.status === 'running';
@@ -59,6 +63,21 @@ export function Controls({
           {t('controls.next')}
         </button>
       </div>
+
+      {/* Clean view toggle — always visible */}
+      {onToggleCleanView && (
+        <button
+          onClick={onToggleCleanView}
+          className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm ${
+            cleanView
+              ? 'bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white border-emerald-500 dark:border-emerald-600 shadow-emerald-300/30 dark:shadow-emerald-900/30'
+              : 'bg-white dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600/40 shadow-gray-200/30 dark:shadow-black/15'
+          }`}
+          title={cleanView ? t('game.cleanViewOff') : t('game.cleanViewOn')}
+        >
+          {cleanView ? t('game.cleanViewOn') : t('game.cleanViewOff')}
+        </button>
+      )}
 
       {!hideSecondaryControls && (
         <div className="flex items-center gap-3">
