@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import type { TournamentConfig, Settings, TournamentCheckpoint } from './domain/types';
 import {
   defaultConfig,
@@ -29,27 +29,32 @@ import {
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
 import { playVictorySound, playBubbleSound, playInTheMoneySound } from './domain/sounds';
-import { TimerDisplay } from './components/TimerDisplay';
-import { Controls } from './components/Controls';
-import { LevelPreview } from './components/LevelPreview';
+// Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
-import { SettingsPanel } from './components/SettingsPanel';
 import { PlayerManager } from './components/PlayerManager';
 import { PayoutEditor } from './components/PayoutEditor';
 import { RebuyEditor } from './components/RebuyEditor';
-import { RebuyStatus } from './components/RebuyStatus';
-import { PlayerPanel } from './components/PlayerPanel';
 import { AddOnEditor } from './components/AddOnEditor';
 import { BountyEditor } from './components/BountyEditor';
 import { ChipEditor } from './components/ChipEditor';
-import { ChipSidebar } from './components/ChipSidebar';
-import { TournamentFinished } from './components/TournamentFinished';
 import { BlindGenerator } from './components/BlindGenerator';
-import { BubbleIndicator } from './components/BubbleIndicator';
 import { TemplateManager } from './components/TemplateManager';
 import { CollapsibleSection } from './components/CollapsibleSection';
 import { CollapsibleSubSection } from './components/CollapsibleSubSection';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { NumberStepper } from './components/NumberStepper';
+import { ThemeSwitcher } from './components/ThemeSwitcher';
+
+// Game-mode components (lazy — only needed after tournament starts)
+const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
+const Controls = lazy(() => import('./components/Controls').then(m => ({ default: m.Controls })));
+const LevelPreview = lazy(() => import('./components/LevelPreview').then(m => ({ default: m.LevelPreview })));
+const PlayerPanel = lazy(() => import('./components/PlayerPanel').then(m => ({ default: m.PlayerPanel })));
+const ChipSidebar = lazy(() => import('./components/ChipSidebar').then(m => ({ default: m.ChipSidebar })));
+const RebuyStatus = lazy(() => import('./components/RebuyStatus').then(m => ({ default: m.RebuyStatus })));
+const BubbleIndicator = lazy(() => import('./components/BubbleIndicator').then(m => ({ default: m.BubbleIndicator })));
+const SettingsPanel = lazy(() => import('./components/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
+const TournamentFinished = lazy(() => import('./components/TournamentFinished').then(m => ({ default: m.TournamentFinished })));
 
 type Mode = 'setup' | 'game';
 
@@ -647,11 +652,12 @@ function App() {
   return (
     <div className="min-h-full flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-700/30 bg-gray-900/50 backdrop-blur-sm">
-        <h1 className="text-lg font-bold text-white tracking-tight">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700/30 bg-gray-50/90 dark:bg-gray-900/50 backdrop-blur-sm">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
           {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
         </h1>
         <div className="flex items-center gap-2">
+          {mode === 'setup' && <ThemeSwitcher />}
           {mode === 'setup' && <LanguageSwitcher />}
           <button
             onClick={() => {
@@ -663,7 +669,7 @@ function App() {
             }}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               mode === 'game'
-                ? 'bg-gray-700/80 hover:bg-gray-600 text-gray-200 border border-gray-600/30'
+                ? 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30'
                 : 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-md shadow-emerald-900/20'
             }`}
           >
@@ -672,7 +678,7 @@ function App() {
           {mode === 'setup' && (
             <button
               onClick={() => setShowTemplates(true)}
-              className="px-3 py-1.5 bg-gray-800/80 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-700/30"
+              className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
             >
               {t('app.templates')}
             </button>
@@ -690,7 +696,7 @@ function App() {
               {pendingCheckpoint && (
                 <div className="bg-amber-900/20 border-2 border-amber-600/50 rounded-xl p-4 space-y-2 shadow-lg shadow-amber-900/20 backdrop-blur-sm animate-fade-in">
                   <p className="text-amber-300 text-sm font-medium">{t('checkpoint.found')}</p>
-                  <p className="text-gray-400 text-xs">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">
                     {t('checkpoint.details', {
                       name: pendingCheckpoint.config.name || 'Tournament',
                       date: new Date(pendingCheckpoint.savedAt).toLocaleString(),
@@ -705,7 +711,7 @@ function App() {
                     </button>
                     <button
                       onClick={dismissCheckpoint}
-                      className="px-4 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-700/40"
+                      className="px-4 py-2 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
                     >
                       {t('checkpoint.dismiss')}
                     </button>
@@ -723,19 +729,14 @@ function App() {
                       setConfig((prev) => ({ ...prev, name: e.target.value }))
                     }
                     placeholder={t('app.tournamentNamePlaceholder')}
-                    className="w-full px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
                   />
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <label className="text-xs text-gray-500">{t('app.buyIn')}</label>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        step={1}
+                      <label className="text-xs text-gray-400 dark:text-gray-500">{t('app.buyIn')}</label>
+                      <NumberStepper
                         value={config.buyIn}
-                        onChange={(e) => {
-                          const newBuyIn = Math.max(1, Number(e.target.value));
+                        onChange={(newBuyIn) => {
                           setConfig((prev) => ({
                             ...prev,
                             buyIn: newBuyIn,
@@ -749,20 +750,16 @@ function App() {
                             },
                           }));
                         }}
-                        className="w-20 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                        min={1}
+                        step={1}
                       />
-                      <span className="text-gray-400 text-sm">{t('unit.eur')}</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-sm">{t('unit.eur')}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <label className="text-xs text-gray-500">{t('app.startingChips')}</label>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        step={1000}
+                      <label className="text-xs text-gray-400 dark:text-gray-500">{t('app.startingChips')}</label>
+                      <NumberStepper
                         value={config.startingChips}
-                        onChange={(e) => {
-                          const raw = Number(e.target.value);
+                        onChange={(raw) => {
                           setConfig((prev) => {
                             const newChips = snapSpinnerValue(raw, prev.startingChips, 1000);
                             return {
@@ -779,9 +776,11 @@ function App() {
                             };
                           });
                         }}
-                        className="w-24 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                        min={1}
+                        step={1000}
+                        inputClassName="w-24"
                       />
-                      <span className="text-gray-400 text-sm">{t('unit.chips')}</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-sm">{t('unit.chips')}</span>
                     </div>
                   </div>
                 </div>
@@ -830,7 +829,7 @@ function App() {
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         config.anteEnabled
                           ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
-                          : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                          : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
                       }`}
                     >
                       {config.anteEnabled ? t('app.withAnte') : t('app.withoutAnte')}
@@ -851,7 +850,7 @@ function App() {
                 <div className="space-y-4">
                   {/* Rebuy */}
                   <div>
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                       {t('app.rebuy')}
                     </h3>
                     <RebuyEditor
@@ -867,8 +866,8 @@ function App() {
                     />
                   </div>
                   {/* Add-On */}
-                  <div className="border-t border-gray-700/50 pt-4">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <div className="border-t border-gray-300 dark:border-gray-700/50 pt-4">
+                    <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                       {t('app.addOn')}
                     </h3>
                     <AddOnEditor
@@ -886,8 +885,8 @@ function App() {
                     />
                   </div>
                   {/* Bounty */}
-                  <div className="border-t border-gray-700/50 pt-4">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <div className="border-t border-gray-300 dark:border-gray-700/50 pt-4">
+                    <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                       {t('app.bounty')}
                     </h3>
                     <BountyEditor
@@ -919,7 +918,7 @@ function App() {
               </CollapsibleSection>
 
               {/* Validation */}
-              <div className="pt-4 border-t border-gray-700/40">
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700/40">
                 {startErrors.length > 0 ? (
                   <div className="bg-red-900/30 border border-red-700 rounded-lg p-3">
                     <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">{t('app.checkConfig')}</p>
@@ -935,7 +934,7 @@ function App() {
               </div>
 
               {/* Start button — sticky on mobile */}
-              <div className="sticky bottom-0 pt-3 pb-3 bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0">
+              <div className="sticky bottom-0 pt-3 pb-3 bg-gray-50 dark:bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0">
                 <button
                   onClick={switchToGame}
                   disabled={startErrors.length > 0}
@@ -948,22 +947,25 @@ function App() {
           </div>
         ) : tournamentFinished && winner ? (
           /* Tournament Finished */
-          <TournamentFinished
-            players={config.players}
-            winner={winner}
-            buyIn={config.buyIn}
-            payout={config.payout}
-            bounty={config.bounty}
-            rebuy={config.rebuy}
-            addOn={config.addOn}
-            onBackToSetup={switchToSetup}
-          />
+          <Suspense fallback={null}>
+            <TournamentFinished
+              players={config.players}
+              winner={winner}
+              buyIn={config.buyIn}
+              payout={config.payout}
+              bounty={config.bounty}
+              rebuy={config.rebuy}
+              addOn={config.addOn}
+              onBackToSetup={switchToSetup}
+            />
+          </Suspense>
         ) : (
           /* Game Mode */
+          <Suspense fallback={null}>
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             {/* Player Panel (LEFT) */}
             {showPlayerPanel && config.players.length > 0 && (
-              <aside className="w-full md:w-60 lg:w-72 border-b md:border-b-0 md:border-r border-gray-700/30 bg-gray-900/40 p-3 sm:p-4 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
+              <aside className="w-full md:w-60 lg:w-72 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-900/40 p-3 sm:p-4 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
                 <PlayerPanel
                   players={config.players}
                   dealerIndex={config.dealerIndex}
@@ -989,7 +991,7 @@ function App() {
               {config.players.length > 0 && (
                 <button
                   onClick={() => setShowPlayerPanel((v) => !v)}
-                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-20 items-center justify-center bg-gray-800/80 hover:bg-gray-700/80 text-gray-500 hover:text-white rounded-r-lg text-xs transition-all duration-200 border-r border-y border-gray-700/30 shadow-md shadow-black/10"
+                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-20 items-center justify-center bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700/80 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-r-lg text-xs transition-all duration-200 border-r border-y border-gray-200 dark:border-gray-700/30 shadow-md shadow-gray-300/30 dark:shadow-black/10"
                   title={showPlayerPanel ? t('app.hidePlayers') : t('app.showPlayers')}
                 >
                   {showPlayerPanel ? '\u25C0' : '\u25B6'}
@@ -997,7 +999,7 @@ function App() {
               )}
               <button
                 onClick={() => setShowSidebar((v) => !v)}
-                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-20 items-center justify-center bg-gray-800/80 hover:bg-gray-700/80 text-gray-500 hover:text-white rounded-l-lg text-xs transition-all duration-200 border-l border-y border-gray-700/30 shadow-md shadow-black/10"
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-20 items-center justify-center bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700/80 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-l-lg text-xs transition-all duration-200 border-l border-y border-gray-200 dark:border-gray-700/30 shadow-md shadow-gray-300/30 dark:shadow-black/10"
                 title={showSidebar ? t('app.hideSidebar') : t('app.showSidebar')}
               >
                 {showSidebar ? '\u25B6' : '\u25C0'}
@@ -1010,7 +1012,7 @@ function App() {
                   className={`absolute top-2 right-8 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors z-10 ${
                     cleanView
                       ? 'bg-emerald-700/60 text-emerald-200 hover:bg-emerald-700/80'
-                      : 'bg-gray-700/70 text-gray-300 hover:bg-gray-600/80 hover:text-white'
+                      : 'bg-gray-200/80 dark:bg-gray-700/70 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600/80 hover:text-gray-900 dark:hover:text-white'
                   }`}
                   title={cleanView ? t('game.cleanViewOff') : t('game.cleanViewOn')}
                 >
@@ -1061,7 +1063,7 @@ function App() {
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       showPlayerPanel
                         ? 'bg-emerald-700 text-white'
-                        : 'bg-gray-800 text-gray-400'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     {showPlayerPanel ? `✓ ${t('app.players')}` : t('app.players')}
@@ -1072,7 +1074,7 @@ function App() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     showSidebar
                       ? 'bg-emerald-700 text-white'
-                      : 'bg-gray-800 text-gray-400'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                   }`}
                 >
                   {showSidebar ? '✓ Sidebar' : 'Sidebar'}
@@ -1082,7 +1084,7 @@ function App() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     cleanView
                       ? 'bg-emerald-700 text-white'
-                      : 'bg-gray-800 text-gray-400'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                   }`}
                 >
                   {cleanView ? `✓ ${t('game.cleanViewOn')}` : t('game.cleanViewOff')}
@@ -1092,7 +1094,7 @@ function App() {
 
             {/* Sidebar (RIGHT) */}
             {showSidebar && (
-              <aside className="w-full md:w-60 lg:w-72 border-t md:border-t-0 md:border-l border-gray-700/30 bg-gray-900/40 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
+              <aside className="w-full md:w-60 lg:w-72 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-900/40 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
                 <LevelPreview timerState={timer.timerState} levels={config.levels} />
                 {config.chips.enabled && (
                   <ChipSidebar
@@ -1109,13 +1111,14 @@ function App() {
                 />
                 <button
                   onClick={handleExitToSetup}
-                  className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-sm transition-colors"
+                  className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-colors"
                 >
                   {t('app.backToSetup')}
                 </button>
               </aside>
             )}
           </div>
+          </Suspense>
         )}
       </main>
 
@@ -1130,14 +1133,14 @@ function App() {
 
       {/* Confirm Action Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-labelledby="confirm-title" className="bg-gray-900/95 border border-gray-700/50 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl shadow-black/40 animate-scale-in">
-            <h3 id="confirm-title" className="text-lg font-bold text-white">{confirmAction.title}</h3>
-            <p className="text-gray-400 text-sm">{confirmAction.message}</p>
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div ref={confirmDialogRef} role="dialog" aria-modal="true" aria-labelledby="confirm-title" className="bg-white/95 dark:bg-gray-900/95 border border-gray-300 dark:border-gray-700/50 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl shadow-gray-300/40 dark:shadow-black/40 animate-scale-in">
+            <h3 id="confirm-title" className="text-lg font-bold text-gray-900 dark:text-white">{confirmAction.title}</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">{confirmAction.message}</p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="px-4 py-2 bg-gray-800/60 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-all duration-200 border border-gray-700/40"
+                className="px-4 py-2 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40"
               >
                 {t('app.cancel')}
               </button>

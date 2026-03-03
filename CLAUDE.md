@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.9.1
+**Version**: 2.0.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -14,8 +14,8 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 - **Tailwind CSS 4** — utility-first styling via Vite plugin (no separate CSS files)
 - **Vitest** — unit testing with `@testing-library/react` and `jsdom`
 - **ESLint 9** — flat config with typescript-eslint, react-hooks, react-refresh plugins
-- **No external state library** — React hooks + props + Context (i18n only)
-- **No CSS-in-JS** — pure Tailwind utility classes + custom `@keyframes`, `@utility`, range slider styling, and body gradient in `index.css`
+- **No external state library** — React hooks + props + Context (i18n, theme)
+- **No CSS-in-JS** — pure Tailwind utility classes + custom `@keyframes`, `@utility`, CSS custom properties, and body gradient in `index.css`
 
 ## Commands
 
@@ -35,12 +35,13 @@ npm run preview      # Preview production build locally
 ```
 src/
 ├── App.tsx                      # Root component: setup/game mode switching, central state
-├── main.tsx                     # React entry point, wraps app in LanguageProvider
-├── index.css                    # Tailwind base imports, @keyframes animations, @utility classes, body gradient
+├── main.tsx                     # React entry point, wraps app in ThemeProvider + LanguageProvider
+├── index.css                    # Tailwind base imports, @keyframes animations, @utility classes, CSS custom properties, body gradient
 ├── components/                  # UI components (one export per file)
 │   ├── AddOnEditor.tsx          # Add-On config (requires Rebuy, auto-disable)
 │   ├── BlindGenerator.tsx       # Blind structure generator (3 speeds, chip-aware)
 │   ├── BountyEditor.tsx         # Bounty amount configuration
+│   ├── ChevronIcon.tsx          # Reusable SVG chevron with rotation animation
 │   ├── ChipEditor.tsx           # Chip denomination management, editable color-up schedule
 │   ├── ChipSidebar.tsx          # Game-mode chip info, next color-up display
 │   ├── CollapsibleSection.tsx   # Reusable collapsible card for setup sections
@@ -49,6 +50,7 @@ src/
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
 │   ├── LevelPreview.tsx         # Next-level sidebar
+│   ├── NumberStepper.tsx        # Custom +/- stepper with long-press support
 │   ├── PayoutEditor.tsx         # Prize distribution config
 │   ├── PlayerManager.tsx        # Add/edit/delete/seat players with drag & drop
 │   ├── PlayerPanel.tsx          # Active players, elimination, bounty tracking
@@ -57,6 +59,7 @@ src/
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
 │   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen
 │   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
+│   ├── ThemeSwitcher.tsx        # System/Light/Dark 3-way toggle
 │   ├── TimerDisplay.tsx         # Main timer, blinds display, progress bar
 │   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
@@ -66,11 +69,16 @@ src/
 │   └── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 ├── hooks/
 │   └── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
+├── theme/                       # Dark/Light mode system
+│   ├── index.ts                 # Public re-exports
+│   ├── ThemeContext.tsx          # React Context provider, system preference listener, localStorage persistence
+│   ├── themeContextValue.ts     # Context value type + ThemeMode type
+│   └── useTheme.ts              # Hook: mode, setMode, resolved
 └── i18n/                        # Lightweight custom i18n (no react-i18next)
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~450+ keys)
+    ├── translations.ts          # DE/EN translation strings (~460+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
@@ -88,8 +96,8 @@ public/
 - **App.tsx** owns all tournament state (config, settings, mode) via `useState`
 - **useTimer** hook manages timer state with drift-free wall-clock computation
 - **Props drilling** for passing state and callbacks to child components
-- **React Context** used only for i18n (language selection)
-- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`
+- **React Context** for i18n (language selection) and theme (dark/light mode)
+- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`
 
 ### Component Conventions
 - Functional components with hooks only (no class components)
@@ -112,13 +120,16 @@ public/
 
 ### Styling
 - Tailwind utility classes + custom `@keyframes` and `@utility` in `index.css` — no CSS modules, no CSS-in-JS
-- Dark theme: `#0a0a0f` body with subtle emerald radial-gradient, `gray-800/40` glassmorphic panels
+- **Dark/Light mode**: `@custom-variant dark (&:is(.dark *))` in `index.css`; class-based via `.dark` on `<html>`; every component uses `dark:` variants (e.g., `bg-gray-100/80 dark:bg-gray-800/40`)
+- Light theme: `#f9fafb` body, `#111827` text. Dark theme: `#0a0a0f` body with subtle emerald radial-gradient, `#e5e7eb` text
+- CSS custom properties: `--timer-glow-color` / `--timer-glow-color-strong` for theme-aware animation colors
 - Color palette: emerald (active/success), amber (breaks/warnings), red (danger/elimination)
-- Glassmorphism: `backdrop-blur-sm`, soft shadows (`shadow-lg shadow-black/20`), semi-transparent backgrounds
+- Glassmorphism: `backdrop-blur-sm`, soft shadows (`shadow-lg shadow-gray-300/30 dark:shadow-black/20`), semi-transparent backgrounds
 - Buttons: `bg-gradient-to-b` for tactile feel, `active:scale-[0.97]` feedback, `shadow-lg` depth
 - Animations: `animate-fade-in` (content), `animate-timer-glow` (running timer), `animate-countdown-pulse`, `animate-scale-in` (modals), `animate-bubble-pulse`/`animate-itm-flash`/`animate-addon-pulse`
-- Design system hierarchy: Rounding (`rounded-2xl` > `rounded-xl` > `rounded-lg` > `rounded-md`), borders (`border-gray-700/40` standard, `/50` hover, `/30` sidebar), focus (`ring-2 ring-emerald-500/25`)
-- Inputs: Global pattern — `bg-gray-800/80`, `border-gray-700/60`, `focus:ring-2 focus:ring-emerald-500/25`, `rounded-lg`
+- Design system hierarchy: Rounding (`rounded-2xl` > `rounded-xl` > `rounded-lg` > `rounded-md`), borders (`border-gray-200 dark:border-gray-700/40` standard), focus (`ring-2 ring-emerald-500/25`)
+- Inputs: Global pattern — `bg-white dark:bg-gray-800/80`, `border-gray-300 dark:border-gray-700/60`, `focus:ring-2 focus:ring-emerald-500/25`, `rounded-lg`
+- NumberStepper: Custom `+`/`-` buttons with long-press support (400ms delay, 100ms repeat), replaces native number input spinners
 - Scrub slider: Custom `ScrubSlider` component in `TimerDisplay.tsx` — mirrors progress bar styling (emerald/amber gradient, glow thumb, pointer events for drag)
 - Responsive: mobile-first, `sm:` and `lg:` breakpoints, flex layouts
 - No component library (fully custom UI)
@@ -150,7 +161,11 @@ public/
 - **Auto-start on level jump**: Timer automatically starts when pressing Next/Previous level
 - **Bubble detection**: `isBubble()` and `isInTheMoney()` based on active players vs paid places; `BubbleIndicator` also shows Add-On announcement banner (amber, center-screen) when rebuy phase ends
 - **Tournament stats**: Live display of players, prizepool, avg stack in BB, elapsed/remaining time
-- **Screenshot/share**: `html-to-image` capture → Web Share API (mobile) or PNG download (desktop)
+- **Dark/Light mode**: 3-way toggle (System/Light/Dark) in header; `ThemeProvider` manages mode + system preference listener + `dark` class on `<html>`; `useTheme()` hook; `poker-timer-theme` in localStorage; PWA `theme-color` meta tag updated dynamically
+- **Code splitting**: Game-mode components lazy-loaded via `React.lazy()` + `Suspense`; `html-to-image` dynamically imported only when capturing screenshots; main bundle ~302KB + ~30KB game chunks
+- **SVG Chevrons**: `ChevronIcon` component with CSS rotation animation replaces Unicode triangles for collapsible sections
+- **NumberStepper**: Custom `+`/`-` stepper component replaces native number input spinners; long-press support via pointer events (400ms delay, 100ms repeat); optional `snap` function; used across all numeric inputs in setup
+- **Screenshot/share**: `html-to-image` (dynamic import) capture → Web Share API (mobile) or PNG download (desktop); theme-aware background color
 - **PWA**: `vite-plugin-pwa` with auto-update service worker, installable on mobile/desktop
 - **Wake Lock**: Screen stays on during active tournament (Wake Lock API, re-acquired on tab focus)
 - **Cross-device compatibility**: Safe area insets (notch/gesture-bar), `100dvh` viewport height, `inputmode="numeric"` on all number inputs, webkit fullscreen prefix, localStorage try-catch for private browsing, tablet breakpoint (`md:` at 768px), touch targets ≥32px
@@ -197,6 +212,15 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.0.0 — Dark/Light Mode, SVG-Chevrons, NumberStepper & Performance
+
+- **Dark/Light Mode**: Vollständiges Theming mit 3-Wege-Toggle (System/Hell/Dunkel). `ThemeProvider` mit System-Preference-Listener, `useTheme()` Hook, `@custom-variant dark` in Tailwind 4, `dark:` Varianten auf allen 24+ Komponenten. PWA `theme-color` dynamisch. CSS Custom Properties für theme-aware Timer-Glow-Animation. Screenshot-Hintergrund passt sich dem Theme an.
+- **SVG-Chevrons**: Neue `ChevronIcon`-Komponente ersetzt Unicode-Dreiecke — `w-4 h-4`, `strokeWidth={2.5}`, CSS-Rotation-Animation, `group-hover`-Farbwechsel. Verwendet in CollapsibleSection, CollapsibleSubSection, ChipSidebar, TemplateManager, TournamentFinished.
+- **NumberStepper**: Neue Komponente ersetzt native Browser-Spinner — Custom `+`/`-` Buttons mit Long-Press-Support (400ms Delay, 100ms Repeat), optionale `snap`-Funktion, konfigurierbares min/max/step. Verwendet in App.tsx, PlayerManager, ConfigEditor, RebuyEditor, AddOnEditor, BountyEditor, PayoutEditor, ChipEditor.
+- **Performance**: Game-Mode-Komponenten (10 Stück) per `React.lazy()` + `Suspense` lazy-loaded. `html-to-image` dynamisch importiert. Haupt-Bundle von 341KB auf 302KB reduziert + ~30KB Game-Chunks.
+- **Neue Dateien**: `ChevronIcon.tsx`, `NumberStepper.tsx`, `ThemeSwitcher.tsx`, `src/theme/` (ThemeContext, useTheme, themeContextValue, index)
+- **3 neue Translation-Keys**: `theme.system`, `theme.light`, `theme.dark` (DE + EN)
 
 ### v1.9.1 — Scrub-Slider Redesign & Add-On-Ankündigung
 

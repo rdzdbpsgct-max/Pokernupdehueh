@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { AddOnConfig } from '../domain/types';
 import { snapSpinnerValue } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { NumberStepper } from './NumberStepper';
 
 interface Props {
   addOn: AddOnConfig;
@@ -51,7 +52,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           addOn.enabled
             ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
-            : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+            : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
       >
         {addOn.enabled ? t('addOnEditor.enabled') : t('addOnEditor.disabled')}
@@ -66,7 +67,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
           <div className="flex gap-2">
             <button
               onClick={() => setShowRebuyHint(false)}
-              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium transition-colors"
+              className="flex-1 px-2 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg text-xs font-medium transition-colors"
             >
               {t('app.cancel')}
             </button>
@@ -83,38 +84,31 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
       {/* Settings (only when enabled) */}
       {addOn.enabled && (
         <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
-          <p className="text-xs text-gray-500">{t('addOnEditor.description')}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">{t('addOnEditor.description')}</p>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">{t('addOnEditor.cost')}</label>
-              <input
-                type="number"
-                inputMode="numeric"
+              <label className="text-sm text-gray-700 dark:text-gray-300">{t('addOnEditor.cost')}</label>
+              <NumberStepper
+                value={addOn.cost}
+                onChange={(v) => onChange({ ...addOn, cost: Math.max(1, v) })}
                 min={1}
                 step={1}
-                value={addOn.cost}
-                onChange={(e) =>
-                  onChange({ ...addOn, cost: Math.max(1, Number(e.target.value)) })
-                }
-                className="w-20 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
-              <span className="text-gray-500 text-xs">{t('unit.eur')}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs">{t('unit.eur')}</span>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">{t('addOnEditor.chips')}</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1000}
+              <label className="text-sm text-gray-700 dark:text-gray-300">{t('addOnEditor.chips')}</label>
+              <NumberStepper
                 value={addOn.chips}
-                onChange={(e) => {
-                  const val = snapSpinnerValue(Number(e.target.value), addOn.chips, 1000);
+                onChange={(raw) => {
+                  const val = snapSpinnerValue(raw, addOn.chips, 1000);
                   onChange({ ...addOn, chips: val });
                 }}
-                className="w-24 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                min={1}
+                step={1000}
+                inputClassName="w-24"
               />
-              <span className="text-gray-500 text-xs">{t('unit.chips')}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs">{t('unit.chips')}</span>
             </div>
           </div>
         </div>

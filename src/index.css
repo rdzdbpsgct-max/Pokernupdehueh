@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 /* === Animations === */
 
 @keyframes fade-in {
@@ -8,8 +10,8 @@
 }
 
 @keyframes timer-glow {
-  0%, 100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.15); }
-  50%      { text-shadow: 0 0 40px rgba(255, 255, 255, 0.3); }
+  0%, 100% { text-shadow: 0 0 20px var(--timer-glow-color, rgba(255, 255, 255, 0.15)); }
+  50%      { text-shadow: 0 0 40px var(--timer-glow-color-strong, rgba(255, 255, 255, 0.3)); }
 }
 
 @keyframes countdown-pulse {
@@ -85,6 +87,18 @@
   animation: slide-in-right 0.2s ease-out;
 }
 
+/* === Theme Variables === */
+
+:root {
+  --timer-glow-color: rgba(0, 0, 0, 0.1);
+  --timer-glow-color-strong: rgba(0, 0, 0, 0.2);
+}
+
+.dark {
+  --timer-glow-color: rgba(255, 255, 255, 0.15);
+  --timer-glow-color-strong: rgba(255, 255, 255, 0.3);
+}
+
 /* === Global Styles === */
 
 html, body, #root {
@@ -95,13 +109,18 @@ html, body, #root {
 }
 
 body {
+  background-color: #f9fafb;
+  color: #111827;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.dark body {
   background-color: #0a0a0f;
   background-image:
     radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
     radial-gradient(ellipse at 80% 100%, rgba(16, 185, 129, 0.02) 0%, transparent 40%);
   color: #e5e7eb;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 /* Custom scrollbar */
@@ -112,9 +131,25 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: #d1d5db;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
+}
+
+/* Hide native number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }

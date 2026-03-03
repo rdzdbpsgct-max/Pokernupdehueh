@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Level, TournamentConfig } from '../domain/types';
 import { generateId, validateConfig, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { NumberStepper } from './NumberStepper';
 
 interface Props {
   config: TournamentConfig;
@@ -111,17 +112,16 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
 
       {/* Global duration controls */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 border border-gray-700/40 rounded-lg">
-          <label className="text-gray-400 text-xs whitespace-nowrap">{t('config.allLevels')}</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
+        <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/40 rounded-lg">
+          <label className="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">{t('config.allLevels')}</label>
+          <NumberStepper
             value={globalMinutes}
-            onChange={(e) => setGlobalMinutes(Math.max(1, Number(e.target.value)))}
-            className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+            onChange={(v) => setGlobalMinutes(Math.max(1, v))}
+            min={1}
+            step={1}
+            inputClassName="w-16"
           />
-          <span className="text-gray-500 text-xs">{t('config.min')}</span>
+          <span className="text-gray-400 dark:text-gray-500 text-xs">{t('config.min')}</span>
           <button
             onClick={applyGlobalDuration}
             className="px-3 py-1 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded text-xs font-medium transition-colors"
@@ -131,15 +131,14 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
           <label className="text-amber-400/70 text-xs whitespace-nowrap">{t('config.allBreaks')}</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
+          <NumberStepper
             value={globalBreakMinutes}
-            onChange={(e) => setGlobalBreakMinutes(Math.max(1, Number(e.target.value)))}
-            className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/25 transition-all duration-200"
+            onChange={(v) => setGlobalBreakMinutes(Math.max(1, v))}
+            min={1}
+            step={1}
+            inputClassName="w-16"
           />
-          <span className="text-gray-500 text-xs">{t('config.min')}</span>
+          <span className="text-gray-400 dark:text-gray-500 text-xs">{t('config.min')}</span>
           <button
             onClick={applyGlobalBreakDuration}
             className="px-3 py-1 bg-amber-800 hover:bg-amber-700 text-amber-200 rounded text-xs font-medium transition-colors"
@@ -154,14 +153,14 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
         {config.levels.map((level, i) => (
           <div
             key={level.id}
-            className={`flex flex-wrap items-center gap-2 p-3 rounded-lg border hover:bg-gray-800/30 transition-colors ${
+            className={`flex flex-wrap items-center gap-2 p-3 rounded-lg border hover:bg-gray-200/30 dark:hover:bg-gray-800/30 transition-colors ${
               level.type === 'break'
                 ? 'bg-amber-900/15 border-amber-800/60'
-                : 'bg-gray-800/40 border-gray-700/40'
+                : 'bg-gray-100/80 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700/40'
             }`}
           >
             {/* Index */}
-            <span className="text-gray-500 text-xs w-6 text-center">{i + 1}</span>
+            <span className="text-gray-400 dark:text-gray-500 text-xs w-6 text-center">{i + 1}</span>
 
             {/* Type badge */}
             <span
@@ -176,55 +175,51 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
 
             {/* Duration */}
             <div className="flex items-center gap-1">
-              <label className="text-gray-500 text-xs">{t('config.min')}:</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
+              <label className="text-gray-400 dark:text-gray-500 text-xs">{t('config.min')}:</label>
+              <NumberStepper
                 value={Math.round(level.durationSeconds / 60)}
-                onChange={(e) =>
-                  updateLevel(i, { durationSeconds: Math.max(60, Number(e.target.value) * 60) })
+                onChange={(v) =>
+                  updateLevel(i, { durationSeconds: Math.max(60, v * 60) })
                 }
-                className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                min={1}
+                step={1}
+                inputClassName="w-16"
               />
-              <span className="text-gray-600 text-xs font-mono">{formatTime(level.durationSeconds)}</span>
+              <span className="text-gray-300 dark:text-gray-600 text-xs font-mono">{formatTime(level.durationSeconds)}</span>
             </div>
 
             {/* Blinds (only for level type) */}
             {level.type === 'level' && (
               <>
                 <div className="flex items-center gap-1">
-                  <label className="text-gray-500 text-xs">SB:</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
+                  <label className="text-gray-400 dark:text-gray-500 text-xs">SB:</label>
+                  <NumberStepper
                     value={level.smallBlind ?? 0}
-                    onChange={(e) => updateLevel(i, { smallBlind: Number(e.target.value) })}
-                    className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                    onChange={(v) => updateLevel(i, { smallBlind: v })}
+                    min={1}
+                    step={1}
+                    inputClassName="w-20"
                   />
                 </div>
                 <div className="flex items-center gap-1">
-                  <label className="text-gray-500 text-xs">BB:</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
+                  <label className="text-gray-400 dark:text-gray-500 text-xs">BB:</label>
+                  <NumberStepper
                     value={level.bigBlind ?? 0}
-                    onChange={(e) => updateLevel(i, { bigBlind: Number(e.target.value) })}
-                    className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                    onChange={(v) => updateLevel(i, { bigBlind: v })}
+                    min={1}
+                    step={1}
+                    inputClassName="w-20"
                   />
                 </div>
                 {anteEnabled && (
                   <div className="flex items-center gap-1">
-                    <label className="text-gray-500 text-xs">{t('timer.ante')}:</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
+                    <label className="text-gray-400 dark:text-gray-500 text-xs">{t('timer.ante')}:</label>
+                    <NumberStepper
                       value={level.ante ?? 0}
-                      onChange={(e) => updateLevel(i, { ante: Number(e.target.value) })}
-                      className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                      onChange={(v) => updateLevel(i, { ante: v })}
+                      min={0}
+                      step={1}
+                      inputClassName="w-20"
                     />
                   </div>
                 )}
@@ -234,12 +229,12 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             {/* Break label */}
             {level.type === 'break' && (
               <div className="flex items-center gap-1">
-                <label className="text-gray-500 text-xs">{t('config.label')}</label>
+                <label className="text-gray-400 dark:text-gray-500 text-xs">{t('config.label')}</label>
                 <input
                   type="text"
                   value={level.label ?? t('logic.defaultBreakLabel')}
                   onChange={(e) => updateLevel(i, { label: e.target.value })}
-                  className="w-24 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                  className="w-24 px-2 py-1 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-600/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
                 />
               </div>
             )}
@@ -249,7 +244,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               <button
                 onClick={() => moveLevel(i, -1)}
                 disabled={i === 0}
-                className="p-1 text-gray-500 hover:text-white disabled:opacity-30 text-xs"
+                className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 text-xs"
                 title={t('config.moveUp')}
               >
                 ▲
@@ -257,14 +252,14 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               <button
                 onClick={() => moveLevel(i, 1)}
                 disabled={i === config.levels.length - 1}
-                className="p-1 text-gray-500 hover:text-white disabled:opacity-30 text-xs"
+                className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 text-xs"
                 title={t('config.moveDown')}
               >
                 ▼
               </button>
               <button
                 onClick={() => duplicateLevel(i)}
-                className="p-1 text-gray-500 hover:text-blue-400 text-xs"
+                className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-400 text-xs"
                 title={t('config.duplicate')}
               >
                 ⧉
@@ -272,7 +267,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               <button
                 onClick={() => removeLevel(i)}
                 disabled={config.levels.length <= 1}
-                className="p-1 text-gray-500 hover:text-red-400 disabled:opacity-30 text-xs"
+                className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-400 disabled:opacity-30 text-xs"
                 title={t('config.delete')}
               >
                 ✕

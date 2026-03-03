@@ -6,7 +6,7 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-1.9.1-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Tests](https://img.shields.io/badge/Tests-187%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
@@ -26,6 +26,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 - **Chip-Management** mit Color-Up Plan und Chip-Blind-Kompatibilitätsprüfung
 - **Turnier-Vorlagen** speichern/laden (Browser + Datei-Export/Import)
 - **Live-Statistiken** mit Bubble-Anzeige und In-The-Money-Erkennung
+- **Dark/Light Mode** — 3-Wege-Umschalter (System/Hell/Dunkel)
 - **Mobilfreundlich** und offline nutzbar (PWA, kein Backend nötig)
 
 ### Verwendung
@@ -74,8 +75,9 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Barrierefreiheit | ARIA-Labels, Dialog-Rollen, Auto-Fokus, Escape-zum-Schließen |
 | Kompatibilität | Safe Area Insets, dynamische Viewport-Höhe, optimierte Touch-Targets, numerische Tastatur, Tablet-Layout |
 | Usability | Aufklappbare Sektionen mit Summary-Badges, ausklappbare Blindstruktur, Sticky Start-Button auf Mobile |
+| Dark/Light Mode | 3-Wege-Umschalter (System/Hell/Dunkel), folgt Systemeinstellung, merkt sich Auswahl |
 | Premium UI | Glassmorphism, Gradient-Buttons, Timer-Glow, benutzerdefinierte Animationen, taktile Interaktionen |
-| Design-System | Einheitliche Abrundungen, Border-Opacities, Focus-Glow, Range-Slider, Card-Hover, Tabellen-Hover |
+| Design-System | Einheitliche Abrundungen, Border-Opacities, Focus-Glow, Custom Number-Stepper, SVG-Chevrons |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
 
 ### Mitwirken
@@ -102,6 +104,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 - **Chip management** with color-up schedule and blind-chip compatibility check
 - **Tournament templates** save/load (browser + file export/import)
 - **Live statistics** with bubble indicator and in-the-money detection
+- **Dark/Light mode** — 3-way toggle (System/Light/Dark)
 - **Mobile-friendly** and works offline (PWA, no backend needed)
 
 ### Usage
@@ -150,8 +153,9 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Accessibility | ARIA labels, dialog roles, auto-focus, escape-to-close |
 | Compatibility | Safe area insets, dynamic viewport height, optimized touch targets, numeric keyboard, tablet layout |
 | Usability | Collapsible sections with summary badges, collapsible blind structure, sticky start button on mobile |
+| Dark/Light mode | 3-way toggle (System/Light/Dark), follows system preference, remembers selection |
 | Premium UI | Glassmorphism, gradient buttons, timer glow, custom animations, tactile interactions |
-| Design system | Unified rounding, border opacities, focus glow, range slider, card hover, table hover |
+| Design system | Unified rounding, border opacities, focus glow, custom number stepper, SVG chevrons |
 | Validation | Input validation before tournament start with clear error messages |
 
 ### Contributing
@@ -229,8 +233,13 @@ src/
     sounds.ts           # Web Audio API Sounds (Beeps, Melodien)
   hooks/
     useTimer.ts         # Timer-Hook (drift-free, shared AudioContext)
+  theme/
+    ThemeContext.tsx     # Dark/Light Mode Provider
+    useTheme.ts         # useTheme() Hook
+    themeContextValue.ts # Context + Types
+    index.ts            # Barrel-Export
   i18n/
-    translations.ts     # DE/EN Übersetzungen / Translations (~300 Keys)
+    translations.ts     # DE/EN Übersetzungen / Translations (~460 Keys)
     LanguageContext.tsx  # React Context Provider
     useTranslation.ts   # useTranslation() Hook
     index.ts            # Barrel-Export
@@ -253,8 +262,11 @@ src/
     TournamentFinished.tsx # Ergebnisse & Screenshot / Results & screenshot
     SettingsPanel.tsx    # Einstellungen / Settings (custom checkboxes)
     Controls.tsx         # Start/Pause/Next/Prev/Reset
-    LanguageSwitcher.tsx # DE/EN-Umschalter / Language toggle
-    LevelPreview.tsx     # Level-Vorschau / Level preview
+    ChevronIcon.tsx      # SVG-Chevron mit Animation / SVG chevron with animation
+    NumberStepper.tsx     # Custom +/- Stepper mit Long-Press / Custom +/- stepper with long-press
+    ThemeSwitcher.tsx     # Dark/Light Mode Toggle
+    LanguageSwitcher.tsx  # DE/EN-Umschalter / Language toggle
+    LevelPreview.tsx      # Level-Vorschau / Level preview
     RebuyStatus.tsx      # Rebuy-Anzeige / Rebuy indicator
 tests/
   logic.test.ts         # 187 Unit-Tests
@@ -266,7 +278,8 @@ tests/
 - **Domain/UI-Trennung / Separation** — `domain/` enthält reine, testbare Funktionen / contains pure, testable functions
 - **Eigenes i18n-System / Custom i18n** — Leichtgewichtiger React Context (~300 Keys), kein react-i18next / Lightweight React Context, no react-i18next
 - **Shared AudioContext** — Alle Sounds teilen einen AudioContext, initialisiert aus User-Geste (Safari-kompatibel) / All sounds share one AudioContext, initialized from user gesture (Safari-compatible)
-- **Keine externen State-Libraries / No external state libraries** — React Hooks + Props + Context (nur i18n) / Only React hooks + props + Context (i18n only)
+- **Dark/Light Mode** — `ThemeProvider` + `useTheme()` Hook, 3-Wege-Toggle (System/Hell/Dunkel), `prefers-color-scheme` Listener, Tailwind `dark:`-Varianten / `ThemeProvider` + `useTheme()` hook, 3-way toggle (System/Light/Dark), `prefers-color-scheme` listener, Tailwind `dark:` variants
+- **Keine externen State-Libraries / No external state libraries** — React Hooks + Props + Context (i18n + Theme) / Only React hooks + props + Context (i18n + theme)
 - **Sound via Web Audio API** — Keine externen Audio-Dateien / No external audio files
 - **PWA** — Offline-fähig, installierbar / Offline-capable, installable
 - **Backward-Kompatibilität / Backward compatibility** — Alte localStorage-Daten werden mit Defaults ergänzt / Old localStorage data is augmented with defaults

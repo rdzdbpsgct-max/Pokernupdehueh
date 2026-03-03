@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ChipConfig, ChipDenomination, Level } from '../domain/types';
 import { getRemovedDenomIds, getNextColorUpLevel } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { ChevronIcon } from './ChevronIcon';
 
 interface Props {
   chipConfig: ChipConfig;
@@ -25,10 +26,10 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
         onClick={() => setCollapsed((v) => !v)}
         className="flex items-center justify-between w-full text-left"
       >
-        <h3 className="text-xs text-gray-500 uppercase tracking-wider">
+        <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
           {t('chipSidebar.title')}
         </h3>
-        <span className="text-gray-500 text-xs">{collapsed ? '▸' : '▾'}</span>
+        <ChevronIcon open={!collapsed} className="text-gray-500 dark:text-gray-400" />
       </button>
 
       {!collapsed && (
@@ -39,25 +40,25 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
               <div
                 key={denom.id}
                 className={`flex items-center gap-2 px-2 py-1 rounded-lg text-sm ${
-                  isRemoved ? 'opacity-40' : 'bg-gray-800/40 border border-gray-700/20'
+                  isRemoved ? 'opacity-40' : 'bg-gray-100/80 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/20'
                 }`}
               >
                 <span
                   className={`w-4 h-4 rounded-full shrink-0 border ${
-                    isRemoved ? 'border-gray-600' : 'border-gray-500'
+                    isRemoved ? 'border-gray-300 dark:border-gray-600' : 'border-gray-400 dark:border-gray-500'
                   }`}
                   style={{ backgroundColor: denom.color }}
                 />
                 <span
                   className={`flex-1 ${
-                    isRemoved ? 'line-through text-gray-500' : 'text-gray-300'
+                    isRemoved ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   {denom.label}
                 </span>
                 <span
                   className={`font-mono text-xs ${
-                    isRemoved ? 'line-through text-gray-600' : 'text-gray-400'
+                    isRemoved ? 'line-through text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400'
                   }`}
                 >
                   {denom.value.toLocaleString()}
@@ -69,7 +70,7 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
 
           {/* Next color-up info (only when color-up is enabled) */}
           {chipConfig.colorUpEnabled && (
-            <div className="pt-1 border-t border-gray-700/40 mt-2">
+            <div className="pt-1 border-t border-gray-200 dark:border-gray-700/40 mt-2">
               {nextColorUpLevel !== null ? (
                 <div className="text-xs text-amber-400/80">
                   <span className="font-medium">{t('chipSidebar.nextColorUp')}: </span>
@@ -93,7 +94,7 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
                   })()}
                 </div>
               ) : (
-                <p className="text-xs text-gray-500">{t('chipSidebar.noMore')}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t('chipSidebar.noMore')}</p>
               )}
             </div>
           )}

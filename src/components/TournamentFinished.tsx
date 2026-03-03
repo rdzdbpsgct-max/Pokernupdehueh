@@ -2,7 +2,8 @@ import { useState, useRef, useCallback } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
 import { useTranslation } from '../i18n';
-import { toPng } from 'html-to-image';
+import { useTheme } from '../theme';
+import { ChevronIcon } from './ChevronIcon';
 
 interface Props {
   players: Player[];
@@ -26,6 +27,7 @@ export function TournamentFinished({
   onBackToSetup,
 }: Props) {
   const { t } = useTranslation();
+  const { resolved: theme } = useTheme();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -34,8 +36,9 @@ export function TournamentFinished({
     if (!resultsRef.current || capturing) return;
     setCapturing(true);
     try {
+      const { toPng } = await import('html-to-image');
       const dataUrl = await toPng(resultsRef.current, {
-        backgroundColor: '#111827',
+        backgroundColor: theme === 'dark' ? '#111827' : '#f9fafb',
         pixelRatio: 2,
       });
 
@@ -64,7 +67,7 @@ export function TournamentFinished({
     } finally {
       setCapturing(false);
     }
-  }, [capturing, t]);
+  }, [capturing, t, theme]);
   const totalRebuys = computeTotalRebuys(players);
   const totalAddOns = computeTotalAddOns(players);
   const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.enabled ? addOn.cost : 0);
@@ -91,9 +94,9 @@ export function TournamentFinished({
 
   const placeColor = (place: number) => {
     if (place === 1) return 'text-amber-400';
-    if (place === 2) return 'text-gray-300';
+    if (place === 2) return 'text-gray-700 dark:text-gray-300';
     if (place === 3) return 'text-amber-700';
-    return 'text-gray-500';
+    return 'text-gray-400 dark:text-gray-500';
   };
 
   const placeLabel = (place: number) => `${place}.`;
@@ -109,7 +112,7 @@ export function TournamentFinished({
           <p className="text-emerald-400 text-lg font-medium tracking-wide">
             {t('finished.congratulations')}
           </p>
-          <p className="text-4xl font-bold text-white">
+          <p className="text-4xl font-bold text-gray-900 dark:text-white">
             {winner.name}
           </p>
           <p className="text-amber-400/70 text-sm uppercase tracking-widest">
@@ -120,17 +123,20 @@ export function TournamentFinished({
         {/* Standings / Ergebnis */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs text-gray-500 uppercase tracking-wider">
+            <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               {t('finished.results')}
             </h3>
             <button
               onClick={() => setDetailsExpanded((prev) => !prev)}
               className="text-xs px-3 py-1 rounded-lg transition-colors text-amber-400 border border-amber-500/40 hover:bg-amber-500/10"
             >
-              {detailsExpanded ? `▲ ${t('finished.collapse')}` : `▼ ${t('finished.expand')}`}
+              <span className="flex items-center gap-1">
+                <ChevronIcon open={detailsExpanded} className="w-3 h-3" />
+                {detailsExpanded ? t('finished.collapse') : t('finished.expand')}
+              </span>
             </button>
           </div>
-          <div className="bg-gray-900/50 border border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-black/20">
+          <div className="bg-gray-50/90 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-gray-300/30 dark:shadow-black/20">
             {standings.map((player, idx) => {
               const isPaid = payoutMap.has(player.finalPlace);
               const amount = payoutMap.get(player.finalPlace);
@@ -147,14 +153,14 @@ export function TournamentFinished({
               return (
                 <div key={player.id}>
                   {showDivider && (
-                    <div className="border-t border-gray-700 mx-3" />
+                    <div className="border-t border-gray-300 dark:border-gray-700 mx-3" />
                   )}
                   <div
-                    className={`px-4 py-2.5 border-b border-gray-800/30 hover:bg-gray-800/40 transition-colors ${
+                    className={`px-4 py-2.5 border-b border-gray-200 dark:border-gray-800/30 hover:bg-gray-200/60 dark:hover:bg-gray-800/40 transition-colors ${
                       player.finalPlace === 1
                         ? 'bg-amber-900/25 border-l-2 border-l-amber-400'
                         : idx % 2 === 0
-                        ? 'bg-gray-800/30'
+                        ? 'bg-gray-100/50 dark:bg-gray-800/30'
                         : ''
                     }`}
                   >
@@ -170,7 +176,7 @@ export function TournamentFinished({
                         </span>
                         <span
                           className={`text-sm truncate ${
-                            isPaid ? 'text-white font-medium' : 'text-gray-500'
+                            isPaid ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-400 dark:text-gray-500'
                           }`}
                         >
                           {player.name}
@@ -187,28 +193,28 @@ export function TournamentFinished({
                       <div className="ml-9 mt-1 space-y-0.5">
                         {/* Buy-In */}
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">{t('finished.buyIn')}</span>
-                          <span className="text-gray-400">{buyIn.toFixed(2)} {t('unit.eur')}</span>
+                          <span className="text-gray-400 dark:text-gray-500">{t('finished.buyIn')}</span>
+                          <span className="text-gray-500 dark:text-gray-400">{buyIn.toFixed(2)} {t('unit.eur')}</span>
                         </div>
                         {/* Rebuys */}
                         {player.rebuys > 0 && (
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-500">{t('finished.rebuys')} ({player.rebuys}×)</span>
-                            <span className="text-gray-400">{(player.rebuys * rebuyCost).toFixed(2)} {t('unit.eur')}</span>
+                            <span className="text-gray-400 dark:text-gray-500">{t('finished.rebuys')} ({player.rebuys}×)</span>
+                            <span className="text-gray-500 dark:text-gray-400">{(player.rebuys * rebuyCost).toFixed(2)} {t('unit.eur')}</span>
                           </div>
                         )}
                         {/* Add-On */}
                         {addOn.enabled && player.addOn && (
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-500">{t('finished.addOn')}</span>
-                            <span className="text-gray-400">{addOn.cost.toFixed(2)} {t('unit.eur')}</span>
+                            <span className="text-gray-400 dark:text-gray-500">{t('finished.addOn')}</span>
+                            <span className="text-gray-500 dark:text-gray-400">{addOn.cost.toFixed(2)} {t('unit.eur')}</span>
                           </div>
                         )}
                         {/* Bounty paid */}
                         {bounty.enabled && (
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-500">{t('finished.bountyPaid')}</span>
-                            <span className="text-gray-400">{bounty.amount.toFixed(2)} {t('unit.eur')}</span>
+                            <span className="text-gray-400 dark:text-gray-500">{t('finished.bountyPaid')}</span>
+                            <span className="text-gray-500 dark:text-gray-400">{bounty.amount.toFixed(2)} {t('unit.eur')}</span>
                           </div>
                         )}
                         {/* Bounty earned */}
@@ -219,12 +225,12 @@ export function TournamentFinished({
                           </div>
                         )}
                         {/* Divider + Balance */}
-                        <div className="border-t border-gray-700/50 pt-0.5 mt-0.5">
+                        <div className="border-t border-gray-300 dark:border-gray-700/50 pt-0.5 mt-0.5">
                           <div className="flex justify-between text-xs font-semibold">
-                            <span className={netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-500'}>
+                            <span className={netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}>
                               {t('finished.balance')}
                             </span>
-                            <span className={netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-500'}>
+                            <span className={netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}>
                               {netBalance >= 0 ? '+' : ''}{netBalance.toFixed(2)} {t('unit.eur')}
                             </span>
                           </div>
@@ -241,19 +247,19 @@ export function TournamentFinished({
         {/* Bounty results */}
         {bounty.enabled && bountyResults.length > 0 && (
           <div>
-            <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+            <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
               {t('finished.bounty')}
             </h3>
-            <div className="bg-gray-900/50 border border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-black/20">
+            <div className="bg-gray-50/90 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-gray-300/30 dark:shadow-black/20">
               {bountyResults.map((player, idx) => (
                 <div
                   key={player.id}
-                  className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-800/30 hover:bg-gray-800/40 transition-colors ${
-                    idx % 2 === 0 ? 'bg-gray-800/30' : ''
+                  className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-800/30 hover:bg-gray-200/60 dark:hover:bg-gray-800/40 transition-colors ${
+                    idx % 2 === 0 ? 'bg-gray-100/50 dark:bg-gray-800/30' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="text-sm text-gray-200 truncate">
+                    <span className="text-sm text-gray-800 dark:text-gray-200 truncate">
                       {player.name}
                     </span>
                     <span className="text-xs text-amber-500/70 shrink-0">
@@ -265,8 +271,8 @@ export function TournamentFinished({
                   </span>
                 </div>
               ))}
-              <div className="border-t border-gray-700/40 px-4 py-2 flex justify-between">
-                <span className="text-xs text-gray-500">{t('finished.bountyPoolTotal')}</span>
+              <div className="border-t border-gray-200 dark:border-gray-700/40 px-4 py-2 flex justify-between">
+                <span className="text-xs text-gray-400 dark:text-gray-500">{t('finished.bountyPoolTotal')}</span>
                 <span className="text-xs text-amber-400/70 font-medium">
                   {(players.length * bounty.amount).toFixed(2)} {t('unit.eur')}
                 </span>
@@ -277,48 +283,48 @@ export function TournamentFinished({
 
         {/* Tournament info summary */}
         <div>
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+          <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
             {t('finished.tournamentInfo')}
           </h3>
-          <div className="bg-gray-900/50 border border-gray-700/40 rounded-xl px-4 py-3 space-y-1 shadow-lg shadow-black/20">
+          <div className="bg-gray-50/90 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/40 rounded-xl px-4 py-3 space-y-1 shadow-lg shadow-gray-300/30 dark:shadow-black/20">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">{t('finished.prizePool')}</span>
-              <span className="text-white font-medium">{prizePool.toFixed(2)} {t('unit.eur')}</span>
+              <span className="text-gray-500 dark:text-gray-400">{t('finished.prizePool')}</span>
+              <span className="text-gray-900 dark:text-white font-medium">{prizePool.toFixed(2)} {t('unit.eur')}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">{t('finished.players')}</span>
-              <span className="text-white">{players.length}</span>
+              <span className="text-gray-500 dark:text-gray-400">{t('finished.players')}</span>
+              <span className="text-gray-900 dark:text-white">{players.length}</span>
             </div>
             {totalRebuys > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">{t('finished.rebuys')}</span>
-                <span className="text-white">
+                <span className="text-gray-500 dark:text-gray-400">{t('finished.rebuys')}</span>
+                <span className="text-gray-900 dark:text-white">
                   {totalRebuys} &times; {rebuy.rebuyCost} {t('unit.eur')}
                 </span>
               </div>
             )}
             {totalAddOns > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">{t('finished.addOns')}</span>
-                <span className="text-white">
+                <span className="text-gray-500 dark:text-gray-400">{t('finished.addOns')}</span>
+                <span className="text-gray-900 dark:text-white">
                   {totalAddOns} &times; {addOn.cost} {t('unit.eur')}
                 </span>
               </div>
             )}
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">{t('finished.buyIn')}</span>
-              <span className="text-white">{buyIn} {t('unit.eur')}</span>
+              <span className="text-gray-500 dark:text-gray-400">{t('finished.buyIn')}</span>
+              <span className="text-gray-900 dark:text-white">{buyIn} {t('unit.eur')}</span>
             </div>
             {bounty.enabled && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">{t('finished.bountyLabel')}</span>
-                <span className="text-white">{bounty.amount} {t('unit.eur')} / KO</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('finished.bountyLabel')}</span>
+                <span className="text-gray-900 dark:text-white">{bounty.amount} {t('unit.eur')} / KO</span>
               </div>
             )}
             {maxPaidPlace > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">{t('finished.paidPlaces')}</span>
-                <span className="text-white">Top {maxPaidPlace}</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('finished.paidPlaces')}</span>
+                <span className="text-gray-900 dark:text-white">Top {maxPaidPlace}</span>
               </div>
             )}
           </div>
@@ -339,7 +345,7 @@ export function TournamentFinished({
         <div>
           <button
             onClick={onBackToSetup}
-            className="w-full px-6 py-3 bg-gray-700/80 hover:bg-gray-600 text-white rounded-xl text-lg font-medium transition-all duration-200 border border-gray-600/30"
+            className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl text-lg font-medium transition-all duration-200 border border-gray-200 dark:border-gray-600/30"
           >
             {t('finished.backToSetup')}
           </button>

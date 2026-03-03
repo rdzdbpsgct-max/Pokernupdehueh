@@ -62,14 +62,14 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
                 onClick={() => setSelectedSpeed(speed.key)}
                 className={`flex flex-col items-start px-3 py-2 rounded-lg text-left transition-colors flex-1 min-w-[100px] ${
                   isSelected
-                    ? 'bg-emerald-700/40 border border-emerald-500/60 text-white shadow-md shadow-emerald-900/20'
-                    : 'bg-gray-800/60 border border-gray-700/40 hover:border-gray-600/70 text-gray-300 hover:bg-gray-800/80'
+                    ? 'bg-emerald-700/40 border border-emerald-500/60 text-gray-900 dark:text-white shadow-md shadow-emerald-900/20'
+                    : 'bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/40 hover:border-gray-300 dark:hover:border-gray-600/70 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/80'
                 }`}
               >
                 <span className="text-sm font-medium">{speed.label}</span>
-                <span className="text-xs text-gray-400 mt-0.5">{speed.desc}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{speed.desc}</span>
                 {estimate && (
-                  <span className={`text-xs mt-1 ${isSelected ? 'text-emerald-300' : 'text-gray-500'}`}>
+                  <span className={`text-xs mt-1 ${isSelected ? 'text-emerald-300' : 'text-gray-400 dark:text-gray-500'}`}>
                     {formatDuration(estimate.totalSeconds)}
                   </span>
                 )}
@@ -79,13 +79,13 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
         </div>
 
         {/* Level count info */}
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-400 dark:text-gray-500">
           {t('blindGenerator.levels', { n: previewPlayLevels.length, b: previewBreaks.length })}
         </p>
 
         {/* Preview table */}
         <div>
-          <h4 className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+          <h4 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
             {t('blindGenerator.preview')}
           </h4>
           <div className="max-h-60 overflow-y-auto space-y-0.5">
@@ -111,18 +111,18 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
                 return (
                   <div
                     key={level.id || idx}
-                    className="flex items-center px-2 py-1 bg-gray-800/40 rounded-lg text-xs border border-gray-700/20"
+                    className="flex items-center px-2 py-1 bg-gray-100/80 dark:bg-gray-800/40 rounded-lg text-xs border border-gray-200 dark:border-gray-700/20"
                   >
-                    <span className="text-gray-500 w-12">L{playNum}</span>
-                    <span className="text-white font-mono">
+                    <span className="text-gray-400 dark:text-gray-500 w-12">L{playNum}</span>
+                    <span className="text-gray-900 dark:text-white font-mono">
                       {level.smallBlind}/{level.bigBlind}
                     </span>
                     {anteEnabled && level.ante != null && level.ante > 0 && (
-                      <span className="text-gray-500 ml-2">
+                      <span className="text-gray-400 dark:text-gray-500 ml-2">
                         (Ante {level.ante})
                       </span>
                     )}
-                    <span className="text-gray-500 ml-auto">
+                    <span className="text-gray-400 dark:text-gray-500 ml-auto">
                       {formatTime(level.durationSeconds)}
                     </span>
                   </div>

@@ -30,7 +30,7 @@ export function TournamentStats({
   const avgStackBB = computeAverageStackInBB(averageStack, currentBB);
 
   return (
-    <div className="w-full max-w-xl flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-3 py-2 bg-gray-800/40 backdrop-blur-sm rounded-xl text-xs border border-gray-700/30 shadow-md shadow-black/10">
+    <div className="w-full max-w-xl flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-3 py-2 bg-gray-100/80 dark:bg-gray-800/40 backdrop-blur-sm rounded-xl text-xs border border-gray-200 dark:border-gray-700/30 shadow-md shadow-gray-200/30 dark:shadow-black/10">
       <StatItem label={t('stats.players')} value={`${activePlayers}/${totalPlayers}`} />
       <StatItem label={t('stats.prizePool')} value={`${prizePool} ${t('unit.eur')}`} />
       {currentBB > 0 && (
@@ -45,8 +45,8 @@ export function TournamentStats({
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-gray-500">{label}:</span>
-      <span className="text-gray-100 font-medium font-mono">{value}</span>
+      <span className="text-gray-400 dark:text-gray-500">{label}:</span>
+      <span className="text-gray-800 dark:text-gray-100 font-medium font-mono">{value}</span>
     </div>
   );
 }
