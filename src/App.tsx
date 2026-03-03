@@ -103,31 +103,30 @@ function App() {
 
   const [pendingCheckpoint, setPendingCheckpoint] = useState<TournamentCheckpoint | null>(() => loadCheckpoint());
 
+  // Index of the last rebuy level (for level-based rebuy).
+  // Used by addOnPauseLevelIndex, addOnWindowOpen, and voice announcements.
+  const lastRebuyLevelIndex = useMemo(() => {
+    if (!config.rebuy.enabled || config.rebuy.limitType !== 'levels') return -1;
+    let playCount = 0;
+    for (let i = 0; i < config.levels.length; i++) {
+      if (config.levels[i].type === 'level') {
+        playCount++;
+        if (playCount === config.rebuy.levelLimit) return i;
+      }
+    }
+    return -1;
+  }, [config.rebuy, config.levels]);
+
   // When add-on is enabled and no break follows the last rebuy level,
   // the timer should pause at that level so players can take their add-on.
   const addOnPauseLevelIndex = useMemo(() => {
-    if (!config.addOn.enabled || !config.rebuy.enabled) return undefined;
-    if (config.rebuy.limitType === 'levels') {
-      let playCount = 0;
-      let lastRebuyLevelIdx = -1;
-      for (let i = 0; i < config.levels.length; i++) {
-        if (config.levels[i].type === 'level') {
-          playCount++;
-          if (playCount === config.rebuy.levelLimit) {
-            lastRebuyLevelIdx = i;
-            break;
-          }
-        }
-      }
-      if (lastRebuyLevelIdx < 0) return undefined;
-      const nextIdx = lastRebuyLevelIdx + 1;
-      if (nextIdx >= config.levels.length) return undefined;
-      // Only pause if there's NO break — breaks already give players time
-      if (config.levels[nextIdx]?.type === 'break') return undefined;
-      return nextIdx;
-    }
-    return undefined;
-  }, [config.addOn.enabled, config.rebuy, config.levels]);
+    if (!config.addOn.enabled || lastRebuyLevelIndex < 0) return undefined;
+    const nextIdx = lastRebuyLevelIndex + 1;
+    if (nextIdx >= config.levels.length) return undefined;
+    // Only pause if there's NO break — breaks already give players time
+    if (config.levels[nextIdx]?.type === 'break') return undefined;
+    return nextIdx;
+  }, [config.addOn.enabled, lastRebuyLevelIndex, config.levels]);
 
   const timer = useTimer(config.levels, settings, addOnPauseLevelIndex);
   const confirmDialogRef = useRef<HTMLDivElement>(null);
@@ -407,45 +406,30 @@ function App() {
     [config.rebuy, timer.timerState.currentLevelIndex, config.levels, tournamentElapsed],
   );
 
-  // Compute add-on window: show announcement at the break/level immediately after rebuy ends
-  // For level-based rebuy: after the last rebuy level, show during the break (if any) + next play level
-  // For time-based rebuy: detect transition reactively
+  // Compute add-on window: show announcement at the END of the last rebuy level
+  // (when timer reaches 0) and during the break/next level after it.
+  // For time-based rebuy: detect transition reactively.
   const prevRebuyActive = useRef(rebuyActive);
   useEffect(() => {
-    if (prevRebuyActive.current && !rebuyActive && config.addOn.enabled && config.rebuy.enabled) {
+    // Time-based rebuy: track the level where rebuy ended
+    if (prevRebuyActive.current && !rebuyActive && config.addOn.enabled && config.rebuy.enabled
+        && config.rebuy.limitType !== 'levels') {
       setAddOnEndLevelIndex(timer.timerState.currentLevelIndex);
-      if (settings.voiceEnabled) {
-        // Queue both — the speech queue plays them sequentially
-        announceRebuyEnded(t);
-        announceAddOn(t);
-      }
     }
     prevRebuyActive.current = rebuyActive;
-  }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, timer.timerState.currentLevelIndex, settings.voiceEnabled, t]);
+  }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, config.rebuy.limitType, timer.timerState.currentLevelIndex]);
 
   const addOnWindowOpen = useMemo(() => {
     if (!config.addOn.enabled || !config.rebuy.enabled) return false;
     const idx = timer.timerState.currentLevelIndex;
 
-    if (config.rebuy.limitType === 'levels') {
-      // Find the index of the last rebuy level (the N-th play level)
-      let playCount = 0;
-      let lastRebuyLevelIdx = -1;
-      for (let i = 0; i < config.levels.length; i++) {
-        if (config.levels[i].type === 'level') {
-          playCount++;
-          if (playCount === config.rebuy.levelLimit) {
-            lastRebuyLevelIdx = i;
-            break;
-          }
-        }
-      }
-      if (lastRebuyLevelIdx < 0) return false;
-      // Add-on window: the break after the last rebuy level (if any) + the next play level
-      const nextIdx = lastRebuyLevelIdx + 1;
+    if (config.rebuy.limitType === 'levels' && lastRebuyLevelIndex >= 0) {
+      // Show at the end of the last rebuy level (timer expired, waiting for advance)
+      if (idx === lastRebuyLevelIndex && timer.timerState.remainingSeconds <= 0) return true;
+      // Show during the break after the last rebuy level (if any) + next play level
+      const nextIdx = lastRebuyLevelIndex + 1;
       if (nextIdx >= config.levels.length) return false;
       if (config.levels[nextIdx]?.type === 'break') {
-        // Show during break and the level after it
         return idx === nextIdx || idx === nextIdx + 1;
       }
       // No break — show during the next play level only
@@ -456,7 +440,27 @@ function App() {
     return !rebuyActive
       && addOnEndLevelIndex !== null
       && idx === addOnEndLevelIndex;
-  }, [config.addOn.enabled, config.rebuy, config.levels, timer.timerState.currentLevelIndex, rebuyActive, addOnEndLevelIndex]);
+  }, [config.addOn.enabled, config.rebuy, config.levels, lastRebuyLevelIndex, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, rebuyActive, addOnEndLevelIndex]);
+
+  // Voice: Rebuy ended + Add-On available when addOnWindowOpen becomes true
+  const prevAddOnWindowRef = useRef(false);
+  useEffect(() => {
+    if (addOnWindowOpen && !prevAddOnWindowRef.current && settings.voiceEnabled && mode === 'game') {
+      announceRebuyEnded(t);
+      announceAddOn(t);
+    }
+    prevAddOnWindowRef.current = addOnWindowOpen;
+  }, [addOnWindowOpen, settings.voiceEnabled, mode, t]);
+
+  // Voice: Rebuy ended (without add-on) — only announce rebuy end when not followed by add-on
+  const prevRebuyForVoice = useRef(rebuyActive);
+  useEffect(() => {
+    if (prevRebuyForVoice.current && !rebuyActive && !config.addOn.enabled && config.rebuy.enabled
+        && settings.voiceEnabled && mode === 'game') {
+      announceRebuyEnded(t);
+    }
+    prevRebuyForVoice.current = rebuyActive;
+  }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, settings.voiceEnabled, mode, t]);
 
   const currentPlayLevel = useMemo(() => {
     return config.levels

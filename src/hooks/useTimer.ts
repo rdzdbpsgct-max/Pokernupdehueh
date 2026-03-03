@@ -46,11 +46,11 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
           lastCountdownSecRef.current = sec;
           if (sec === 0) {
             // Don't announce zero — level end beep handles this
-          } else if (settings.voiceEnabled && sec <= 5) {
-            // Voice countdown replaces beep for last 5 seconds
+          } else if (settings.voiceEnabled) {
+            // Voice countdown replaces beep for all 10 seconds
             announceCountdown(sec);
           } else if (settings.soundEnabled) {
-            // Beep only when voice is off or for seconds 6-10
+            // Beep only when voice is off
             playBeep(sec <= 3 ? 880 : 660, 100);
           }
         }

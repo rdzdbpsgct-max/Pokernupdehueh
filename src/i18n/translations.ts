@@ -350,7 +350,7 @@ const de = {
   'voice.inTheMoney': 'Inn se Manni! Herzlichen Glückwunsch!',
   'voice.playerEliminated': '{name} ausgeschieden auf Platz {place}',
   'voice.tournamentWinner': '{name} gewinnt das Turnier!',
-  'voice.addOnAvailable': 'Ädd-On jetzt verfügbar!',
+  'voice.addOnAvailable': 'Ädd-On ist einmalig verfügbar!',
   'voice.rebuyEnded': 'Die Riebai-Phase ist beendet',
   'voice.colorUp': 'Kaller-App: {chips} Chips werden eingetauscht',
 } as const;
@@ -704,7 +704,7 @@ const en: Record<TranslationKey, string> = {
   'voice.inTheMoney': 'In the money! Congratulations!',
   'voice.playerEliminated': '{name} eliminated in place {place}',
   'voice.tournamentWinner': '{name} wins the tournament!',
-  'voice.addOnAvailable': 'Add-on now available!',
+  'voice.addOnAvailable': 'Add-on is available once!',
   'voice.rebuyEnded': 'The rebuy phase has ended',
   'voice.colorUp': 'Color-up: exchange {chips} chips',
 };
