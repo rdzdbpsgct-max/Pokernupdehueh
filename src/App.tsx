@@ -43,6 +43,7 @@ import { CollapsibleSection } from './components/CollapsibleSection';
 import { CollapsibleSubSection } from './components/CollapsibleSubSection';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { NumberStepper } from './components/NumberStepper';
+import { ThemeSwitcher } from './components/ThemeSwitcher';
 
 // Game-mode components (lazy — only needed after tournament starts)
 const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
@@ -656,6 +657,7 @@ function App() {
           {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
         </h1>
         <div className="flex items-center gap-2">
+          {mode === 'setup' && <ThemeSwitcher />}
           {mode === 'setup' && <LanguageSwitcher />}
           <button
             onClick={() => {

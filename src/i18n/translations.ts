@@ -328,6 +328,11 @@ const de = {
   'checkpoint.restore': 'Turnier fortsetzen',
   'checkpoint.dismiss': 'Verwerfen',
 
+  // --- Theme ---
+  'theme.system': 'System',
+  'theme.light': 'Hell',
+  'theme.dark': 'Dunkel',
+
   // --- Units ---
   'unit.eur': 'EUR',
   'unit.chips': 'Chips',
@@ -662,6 +667,11 @@ const en: Record<TranslationKey, string> = {
   'checkpoint.details': '"{name}" — saved at {date}',
   'checkpoint.restore': 'Resume tournament',
   'checkpoint.dismiss': 'Dismiss',
+
+  // --- Theme ---
+  'theme.system': 'System',
+  'theme.light': 'Light',
+  'theme.dark': 'Dark',
 
   // --- Units ---
   'unit.eur': 'EUR',
