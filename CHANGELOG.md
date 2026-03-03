@@ -5,6 +5,30 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.0.0] – 2026-03-03
+
+### Dark/Light Mode, SVG-Chevrons, NumberStepper & Performance
+
+- **Dark/Light Mode** — Vollständiges Theming mit 3-Wege-Toggle (System/Hell/Dunkel) im Header. Alle 24+ Komponenten mit Tailwind `dark:`-Varianten konvertiert. Theme-Infrastruktur: `ThemeProvider` mit System-Preference-Listener (`prefers-color-scheme`), `useTheme()` Hook, localStorage-Persistenz (`poker-timer-theme`). CSS Custom Properties für theme-aware Timer-Glow-Animation. PWA `theme-color` Meta-Tag passt sich dynamisch an. Screenshot-Hintergrund respektiert aktives Theme.
+- **Dark/Light mode** — Full theming with 3-way toggle (System/Light/Dark) in header. All 24+ components converted with Tailwind `dark:` variants. Theme infrastructure: `ThemeProvider` with system preference listener, `useTheme()` hook, localStorage persistence. CSS custom properties for theme-aware timer glow animation. PWA theme-color meta tag dynamically updated. Screenshot background respects active theme.
+
+- **SVG-Chevrons** — Neue `ChevronIcon`-Komponente ersetzt Unicode-Dreiecke in allen ausklappbaren Sektionen. Größer (`w-4 h-4`), dicker (`strokeWidth 2.5`), CSS-Rotation-Animation, Hover-Farbwechsel (`group-hover`). Verwendet in 5 Komponenten.
+- **SVG chevrons** — New `ChevronIcon` component replaces Unicode triangles in all collapsible sections. Larger (`w-4 h-4`), thicker (`strokeWidth 2.5`), CSS rotation animation, hover color change (`group-hover`). Used in 5 components.
+
+- **NumberStepper** — Neue Komponente ersetzt native Browser-Zahleneingaben. Custom `+`/`-` Buttons mit Long-Press-Support (400ms Delay, 100ms Repeat via Pointer Events), optionale `snap`-Funktion, konfigurierbares min/max/step. Native Spinner per CSS ausgeblendet. Verwendet in 8 Komponenten.
+- **Number stepper** — New component replaces native browser number inputs. Custom `+`/`- buttons with long-press support (400ms delay, 100ms repeat via pointer events), optional `snap` function, configurable min/max/step. Native spinners hidden via CSS. Used in 8 components.
+
+- **Performance** — Game-Mode-Komponenten (10 Stück) per `React.lazy()` + `Suspense` lazy-loaded. `html-to-image` dynamisch importiert statt statisch gebundelt. Haupt-Bundle von 341KB auf ~302KB reduziert + separate Game-Chunks (~30KB).
+- **Performance** — 10 game-mode components lazy-loaded via `React.lazy()` + `Suspense`. `html-to-image` dynamically imported instead of statically bundled. Main bundle reduced from 341KB to ~302KB + separate game chunks (~30KB).
+
+- **Neue Dateien** — `ChevronIcon.tsx`, `NumberStepper.tsx`, `ThemeSwitcher.tsx`, `src/theme/` (ThemeContext, useTheme, themeContextValue, index).
+- **New files** — `ChevronIcon.tsx`, `NumberStepper.tsx`, `ThemeSwitcher.tsx`, `src/theme/` (ThemeContext, useTheme, themeContextValue, index).
+
+- **3 neue Translation-Keys** — `theme.system`, `theme.light`, `theme.dark` (DE + EN).
+- **3 new translation keys** — `theme.system`, `theme.light`, `theme.dark` (DE + EN).
+
+---
+
 ## [1.9.1] – 2026-03-03
 
 ### Scrub-Slider Redesign & Add-On-Ankündigung
