@@ -64,7 +64,7 @@ export function Controls({
         <div className="flex items-center gap-3">
           <button
             onClick={onReset}
-            className="px-4 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium transition-all duration-200 border border-gray-700/30"
+            className="px-4 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium transition-all duration-200 border border-gray-700/30 shadow-md shadow-black/15 active:scale-[0.97] active:shadow-sm"
             title={t('controls.levelResetTooltip')}
             aria-label={t('controls.levelResetTooltip')}
           >
@@ -72,7 +72,7 @@ export function Controls({
           </button>
           <button
             onClick={onRestart}
-            className="px-4 py-2 bg-gray-800/80 hover:bg-red-900/80 text-gray-300 hover:text-red-300 rounded-lg text-xs font-medium transition-all duration-200 border border-gray-700/30 hover:border-red-800/50"
+            className="px-4 py-2 bg-gray-800/80 hover:bg-red-900/80 text-gray-300 hover:text-red-300 rounded-lg text-xs font-medium transition-all duration-200 border border-gray-700/30 hover:border-red-800/50 shadow-md shadow-black/15 active:scale-[0.97] active:shadow-sm"
             title={t('controls.tournamentRestartTooltip')}
             aria-label={t('controls.tournamentRestartTooltip')}
           >

@@ -38,7 +38,7 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
             return (
               <div
                 key={denom.id}
-                className={`flex items-center gap-2 px-2 py-1 rounded text-sm ${
+                className={`flex items-center gap-2 px-2 py-1 rounded-lg text-sm ${
                   isRemoved ? 'opacity-40' : 'bg-gray-800/40 border border-gray-700/20'
                 }`}
               >
@@ -69,7 +69,7 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
 
           {/* Next color-up info (only when color-up is enabled) */}
           {chipConfig.colorUpEnabled && (
-            <div className="pt-1 border-t border-gray-800 mt-2">
+            <div className="pt-1 border-t border-gray-700/40 mt-2">
               {nextColorUpLevel !== null ? (
                 <div className="text-xs text-amber-400/80">
                   <span className="font-medium">{t('chipSidebar.nextColorUp')}: </span>

@@ -150,9 +150,9 @@ export function TournamentFinished({
                     <div className="border-t border-gray-700 mx-3" />
                   )}
                   <div
-                    className={`px-4 py-2.5 ${
+                    className={`px-4 py-2.5 border-b border-gray-800/30 hover:bg-gray-800/40 transition-colors ${
                       player.finalPlace === 1
-                        ? 'bg-amber-900/20'
+                        ? 'bg-amber-900/25 border-l-2 border-l-amber-400'
                         : idx % 2 === 0
                         ? 'bg-gray-800/30'
                         : ''
@@ -248,7 +248,7 @@ export function TournamentFinished({
               {bountyResults.map((player, idx) => (
                 <div
                   key={player.id}
-                  className={`flex items-center justify-between px-4 py-2.5 ${
+                  className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-800/30 hover:bg-gray-800/40 transition-colors ${
                     idx % 2 === 0 ? 'bg-gray-800/30' : ''
                   }`}
                 >
@@ -265,7 +265,7 @@ export function TournamentFinished({
                   </span>
                 </div>
               ))}
-              <div className="border-t border-gray-700 px-4 py-2 flex justify-between">
+              <div className="border-t border-gray-700/40 px-4 py-2 flex justify-between">
                 <span className="text-xs text-gray-500">{t('finished.bountyPoolTotal')}</span>
                 <span className="text-xs text-amber-400/70 font-medium">
                   {(players.length * bounty.amount).toFixed(2)} {t('unit.eur')}

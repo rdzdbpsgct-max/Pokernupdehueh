@@ -5,6 +5,51 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [1.9.0] – 2026-03-03
+
+### Design Polish — Konsistenz & Verfeinerung
+
+- **Abrundungs-Hierarchie** — Einheitliches System: Container `rounded-2xl` → Cards `rounded-xl` → Buttons/Inputs `rounded-lg` → Badges `rounded-md`/`rounded-full`. Betrifft 10 Komponenten mit insgesamt ~25 Korrekturen.
+- **Rounding hierarchy** — Unified system: Container `rounded-2xl` → Cards `rounded-xl` → Buttons/Inputs `rounded-lg` → Badges `rounded-md`/`rounded-full`. Affects 10 components with ~25 corrections total.
+
+- **Border-Standardisierung** — Einheitliche Opacities: `border-gray-700/40` (Standard), `border-gray-600/50` (Hover), `border-gray-700/30` (Sidebar-Trennung). Amber-Borders auf `/40` normalisiert. 12+ Dateien angepasst.
+- **Border standardization** — Unified opacities: `border-gray-700/40` (standard), `border-gray-600/50` (hover), `border-gray-700/30` (sidebar separation). Amber borders normalized to `/40`. 12+ files updated.
+
+- **Sekundäre Buttons** — Reset/Restart-Buttons mit `shadow-md shadow-black/15` und `active:scale-[0.97]` für taktiles Feedback aufgewertet.
+- **Secondary buttons** — Reset/Restart buttons upgraded with `shadow-md shadow-black/15` and `active:scale-[0.97]` for tactile feedback.
+
+- **Range-Slider Styling** — Custom CSS für `<input type="range">`: Emerald-Gradient-Track, runder Gradient-Thumb mit Glow-Shadow. Webkit + Firefox Pseudo-Elemente.
+- **Range slider styling** — Custom CSS for `<input type="range">`: emerald gradient track, round gradient thumb with glow shadow. Webkit + Firefox pseudo-elements.
+
+- **Sidebar-Trennung** — Desktop-Sidebars mit `bg-gray-900/40` Hintergrund und `border-gray-700/30`. Toggle-Buttons von `w-6 h-16` auf `w-7 h-20` vergrößert.
+- **Sidebar separation** — Desktop sidebars with `bg-gray-900/40` background and `border-gray-700/30`. Toggle buttons enlarged from `w-6 h-16` to `w-7 h-20`.
+
+- **Focus-States** — Glow-Effekt auf allen Inputs verstärkt: `focus:ring-1 focus:ring-emerald-500/20` → `focus:ring-2 focus:ring-emerald-500/25`. Betrifft 9 Komponenten.
+- **Focus states** — Enhanced glow effect on all inputs: `focus:ring-1 focus:ring-emerald-500/20` → `focus:ring-2 focus:ring-emerald-500/25`. Affects 9 components.
+
+- **Tabellen-Rows** — Standings und Bounty-Tabelle in Ergebnissen: `border-b border-gray-800/30`, `hover:bg-gray-800/40`, 1. Platz mit `border-l-2 border-l-amber-400`. Level-Rows im Editor mit Hover-Effekt.
+- **Table rows** — Standings and bounty table in results: `border-b border-gray-800/30`, `hover:bg-gray-800/40`, 1st place with `border-l-2 border-l-amber-400`. Level rows in editor with hover effect.
+
+- **Spieler-Rows** — Aktive Spieler mit `hover:border-gray-600/40`. Dealer-Badge mit `ring-2 ring-red-500/30` Glow. Rebuy-Count als Badge (`bg-emerald-900/30 rounded-full`). Eliminierte Spieler stärker abgeblendet (`opacity-40`).
+- **Player rows** — Active players with `hover:border-gray-600/40`. Dealer badge with `ring-2 ring-red-500/30` glow. Rebuy count as badge (`bg-emerald-900/30 rounded-full`). Eliminated players more faded (`opacity-40`).
+
+- **Body-Gradient** — Verstärkt auf `0.06` Opacity + zweiter Gradient am unteren rechten Bildschirmrand (`ellipse at 80% 100%`).
+- **Body gradient** — Enhanced to `0.06` opacity + second gradient at bottom-right of screen (`ellipse at 80% 100%`).
+
+- **Checkpoint-Banner** — `border-2 border-amber-600/50`, `shadow-lg`, `animate-fade-in`. Restore-Button als Gradient, Dismiss-Button als Ghost-Style.
+- **Checkpoint banner** — `border-2 border-amber-600/50`, `shadow-lg`, `animate-fade-in`. Restore button as gradient, dismiss button as ghost style.
+
+- **Card-Hover Glow** — `CollapsibleSection` und `CollapsibleSubSection` Header mit Hover-Shadows (`shadow-lg`/`shadow-md`).
+- **Card hover glow** — `CollapsibleSection` and `CollapsibleSubSection` headers with hover shadows (`shadow-lg`/`shadow-md`).
+
+- **Confirm-Dialog** — Cancel subtiler (`bg-gray-800/60`), Confirm mit `shadow-lg shadow-red-900/40`, `border border-red-700/30`, `active:scale-[0.97]`.
+- **Confirm dialog** — Cancel more subtle (`bg-gray-800/60`), confirm with `shadow-lg shadow-red-900/40`, `border border-red-700/30`, `active:scale-[0.97]`.
+
+- **22 Dateien geändert** — Rein visuelle/CSS-Änderungen, keine Logik-Modifikationen, keine neuen Dateien, keine neuen Dependencies.
+- **22 files modified** — Purely visual/CSS changes, no logic modifications, no new files, no new dependencies.
+
+---
+
 ## [1.8.0] – 2026-03-03
 
 ### Premium UI — Glassmorphism, Animationen & taktiles Design

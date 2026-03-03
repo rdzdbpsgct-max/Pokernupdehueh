@@ -3,7 +3,7 @@ import { useTranslation } from '../i18n';
 export function LanguageSwitcher() {
   const { language, setLanguage } = useTranslation();
   return (
-    <div className="flex rounded-lg overflow-hidden border border-gray-700">
+    <div className="flex rounded-lg overflow-hidden border border-gray-700/40">
       <button
         onClick={() => setLanguage('de')}
         className={`px-2 py-1 text-xs font-medium transition-colors ${

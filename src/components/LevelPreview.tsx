@@ -23,7 +23,7 @@ export function LevelPreview({ timerState, levels }: Props) {
           return (
             <div
               key={level.id}
-              className={`flex items-center justify-between px-3 py-1.5 rounded text-sm ${
+              className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-sm ${
                 isCurrent
                   ? 'bg-emerald-900/40 border border-emerald-600/70 text-white shadow-sm shadow-emerald-900/20'
                   : isNext

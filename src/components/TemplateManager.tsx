@@ -179,7 +179,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               placeholder={t('templates.namePlaceholder')}
-              className="flex-1 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+              className="flex-1 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
             />
             <button
               onClick={handleSave}
@@ -191,7 +191,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
           </div>
           <button
             onClick={handleSaveToFile}
-            className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700/40 hover:border-gray-600/50 text-gray-300 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             <span>↓</span> {t('templates.saveToFile')}
           </button>
@@ -209,7 +209,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
           </label>
           <button
             onClick={handleLoadFromFile}
-            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 rounded text-xs font-medium transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700/40 hover:border-gray-600/50 text-gray-300 rounded text-xs font-medium transition-colors flex items-center gap-1"
           >
             <span>↑</span> {t('templates.loadFromFile')}
           </button>
@@ -271,7 +271,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
         </div>
 
         {/* Collapsible JSON Import/Export */}
-        <div className="border-t border-gray-700 pt-3">
+        <div className="border-t border-gray-700/40 pt-3">
           <button
             onClick={handleToggleJson}
             aria-expanded={showJson}

@@ -114,7 +114,7 @@ export function PlayerPanel({
           {payoutAmounts.map((p) => (
             <div
               key={p.place}
-              className="flex justify-between px-3 py-1 bg-gray-800/50 rounded text-sm"
+              className="flex justify-between px-3 py-1 bg-gray-800/50 rounded-lg text-sm"
             >
               <span className="text-gray-400">
                 {p.place}. {t('playerPanel.place')}
@@ -137,7 +137,7 @@ export function PlayerPanel({
 
       {/* Add-On info banner (shown after rebuy phase ends) */}
       {addOnWindowOpen && totalAddOns < activePlayers.length && (
-        <div className="px-3 py-2 bg-amber-900/30 border border-amber-700 rounded-lg">
+        <div className="px-3 py-2 bg-amber-900/30 border border-amber-700/40 rounded-lg">
           <p className="text-amber-300 text-sm font-medium">
             {t('playerPanel.addOnAvailable')}
           </p>
@@ -159,19 +159,24 @@ export function PlayerPanel({
             return (
             <div
               key={player.id}
-              className="flex items-center justify-between px-3 py-1.5 bg-gray-800/40 rounded-lg border border-gray-700/20 transition-colors hover:bg-gray-800/60"
+              className="flex items-center justify-between px-3 py-1.5 bg-gray-800/40 rounded-lg border border-gray-700/20 transition-colors hover:bg-gray-800/60 hover:border-gray-600/40"
             >
               <div className="flex-1 mr-2 min-w-0">
                 <span className={`${nameSizeClass} text-gray-200 truncate block`}>
                   <span className="text-gray-500 text-xs mr-1">#{seatIndex + 1}</span>
                   {isDealer && (
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold mr-1 align-text-bottom">D</span>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold mr-1 align-text-bottom ring-2 ring-red-500/30">D</span>
                   )}
                   {player.name}
                 </span>
                 {bountyConfig.enabled && player.knockouts > 0 && (
                   <span className="text-xs text-amber-400">
                     {player.knockouts} KO ({(player.knockouts * bountyConfig.amount).toFixed(0)} {t('unit.eur')})
+                  </span>
+                )}
+                {!rebuyActive && player.rebuys > 0 && (
+                  <span className="inline-block bg-emerald-900/30 text-emerald-400 rounded-full px-1.5 text-xs font-medium">
+                    {player.rebuys} RB
                   </span>
                 )}
               </div>
@@ -186,7 +191,7 @@ export function PlayerPanel({
                         onUpdateRebuys(player.id, Math.max(0, player.rebuys - 1))
                       }
                       disabled={player.rebuys <= 0}
-                      className="w-8 h-8 rounded bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       -
                     </button>
@@ -197,7 +202,7 @@ export function PlayerPanel({
                       onClick={() =>
                         onUpdateRebuys(player.id, player.rebuys + 1)
                       }
-                      className="w-8 h-8 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
+                      className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
                     >
                       +
                     </button>
@@ -208,7 +213,7 @@ export function PlayerPanel({
                 {addOnWindowOpen && (
                   <button
                     onClick={() => onUpdateAddOn(player.id, !player.addOn)}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       player.addOn
                         ? 'bg-emerald-700/50 text-emerald-300'
                         : 'bg-gray-700 hover:bg-gray-600 text-gray-400'
@@ -238,14 +243,14 @@ export function PlayerPanel({
 
       {/* Bounty elimination dialog */}
       {eliminatingId && bountyConfig.enabled && (
-        <div className="px-3 py-3 bg-amber-900/20 border border-amber-800 rounded-lg space-y-2">
+        <div className="px-3 py-3 bg-amber-900/20 border border-amber-700/40 rounded-lg space-y-2">
           <p className="text-sm text-amber-300 font-medium">
             {t('playerPanel.whoEliminated', { name: players.find((p) => p.id === eliminatingId)?.name ?? '?' })}
           </p>
           <select
             value={selectedKiller}
             onChange={(e) => setSelectedKiller(e.target.value)}
-            className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-amber-500"
+            className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-amber-500"
           >
             <option value="">{t('playerPanel.selectPlayer')}</option>
             {activePlayers
@@ -259,14 +264,14 @@ export function PlayerPanel({
           <div className="flex gap-2">
             <button
               onClick={cancelElimination}
-              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
+              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium transition-colors"
             >
               {t('app.cancel')}
             </button>
             <button
               onClick={confirmElimination}
               disabled={!selectedKiller}
-              className="flex-1 px-2 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-2 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded-lg text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               {t('playerPanel.confirm')}
             </button>
@@ -287,7 +292,7 @@ export function PlayerPanel({
               return (
                 <div
                   key={player.id}
-                  className="flex items-center justify-between px-3 py-1.5 bg-gray-800/20 rounded-lg opacity-50"
+                  className="flex items-center justify-between px-3 py-1.5 bg-gray-800/20 rounded-lg opacity-40"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className="text-xs text-gray-500 font-bold w-6 text-right shrink-0">

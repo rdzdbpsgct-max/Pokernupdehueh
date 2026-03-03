@@ -67,7 +67,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 onChange={(e) =>
                   onChange({ ...rebuy, rebuyCost: Math.max(1, Number(e.target.value)) })
                 }
-                className="w-20 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                className="w-20 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
               <span className="text-gray-500 text-xs">{t('unit.eur')}</span>
             </div>
@@ -83,7 +83,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                   const val = snapSpinnerValue(Number(e.target.value), rebuy.rebuyChips, 1000);
                   onChange({ ...rebuy, rebuyChips: val });
                 }}
-                className="w-24 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                className="w-24 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
               <span className="text-gray-500 text-xs">{t('unit.chips')}</span>
             </div>
@@ -124,7 +124,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 max={20}
                 value={rebuy.levelLimit}
                 onChange={(e) => setLevelLimit(Number(e.target.value))}
-                className="w-16 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                className="w-16 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
             </div>
           )}
@@ -142,7 +142,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 onChange={(e) =>
                   setTimeLimitFromHoursMinutes(Number(e.target.value), minutes)
                 }
-                className="w-14 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                className="w-14 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
               <span className="text-gray-500 text-xs">{t('rebuyEditor.hours')}</span>
               <input
@@ -154,7 +154,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 onChange={(e) =>
                   setTimeLimitFromHoursMinutes(hours, Number(e.target.value))
                 }
-                className="w-14 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                className="w-14 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
               <span className="text-gray-500 text-xs">{t('rebuyEditor.minutes')}</span>
             </div>

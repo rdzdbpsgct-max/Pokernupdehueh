@@ -158,7 +158,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         <div className="flex flex-col items-center gap-2 w-full max-w-xl">
           <button
             onClick={() => setScrubbing((v) => !v)}
-            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
               scrubbing
                 ? 'bg-amber-700 hover:bg-amber-600 text-white'
                 : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
@@ -178,7 +178,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
                 onChange={(e) => onScrub(Number(e.target.value))}
                 onPointerUp={() => onScrubEnd?.()}
                 onTouchEnd={() => onScrubEnd?.()}
-                className="flex-1 accent-emerald-500 h-2 cursor-pointer"
+                className="flex-1 cursor-pointer"
                 aria-label={t('timer.adjustTime')}
               />
               <span className="text-xs text-gray-500 w-12">

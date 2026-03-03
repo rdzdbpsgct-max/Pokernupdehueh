@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.8.0
+**Version**: 1.9.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -15,7 +15,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 - **Vitest** — unit testing with `@testing-library/react` and `jsdom`
 - **ESLint 9** — flat config with typescript-eslint, react-hooks, react-refresh plugins
 - **No external state library** — React hooks + props + Context (i18n only)
-- **No CSS-in-JS** — pure Tailwind utility classes + custom `@keyframes` and `@utility` in `index.css`
+- **No CSS-in-JS** — pure Tailwind utility classes + custom `@keyframes`, `@utility`, range slider styling, and body gradient in `index.css`
 
 ## Commands
 
@@ -117,7 +117,9 @@ public/
 - Glassmorphism: `backdrop-blur-sm`, soft shadows (`shadow-lg shadow-black/20`), semi-transparent backgrounds
 - Buttons: `bg-gradient-to-b` for tactile feel, `active:scale-[0.97]` feedback, `shadow-lg` depth
 - Animations: `animate-fade-in` (content), `animate-timer-glow` (running timer), `animate-countdown-pulse`, `animate-scale-in` (modals), `animate-bubble-pulse`/`animate-itm-flash`
-- Inputs: Global pattern — `bg-gray-800/80`, `border-gray-700/60`, `focus:ring-1 focus:ring-emerald-500/20`, `rounded-lg`
+- Design system hierarchy: Rounding (`rounded-2xl` > `rounded-xl` > `rounded-lg` > `rounded-md`), borders (`border-gray-700/40` standard, `/50` hover, `/30` sidebar), focus (`ring-2 ring-emerald-500/25`)
+- Inputs: Global pattern — `bg-gray-800/80`, `border-gray-700/60`, `focus:ring-2 focus:ring-emerald-500/25`, `rounded-lg`
+- Range sliders: Custom CSS in `index.css` — emerald gradient track, gradient thumb with glow shadow (webkit + moz pseudo-elements)
 - Responsive: mobile-first, `sm:` and `lg:` breakpoints, flex layouts
 - No component library (fully custom UI)
 
@@ -155,7 +157,7 @@ public/
 - **Progressive disclosure in setup**: `CollapsibleSection` card component wraps each setup section; essential sections (Tournament Basics, Players, Blinds) open by default, optional sections (Chips, Payout, Tournament Format) collapsed with summary text; `CollapsibleSubSection` for nested collapsibles inside cards (BlindGenerator, Level Table); Tournament Name + Buy-In merged into "Turnier-Grundlagen" card; Rebuy/Add-On/Bounty grouped into one "Tournament Format" card; Summary badges visible as subtitles even on open sections
 - **Tournament checkpoint**: Auto-save game state to localStorage on every action in game mode; on restart, offer to resume with timer always paused (timestamps invalid after reload)
 - **Accessibility**: ARIA roles/labels on timer, controls, modals, collapsible sections; auto-focus and Escape-to-close on dialogs
-- **Premium UI**: Glassmorphism (`backdrop-blur-sm`, soft shadows), gradient buttons (`bg-gradient-to-b`), custom animations (8 `@keyframes` in `index.css`), tactile feedback (`active:scale-[0.97]`), timer glow (`animate-timer-glow`), body gradient, focus rings on all inputs
+- **Premium UI**: Glassmorphism (`backdrop-blur-sm`, soft shadows), gradient buttons (`bg-gradient-to-b`), custom animations (8 `@keyframes` in `index.css`), tactile feedback (`active:scale-[0.97]`), timer glow (`animate-timer-glow`), dual body gradient, focus glow on all inputs, custom range slider styling, card hover glow, table row hover states
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -195,6 +197,22 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v1.9.0 — Design Polish: Konsistenz & Verfeinerung
+
+- **Abrundungs-Hierarchie**: Container `rounded-2xl` → Cards `rounded-xl` → Buttons `rounded-lg` → Badges `rounded-md`/`rounded-full` durchgehend vereinheitlicht (10 Komponenten, ~25 Fixes)
+- **Border-Standardisierung**: `border-gray-700/40` (Standard), `border-gray-600/50` (Hover), `border-gray-700/30` (Sidebar). Amber-Borders auf `/40` normalisiert (12+ Dateien)
+- **Sekundäre Buttons**: Reset/Restart mit `shadow-md` und `active:scale-[0.97]`
+- **Range-Slider**: Custom CSS — Emerald-Gradient-Track, Gradient-Thumb mit Glow (webkit + moz)
+- **Sidebar-Trennung**: `bg-gray-900/40` Hintergrund, `border-gray-700/30`, Toggle-Buttons vergrößert (`w-7 h-20`)
+- **Focus-States**: `ring-1 ring-emerald-500/20` → `ring-2 ring-emerald-500/25` auf allen Inputs (9 Komponenten)
+- **Tabellen-Rows**: Hover-States und `border-b` auf Standings, Bounty-Tabelle, Level-Editor; 1. Platz mit amber Border-Left
+- **Spieler-Rows**: Hover-Border, Dealer-Badge-Glow, Rebuy-Badge, eliminierte Spieler `opacity-40`
+- **Body-Gradient**: Verstärkt + zweiter Gradient bottom-right
+- **Checkpoint-Banner**: `border-2`, `shadow-lg`, `animate-fade-in`, Gradient-Restore-Button, Ghost-Dismiss
+- **Card-Hover**: CollapsibleSection/SubSection Header mit Hover-Shadows
+- **Confirm-Dialog**: Button-Hierarchie verfeinert — Cancel subtiler, Confirm mit Red-Shadow und Scale
+- **22 Dateien geändert**: Rein visuelle/CSS-Änderungen, keine Logik, keine neuen Dateien/Dependencies
 
 ### v1.8.0 — Premium UI: Glassmorphism, Animationen & taktiles Design
 

@@ -63,7 +63,7 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
                 className={`flex flex-col items-start px-3 py-2 rounded-lg text-left transition-colors flex-1 min-w-[100px] ${
                   isSelected
                     ? 'bg-emerald-700/40 border border-emerald-500/60 text-white shadow-md shadow-emerald-900/20'
-                    : 'bg-gray-800/60 border border-gray-700/50 hover:border-gray-600/70 text-gray-300 hover:bg-gray-800/80'
+                    : 'bg-gray-800/60 border border-gray-700/40 hover:border-gray-600/70 text-gray-300 hover:bg-gray-800/80'
                 }`}
               >
                 <span className="text-sm font-medium">{speed.label}</span>

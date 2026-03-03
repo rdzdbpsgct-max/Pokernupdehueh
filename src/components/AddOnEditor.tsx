@@ -59,20 +59,20 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
 
       {/* Rebuy required hint */}
       {showRebuyHint && (
-        <div className="px-3 py-3 bg-amber-900/20 border border-amber-800 rounded-lg space-y-2">
+        <div className="px-3 py-3 bg-amber-900/20 border border-amber-700/40 rounded-lg space-y-2">
           <p className="text-sm text-amber-300 font-medium">
             {t('addOnEditor.requiresRebuy')}
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setShowRebuyHint(false)}
-              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
+              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium transition-colors"
             >
               {t('app.cancel')}
             </button>
             <button
               onClick={handleEnableRebuy}
-              className="flex-1 px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-medium transition-colors"
+              className="flex-1 px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors"
             >
               {t('addOnEditor.enableRebuy')}
             </button>
@@ -96,7 +96,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
                 onChange={(e) =>
                   onChange({ ...addOn, cost: Math.max(1, Number(e.target.value)) })
                 }
-                className="w-20 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                className="w-20 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
               <span className="text-gray-500 text-xs">{t('unit.eur')}</span>
             </div>
@@ -112,7 +112,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
                   const val = snapSpinnerValue(Number(e.target.value), addOn.chips, 1000);
                   onChange({ ...addOn, chips: val });
                 }}
-                className="w-24 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                className="w-24 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
               <span className="text-gray-500 text-xs">{t('unit.chips')}</span>
             </div>

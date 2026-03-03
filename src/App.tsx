@@ -688,7 +688,7 @@ function App() {
             <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
               {/* Checkpoint recovery banner */}
               {pendingCheckpoint && (
-                <div className="bg-amber-900/20 border border-amber-700/50 rounded-xl p-4 space-y-2 shadow-md shadow-amber-900/10 backdrop-blur-sm">
+                <div className="bg-amber-900/20 border-2 border-amber-600/50 rounded-xl p-4 space-y-2 shadow-lg shadow-amber-900/20 backdrop-blur-sm animate-fade-in">
                   <p className="text-amber-300 text-sm font-medium">{t('checkpoint.found')}</p>
                   <p className="text-gray-400 text-xs">
                     {t('checkpoint.details', {
@@ -699,13 +699,13 @@ function App() {
                   <div className="flex gap-2">
                     <button
                       onClick={restoreFromCheckpoint}
-                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors"
+                      className="px-4 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-emerald-900/30 active:scale-[0.97]"
                     >
                       {t('checkpoint.restore')}
                     </button>
                     <button
                       onClick={dismissCheckpoint}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+                      className="px-4 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-700/40"
                     >
                       {t('checkpoint.dismiss')}
                     </button>
@@ -723,7 +723,7 @@ function App() {
                       setConfig((prev) => ({ ...prev, name: e.target.value }))
                     }
                     placeholder={t('app.tournamentNamePlaceholder')}
-                    className="w-full px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                    className="w-full px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
                   />
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
@@ -749,7 +749,7 @@ function App() {
                             },
                           }));
                         }}
-                        className="w-20 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                        className="w-20 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
                       />
                       <span className="text-gray-400 text-sm">{t('unit.eur')}</span>
                     </div>
@@ -779,7 +779,7 @@ function App() {
                             };
                           });
                         }}
-                        className="w-24 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                        className="w-24 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
                       />
                       <span className="text-gray-400 text-sm">{t('unit.chips')}</span>
                     </div>
@@ -907,7 +907,7 @@ function App() {
                 />
                 {/* Chip-Blind compatibility warning */}
                 {blindChipConflicts.length > 0 && (
-                  <div className="mt-2 px-3 py-2 bg-amber-900/20 border border-amber-800 rounded-lg">
+                  <div className="mt-2 px-3 py-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
                     <p className="text-amber-300 text-xs font-medium">
                       {t('app.chipBlindConflict', { values: blindChipConflicts.join(', ') })}
                     </p>
@@ -919,7 +919,7 @@ function App() {
               </CollapsibleSection>
 
               {/* Validation */}
-              <div className="pt-4 border-t border-gray-800">
+              <div className="pt-4 border-t border-gray-700/40">
                 {startErrors.length > 0 ? (
                   <div className="bg-red-900/30 border border-red-700 rounded-lg p-3">
                     <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">{t('app.checkConfig')}</p>
@@ -963,7 +963,7 @@ function App() {
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             {/* Player Panel (LEFT) */}
             {showPlayerPanel && config.players.length > 0 && (
-              <aside className="w-full md:w-60 lg:w-72 border-b md:border-b-0 md:border-r border-gray-800 p-3 sm:p-4 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
+              <aside className="w-full md:w-60 lg:w-72 border-b md:border-b-0 md:border-r border-gray-700/30 bg-gray-900/40 p-3 sm:p-4 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
                 <PlayerPanel
                   players={config.players}
                   dealerIndex={config.dealerIndex}
@@ -989,7 +989,7 @@ function App() {
               {config.players.length > 0 && (
                 <button
                   onClick={() => setShowPlayerPanel((v) => !v)}
-                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/70 hover:bg-gray-700/80 text-gray-500 hover:text-white rounded-r-lg text-xs transition-all duration-200 border-r border-y border-gray-700/30 shadow-md shadow-black/10"
+                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-20 items-center justify-center bg-gray-800/80 hover:bg-gray-700/80 text-gray-500 hover:text-white rounded-r-lg text-xs transition-all duration-200 border-r border-y border-gray-700/30 shadow-md shadow-black/10"
                   title={showPlayerPanel ? t('app.hidePlayers') : t('app.showPlayers')}
                 >
                   {showPlayerPanel ? '\u25C0' : '\u25B6'}
@@ -997,7 +997,7 @@ function App() {
               )}
               <button
                 onClick={() => setShowSidebar((v) => !v)}
-                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-6 h-16 items-center justify-center bg-gray-800/70 hover:bg-gray-700/80 text-gray-500 hover:text-white rounded-l-lg text-xs transition-all duration-200 border-l border-y border-gray-700/30 shadow-md shadow-black/10"
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-20 items-center justify-center bg-gray-800/80 hover:bg-gray-700/80 text-gray-500 hover:text-white rounded-l-lg text-xs transition-all duration-200 border-l border-y border-gray-700/30 shadow-md shadow-black/10"
                 title={showSidebar ? t('app.hideSidebar') : t('app.showSidebar')}
               >
                 {showSidebar ? '\u25B6' : '\u25C0'}
@@ -1089,7 +1089,7 @@ function App() {
 
             {/* Sidebar (RIGHT) */}
             {showSidebar && (
-              <aside className="w-full md:w-60 lg:w-72 border-t md:border-t-0 md:border-l border-gray-800 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
+              <aside className="w-full md:w-60 lg:w-72 border-t md:border-t-0 md:border-l border-gray-700/30 bg-gray-900/40 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
                 <LevelPreview timerState={timer.timerState} levels={config.levels} />
                 {config.chips.enabled && (
                   <ChipSidebar
@@ -1134,7 +1134,7 @@ function App() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="px-4 py-2 bg-gray-700/80 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-all duration-200 border border-gray-600/30"
+                className="px-4 py-2 bg-gray-800/60 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-all duration-200 border border-gray-700/40"
               >
                 {t('app.cancel')}
               </button>
@@ -1143,7 +1143,7 @@ function App() {
                   confirmAction.onConfirm();
                   setConfirmAction(null);
                 }}
-                className="px-4 py-2 bg-gradient-to-b from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-red-900/30"
+                className="px-4 py-2 bg-gradient-to-b from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-lg shadow-red-900/40 border border-red-700/30 active:scale-[0.97]"
               >
                 {confirmAction.confirmLabel}
               </button>

@@ -141,7 +141,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
 
           {/* Duplicate color warning */}
           {duplicateColors.size > 0 && (
-            <div className="px-3 py-2 bg-amber-900/20 border border-amber-800 rounded-lg">
+            <div className="px-3 py-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
               <p className="text-amber-300 text-xs font-medium">
                 {t('chipEditor.duplicateColor')}
               </p>
@@ -154,7 +154,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
               const isDuplicate = duplicateColors.has(denom.color);
               return (
               <div key={denom.id}>
-                <div className={`flex items-center gap-2 px-2 py-1.5 bg-gray-800/50 rounded ${
+                <div className={`flex items-center gap-2 px-2 py-1.5 bg-gray-800/50 rounded-lg ${
                   isDuplicate ? 'ring-1 ring-amber-600/50' : ''
                 }`}>
                   {/* Color swatch */}
@@ -184,7 +184,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                       })
                     }
                     className="w-20 px-2 py-1 bg-gray-800/80 border border-gray-700/60 rounded-lg
-                               text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                               text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
                   />
 
                   {/* Remove button */}
@@ -238,7 +238,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
             <button
               onClick={addDenomination}
               className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400
-                         rounded text-sm transition-colors"
+                         rounded-lg text-sm transition-colors"
             >
               {t('chipEditor.addDenomination')}
             </button>
@@ -246,7 +246,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
 
           {/* Color-Up toggle + editable schedule */}
           {chips.denominations.length >= 2 && (
-            <div className="pt-2 border-t border-gray-700">
+            <div className="pt-2 border-t border-gray-700/40">
               <button
                 onClick={() => emitChange({ ...chips, colorUpEnabled: !chips.colorUpEnabled })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -364,7 +364,7 @@ function ColorUpScheduleEditor({
       ) : (
         <div className="space-y-1.5">
           {grouped.map(([levelIdx, denoms]) => (
-            <div key={levelIdx} className="bg-gray-800/50 rounded px-2 py-1.5 space-y-1">
+            <div key={levelIdx} className="bg-gray-800/50 rounded-lg px-2 py-1.5 space-y-1">
               {denoms.map((denom) => {
                 const entryIdx = schedule.findIndex(
                   (e) => e.levelIndex === levelIdx && e.denomId === denom.id,

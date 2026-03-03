@@ -127,7 +127,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
-          className="w-20 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+          className="w-20 px-3 py-2 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
         />
       </div>
 
@@ -142,7 +142,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={(e) => handleDrop(e, i)}
               onDragEnd={handleDragEnd}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition-all ${
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all ${
                 draggedIndex === i ? 'opacity-40' : ''
               } ${
                 dragOverIndex === i && draggedIndex !== null
@@ -169,7 +169,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
               ) : (
                 <button
                   onClick={() => handleSetDealer(i)}
-                  className="w-5 h-5 rounded-full border border-gray-700 text-gray-600 hover:border-red-500 hover:text-red-400 text-[10px] font-bold flex items-center justify-center shrink-0 transition-colors"
+                  className="w-5 h-5 rounded-full border border-gray-700/40 text-gray-600 hover:border-red-500 hover:text-red-400 text-[10px] font-bold flex items-center justify-center shrink-0 transition-colors"
                   title={t('playerManager.setDealer')}
                 >
                   D
@@ -182,7 +182,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
                 value={player.name}
                 onChange={(e) => updateName(i, e.target.value)}
                 placeholder={t('playerManager.playerN', { n: i + 1 })}
-                className="flex-1 min-w-0 px-2 py-1 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+                className="flex-1 min-w-0 px-2 py-1 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
 
               {/* Arrow buttons */}
@@ -217,7 +217,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
         </button>
       )}
       {showShuffleConfirm && (
-        <div className="px-3 py-3 bg-amber-900/20 border border-amber-800 rounded-lg space-y-2">
+        <div className="px-3 py-3 bg-amber-900/20 border border-amber-700/40 rounded-lg space-y-2">
           <p className="text-sm text-amber-300 font-medium">
             {t('playerManager.shuffleConfirm')}
           </p>
@@ -227,13 +227,13 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
           <div className="flex gap-2">
             <button
               onClick={() => setShowShuffleConfirm(false)}
-              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-medium transition-colors"
+              className="flex-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium transition-colors"
             >
               {t('app.cancel')}
             </button>
             <button
               onClick={() => { handleShuffle(); setShowShuffleConfirm(false); }}
-              className="flex-1 px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-medium transition-colors"
+              className="flex-1 px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors"
             >
               🔀 {t('playerManager.shuffleConfirmBtn')}
             </button>

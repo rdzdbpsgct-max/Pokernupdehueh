@@ -16,7 +16,7 @@ export function CollapsibleSection({ title, summary, defaultOpen = true, childre
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 transition-all duration-200 text-left"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 hover:shadow-lg hover:shadow-black/25 transition-all duration-200 text-left"
       >
         <div>
           <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">

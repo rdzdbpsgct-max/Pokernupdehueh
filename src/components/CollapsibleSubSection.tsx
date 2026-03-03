@@ -16,7 +16,7 @@ export function CollapsibleSubSection({ title, summary, defaultOpen = false, chi
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-800/40 hover:bg-gray-700/40 transition-all duration-200 text-left"
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-800/40 hover:bg-gray-700/40 hover:shadow-md hover:shadow-black/15 transition-all duration-200 text-left"
       >
         <span className="text-sm font-medium text-gray-300">{title}</span>
         <div className="flex items-center gap-2 shrink-0">

@@ -34,7 +34,7 @@ export function RebuyStatus({ active, rebuy, currentPlayLevel, elapsedSeconds }:
   }
 
   return (
-    <div className="px-4 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-center">
+    <div className="px-4 py-1.5 bg-gray-800/50 border border-gray-700/40 rounded-xl text-center">
       <span className="text-gray-500 text-sm">{t('rebuyStatus.ended')}</span>
     </div>
   );

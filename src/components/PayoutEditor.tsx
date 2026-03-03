@@ -102,7 +102,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
           max={maxPlaces}
           value={payout.entries.length}
           onChange={(e) => setPlaceCount(Number(e.target.value))}
-          className="w-16 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+          className="w-16 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
         />
       </div>
 
@@ -118,7 +118,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
               step={payout.mode === 'percent' ? 5 : 1}
               value={entry.value}
               onChange={(e) => updateEntry(i, Number(e.target.value))}
-              className="w-24 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
+              className="w-24 px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
             />
             <span className="text-gray-500 text-sm">
               {payout.mode === 'percent' ? '%' : '€'}
@@ -132,14 +132,14 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
         <button
           onClick={addPlace}
           disabled={payout.entries.length >= maxPlaces}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-xs font-medium transition-colors disabled:opacity-30"
+          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-30"
         >
           {t('payoutEditor.addPlace')}
         </button>
         <button
           onClick={removeLastPlace}
           disabled={payout.entries.length <= 1}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded text-xs font-medium transition-colors disabled:opacity-30"
+          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-30"
         >
           {t('payoutEditor.removePlace')}
         </button>
