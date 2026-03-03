@@ -6,9 +6,9 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.1.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.2.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
-[![Tests](https://img.shields.io/badge/Tests-187%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-192%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -67,7 +67,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
-| Sprachansagen | Level-Wechsel, Pausen, Bubble, ITM, Eliminierungen, Sieger — Web Speech API (offline, kostenlos) |
+| Sprachansagen | Level-Wechsel, Pausen, Bubble, ITM, Eliminierungen, Sieger — Web Speech API (offline, kostenlos). Phonetische Aussprache englischer Pokerbegriffe im DE-Modus. Countdown alle 10 Sek. VoiceSwitcher-Toggle im Header. |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
@@ -146,7 +146,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
-| Voice announcements | Level changes, breaks, bubble, ITM, eliminations, winner — Web Speech API (offline, free) |
+| Voice announcements | Level changes, breaks, bubble, ITM, eliminations, winner — Web Speech API (offline, free). Phonetic pronunciation of English poker terms in DE mode. Countdown all 10 sec. VoiceSwitcher toggle in header. |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
@@ -180,13 +180,13 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-187_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-192_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 
 - **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
 - **TypeScript 5.9** — Strikte Typisierung / Strict typing
 - **Vite 7** — Build-Tool / Build tool
 - **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
-- **Vitest** — 187 Unit-Tests / Unit tests
+- **Vitest** — 192 Unit-Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
 - **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
 
@@ -219,7 +219,7 @@ App: `http://localhost:5173/Pokernupdehueh/`
 
 ```bash
 npm run lint        # ESLint
-npm run test        # 187 Unit-Tests
+npm run test        # 192 Unit-Tests
 npm run build       # Production-Build → ./dist
 ```
 
@@ -242,7 +242,7 @@ src/
     themeContextValue.ts # Context + Types
     index.ts            # Barrel-Export
   i18n/
-    translations.ts     # DE/EN Übersetzungen / Translations (~460 Keys)
+    translations.ts     # DE/EN Übersetzungen / Translations (~480+ Keys)
     LanguageContext.tsx  # React Context Provider
     useTranslation.ts   # useTranslation() Hook
     index.ts            # Barrel-Export
@@ -268,11 +268,12 @@ src/
     ChevronIcon.tsx      # SVG-Chevron mit Animation / SVG chevron with animation
     NumberStepper.tsx     # Custom +/- Stepper mit Long-Press / Custom +/- stepper with long-press
     ThemeSwitcher.tsx     # Dark/Light Mode Toggle
+    VoiceSwitcher.tsx     # Sound/Voice Toggle im Header / Sound/voice toggle in header
     LanguageSwitcher.tsx  # DE/EN-Umschalter / Language toggle
     LevelPreview.tsx      # Level-Vorschau / Level preview
     RebuyStatus.tsx      # Rebuy-Anzeige / Rebuy indicator
 tests/
-  logic.test.ts         # 187 Unit-Tests
+  logic.test.ts         # 192 Unit-Tests
 ```
 
 ## Architektur / Architecture

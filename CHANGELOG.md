@@ -5,6 +5,30 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.2.0] – 2026-03-03
+
+### Sprachausgabe-Verfeinerung & VoiceSwitcher / Voice Refinement & VoiceSwitcher
+
+- **VoiceSwitcher im Header** — Neue `VoiceSwitcher.tsx`-Komponente: 2-Segment-Toggle (Noten-Icon für Sound / Mikrofon-Icon für Voice) im Header zwischen Sprachumschalter und Modus-Button. Ersetzt den Voice-Toggle aus den Einstellungen. Verfügbar in Setup und Spielmodus.
+- **VoiceSwitcher in header** — New `VoiceSwitcher.tsx` component: 2-segment toggle (music note icon for sound / microphone icon for voice) in header between language switcher and mode button. Replaces the voice toggle from settings panel. Available in setup and game mode.
+
+- **Sequentielle Sprachwiedergabe** — Speech-Queue mit `onend`-Verkettung: Ansagen werden nacheinander abgespielt, keine Überlappung. `announceImmediate()` für zeitkritische Countdown-Zahlen (leert Queue und spricht sofort). Sound-Effekte werden vor Voice-Ansagen abgespielt (delay-basierte Koordination).
+- **Sequential speech playback** — Speech queue with `onend` chaining: announcements play one after another, no overlap. `announceImmediate()` for time-critical countdown numbers (clears queue and speaks immediately). Sound effects play before voice announcements (delay-based coordination).
+
+- **Phonetische Aussprache** — Alle englischen Pokerbegriffe in deutschen Voice-Texten phonetisch angepasst für natürliche TTS-Aussprache: Bleindz (Blinds), Riebai (Rebuy), Ädd-On (Add-On), Babbl (Bubble), Kaller-App (Color-Up), Inn se Manni (In The Money).
+- **Phonetic pronunciation** — All English poker terms in German voice texts phonetically adjusted for natural TTS pronunciation: Bleindz (Blinds), Riebai (Rebuy), Ädd-On (Add-On), Babbl (Bubble), Kaller-App (Color-Up), Inn se Manni (In The Money).
+
+- **Countdown komplett gesprochen** — Voice-Countdown für alle 10 Sekunden (vorher nur letzte 5). Timing-Fix: `Math.floor` statt `Math.ceil` — Ansage synchron mit der Anzeige (kein 1-Sekunden-Versatz mehr).
+- **Full countdown spoken** — Voice countdown for all 10 seconds (previously only last 5). Timing fix: `Math.floor` instead of `Math.ceil` — announcement in sync with display (no more 1-second offset).
+
+- **Add-On/Rebuy-Timing** — Ansage und Banner erscheinen vor der Pause bzw. vor dem nächsten Level — nicht erst danach. Zentralisierter `lastRebuyLevelIndex` als `useMemo`. `addOnWindowOpen` reagiert auf `remainingSeconds <= 0` am letzten Rebuy-Level.
+- **Add-on/rebuy timing** — Announcement and banner appear before the break or next level — not after. Centralized `lastRebuyLevelIndex` as `useMemo`. `addOnWindowOpen` reacts to `remainingSeconds <= 0` at last rebuy level.
+
+- **Add-On-Text** — „einmalig verfügbar" / „available once" statt generisch „verfügbar" / „available".
+- **Add-on text** — "einmalig verfügbar" / "available once" instead of generic "verfügbar" / "available".
+
+---
+
 ## [2.1.0] – 2026-03-03
 
 ### Sprachansagen / Voice Announcements

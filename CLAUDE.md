@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.1.0
+**Version**: 2.2.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -60,6 +60,7 @@ src/
 │   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen
 │   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
 │   ├── ThemeSwitcher.tsx        # System/Light/Dark 3-way toggle
+│   ├── VoiceSwitcher.tsx        # Sound/Voice segmented toggle in header
 │   ├── TimerDisplay.tsx         # Main timer, blinds display, progress bar
 │   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
@@ -150,7 +151,7 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files
-- **Voice announcements**: Web Speech API (`speechSynthesis`) — offline, zero sound files, zero cost. Voice selection by app language (DE/EN, prefers local voices). Cancel-before-speak queue prevents overlapping. Toggle via `settings.voiceEnabled`. Announces: level changes, breaks (start + 30s warning), bubble, ITM, eliminations, tournament winner, add-on, rebuy end, color-up. Verbal countdown for last 5 seconds.
+- **Voice announcements**: Web Speech API (`speechSynthesis`) — offline, zero sound files, zero cost. Voice selection by app language (DE/EN, prefers local voices). Sequential speech queue (`onend`-chained) prevents overlapping; `announceImmediate()` for time-critical countdown. `VoiceSwitcher` header toggle (sound-only / voice). Phonetic pronunciation hints for English poker terms in German TTS (e.g. "Bleindz", "Riebai", "Babbl"). Announces: level changes, breaks (start + 30s warning), bubble, ITM, eliminations, tournament winner, add-on, rebuy end, color-up. Verbal countdown for last 10 seconds. Sound effects finish before voice starts (delay-based coordination).
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
@@ -214,6 +215,15 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.2.0 — Sprachausgabe-Verfeinerung & VoiceSwitcher
+
+- **VoiceSwitcher im Header**: Neue `VoiceSwitcher.tsx`-Komponente — 2-Segment-Toggle (Noten-Icon / Mikrofon-Icon) zwischen LanguageSwitcher und Mode-Button. Ersetzt Voice-Toggle aus SettingsPanel. Verfügbar in Setup + Spielmodus.
+- **Sequentielle Sprachwiedergabe**: Speech-Queue mit `onend`-Verkettung — Ansagen werden nacheinander abgespielt (kein Überlappen). `announceImmediate()` für zeitkritische Countdown-Zahlen (Queue leeren + sofort sprechen).
+- **Phonetische Aussprache**: Alle englischen Pokerbegriffe in deutschen Voice-Texten phonetisch angepasst: Bleindz (Blinds), Riebai (Rebuy), Ädd-On (Add-On), Babbl (Bubble), Kaller-App (Color-Up), Inn se Manni (In The Money).
+- **Countdown komplett gesprochen**: Voice-Countdown für alle 10 Sekunden (war: nur letzte 5). Timing-Fix: `Math.floor` statt `Math.ceil` — synchron mit Anzeige.
+- **Sound-Voice-Koordination**: Sound-Effekte werden vor Sprachansagen abgespielt (delay-basiert, conditional auf `soundEnabled`).
+- **Add-On/Rebuy-Timing**: Ansage und Banner vor Pause/nächstem Level. Zentralisierter `lastRebuyLevelIndex`. Add-On-Text: „einmalig verfügbar".
 
 ### v2.1.0 — Sprachansagen (Web Speech API)
 
