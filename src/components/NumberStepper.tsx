@@ -74,7 +74,7 @@ export function NumberStepper({
 
   const btnBase =
     'w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all duration-150 select-none shrink-0 ' +
-    'bg-gray-700/80 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600/50 ' +
+    'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600/50 ' +
     'active:scale-[0.93] disabled:opacity-30 disabled:pointer-events-none';
 
   return (
@@ -103,7 +103,7 @@ export function NumberStepper({
         min={min}
         max={max === Infinity ? undefined : max}
         step={step}
-        className={`${inputClassName} px-2 py-1.5 bg-gray-800/80 border border-gray-700/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200`}
+        className={`${inputClassName} px-2 py-1.5 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200`}
       />
       <button
         type="button"

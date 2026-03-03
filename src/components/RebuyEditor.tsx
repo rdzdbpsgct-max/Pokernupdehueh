@@ -46,7 +46,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           rebuy.enabled
             ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
-            : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+            : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
       >
         {rebuy.enabled ? t('rebuyEditor.enabled') : t('rebuyEditor.disabled')}
@@ -58,17 +58,17 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
           {/* Rebuy cost & chips */}
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">{t('rebuyEditor.cost')}</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300">{t('rebuyEditor.cost')}</label>
               <NumberStepper
                 value={rebuy.rebuyCost}
                 onChange={(v) => onChange({ ...rebuy, rebuyCost: Math.max(1, v) })}
                 min={1}
                 step={1}
               />
-              <span className="text-gray-500 text-xs">{t('unit.eur')}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs">{t('unit.eur')}</span>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">{t('rebuyEditor.chips')}</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300">{t('rebuyEditor.chips')}</label>
               <NumberStepper
                 value={rebuy.rebuyChips}
                 onChange={(raw) => {
@@ -79,7 +79,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 step={1000}
                 inputClassName="w-24"
               />
-              <span className="text-gray-500 text-xs">{t('unit.chips')}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs">{t('unit.chips')}</span>
             </div>
           </div>
 
@@ -90,7 +90,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 rebuy.limitType === 'levels'
                   ? 'bg-emerald-700 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               {t('rebuyEditor.byLevels')}
@@ -100,7 +100,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 rebuy.limitType === 'time'
                   ? 'bg-emerald-700 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               {t('rebuyEditor.byTime')}
@@ -110,7 +110,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
           {/* Level limit */}
           {rebuy.limitType === 'levels' && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">{t('rebuyEditor.untilLevel')}</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300">{t('rebuyEditor.untilLevel')}</label>
               <NumberStepper
                 value={rebuy.levelLimit}
                 onChange={(v) => setLevelLimit(v)}
@@ -125,7 +125,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
           {/* Time limit */}
           {rebuy.limitType === 'time' && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-300">{t('rebuyEditor.timePeriod')}</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300">{t('rebuyEditor.timePeriod')}</label>
               <NumberStepper
                 value={hours}
                 onChange={(v) => setTimeLimitFromHoursMinutes(v, minutes)}
@@ -134,7 +134,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 step={1}
                 inputClassName="w-14"
               />
-              <span className="text-gray-500 text-xs">{t('rebuyEditor.hours')}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs">{t('rebuyEditor.hours')}</span>
               <NumberStepper
                 value={minutes}
                 onChange={(v) => setTimeLimitFromHoursMinutes(hours, v)}
@@ -143,7 +143,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
                 step={1}
                 inputClassName="w-14"
               />
-              <span className="text-gray-500 text-xs">{t('rebuyEditor.minutes')}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs">{t('rebuyEditor.minutes')}</span>
             </div>
           )}
         </div>

@@ -76,7 +76,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
             payout.mode === 'percent'
               ? 'bg-emerald-700 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
           }`}
         >
           {t('payoutEditor.percent')}
@@ -86,7 +86,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
             payout.mode === 'euro'
               ? 'bg-emerald-700 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
           }`}
         >
           {t('payoutEditor.euro')}
@@ -95,7 +95,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
 
       {/* Place count */}
       <div className="flex items-center gap-3">
-        <label className="text-xs text-gray-400 uppercase tracking-wider">{t('payoutEditor.paidPlaces')}</label>
+        <label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('payoutEditor.paidPlaces')}</label>
         <NumberStepper
           value={payout.entries.length}
           onChange={(v) => setPlaceCount(v)}
@@ -110,7 +110,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
       <div className="space-y-2">
         {payout.entries.map((entry, i) => (
           <div key={entry.place} className="flex items-center gap-2">
-            <span className="text-gray-400 text-sm w-16">{t('payoutEditor.placeN', { n: entry.place })}</span>
+            <span className="text-gray-500 dark:text-gray-400 text-sm w-16">{t('payoutEditor.placeN', { n: entry.place })}</span>
             <NumberStepper
               value={entry.value}
               onChange={(v) => updateEntry(i, v)}
@@ -118,7 +118,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
               step={payout.mode === 'percent' ? 5 : 1}
               inputClassName="w-24"
             />
-            <span className="text-gray-500 text-sm">
+            <span className="text-gray-400 dark:text-gray-500 text-sm">
               {payout.mode === 'percent' ? '%' : '€'}
             </span>
           </div>
@@ -130,14 +130,14 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
         <button
           onClick={addPlace}
           disabled={payout.entries.length >= maxPlaces}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-30"
+          className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-30"
         >
           {t('payoutEditor.addPlace')}
         </button>
         <button
           onClick={removeLastPlace}
           disabled={payout.entries.length <= 1}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-30"
+          className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-30"
         >
           {t('payoutEditor.removePlace')}
         </button>
@@ -154,7 +154,7 @@ export function PayoutEditor({ payout, onChange, maxPlaces = 10 }: Props) {
 
       {/* Sum display for percent */}
       {payout.mode === 'percent' && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-400 dark:text-gray-500">
           {t('payoutEditor.sum')} {payout.entries.reduce((s, e) => s + e.value, 0)}%
         </p>
       )}

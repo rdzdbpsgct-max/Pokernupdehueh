@@ -12,25 +12,25 @@ export function CollapsibleSubSection({ title, summary, defaultOpen = false, chi
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border border-gray-700/50 rounded-lg overflow-hidden shadow-md shadow-black/10">
+    <div className="border border-gray-300 dark:border-gray-700/50 rounded-lg overflow-hidden shadow-md shadow-gray-300/30 dark:shadow-black/10">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
-        className="group w-full flex items-center justify-between px-4 py-2.5 bg-gray-800/40 hover:bg-gray-700/40 hover:shadow-md hover:shadow-black/15 transition-all duration-200 text-left"
+        className="group w-full flex items-center justify-between px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/40 hover:bg-gray-200/50 dark:hover:bg-gray-700/40 hover:shadow-md hover:shadow-gray-300/30 dark:hover:shadow-black/15 transition-all duration-200 text-left"
       >
-        <span className="text-sm font-medium text-gray-300">{title}</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</span>
         <div className="flex items-center gap-2 shrink-0">
           {!isOpen && summary && (
-            <span className="text-xs text-gray-500 truncate max-w-[200px]">
+            <span className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
               {summary}
             </span>
           )}
-          <ChevronIcon open={isOpen} className="text-gray-400 group-hover:text-gray-200" />
+          <ChevronIcon open={isOpen} className="text-gray-500 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200" />
         </div>
       </button>
       {isOpen && (
-        <div className="p-4 bg-gray-900/30 animate-fade-in">
+        <div className="p-4 bg-gray-50 dark:bg-gray-900/30 animate-fade-in">
           {children}
         </div>
       )}

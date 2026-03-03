@@ -1,7 +1,8 @@
 import { useTheme, type ThemeMode } from '../theme';
 import { useTranslation } from '../i18n';
+import type { TranslationKey } from '../i18n/translations';
 
-const modes: { mode: ThemeMode; icon: string; key: string }[] = [
+const modes: { mode: ThemeMode; icon: string; key: TranslationKey }[] = [
   { mode: 'system', icon: '💻', key: 'theme.system' },
   { mode: 'light', icon: '☀️', key: 'theme.light' },
   { mode: 'dark', icon: '🌙', key: 'theme.dark' },

@@ -105,7 +105,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           chips.enabled
             ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
-            : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+            : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
       >
         {chips.enabled ? t('chipEditor.enabled') : t('chipEditor.disabled')}
@@ -113,11 +113,11 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
 
       {chips.enabled && (
         <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
-          <p className="text-xs text-gray-500">{t('chipEditor.description')}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">{t('chipEditor.description')}</p>
 
           {/* Preset buttons */}
           <div>
-            <label className="text-xs text-gray-400 uppercase tracking-wider">
+            <label className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t('chipEditor.presets')}
             </label>
             <div className="flex flex-wrap gap-2 mt-1">
@@ -125,14 +125,14 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                 <button
                   key={p.key}
                   onClick={() => emitChange(applyChipPreset(p))}
-                  className="flex flex-col items-start px-3 py-2 bg-gray-800 hover:bg-gray-700
-                             border border-gray-700 hover:border-emerald-600 rounded-lg
+                  className="flex flex-col items-start px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
+                             border border-gray-300 dark:border-gray-700 hover:border-emerald-600 rounded-lg
                              transition-colors text-left"
                 >
-                  <span className="text-white font-medium text-xs">
+                  <span className="text-gray-900 dark:text-white font-medium text-xs">
                     {t(`chipEditor.preset${presetKeys[i]}` as const)}
                   </span>
-                  <span className="text-gray-400 text-xs mt-0.5">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
                     {t(`chipEditor.preset${presetKeys[i]}Desc` as const)}
                   </span>
                 </button>
@@ -155,7 +155,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
               const isDuplicate = duplicateColors.has(denom.color);
               return (
               <div key={denom.id}>
-                <div className={`flex items-center gap-2 px-2 py-1.5 bg-gray-800/50 rounded-lg ${
+                <div className={`flex items-center gap-2 px-2 py-1.5 bg-gray-100 dark:bg-gray-800/50 rounded-lg ${
                   isDuplicate ? 'ring-1 ring-amber-600/50' : ''
                 }`}>
                   {/* Color swatch */}
@@ -163,15 +163,15 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                     onClick={() =>
                       setEditingColorId(editingColorId === denom.id ? null : denom.id)
                     }
-                    className={`w-6 h-6 rounded-full border-2 shrink-0 hover:border-gray-400 transition-colors ${
-                      isDuplicate ? 'border-amber-500' : 'border-gray-600'
+                    className={`w-6 h-6 rounded-full border-2 shrink-0 hover:border-gray-500 dark:hover:border-gray-400 transition-colors ${
+                      isDuplicate ? 'border-amber-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     style={{ backgroundColor: denom.color }}
                     title={denom.label}
                   />
 
                   {/* Label */}
-                  <span className="text-xs text-gray-400 w-14 truncate">{denom.label}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 w-14 truncate">{denom.label}</span>
 
                   {/* Value input */}
                   <NumberStepper
@@ -216,7 +216,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                               ? 'border-emerald-400 ring-1 ring-emerald-400'
                               : isUsedByOther
                                 ? 'border-amber-500/50 opacity-50'
-                                : 'border-gray-600 hover:border-gray-400'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-500 dark:hover:border-gray-400'
                           }`}
                           style={{ backgroundColor: c.hex }}
                           title={language === 'de' ? c.de : c.en}
@@ -234,7 +234,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
           {chips.denominations.length < 10 && (
             <button
               onClick={addDenomination}
-              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400
+              className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400
                          rounded-lg text-sm transition-colors"
             >
               {t('chipEditor.addDenomination')}
@@ -243,13 +243,13 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
 
           {/* Color-Up toggle + editable schedule */}
           {chips.denominations.length >= 2 && (
-            <div className="pt-2 border-t border-gray-700/40">
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
               <button
                 onClick={() => emitChange({ ...chips, colorUpEnabled: !chips.colorUpEnabled })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   chips.colorUpEnabled
                     ? 'bg-amber-700/50 hover:bg-amber-700/70 text-amber-200'
-                    : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
                 }`}
               >
                 {chips.colorUpEnabled ? t('chipEditor.colorUpEnabled') : t('chipEditor.colorUpDisabled')}
@@ -345,7 +345,7 @@ function ColorUpScheduleEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs text-gray-500 uppercase tracking-wider">
+        <h4 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
           {t('chipEditor.colorUpSchedule')}
         </h4>
         <button
@@ -357,11 +357,11 @@ function ColorUpScheduleEditor({
       </div>
 
       {schedule.length === 0 ? (
-        <p className="text-xs text-gray-500">{t('chipEditor.noSchedule')}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">{t('chipEditor.noSchedule')}</p>
       ) : (
         <div className="space-y-1.5">
           {grouped.map(([levelIdx, denoms]) => (
-            <div key={levelIdx} className="bg-gray-800/50 rounded-lg px-2 py-1.5 space-y-1">
+            <div key={levelIdx} className="bg-gray-100 dark:bg-gray-800/50 rounded-lg px-2 py-1.5 space-y-1">
               {denoms.map((denom) => {
                 const entryIdx = schedule.findIndex(
                   (e) => e.levelIndex === levelIdx && e.denomId === denom.id,
@@ -369,16 +369,16 @@ function ColorUpScheduleEditor({
                 return (
                   <div key={denom.id} className="flex items-center gap-2 text-xs">
                     <span
-                      className="w-4 h-4 rounded-full shrink-0 border border-gray-600"
+                      className="w-4 h-4 rounded-full shrink-0 border border-gray-300 dark:border-gray-600"
                       style={{ backgroundColor: denom.color }}
                     />
-                    <span className="text-gray-300 w-12 truncate">{denom.label}</span>
-                    <span className="text-gray-500 font-mono">{denom.value.toLocaleString()}</span>
-                    <span className="text-gray-600 mx-1">→</span>
+                    <span className="text-gray-700 dark:text-gray-300 w-12 truncate">{denom.label}</span>
+                    <span className="text-gray-400 dark:text-gray-500 font-mono">{denom.value.toLocaleString()}</span>
+                    <span className="text-gray-300 dark:text-gray-600 mx-1">→</span>
                     <select
                       value={levelIdx}
                       onChange={(e) => handleChangeLevelIndex(entryIdx, Number(e.target.value))}
-                      className="flex-1 min-w-0 px-1 py-0.5 bg-gray-700 border border-gray-600 rounded text-xs text-gray-300 focus:outline-none focus:border-amber-500"
+                      className="flex-1 min-w-0 px-1 py-0.5 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500"
                     >
                       {levelOptions.map((opt) => (
                         <option key={opt.index} value={opt.index}>
@@ -448,7 +448,7 @@ function AddColorUpRow({
       <select
         value={selectedDenom}
         onChange={(e) => setSelectedDenom(e.target.value)}
-        className="px-1 py-1 bg-gray-700 border border-gray-600 rounded text-xs text-gray-300 focus:outline-none focus:border-amber-500"
+        className="px-1 py-1 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500"
       >
         {sorted.map((d) => (
           <option key={d.id} value={d.id}>
@@ -456,12 +456,12 @@ function AddColorUpRow({
           </option>
         ))}
       </select>
-      <span className="text-gray-600">→</span>
+      <span className="text-gray-300 dark:text-gray-600">→</span>
       {/* Level selector */}
       <select
         value={selectedLevel}
         onChange={(e) => setSelectedLevel(Number(e.target.value))}
-        className="flex-1 min-w-0 px-1 py-1 bg-gray-700 border border-gray-600 rounded text-xs text-gray-300 focus:outline-none focus:border-amber-500"
+        className="flex-1 min-w-0 px-1 py-1 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500"
       >
         {levelOptions.map((opt) => (
           <option key={opt.index} value={opt.index}>

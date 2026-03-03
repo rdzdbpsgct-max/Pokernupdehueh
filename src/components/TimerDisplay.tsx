@@ -23,7 +23,7 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
   const nextLabel = getLevelLabel(nextLvl, nextIdx, levels);
   return (
     <div className="text-center">
-      <p className={`text-gray-500 ${largeDisplay ? 'text-sm' : 'text-xs'} uppercase tracking-wider`}>
+      <p className={`text-gray-400 dark:text-gray-500 ${largeDisplay ? 'text-sm' : 'text-xs'} uppercase tracking-wider`}>
         {t('timer.next')} {nextLabel}
       </p>
       {nextLvl.type === 'break' ? (
@@ -31,7 +31,7 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
           {formatTime(nextLvl.durationSeconds)}
         </p>
       ) : (
-        <p className={`text-gray-400 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
+        <p className={`text-gray-500 dark:text-gray-400 font-medium mt-0.5 ${largeDisplay ? 'text-lg' : 'text-sm'}`}>
           {getBlindsText(nextLvl)} ({formatTime(nextLvl.durationSeconds)})
         </p>
       )}
@@ -97,7 +97,7 @@ function ScrubSlider({
 
   return (
     <div className="w-full flex items-center gap-3">
-      <span className="text-xs text-gray-500 w-12 text-right">0:00</span>
+      <span className="text-xs text-gray-400 dark:text-gray-500 w-12 text-right">0:00</span>
       <div
         ref={trackRef}
         className="flex-1 relative cursor-pointer touch-none py-2"
@@ -112,7 +112,7 @@ function ScrubSlider({
         tabIndex={0}
       >
         {/* Track */}
-        <div className="h-2.5 bg-gray-800 rounded-full overflow-hidden">
+        <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full ${
               isBreak
@@ -132,7 +132,7 @@ function ScrubSlider({
           style={{ left: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-gray-500 w-12">
+      <span className="text-xs text-gray-400 dark:text-gray-500 w-12">
         {formatTime(duration)}
       </span>
     </div>
@@ -158,7 +158,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
     <div className="flex flex-col items-center justify-center gap-2 sm:gap-4 select-none w-full">
       {/* Progress bar */}
       <div
-        className="w-full max-w-xl h-2.5 bg-gray-800 rounded-full overflow-hidden"
+        className="w-full max-w-xl h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden"
         role="progressbar"
         aria-valuenow={Math.round(Math.min(100, progress * 100))}
         aria-valuemin={0}
@@ -181,13 +181,13 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
         </p>
         {currentLevel.type === 'level' && (
           <div className={`mt-2 ${largeDisplay ? 'space-y-1' : 'space-y-0.5'}`}>
-            <p className={`text-white font-bold tabular-nums tracking-wide drop-shadow-[0_0_12px_rgba(255,255,255,0.1)] ${
+            <p className={`text-gray-900 dark:text-white font-bold tabular-nums tracking-wide drop-shadow-[0_0_12px_rgba(255,255,255,0.1)] ${
               largeDisplay ? 'text-[3rem] sm:text-[5.5rem] lg:text-[8rem]' : 'text-4xl sm:text-6xl'
             }`}>
               {currentLevel.smallBlind ?? 0} / {currentLevel.bigBlind ?? 0}
             </p>
             {currentLevel.ante != null && currentLevel.ante > 0 && (
-              <p className={`text-gray-400 font-semibold ${
+              <p className={`text-gray-500 dark:text-gray-400 font-semibold ${
                 largeDisplay ? 'text-lg sm:text-2xl' : 'text-base sm:text-lg'
               }`}>
                 {t('timer.ante')} {currentLevel.ante}
@@ -245,8 +245,8 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
             : timerState.status === 'paused'
             ? 'text-yellow-400 opacity-80'
             : remaining <= 0
-            ? 'text-gray-500'
-            : 'text-white animate-timer-glow'
+            ? 'text-gray-400 dark:text-gray-500'
+            : 'text-gray-900 dark:text-white animate-timer-glow'
         }`}
         aria-live="assertive"
         aria-label={formatTime(remaining)}
@@ -262,7 +262,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
             className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
               scrubbing
                 ? 'bg-amber-700 hover:bg-amber-600 text-white'
-                : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
             }`}
           >
             {scrubbing ? t('timer.closeSlider') : t('timer.adjustTime')}
@@ -284,7 +284,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
 
       {/* Status (hidden in clean view) */}
       {!cleanView && (
-        <p className="text-sm text-gray-500 uppercase tracking-widest">
+        <p className="text-sm text-gray-400 dark:text-gray-500 uppercase tracking-widest">
           {timerState.status === 'running'
             ? t('timer.running')
             : timerState.status === 'paused'

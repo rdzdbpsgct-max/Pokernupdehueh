@@ -22,7 +22,7 @@ export function BountyEditor({ bounty, onChange }: Props) {
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           bounty.enabled
             ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
-            : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+            : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
       >
         {bounty.enabled ? t('bountyEditor.enabled') : t('bountyEditor.disabled')}
@@ -32,16 +32,16 @@ export function BountyEditor({ bounty, onChange }: Props) {
       {bounty.enabled && (
         <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-300">{t('bountyEditor.perKnockout')}</label>
+            <label className="text-sm text-gray-700 dark:text-gray-300">{t('bountyEditor.perKnockout')}</label>
             <NumberStepper
               value={bounty.amount}
               onChange={(v) => onChange({ ...bounty, amount: Math.max(1, v) })}
               min={1}
               step={1}
             />
-            <span className="text-gray-500 text-xs">{t('unit.eur')}</span>
+            <span className="text-gray-400 dark:text-gray-500 text-xs">{t('unit.eur')}</span>
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             {t('bountyEditor.description')}
           </p>
         </div>
