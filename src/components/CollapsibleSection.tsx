@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { ChevronIcon } from './ChevronIcon';
 
 interface Props {
   title: string;
@@ -16,7 +17,7 @@ export function CollapsibleSection({ title, summary, defaultOpen = true, childre
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 hover:shadow-lg hover:shadow-black/25 transition-all duration-200 text-left"
+        className="group w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 hover:shadow-lg hover:shadow-black/25 transition-all duration-200 text-left"
       >
         <div>
           <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
@@ -34,9 +35,7 @@ export function CollapsibleSection({ title, summary, defaultOpen = true, childre
               {summary}
             </span>
           )}
-          <span className="text-gray-500 text-xs" aria-hidden="true">
-            {isOpen ? '\u25BE' : '\u25B8'}
-          </span>
+          <ChevronIcon open={isOpen} className="text-gray-400 group-hover:text-gray-200" />
         </div>
       </button>
       {isOpen && (

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
 import { useTranslation } from '../i18n';
-import { toPng } from 'html-to-image';
+import { ChevronIcon } from './ChevronIcon';
 
 interface Props {
   players: Player[];
@@ -34,6 +34,7 @@ export function TournamentFinished({
     if (!resultsRef.current || capturing) return;
     setCapturing(true);
     try {
+      const { toPng } = await import('html-to-image');
       const dataUrl = await toPng(resultsRef.current, {
         backgroundColor: '#111827',
         pixelRatio: 2,
@@ -127,7 +128,10 @@ export function TournamentFinished({
               onClick={() => setDetailsExpanded((prev) => !prev)}
               className="text-xs px-3 py-1 rounded-lg transition-colors text-amber-400 border border-amber-500/40 hover:bg-amber-500/10"
             >
-              {detailsExpanded ? `▲ ${t('finished.collapse')}` : `▼ ${t('finished.expand')}`}
+              <span className="flex items-center gap-1">
+                <ChevronIcon open={detailsExpanded} className="w-3 h-3" />
+                {detailsExpanded ? t('finished.collapse') : t('finished.expand')}
+              </span>
             </button>
           </div>
           <div className="bg-gray-900/50 border border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-black/20">

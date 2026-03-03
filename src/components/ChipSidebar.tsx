@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ChipConfig, ChipDenomination, Level } from '../domain/types';
 import { getRemovedDenomIds, getNextColorUpLevel } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { ChevronIcon } from './ChevronIcon';
 
 interface Props {
   chipConfig: ChipConfig;
@@ -28,7 +29,7 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
         <h3 className="text-xs text-gray-500 uppercase tracking-wider">
           {t('chipSidebar.title')}
         </h3>
-        <span className="text-gray-500 text-xs">{collapsed ? '▸' : '▾'}</span>
+        <ChevronIcon open={!collapsed} className="text-gray-400" />
       </button>
 
       {!collapsed && (

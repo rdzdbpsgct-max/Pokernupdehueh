@@ -3,6 +3,7 @@ import type { TournamentConfig } from '../domain/types';
 import type { TournamentTemplate } from '../domain/logic';
 import { loadTemplates, saveTemplate, deleteTemplate, exportTemplateToJSON, parseTemplateFile, exportConfigJSON, importConfigJSON } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { ChevronIcon } from './ChevronIcon';
 
 // Minimal type for File System Access API (Chromium only)
 interface FilePickerHandle {
@@ -278,7 +279,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
             className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-gray-300 transition-colors"
           >
             <span className="uppercase tracking-wider">{t('templates.jsonSection')}</span>
-            <span>{showJson ? '▾' : '▸'}</span>
+            <ChevronIcon open={showJson} className="text-gray-400" />
           </button>
           {showJson && (
             <div className="mt-2 space-y-2">

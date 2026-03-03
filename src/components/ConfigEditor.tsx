@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Level, TournamentConfig } from '../domain/types';
 import { generateId, validateConfig, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { NumberStepper } from './NumberStepper';
 
 interface Props {
   config: TournamentConfig;
@@ -113,13 +114,12 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/50 border border-gray-700/40 rounded-lg">
           <label className="text-gray-400 text-xs whitespace-nowrap">{t('config.allLevels')}</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
+          <NumberStepper
             value={globalMinutes}
-            onChange={(e) => setGlobalMinutes(Math.max(1, Number(e.target.value)))}
-            className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+            onChange={(v) => setGlobalMinutes(Math.max(1, v))}
+            min={1}
+            step={1}
+            inputClassName="w-16"
           />
           <span className="text-gray-500 text-xs">{t('config.min')}</span>
           <button
@@ -131,13 +131,12 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
           <label className="text-amber-400/70 text-xs whitespace-nowrap">{t('config.allBreaks')}</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
+          <NumberStepper
             value={globalBreakMinutes}
-            onChange={(e) => setGlobalBreakMinutes(Math.max(1, Number(e.target.value)))}
-            className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/25 transition-all duration-200"
+            onChange={(v) => setGlobalBreakMinutes(Math.max(1, v))}
+            min={1}
+            step={1}
+            inputClassName="w-16"
           />
           <span className="text-gray-500 text-xs">{t('config.min')}</span>
           <button
@@ -177,15 +176,14 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
             {/* Duration */}
             <div className="flex items-center gap-1">
               <label className="text-gray-500 text-xs">{t('config.min')}:</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
+              <NumberStepper
                 value={Math.round(level.durationSeconds / 60)}
-                onChange={(e) =>
-                  updateLevel(i, { durationSeconds: Math.max(60, Number(e.target.value) * 60) })
+                onChange={(v) =>
+                  updateLevel(i, { durationSeconds: Math.max(60, v * 60) })
                 }
-                className="w-16 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                min={1}
+                step={1}
+                inputClassName="w-16"
               />
               <span className="text-gray-600 text-xs font-mono">{formatTime(level.durationSeconds)}</span>
             </div>
@@ -195,36 +193,33 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               <>
                 <div className="flex items-center gap-1">
                   <label className="text-gray-500 text-xs">SB:</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
+                  <NumberStepper
                     value={level.smallBlind ?? 0}
-                    onChange={(e) => updateLevel(i, { smallBlind: Number(e.target.value) })}
-                    className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                    onChange={(v) => updateLevel(i, { smallBlind: v })}
+                    min={1}
+                    step={1}
+                    inputClassName="w-20"
                   />
                 </div>
                 <div className="flex items-center gap-1">
                   <label className="text-gray-500 text-xs">BB:</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
+                  <NumberStepper
                     value={level.bigBlind ?? 0}
-                    onChange={(e) => updateLevel(i, { bigBlind: Number(e.target.value) })}
-                    className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                    onChange={(v) => updateLevel(i, { bigBlind: v })}
+                    min={1}
+                    step={1}
+                    inputClassName="w-20"
                   />
                 </div>
                 {anteEnabled && (
                   <div className="flex items-center gap-1">
                     <label className="text-gray-500 text-xs">{t('timer.ante')}:</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
+                    <NumberStepper
                       value={level.ante ?? 0}
-                      onChange={(e) => updateLevel(i, { ante: Number(e.target.value) })}
-                      className="w-20 px-2 py-1 bg-gray-900/80 border border-gray-600/60 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                      onChange={(v) => updateLevel(i, { ante: v })}
+                      min={0}
+                      step={1}
+                      inputClassName="w-20"
                     />
                   </div>
                 )}
