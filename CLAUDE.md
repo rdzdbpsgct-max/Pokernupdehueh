@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 1.6.0
+**Version**: 1.7.0
 **Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
 
 ## Tech Stack
@@ -44,6 +44,7 @@ src/
 │   ├── ChipEditor.tsx           # Chip denomination management, editable color-up schedule
 │   ├── ChipSidebar.tsx          # Game-mode chip info, next color-up display
 │   ├── CollapsibleSection.tsx   # Reusable collapsible card for setup sections
+│   ├── CollapsibleSubSection.tsx # Lighter collapsible for nesting inside cards
 │   ├── ConfigEditor.tsx         # Blind level table editor
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
@@ -73,7 +74,7 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 184 unit tests for domain/logic.ts
+└── logic.test.ts                # 187 unit tests for domain/logic.ts
 
 public/
 ├── favicon.svg                  # Spade symbol favicon
@@ -147,7 +148,7 @@ public/
 - **PWA**: `vite-plugin-pwa` with auto-update service worker, installable on mobile/desktop
 - **Wake Lock**: Screen stays on during active tournament (Wake Lock API, re-acquired on tab focus)
 - **Cross-device compatibility**: Safe area insets (notch/gesture-bar), `100dvh` viewport height, `inputmode="numeric"` on all number inputs, webkit fullscreen prefix, localStorage try-catch for private browsing, tablet breakpoint (`md:` at 768px), touch targets ≥32px
-- **Progressive disclosure in setup**: `CollapsibleSection` card component wraps each setup section; essential sections (Players, Buy-In, Blinds) open by default, optional sections (Chips, Payout, Tournament Format) collapsed with summary text; Rebuy/Add-On/Bounty grouped into one "Tournament Format" card
+- **Progressive disclosure in setup**: `CollapsibleSection` card component wraps each setup section; essential sections (Tournament Basics, Players, Blinds) open by default, optional sections (Chips, Payout, Tournament Format) collapsed with summary text; `CollapsibleSubSection` for nested collapsibles inside cards (BlindGenerator, Level Table); Tournament Name + Buy-In merged into "Turnier-Grundlagen" card; Rebuy/Add-On/Bounty grouped into one "Tournament Format" card; Summary badges visible as subtitles even on open sections
 - **Tournament checkpoint**: Auto-save game state to localStorage on every action in game mode; on restart, offer to resume with timer always paused (timestamps invalid after reload)
 - **Accessibility**: ARIA roles/labels on timer, controls, modals, collapsible sections; auto-focus and Escape-to-close on dialogs
 - **Offline-first**: Zero network dependencies at runtime
@@ -196,6 +197,17 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Turnier-Format-Gruppierung**: Rebuy, Add-On und Bounty in einer gemeinsamen „Turnier-Format"-Karte zusammengefasst (logische Gruppierung verwandter Optionen)
 - **Summary-Badges**: Eingeklappte Sektionen zeigen kompakte Zusammenfassung (z.B. „5 Chips, Color-Up aktiv", „3 Plätze, % Prozent", „Rebuy, Bounty: 5 €")
 - **Clean View auf Mobile**: Clean-View-Toggle in der mobilen Button-Leiste im Spielmodus hinzugefügt (neben Spieler/Sidebar)
+
+### v1.7.0 — Setup UX: Blindstruktur ausklappbar + Cleanup
+
+- **Blindstruktur ausklappbar**: Level-Tabelle (ConfigEditor) in `CollapsibleSubSection` gewrappt, standardmäßig eingeklappt mit Summary „12 Levels, 3 Pausen, Ø 15 Min"
+- **BlindGenerator vereinheitlicht**: Eigener Toggle durch `CollapsibleSubSection` ersetzt — konsistente Chevrons und Styling
+- **Turnier-Name + Buy-In zusammengeführt**: Neue „Turnier-Grundlagen"-Karte spart eine Sektion
+- **Summary-Badges auch bei offenen Sektionen**: Dezenter Subtitle unter dem Titel zeigt Key-Info
+- **Spieler-Summary**: „6 Spieler"-Badge auf Spieler-Sektion
+- **Sticky Start-Button auf Mobile**: Button bleibt am unteren Bildschirmrand sichtbar
+- **Neue Komponente**: `CollapsibleSubSection.tsx` — leichteres Collapsible für Verschachtelung in Karten
+- **3 neue Tests**: `computeBlindStructureSummary` (187 Tests gesamt)
 
 ### v1.6.0 — Bug-Fixes, Accessibility & Turnier-Checkpoint
 

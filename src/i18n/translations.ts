@@ -314,6 +314,12 @@ const de = {
   'section.payoutSummary': '{places} Plätze, {mode}',
   'section.allDisabled': 'Alles deaktiviert',
 
+  // --- Setup UX ---
+  'app.tournamentBasics': 'Turnier-Grundlagen',
+  'config.levelTable': 'Level-Tabelle',
+  'config.summary': '{levels} Levels, {breaks} Pausen, Ø {min} Min',
+  'section.playerCount': '{n} Spieler',
+
   // --- Checkpoint ---
   'checkpoint.found': 'Laufendes Turnier gefunden',
   'checkpoint.details': '„{name}" — gespeichert am {date}',
@@ -640,6 +646,12 @@ const en: Record<TranslationKey, string> = {
   'section.colorUpActive': 'Color-Up active',
   'section.payoutSummary': '{places} places, {mode}',
   'section.allDisabled': 'All disabled',
+
+  // --- Setup UX ---
+  'app.tournamentBasics': 'Tournament Basics',
+  'config.levelTable': 'Level Table',
+  'config.summary': '{levels} Levels, {breaks} Breaks, avg {min} Min',
+  'section.playerCount': '{n} Players',
 
   // --- Checkpoint ---
   'checkpoint.found': 'Running tournament found',

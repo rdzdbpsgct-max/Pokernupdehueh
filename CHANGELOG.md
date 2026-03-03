@@ -5,6 +5,30 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [1.7.0] – 2026-03-03
+
+### Setup UX: Blindstruktur ausklappbar + Cleanup
+
+- **Blindstruktur ausklappbar** — Die Level-Tabelle (ConfigEditor) ist jetzt in einem `CollapsibleSubSection` gewrappt und standardmäßig eingeklappt. Summary zeigt „12 Levels, 3 Pausen, Ø 15 Min".
+- **Collapsible blind structure** — The level table (ConfigEditor) is now wrapped in a `CollapsibleSubSection` and collapsed by default. Summary shows "12 Levels, 3 Breaks, avg 15 Min".
+
+- **BlindGenerator vereinheitlicht** — Eigener interner Toggle durch `CollapsibleSubSection` ersetzt — konsistente Chevrons (▸/▾) und Styling in der gesamten App.
+- **BlindGenerator unified** — Internal toggle replaced with `CollapsibleSubSection` — consistent chevrons (▸/▾) and styling throughout the app.
+
+- **Turnier-Grundlagen** — Turnier-Name und Buy-In/Startchips in einer gemeinsamen Karte zusammengefasst. Spart eine Sektion im vertikalen Scroll.
+- **Tournament basics** — Tournament name and buy-in/starting chips merged into a single card. Saves one section in vertical scroll.
+
+- **Summary-Badges bei offenen Sektionen** — Summaries werden jetzt auch als dezenter Subtitle angezeigt, wenn die Sektion geöffnet ist. Neue Summaries für Spieler-Sektion und Blindstruktur.
+- **Summary badges on open sections** — Summaries are now also shown as subtle subtitles when the section is open. New summaries for players section and blind structure.
+
+- **Sticky Start-Button auf Mobile** — Der „Turnier starten"-Button bleibt auf Mobile am unteren Bildschirmrand sichtbar, unabhängig von der Scroll-Position.
+- **Sticky start button on mobile** — The "Start tournament" button stays visible at the bottom of the screen on mobile, regardless of scroll position.
+
+- **3 neue Tests** — `computeBlindStructureSummary` (187 Tests gesamt).
+- **3 new tests** — `computeBlindStructureSummary` (187 tests total).
+
+---
+
 ## [1.6.0] – 2026-02-27
 
 ### Bug-Fixes, Accessibility & Turnier-Checkpoint

@@ -6,9 +6,9 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-1.6.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-1.7.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
-[![Tests](https://img.shields.io/badge/Tests-184%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-187%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -73,7 +73,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Turnier-Checkpoint | Automatische Spielstandsicherung, Wiederherstellung nach Browser-Crash |
 | Barrierefreiheit | ARIA-Labels, Dialog-Rollen, Auto-Fokus, Escape-zum-Schließen |
 | Kompatibilität | Safe Area Insets, dynamische Viewport-Höhe, optimierte Touch-Targets, numerische Tastatur, Tablet-Layout |
-| Usability | Aufklappbare Setup-Sektionen, Progressive Disclosure, Turnier-Format-Gruppierung, Summary-Badges |
+| Usability | Aufklappbare Sektionen mit Summary-Badges, ausklappbare Blindstruktur, Sticky Start-Button auf Mobile |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
 
 ### Mitwirken
@@ -147,7 +147,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Tournament checkpoint | Auto-save game state, recovery after browser crash |
 | Accessibility | ARIA labels, dialog roles, auto-focus, escape-to-close |
 | Compatibility | Safe area insets, dynamic viewport height, optimized touch targets, numeric keyboard, tablet layout |
-| Usability | Collapsible setup sections, progressive disclosure, tournament format grouping, summary badges |
+| Usability | Collapsible sections with summary badges, collapsible blind structure, sticky start button on mobile |
 | Validation | Input validation before tournament start with clear error messages |
 
 ### Contributing
@@ -170,13 +170,13 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-184_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-187_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 
 - **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
 - **TypeScript 5.9** — Strikte Typisierung / Strict typing
 - **Vite 7** — Build-Tool / Build tool
 - **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
-- **Vitest** — 184 Unit-Tests / Unit tests
+- **Vitest** — 187 Unit-Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
 - **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
 
@@ -209,7 +209,7 @@ App: `http://localhost:5173/Pokernupdehueh/`
 
 ```bash
 npm run lint        # ESLint
-npm run test        # 184 Unit-Tests
+npm run test        # 187 Unit-Tests
 npm run build       # Production-Build → ./dist
 ```
 
@@ -242,6 +242,7 @@ src/
     BountyEditor.tsx     # Bounty-Konfiguration / Bounty configuration
     ChipEditor.tsx       # Chip-Werte & Color-Up / Chip values & color-up
     ChipSidebar.tsx      # Chip-Info im Spiel / Chip info during game
+    CollapsibleSubSection.tsx # Leichteres Collapsible für Verschachtelung / Lighter collapsible for nesting
     TemplateManager.tsx  # Vorlagen + JSON Import/Export / Templates + JSON import/export
     TournamentStats.tsx  # Live-Statistiken / Live statistics
     BubbleIndicator.tsx  # Bubble / In The Money Banner
@@ -252,7 +253,7 @@ src/
     LevelPreview.tsx     # Level-Vorschau / Level preview
     RebuyStatus.tsx      # Rebuy-Anzeige / Rebuy indicator
 tests/
-  logic.test.ts         # 184 Unit-Tests
+  logic.test.ts         # 187 Unit-Tests
 ```
 
 ## Architektur / Architecture

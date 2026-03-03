@@ -18,9 +18,16 @@ export function CollapsibleSection({ title, summary, defaultOpen = true, childre
         aria-expanded={isOpen}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/50 transition-colors text-left"
       >
-        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
-          {title}
-        </h2>
+        <div>
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+            {title}
+          </h2>
+          {isOpen && summary && (
+            <span className="text-xs text-gray-600 font-normal normal-case tracking-normal">
+              {summary}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2 shrink-0">
           {!isOpen && summary && (
             <span className="text-sm text-gray-500 truncate max-w-[200px]">

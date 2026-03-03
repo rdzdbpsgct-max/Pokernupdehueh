@@ -24,6 +24,7 @@ import {
   checkBlindChipCompatibility,
   isBubble,
   isInTheMoney,
+  computeBlindStructureSummary,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
@@ -47,6 +48,7 @@ import { BlindGenerator } from './components/BlindGenerator';
 import { BubbleIndicator } from './components/BubbleIndicator';
 import { TemplateManager } from './components/TemplateManager';
 import { CollapsibleSection } from './components/CollapsibleSection';
+import { CollapsibleSubSection } from './components/CollapsibleSubSection';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 
 type Mode = 'setup' | 'game';
@@ -424,6 +426,16 @@ function App() {
     return parts.length > 0 ? parts.join(', ') : t('section.allDisabled');
   }, [config.rebuy, config.addOn, config.bounty, t]);
 
+  const playersSummary = useMemo(
+    () => t('section.playerCount', { n: config.players.length }),
+    [config.players.length, t],
+  );
+
+  const blindSummary = useMemo(() => {
+    const s = computeBlindStructureSummary(config.levels);
+    return t('config.summary', { levels: s.levelCount, breaks: s.breakCount, min: s.avgMinutes });
+  }, [config.levels, t]);
+
   const activePlayerCount = useMemo(
     () => config.players.filter((p) => p.status === 'active').length,
     [config.players],
@@ -701,24 +713,82 @@ function App() {
                 </div>
               )}
 
-              {/* Turnier-Name */}
-              <div>
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('app.tournamentName')}
-                </h2>
-                <input
-                  type="text"
-                  value={config.name}
-                  onChange={(e) =>
-                    setConfig((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  placeholder={t('app.tournamentNamePlaceholder')}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
-                />
-              </div>
+              {/* Turnier-Grundlagen (Name + Buy-In + Startchips) */}
+              <CollapsibleSection title={t('app.tournamentBasics')}>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={config.name}
+                    onChange={(e) =>
+                      setConfig((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    placeholder={t('app.tournamentNamePlaceholder')}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-gray-500">{t('app.buyIn')}</label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        step={1}
+                        value={config.buyIn}
+                        onChange={(e) => {
+                          const newBuyIn = Math.max(1, Number(e.target.value));
+                          setConfig((prev) => ({
+                            ...prev,
+                            buyIn: newBuyIn,
+                            rebuy: {
+                              ...prev.rebuy,
+                              rebuyCost: prev.rebuy.rebuyCost === prev.buyIn ? newBuyIn : prev.rebuy.rebuyCost,
+                            },
+                            addOn: {
+                              ...prev.addOn,
+                              cost: prev.addOn.cost === prev.buyIn ? newBuyIn : prev.addOn.cost,
+                            },
+                          }));
+                        }}
+                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                      />
+                      <span className="text-gray-400 text-sm">{t('unit.eur')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-gray-500">{t('app.startingChips')}</label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        step={1000}
+                        value={config.startingChips}
+                        onChange={(e) => {
+                          const raw = Number(e.target.value);
+                          setConfig((prev) => {
+                            const newChips = snapSpinnerValue(raw, prev.startingChips, 1000);
+                            return {
+                              ...prev,
+                              startingChips: newChips,
+                              rebuy: {
+                                ...prev.rebuy,
+                                rebuyChips: prev.rebuy.rebuyChips === prev.startingChips ? newChips : prev.rebuy.rebuyChips,
+                              },
+                              addOn: {
+                                ...prev.addOn,
+                                chips: prev.addOn.chips === prev.startingChips ? newChips : prev.addOn.chips,
+                              },
+                            };
+                          });
+                        }}
+                        className="w-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
+                      />
+                      <span className="text-gray-400 text-sm">{t('unit.chips')}</span>
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleSection>
 
               {/* Spieler */}
-              <CollapsibleSection title={t('app.players')}>
+              <CollapsibleSection title={t('app.players')} summary={playersSummary}>
                 <PlayerManager
                   players={config.players}
                   dealerIndex={config.dealerIndex}
@@ -733,71 +803,8 @@ function App() {
                 />
               </CollapsibleSection>
 
-              {/* Buy-In & Startchips */}
-              <CollapsibleSection title={t('app.buyInAndChips')}>
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-500">{t('app.buyIn')}</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      step={1}
-                      value={config.buyIn}
-                      onChange={(e) => {
-                        const newBuyIn = Math.max(1, Number(e.target.value));
-                        setConfig((prev) => ({
-                          ...prev,
-                          buyIn: newBuyIn,
-                          rebuy: {
-                            ...prev.rebuy,
-                            rebuyCost: prev.rebuy.rebuyCost === prev.buyIn ? newBuyIn : prev.rebuy.rebuyCost,
-                          },
-                          addOn: {
-                            ...prev.addOn,
-                            cost: prev.addOn.cost === prev.buyIn ? newBuyIn : prev.addOn.cost,
-                          },
-                        }));
-                      }}
-                      className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
-                    />
-                    <span className="text-gray-400 text-sm">{t('unit.eur')}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-500">{t('app.startingChips')}</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      step={1000}
-                      value={config.startingChips}
-                      onChange={(e) => {
-                        const raw = Number(e.target.value);
-                        setConfig((prev) => {
-                          const newChips = snapSpinnerValue(raw, prev.startingChips, 1000);
-                          return {
-                            ...prev,
-                            startingChips: newChips,
-                            rebuy: {
-                              ...prev.rebuy,
-                              rebuyChips: prev.rebuy.rebuyChips === prev.startingChips ? newChips : prev.rebuy.rebuyChips,
-                            },
-                            addOn: {
-                              ...prev.addOn,
-                              chips: prev.addOn.chips === prev.startingChips ? newChips : prev.addOn.chips,
-                            },
-                          };
-                        });
-                      }}
-                      className="w-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:outline-none focus:border-emerald-500"
-                    />
-                    <span className="text-gray-400 text-sm">{t('unit.chips')}</span>
-                  </div>
-                </div>
-              </CollapsibleSection>
-
-              {/* Blind-Struktur (Generator + Ante Toggle + Editor) */}
-              <CollapsibleSection title={t('app.blindStructure')}>
+              {/* Blind-Struktur (Generator + Ante Toggle + Level-Tabelle) */}
+              <CollapsibleSection title={t('app.blindStructure')} summary={blindSummary}>
                 <div className="space-y-4">
                   <BlindGenerator
                     startingChips={config.startingChips}
@@ -820,11 +827,13 @@ function App() {
                       {config.anteEnabled ? t('app.withAnte') : t('app.withoutAnte')}
                     </button>
                   </div>
-                  <ConfigEditor
-                    config={config}
-                    onChange={setConfig}
-                    anteEnabled={config.anteEnabled}
-                  />
+                  <CollapsibleSubSection title={t('config.levelTable')} summary={blindSummary} defaultOpen={false}>
+                    <ConfigEditor
+                      config={config}
+                      onChange={setConfig}
+                      anteEnabled={config.anteEnabled}
+                    />
+                  </CollapsibleSubSection>
                 </div>
               </CollapsibleSection>
 
@@ -909,8 +918,8 @@ function App() {
                 </div>
               </CollapsibleSection>
 
-              {/* Validation + Start button */}
-              <div className="pt-4 border-t border-gray-800 space-y-3">
+              {/* Validation */}
+              <div className="pt-4 border-t border-gray-800">
                 {startErrors.length > 0 ? (
                   <div className="bg-red-900/30 border border-red-700 rounded-lg p-3">
                     <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">{t('app.checkConfig')}</p>
@@ -923,6 +932,10 @@ function App() {
                     <p className="text-emerald-400 text-sm">{t('app.allReady')}</p>
                   </div>
                 )}
+              </div>
+
+              {/* Start button — sticky on mobile */}
+              <div className="sticky bottom-0 pt-3 pb-3 bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0">
                 <button
                   onClick={switchToGame}
                   disabled={startErrors.length > 0}

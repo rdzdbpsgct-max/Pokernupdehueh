@@ -49,6 +49,7 @@ import {
   deleteTemplate,
   exportTemplateToJSON,
   parseTemplateFile,
+  computeBlindStructureSummary,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -1923,5 +1924,38 @@ describe('parseTemplateFile', () => {
 
   it('returns null for empty object', () => {
     expect(parseTemplateFile(JSON.stringify({}))).toBeNull();
+  });
+});
+
+describe('computeBlindStructureSummary', () => {
+  it('counts levels, breaks, and average minutes', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20 },
+      { id: '2', type: 'level', durationSeconds: 900, smallBlind: 20, bigBlind: 40 },
+      { id: '3', type: 'break', durationSeconds: 300, label: 'Pause' },
+      { id: '4', type: 'level', durationSeconds: 600, smallBlind: 30, bigBlind: 60 },
+    ];
+    const result = computeBlindStructureSummary(levels);
+    expect(result.levelCount).toBe(3);
+    expect(result.breakCount).toBe(1);
+    expect(result.avgMinutes).toBe(12); // (600+900+600)/3/60 = 11.67 → 12
+  });
+
+  it('handles no breaks', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 900, smallBlind: 10, bigBlind: 20 },
+      { id: '2', type: 'level', durationSeconds: 900, smallBlind: 20, bigBlind: 40 },
+    ];
+    const result = computeBlindStructureSummary(levels);
+    expect(result.levelCount).toBe(2);
+    expect(result.breakCount).toBe(0);
+    expect(result.avgMinutes).toBe(15);
+  });
+
+  it('returns zeros for empty levels', () => {
+    const result = computeBlindStructureSummary([]);
+    expect(result.levelCount).toBe(0);
+    expect(result.breakCount).toBe(0);
+    expect(result.avgMinutes).toBe(0);
   });
 });

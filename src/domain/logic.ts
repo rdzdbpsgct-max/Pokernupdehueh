@@ -230,6 +230,28 @@ export function shufflePlayers(players: Player[]): { players: Player[]; dealerIn
 }
 
 // ---------------------------------------------------------------------------
+// Blind Structure Summary
+// ---------------------------------------------------------------------------
+
+export function computeBlindStructureSummary(levels: Level[]): {
+  levelCount: number;
+  breakCount: number;
+  avgMinutes: number;
+} {
+  const playLevels = levels.filter((l) => l.type === 'level');
+  const breaks = levels.filter((l) => l.type === 'break');
+  const avgMinutes =
+    playLevels.length > 0
+      ? Math.round(
+          playLevels.reduce((s, l) => s + l.durationSeconds, 0) /
+            playLevels.length /
+            60,
+        )
+      : 0;
+  return { levelCount: playLevels.length, breakCount: breaks.length, avgMinutes };
+}
+
+// ---------------------------------------------------------------------------
 // Blind Structure Generator
 // ---------------------------------------------------------------------------
 
