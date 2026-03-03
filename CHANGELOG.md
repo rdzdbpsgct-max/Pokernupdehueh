@@ -5,6 +5,24 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [1.9.1] – 2026-03-03
+
+### Scrub-Slider Redesign & Add-On-Ankündigung
+
+- **Custom Scrub-Slider** — Nativen `<input type="range">` durch `ScrubSlider`-Komponente ersetzt. Sieht identisch zum Fortschrittsbalken am oberen Bildschirmrand aus (emerald/amber Gradient, Glow-Shadow, runder Thumb). Bewegen des Sliders aktualisiert den oberen Fortschrittsbalken in Echtzeit. Pointer Events für Touch + Mouse (kein Browser-Scroll-Conflict).
+- **Custom scrub slider** — Replaced native `<input type="range">` with `ScrubSlider` component. Looks identical to the progress bar at the top of the screen (emerald/amber gradient, glow shadow, round thumb). Moving the slider updates the top progress bar in real-time. Pointer events for touch + mouse (no browser scroll conflict).
+
+- **Add-On-Ankündigung** — Prominenter amber Banner in der Hauptanzeige (wie Bubble/ITM) sobald die Rebuy-Phase endet. Zeigt Kosten und Chip-Bonus an. `BubbleIndicator` erweitert um Add-On-Props, Fragment-Return erlaubt gleichzeitige Anzeige mit Bubble/ITM.
+- **Add-on announcement** — Prominent amber banner in the main display (like Bubble/ITM) as soon as the rebuy phase ends. Shows cost and chip bonus. `BubbleIndicator` extended with add-on props, fragment return allows simultaneous display with bubble/ITM.
+
+- **Neue Animation** — `animate-addon-pulse` (amber box-shadow pulse) in `index.css`.
+- **New animation** — `animate-addon-pulse` (amber box-shadow pulse) in `index.css`.
+
+- **2 neue Translation-Keys** — `addOn.announcement`, `addOn.announcementDetail` (DE + EN).
+- **2 new translation keys** — `addOn.announcement`, `addOn.announcementDetail` (DE + EN).
+
+---
+
 ## [1.9.0] – 2026-03-03
 
 ### Design Polish — Konsistenz & Verfeinerung

@@ -27,6 +27,11 @@
   50%      { box-shadow: 0 0 20px 4px rgba(16, 185, 129, 0.2); }
 }
 
+@keyframes addon-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50%      { box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.2); }
+}
+
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
@@ -64,6 +69,10 @@
   animation: itm-flash 1.5s ease-in-out infinite;
 }
 
+@utility animate-addon-pulse {
+  animation: addon-pulse 1.5s ease-in-out infinite;
+}
+
 @utility animate-scale-in {
   animation: scale-in 0.2s ease-out;
 }
@@ -93,43 +102,6 @@ body {
   color: #e5e7eb;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-}
-
-/* Range slider styling */
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-input[type="range"]::-webkit-slider-track {
-  height: 6px;
-  border-radius: 3px;
-  background: #374151;
-  border: 1px solid rgba(75, 85, 99, 0.5);
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: linear-gradient(to bottom, #34d399, #059669);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
-  margin-top: -7px;
-}
-input[type="range"]::-moz-range-track {
-  height: 6px;
-  border-radius: 3px;
-  background: #374151;
-  border: 1px solid rgba(75, 85, 99, 0.5);
-}
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(to bottom, #34d399, #059669);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Custom scrollbar */

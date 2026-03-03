@@ -1030,6 +1030,9 @@ function App() {
                 <BubbleIndicator
                   isBubble={bubbleActive}
                   showItmFlash={showItmFlash}
+                  addOnWindowOpen={addOnWindowOpen}
+                  addOnCost={config.addOn.cost}
+                  addOnChips={config.addOn.chips}
                 />
                 {!cleanView && (
                   <RebuyStatus

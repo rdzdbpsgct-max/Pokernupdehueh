@@ -84,6 +84,8 @@ const de = {
   'playerPanel.reinstate': 'Zurück',
   'playerPanel.by': 'von',
   'playerPanel.addOnAvailable': 'Add-On jetzt verfügbar! (einmalig pro Spieler)',
+  'addOn.announcement': 'Add-On jetzt verfügbar!',
+  'addOn.announcementDetail': '{cost} € → +{chips} Chips (einmalig pro Spieler)',
 
   // --- Config Editor ---
   'config.allLevels': 'Alle Levels:',
@@ -417,6 +419,8 @@ const en: Record<TranslationKey, string> = {
   'playerPanel.reinstate': 'Undo',
   'playerPanel.by': 'by',
   'playerPanel.addOnAvailable': 'Add-On now available! (once per player)',
+  'addOn.announcement': 'Add-On now available!',
+  'addOn.announcementDetail': '{cost} € → +{chips} Chips (once per player)',
 
   // --- Config Editor ---
   'config.allLevels': 'All Levels:',

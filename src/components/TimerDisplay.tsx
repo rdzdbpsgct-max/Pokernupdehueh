@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { Level, TimerState, ChipConfig, ChipDenomination } from '../domain/types';
 import { formatTime, getLevelLabel, getBlindsText } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -39,9 +39,110 @@ function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Le
   );
 }
 
+function ScrubSlider({
+  trackRef,
+  progress,
+  remaining,
+  duration,
+  isBreak,
+  onScrub,
+  onScrubEnd,
+  ariaLabel,
+}: {
+  trackRef: React.RefObject<HTMLDivElement | null>;
+  progress: number;
+  remaining: number;
+  duration: number;
+  isBreak: boolean;
+  onScrub: (seconds: number) => void;
+  onScrubEnd?: () => void;
+  ariaLabel: string;
+}) {
+  const scrubFromEvent = useCallback(
+    (e: React.PointerEvent | PointerEvent) => {
+      if (!trackRef.current) return;
+      const rect = trackRef.current.getBoundingClientRect();
+      const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      onScrub(Math.round(duration * (1 - fraction)));
+    },
+    [trackRef, duration, onScrub],
+  );
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      trackRef.current?.setPointerCapture(e.pointerId);
+      scrubFromEvent(e);
+    },
+    [trackRef, scrubFromEvent],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!trackRef.current?.hasPointerCapture(e.pointerId)) return;
+      scrubFromEvent(e);
+    },
+    [trackRef, scrubFromEvent],
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      trackRef.current?.releasePointerCapture(e.pointerId);
+      onScrubEnd?.();
+    },
+    [trackRef, onScrubEnd],
+  );
+
+  const pct = Math.min(100, progress * 100);
+
+  return (
+    <div className="w-full flex items-center gap-3">
+      <span className="text-xs text-gray-500 w-12 text-right">0:00</span>
+      <div
+        ref={trackRef}
+        className="flex-1 relative cursor-pointer touch-none py-2"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        role="slider"
+        aria-valuenow={Math.round(remaining)}
+        aria-valuemin={0}
+        aria-valuemax={duration}
+        aria-label={ariaLabel}
+        tabIndex={0}
+      >
+        {/* Track */}
+        <div className="h-2.5 bg-gray-800 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full ${
+              isBreak
+                ? 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                : 'bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        {/* Thumb */}
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 border-white/30 pointer-events-none ${
+            isBreak
+              ? 'bg-gradient-to-b from-amber-400 to-amber-600 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+              : 'bg-gradient-to-b from-emerald-400 to-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+          }`}
+          style={{ left: `${pct}%` }}
+        />
+      </div>
+      <span className="text-xs text-gray-500 w-12">
+        {formatTime(duration)}
+      </span>
+    </div>
+  );
+}
+
 export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, onScrubEnd, chipConfig, colorUpMap, cleanView }: Props) {
   const { t } = useTranslation();
   const [scrubbing, setScrubbing] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
 
   const currentLevel = levels[timerState.currentLevelIndex];
   if (!currentLevel) return null;
@@ -167,24 +268,16 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
             {scrubbing ? t('timer.closeSlider') : t('timer.adjustTime')}
           </button>
           {scrubbing && (
-            <div className="w-full flex items-center gap-3">
-              <span className="text-xs text-gray-500 w-12 text-right">0:00</span>
-              <input
-                type="range"
-                min={0}
-                max={currentLevel.durationSeconds}
-                step={1}
-                value={Math.round(remaining)}
-                onChange={(e) => onScrub(Number(e.target.value))}
-                onPointerUp={() => onScrubEnd?.()}
-                onTouchEnd={() => onScrubEnd?.()}
-                className="flex-1 cursor-pointer"
-                aria-label={t('timer.adjustTime')}
-              />
-              <span className="text-xs text-gray-500 w-12">
-                {formatTime(currentLevel.durationSeconds)}
-              </span>
-            </div>
+            <ScrubSlider
+              trackRef={trackRef}
+              progress={progress}
+              remaining={remaining}
+              duration={currentLevel.durationSeconds}
+              isBreak={isBreak}
+              onScrub={onScrub}
+              onScrubEnd={onScrubEnd}
+              ariaLabel={t('timer.adjustTime')}
+            />
           )}
         </div>
       )}
