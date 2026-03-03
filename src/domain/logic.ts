@@ -790,9 +790,13 @@ export function computeColorUps(
 
       if (!isDenominationNeeded(denom.value, activeDenoms, futureValues)) {
         removedIds.add(denom.id);
-        // Shift color-up to the next break, or keep at the level if no break follows
-        const breakIdx = findNextBreak(levels, levelIdx);
-        const targetIdx = breakIdx ?? levelIdx;
+        // Shift color-up to the next break after this level
+        const firstBreak = findNextBreak(levels, levelIdx);
+        // For realism: skip one more break to keep chips in play longer.
+        // In real tournaments, chips stay on the table a bit longer than
+        // the mathematically earliest possible removal point.
+        const secondBreak = firstBreak !== null ? findNextBreak(levels, firstBreak + 1) : null;
+        const targetIdx = secondBreak ?? firstBreak ?? levelIdx;
         const existing = result.get(targetIdx) ?? [];
         existing.push(denom);
         result.set(targetIdx, existing);
