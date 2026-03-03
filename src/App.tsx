@@ -803,6 +803,15 @@ function App() {
                 />
               </CollapsibleSection>
 
+              {/* Auszahlung */}
+              <CollapsibleSection title={t('app.payout')} summary={payoutSummary} defaultOpen={false}>
+                <PayoutEditor
+                  payout={config.payout}
+                  onChange={(payout) => setConfig((prev) => ({ ...prev, payout }))}
+                  maxPlaces={config.players.length}
+                />
+              </CollapsibleSection>
+
               {/* Blind-Struktur (Generator + Ante Toggle + Level-Tabelle) */}
               <CollapsibleSection title={t('app.blindStructure')} summary={blindSummary}>
                 <div className="space-y-4">
@@ -855,15 +864,6 @@ function App() {
                     </p>
                   </div>
                 )}
-              </CollapsibleSection>
-
-              {/* Auszahlung (collapsed by default) */}
-              <CollapsibleSection title={t('app.payout')} summary={payoutSummary} defaultOpen={false}>
-                <PayoutEditor
-                  payout={config.payout}
-                  onChange={(payout) => setConfig((prev) => ({ ...prev, payout }))}
-                  maxPlaces={config.players.length}
-                />
               </CollapsibleSection>
 
               {/* Turnier-Format: Rebuy + Add-On + Bounty (collapsed by default) */}
