@@ -299,20 +299,21 @@ export function announceInTheMoney(t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/itm.mp3'], t('voice.inTheMoney')));
 }
 
-/** Player eliminated — always Web Speech API (dynamic player name) */
-export function announceElimination(
-  playerName: string,
-  place: number,
-  t: TranslateFn,
-): void {
-  if (voiceLanguage !== 'de') return;
-  enqueue({ mode: 'speech', text: t('voice.playerEliminated', { name: playerName, place }) });
+/** Player eliminated — no player name announced */
+export function announceElimination(): void {
+  // Intentionally empty — elimination is visual only (no name announcement)
 }
 
-/** Tournament winner — always Web Speech API (dynamic player name) */
-export function announceWinner(playerName: string, t: TranslateFn): void {
+/** Tournament winner — generic announcement without player name */
+export function announceWinner(): void {
   if (voiceLanguage !== 'de') return;
-  enqueue({ mode: 'speech', text: t('voice.tournamentWinner', { name: playerName }) });
+  enqueue({ mode: 'audio', files: ['fixed/tournament-winner.mp3'] });
+}
+
+/** Bounty collected — "Bounty kassiert! Was für ein Knockout!" */
+export function announceBounty(): void {
+  if (voiceLanguage !== 'de') return;
+  enqueue({ mode: 'audio', files: ['fixed/bounty-collected.mp3'] });
 }
 
 /** Add-On available */

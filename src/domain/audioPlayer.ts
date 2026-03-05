@@ -9,8 +9,8 @@ function getBasePath(): string {
 
 /**
  * Play a sequence of MP3 files one after another.
- * Resolves when all files have finished. Rejects on the first error
- * (file not found, network issue, play() rejection).
+ * Preloads all files upfront to minimize gaps between sequential playback.
+ * Resolves when all files have finished. Rejects on the first error.
  */
 export function playAudioSequence(files: string[]): Promise<void> {
   if (files.length === 0) return Promise.resolve();
@@ -18,17 +18,26 @@ export function playAudioSequence(files: string[]): Promise<void> {
     return Promise.reject(new Error('Audio not available'));
   }
 
+  const basePath = getBasePath();
+
+  // Preload all audio elements upfront — reduces gaps between sequential files
+  const audioElements = files.map((file) => {
+    const audio = new Audio(basePath + file);
+    audio.preload = 'auto';
+    return audio;
+  });
+
   return new Promise<void>((resolve, reject) => {
     let index = 0;
 
     function playNext(): void {
-      if (index >= files.length) {
+      if (index >= audioElements.length) {
         currentAudio = null;
         resolve();
         return;
       }
 
-      const audio = new Audio(getBasePath() + files[index]);
+      const audio = audioElements[index];
       currentAudio = audio;
 
       audio.onended = () => {

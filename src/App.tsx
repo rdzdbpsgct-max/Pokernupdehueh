@@ -38,13 +38,13 @@ import {
   announceBreakWarning,
   announceBubble,
   announceInTheMoney,
-  announceElimination,
   announceWinner,
   announceAddOn,
   announceRebuyEnded,
   announceColorUp,
   announceTournamentStart,
   announceHeadsUp,
+  announceBounty,
 } from './domain/speech';
 // Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
@@ -587,17 +587,17 @@ function App() {
         victorySoundPlayedRef.current = true;
         playVictorySound();
       }
-      if (settings.voiceEnabled && winner && !victoryVoicePlayedRef.current) {
+      if (settings.voiceEnabled && !victoryVoicePlayedRef.current) {
         victoryVoicePlayedRef.current = true;
         // Voice after victory melody finishes (~1800ms)
-        setTimeout(() => announceWinner(winner.name, t), settings.soundEnabled ? 1800 : 0);
+        setTimeout(() => announceWinner(), settings.soundEnabled ? 1800 : 0);
       }
     }
     if (!tournamentFinished) {
       victorySoundPlayedRef.current = false;
       victoryVoicePlayedRef.current = false;
     }
-  }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled, winner, t]);
+  }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled]);
 
   // Bubble & ITM sound/voice/visual effects
   const prevBubbleRef = useRef(false);
@@ -680,7 +680,7 @@ function App() {
     }
   }, [mode, settings.voiceEnabled, config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, t]);
 
-  // Voice: Player elimination
+  // Voice: Bounty collected on player elimination
   const prevPlayersRef = useRef(config.players);
   useEffect(() => {
     if (mode !== 'game' || !settings.voiceEnabled) return;
@@ -690,12 +690,12 @@ function App() {
       if (player.status === 'eliminated' && player.placement !== null) {
         const prevPlayer = prev.find(p => p.id === player.id);
         if (prevPlayer && prevPlayer.status === 'active') {
-          announceElimination(player.name, player.placement, t);
+          if (config.bounty.enabled) announceBounty();
           break;
         }
       }
     }
-  }, [mode, config.players, settings.voiceEnabled, t]);
+  }, [mode, config.players, settings.voiceEnabled, config.bounty.enabled]);
 
   // Voice: Heads-Up announcement when exactly 2 players remain
   const prevActiveCountRef = useRef(activePlayerCount);

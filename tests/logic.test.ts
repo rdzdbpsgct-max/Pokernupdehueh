@@ -1996,7 +1996,7 @@ describe('speech module', () => {
       setSpeechLanguage,
       announceLevelChange, announceBreakStart, announceBreakWarning,
       announceCountdown, announceBubble, announceInTheMoney,
-      announceElimination, announceWinner, announceAddOn,
+      announceElimination, announceWinner, announceBounty, announceAddOn,
       announceRebuyEnded, announceColorUp, announceTournamentStart,
       announceHeadsUp, cancelSpeech,
     } = await import('../src/domain/speech');
@@ -2016,8 +2016,9 @@ describe('speech module', () => {
     expect(() => announceCountdown(5)).not.toThrow();
     expect(() => announceBubble(mockT)).not.toThrow();
     expect(() => announceInTheMoney(mockT)).not.toThrow();
-    expect(() => announceElimination('Alice', 3, mockT)).not.toThrow();
-    expect(() => announceWinner('Bob', mockT)).not.toThrow();
+    expect(() => announceElimination()).not.toThrow();
+    expect(() => announceWinner()).not.toThrow();
+    expect(() => announceBounty()).not.toThrow();
     expect(() => announceAddOn(mockT)).not.toThrow();
     expect(() => announceRebuyEnded(mockT)).not.toThrow();
     expect(() => announceColorUp('500, 1000', mockT)).not.toThrow();
