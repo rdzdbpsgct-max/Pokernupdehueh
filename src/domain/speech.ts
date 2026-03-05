@@ -33,7 +33,7 @@ const ANTE_VALUES = new Set([
   '100','150','200','250','500','1000','1500','2000','2500','5000',
 ]);
 
-const BREAK_MINUTES = new Set([5, 10, 15, 20, 25, 30]);
+const MAX_BREAK_MINUTES = 30;
 const MAX_LEVEL = 25;
 const MAX_COUNTDOWN = 10;
 
@@ -255,7 +255,7 @@ export function announceBreakStart(
   durationMinutes: number,
   t: TranslateFn,
 ): void {
-  if (BREAK_MINUTES.has(durationMinutes)) {
+  if (durationMinutes >= 1 && durationMinutes <= MAX_BREAK_MINUTES) {
     const file = `breaks/break-${String(durationMinutes).padStart(2, '0')}min.mp3`;
     enqueue(audioOrSpeech([file], t('voice.breakStart', { minutes: durationMinutes })));
   } else {

@@ -68,7 +68,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
-| Sprachansagen | Professionelle ElevenLabs-MP3-Stimme (Deutsch) für Level-Wechsel, Pausen, Bubble, Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart. Web Speech API als Fallback. Englisch = nur Beep-Sounds. 156 Audio-Dateien, offline via PWA. |
+| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (minutengenau 1–30 Min), Bubble, Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart. Web Speech API als Fallback. 362 Audio-Dateien (181 pro Sprache), offline via PWA. |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
@@ -147,7 +147,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
-| Voice announcements | Professional ElevenLabs MP3 voice (German) for level changes, breaks, bubble, heads-up, ITM, eliminations, winner, tournament start. Web Speech API fallback. English = beeps only. 156 audio files, offline via PWA. |
+| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (every minute 1–30), bubble, heads-up, ITM, eliminations, winner, tournament start. Web Speech API fallback. 362 audio files (181 per language), offline via PWA. |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
@@ -276,7 +276,8 @@ src/
     LevelPreview.tsx      # Level-Vorschau / Level preview
     RebuyStatus.tsx      # Rebuy-Anzeige / Rebuy indicator
 public/
-  audio/de/             # 156 ElevenLabs MP3 Audiodateien (Deutsch)
+  audio/de/             # 181 ElevenLabs MP3 Audiodateien (Deutsch, Stimme: Ava)
+  audio/en/             # 181 ElevenLabs MP3 Audiodateien (Englisch)
 tests/
   logic.test.ts         # 195 Unit-Tests
 ```
@@ -290,7 +291,7 @@ tests/
 - **Dark/Light Mode** — `ThemeProvider` + `useTheme()` Hook, 3-Wege-Toggle (System/Hell/Dunkel), `prefers-color-scheme` Listener, Tailwind `dark:`-Varianten / `ThemeProvider` + `useTheme()` hook, 3-way toggle (System/Light/Dark), `prefers-color-scheme` listener, Tailwind `dark:` variants
 - **Keine externen State-Libraries / No external state libraries** — React Hooks + Props + Context (i18n + Theme) / Only React hooks + props + Context (i18n + theme)
 - **Sound via Web Audio API** — Beep-Sounds als Oszillatoren (keine externen Dateien) / Beep sounds as oscillators (no external files)
-- **Sprachausgabe / Voice** — ElevenLabs MP3 (Deutsch, 156 Dateien in `public/audio/de/`), Web Speech API Fallback, Englisch nur Beeps / ElevenLabs MP3 (German, 156 files in `public/audio/de/`), Web Speech API fallback, English beeps only
+- **Sprachausgabe / Voice** — ElevenLabs MP3 (Deutsch + Englisch, je 181 Dateien in `public/audio/de/` + `public/audio/en/`), Web Speech API Fallback, Pausenansagen minutengenau 1–30 Min / ElevenLabs MP3 (German + English, 181 files each in `public/audio/de/` + `public/audio/en/`), Web Speech API fallback, break announcements for every minute 1–30
 - **PWA** — Offline-fähig, installierbar / Offline-capable, installable
 - **Backward-Kompatibilität / Backward compatibility** — Alte localStorage-Daten werden mit Defaults ergänzt / Old localStorage data is augmented with defaults
 

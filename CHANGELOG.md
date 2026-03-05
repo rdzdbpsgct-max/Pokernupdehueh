@@ -7,28 +7,34 @@ All notable changes to the Pokern up de Hüh app.
 
 ## [2.3.0] – 2026-03-05
 
-### ElevenLabs MP3 Sprachausgabe / ElevenLabs MP3 Voice
+### ElevenLabs MP3 Sprachausgabe (Deutsch + Englisch) / ElevenLabs MP3 Voice (German + English)
 
-- **ElevenLabs MP3 Sprachausgabe** — 156 professionelle Audio-Dateien (Stimme: Ava) für alle deutschen Sprachansagen. Modular aufgebaut: Building-Blocks für englische Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (73), Ante-Werte (20), Countdowns (1–10), Pausen (5–30 Min) und 19 feste Ansagen. ~4.4MB in `public/audio/de/`, offline via PWA gecached.
-- **ElevenLabs MP3 voice** — 156 professional audio files (voice: Ava) for all German voice announcements. Modular architecture: building blocks for English poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (73), ante values (20), countdowns (1–10), breaks (5–30 min), and 19 fixed announcements. ~4.4MB in `public/audio/de/`, offline-cached via PWA.
+- **ElevenLabs MP3 Sprachausgabe** — 362 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (73), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 20+ feste Ansagen. 181 Dateien pro Sprache, offline via PWA gecached (383 Precache-Einträge).
+- **ElevenLabs MP3 voice** — 362 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (73), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 20+ fixed announcements. 181 files per language, offline-cached via PWA (383 precache entries).
 
-- **Neue Datei: `audioPlayer.ts`** — MP3-Playback-Engine mit sequentieller Datei-Wiedergabe. `playAudioSequence()` spielt mehrere MP3-Dateien nacheinander ab (z.B. „Level 5" + „Blinds" + „200 auf 400").
-- **New file: `audioPlayer.ts`** — MP3 playback engine with sequential file playback. `playAudioSequence()` plays multiple MP3 files one after another (e.g. "Level 5" + "Blinds" + "200 auf 400").
+- **Gapless Audio-Playback** — Web Audio API (`AudioContext`, `AudioBufferSourceNode`) mit Trailing-Silence-Trimming und präzisem `start(when)`-Scheduling. Keine Lücken zwischen sequentiellen Dateien.
+- **Gapless audio playback** — Web Audio API (`AudioContext`, `AudioBufferSourceNode`) with trailing silence trimming and precise `start(when)` scheduling. No gaps between sequential files.
 
-- **speech.ts Refactoring** — Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung: 73 Blind-Paare, 20 Ante-Werte, 25 Levels, 6 Pausen-Dauern. Automatischer Web Speech API Fallback bei fehlenden Dateien oder dynamischen Inhalten (Spielernamen bei Eliminierung/Sieger).
-- **speech.ts refactoring** — Unified queue supporting `audio` and `speech` items. Manifest-based file lookup: 73 blind pairs, 20 ante values, 25 levels, 6 break durations. Automatic Web Speech API fallback for missing files or dynamic content (player names in elimination/winner).
+- **Neue Datei: `audioPlayer.ts`** — MP3-Playback-Engine mit Web Audio API, dynamischem Sprachpfad (`audio/de/` / `audio/en/`). `playAudioSequence()` dekodiert alle Dateien parallel, trimmt Stille, schedulet nahtlos.
+- **New file: `audioPlayer.ts`** — MP3 playback engine with Web Audio API, dynamic language path (`audio/de/` / `audio/en/`). `playAudioSequence()` decodes all files in parallel, trims silence, schedules seamlessly.
 
-- **Englisch = nur Töne** — Bei englischer Sprachauswahl keine Voice-Ausgabe, nur Beep-Sounds. `announceCountdown()` gibt `boolean` zurück damit `useTimer.ts` bei Englisch auf Beeps ausweichen kann.
-- **English = beeps only** — When English is selected, no voice output, only beep sounds. `announceCountdown()` returns `boolean` so `useTimer.ts` can fall back to beeps for English.
+- **speech.ts Refactoring** — Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung: 73 Blind-Paare, 20 Ante-Werte, 25 Levels, 30 Pausen-Dauern (1–30 Min). Automatischer Web Speech API Fallback bei fehlenden Dateien oder dynamischen Inhalten.
+- **speech.ts refactoring** — Unified queue supporting `audio` and `speech` items. Manifest-based file lookup: 73 blind pairs, 20 ante values, 25 levels, 30 break durations (1–30 min). Automatic Web Speech API fallback for missing files or dynamic content.
+
+- **Beide Sprachen mit Voice** — Sowohl Deutsch als auch Englisch nutzen ElevenLabs MP3s. Voice standardmäßig aktiviert. Bei deaktivierter Sprachausgabe nur Beep-Sounds.
+- **Both languages with voice** — Both German and English use ElevenLabs MP3s. Voice enabled by default. When voice is disabled, beep sounds only.
+
+- **Pausenzeiten minutengenau** — Alle Pausenansagen von 1 bis 30 Minuten als eigene MP3-Dateien (vorher nur 5/10/15/20/25/30).
+- **Break announcements per minute** — All break announcements from 1 to 30 minutes as individual MP3 files (previously only 5/10/15/20/25/30).
 
 - **Neue Ansagen** — Turnierstart („Shuffle up and deal!"), Heads-Up-Erkennung bei 2 verbleibenden Spielern.
 - **New announcements** — Tournament start ("Shuffle up and deal!"), heads-up detection when 2 players remain.
 
-- **PWA-Caching** — `.mp3` zu Workbox `globPatterns` hinzugefügt (177 Precache-Einträge). Audio-Dateien offline verfügbar.
-- **PWA caching** — `.mp3` added to Workbox `globPatterns` (177 precache entries). Audio files available offline.
+- **PWA-Caching** — `.mp3` zu Workbox `globPatterns` hinzugefügt. Audio-Dateien offline verfügbar.
+- **PWA caching** — `.mp3` added to Workbox `globPatterns`. Audio files available offline.
 
-- **3 neue Tests** — audioPlayer Degradation, announceCountdown Return-Value für Sprachauswahl, English-Silence-Verifikation (195 Tests gesamt).
-- **3 new tests** — audioPlayer degradation, announceCountdown return value for language selection, English silence verification (195 tests total).
+- **3 neue Tests** — audioPlayer Degradation, announceCountdown Return-Value, Dual-Language-Support (195 Tests gesamt).
+- **3 new tests** — audioPlayer degradation, announceCountdown return value, dual-language support (195 tests total).
 
 ---
 
