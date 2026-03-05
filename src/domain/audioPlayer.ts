@@ -1,18 +1,24 @@
-// MP3 audio playback engine — Web Audio API for gapless sequential playback
+// MP3 audio playback engine — Web Audio API for gapless playback,
+// HTMLAudioElement fallback for maximum compatibility
 
 import type { Language } from '../i18n/translations';
 
 let audioContext: AudioContext | null = null;
 let scheduledSources: AudioBufferSourceNode[] = [];
+let currentHtmlAudio: HTMLAudioElement | null = null;
 let cancelRequested = false;
 let audioLanguage: Language = 'de';
 
 function getOrCreateContext(): AudioContext | null {
-  if (typeof AudioContext === 'undefined') return null;
-  if (!audioContext || audioContext.state === 'closed') {
-    audioContext = new AudioContext();
+  try {
+    if (typeof AudioContext === 'undefined') return null;
+    if (!audioContext || audioContext.state === 'closed') {
+      audioContext = new AudioContext();
+    }
+    return audioContext;
+  } catch {
+    return null;
   }
-  return audioContext;
 }
 
 function getBasePath(): string {
@@ -74,22 +80,13 @@ function trimTrailingSilence(ctx: AudioContext, buffer: AudioBuffer): AudioBuffe
   return trimmed;
 }
 
-/**
- * Play a sequence of MP3 files using Web Audio API with precise scheduling.
- * Decodes all files, trims trailing silence, then schedules back-to-back.
- * Resolves when all files have finished. Rejects on the first error.
- */
-export function playAudioSequence(files: string[]): Promise<void> {
-  if (files.length === 0) return Promise.resolve();
-  if (typeof window === 'undefined') {
-    return Promise.reject(new Error('Audio not available'));
-  }
+// ---------------------------------------------------------------------------
+// Web Audio API playback (gapless, precise scheduling)
+// ---------------------------------------------------------------------------
 
-  cancelRequested = false;
-  const maybeCtx = getOrCreateContext();
-  if (!maybeCtx) return Promise.reject(new Error('AudioContext not available'));
-  const ctx = maybeCtx;
-  const basePath = getBasePath();
+function playWithWebAudio(files: string[], basePath: string): Promise<void> {
+  const ctx = getOrCreateContext();
+  if (!ctx) return Promise.reject(new Error('AudioContext not available'));
 
   // Resume context if suspended (autoplay policy)
   const resumePromise = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
@@ -99,7 +96,7 @@ export function playAudioSequence(files: string[]): Promise<void> {
     const decodePromises = files.map((file) =>
       fetch(basePath + file)
         .then((res) => {
-          if (!res.ok) throw new Error(`Failed to fetch: ${file}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status} for ${file}`);
           return res.arrayBuffer();
         })
         .then((buf) => ctx.decodeAudioData(buf)),
@@ -137,11 +134,87 @@ export function playAudioSequence(files: string[]): Promise<void> {
   });
 }
 
+// ---------------------------------------------------------------------------
+// HTMLAudioElement fallback (sequential, maximum compatibility)
+// ---------------------------------------------------------------------------
+
+function playWithHtmlAudio(files: string[], basePath: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let index = 0;
+
+    function playNext(): void {
+      if (cancelRequested || index >= files.length) {
+        currentHtmlAudio = null;
+        resolve();
+        return;
+      }
+
+      const audio = new Audio(basePath + files[index]);
+      currentHtmlAudio = audio;
+      index++;
+
+      audio.onended = () => {
+        currentHtmlAudio = null;
+        playNext();
+      };
+
+      audio.onerror = () => {
+        currentHtmlAudio = null;
+        const errorMsg = `HTMLAudioElement failed for: ${files[index - 1]}`;
+        console.error('[audioPlayer]', errorMsg);
+        reject(new Error(errorMsg));
+      };
+
+      audio.play().catch((err) => {
+        currentHtmlAudio = null;
+        console.error('[audioPlayer] HTMLAudioElement play() rejected:', err);
+        reject(err);
+      });
+    }
+
+    playNext();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Play a sequence of MP3 files. Tries Web Audio API first (gapless),
+ * falls back to HTMLAudioElement (sequential) if decoding fails.
+ * Resolves when all files have finished. Rejects only when both methods fail.
+ */
+export function playAudioSequence(files: string[]): Promise<void> {
+  if (files.length === 0) return Promise.resolve();
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('Audio not available'));
+  }
+
+  cancelRequested = false;
+  const basePath = getBasePath();
+
+  // Try Web Audio API first (gapless playback)
+  return playWithWebAudio(files, basePath).catch((webAudioErr) => {
+    if (cancelRequested) return;
+
+    console.warn(
+      '[audioPlayer] Web Audio API failed, trying HTMLAudioElement fallback:',
+      webAudioErr instanceof Error ? webAudioErr.message : webAudioErr,
+    );
+
+    // Fallback: HTMLAudioElement (sequential, no gapless but maximum compat)
+    return playWithHtmlAudio(files, basePath);
+  });
+}
+
 /**
  * Stop any currently playing audio immediately.
  */
 export function cancelAudioPlayback(): void {
   cancelRequested = true;
+
+  // Stop Web Audio API sources
   for (const source of scheduledSources) {
     try {
       source.stop();
@@ -150,6 +223,17 @@ export function cancelAudioPlayback(): void {
     }
   }
   scheduledSources = [];
+
+  // Stop HTMLAudioElement
+  if (currentHtmlAudio) {
+    try {
+      currentHtmlAudio.pause();
+      currentHtmlAudio.currentTime = 0;
+    } catch {
+      // already stopped
+    }
+    currentHtmlAudio = null;
+  }
 }
 
 /**

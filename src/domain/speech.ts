@@ -115,8 +115,9 @@ function processQueue(): void {
         isSpeaking = false;
         processQueue();
       })
-      .catch(() => {
+      .catch((err) => {
         // MP3 failed — try Web Speech API fallback
+        console.error('[speech] MP3 playback failed, falling back to Web Speech API:', err, 'files:', next.files);
         if (next.fallbackText) {
           speakUtterance(next.fallbackText, next.fallbackOptions, () => {
             isSpeaking = false;
