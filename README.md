@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.2.1-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.3.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-192%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-195%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -68,7 +68,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
-| Sprachansagen | Level-Wechsel, Pausen, Bubble, ITM, Eliminierungen, Sieger — Web Speech API (offline, kostenlos). Phonetische Aussprache englischer Pokerbegriffe im DE-Modus. Countdown alle 10 Sek. VoiceSwitcher-Toggle im Header. |
+| Sprachansagen | Professionelle ElevenLabs-MP3-Stimme (Deutsch) für Level-Wechsel, Pausen, Bubble, Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart. Web Speech API als Fallback. Englisch = nur Beep-Sounds. 156 Audio-Dateien, offline via PWA. |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
@@ -147,7 +147,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
-| Voice announcements | Level changes, breaks, bubble, ITM, eliminations, winner — Web Speech API (offline, free). Phonetic pronunciation of English poker terms in DE mode. Countdown all 10 sec. VoiceSwitcher toggle in header. |
+| Voice announcements | Professional ElevenLabs MP3 voice (German) for level changes, breaks, bubble, heads-up, ITM, eliminations, winner, tournament start. Web Speech API fallback. English = beeps only. 156 audio files, offline via PWA. |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
@@ -181,13 +181,13 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-192_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-195_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 
 - **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
 - **TypeScript 5.9** — Strikte Typisierung / Strict typing
 - **Vite 7** — Build-Tool / Build tool
 - **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
-- **Vitest** — 192 Unit-Tests / Unit tests
+- **Vitest** — 195 Unit-Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
 - **Vercel** — Automatisches Deploy / Auto-deploy on push
 - **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
@@ -221,7 +221,7 @@ App: `http://localhost:5173/`
 
 ```bash
 npm run lint        # ESLint
-npm run test        # 192 Unit-Tests
+npm run test        # 195 Unit-Tests
 npm run build       # Production-Build → ./dist
 ```
 
@@ -235,7 +235,8 @@ src/
     types.ts            # TypeScript-Typen / Types
     logic.ts            # Geschäftslogik / Business logic (~1200 Zeilen)
     sounds.ts           # Web Audio API Sounds (Beeps, Melodien)
-    speech.ts           # Web Speech API Sprachansagen
+    speech.ts           # Sprachansagen (ElevenLabs MP3 + Web Speech API Fallback)
+    audioPlayer.ts      # MP3-Playback-Engine
   hooks/
     useTimer.ts         # Timer-Hook (drift-free, shared AudioContext)
   theme/
@@ -274,8 +275,10 @@ src/
     LanguageSwitcher.tsx  # DE/EN-Umschalter / Language toggle
     LevelPreview.tsx      # Level-Vorschau / Level preview
     RebuyStatus.tsx      # Rebuy-Anzeige / Rebuy indicator
+public/
+  audio/de/             # 156 ElevenLabs MP3 Audiodateien (Deutsch)
 tests/
-  logic.test.ts         # 192 Unit-Tests
+  logic.test.ts         # 195 Unit-Tests
 ```
 
 ## Architektur / Architecture
@@ -286,7 +289,8 @@ tests/
 - **Shared AudioContext** — Alle Sounds teilen einen AudioContext, initialisiert aus User-Geste (Safari-kompatibel) / All sounds share one AudioContext, initialized from user gesture (Safari-compatible)
 - **Dark/Light Mode** — `ThemeProvider` + `useTheme()` Hook, 3-Wege-Toggle (System/Hell/Dunkel), `prefers-color-scheme` Listener, Tailwind `dark:`-Varianten / `ThemeProvider` + `useTheme()` hook, 3-way toggle (System/Light/Dark), `prefers-color-scheme` listener, Tailwind `dark:` variants
 - **Keine externen State-Libraries / No external state libraries** — React Hooks + Props + Context (i18n + Theme) / Only React hooks + props + Context (i18n + theme)
-- **Sound via Web Audio API** — Keine externen Audio-Dateien / No external audio files
+- **Sound via Web Audio API** — Beep-Sounds als Oszillatoren (keine externen Dateien) / Beep sounds as oscillators (no external files)
+- **Sprachausgabe / Voice** — ElevenLabs MP3 (Deutsch, 156 Dateien in `public/audio/de/`), Web Speech API Fallback, Englisch nur Beeps / ElevenLabs MP3 (German, 156 files in `public/audio/de/`), Web Speech API fallback, English beeps only
 - **PWA** — Offline-fähig, installierbar / Offline-capable, installable
 - **Backward-Kompatibilität / Backward compatibility** — Alte localStorage-Daten werden mit Defaults ergänzt / Old localStorage data is augmented with defaults
 

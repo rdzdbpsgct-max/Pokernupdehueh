@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.2.1
+**Version**: 2.3.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (192 tests, single run)
+npm run test         # Vitest run (195 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -70,7 +70,8 @@ src/
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
 │   ├── logic.ts                 # Core logic (~900 lines): validation, payouts, blinds, chips, templates, persistence, checkpoint
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
-│   └── speech.ts                # Web Speech API voice announcements (level, break, bubble, ITM, elimination, winner)
+│   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
+│   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
 ├── hooks/
 │   └── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
 ├── theme/                       # Dark/Light mode system
@@ -153,7 +154,7 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files
-- **Voice announcements**: Web Speech API (`speechSynthesis`) — offline, zero sound files, zero cost. Voice selection by app language (DE/EN, prefers local voices). Sequential speech queue (`onend`-chained) prevents overlapping; `announceImmediate()` for time-critical countdown. `VoiceSwitcher` header toggle (sound-only / voice). Phonetic pronunciation hints for English poker terms in German TTS (e.g. "Bleindz", "Riebai", "Babbl"). Announces: level changes, breaks (start + 30s warning), bubble, ITM, eliminations, tournament winner, add-on, rebuy end, color-up. Verbal countdown for last 10 seconds. Sound effects finish before voice starts (delay-based coordination).
+- **Voice announcements**: Dual-engine system — ElevenLabs pre-recorded MP3s for German, Web Speech API (`speechSynthesis`) as fallback. 156 MP3 files in `public/audio/de/` (~4.4MB, PWA-cached for offline use). English = beeps only (no voice). `audioPlayer.ts` handles sequential MP3 playback; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (blind pairs, ante values, levels, breaks) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning), bubble, heads-up, ITM, eliminations, tournament winner, add-on, rebuy end, color-up. Verbal countdown for last 10 seconds. Sound effects finish before voice starts (delay-based coordination).
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
@@ -218,6 +219,17 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ## Changelog
 
+### v2.3.0 — ElevenLabs MP3 Voice (German)
+
+- **ElevenLabs MP3 Sprachausgabe**: 156 professionelle MP3-Audiodateien (Stimme: Ava) für alle deutschen Sprachansagen. Modular aufgebaut: Building-Blocks (`blinds.mp3`, `ante.mp3`, `color-up.mp3`) + einzelne Dateien für Levels, Blind-Paare, Ante-Werte, Countdowns, Pausen und feste Ansagen.
+- **Neue Datei**: `src/domain/audioPlayer.ts` — MP3-Playback-Engine mit sequentieller Datei-Wiedergabe
+- **speech.ts Refactoring**: Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung (73 Blind-Paare, 20 Ante-Werte, 25 Levels, 6 Pausen-Dauern). Automatischer Web Speech API Fallback bei fehlenden Dateien oder dynamischen Inhalten (Spielernamen).
+- **Englisch = nur Töne**: Bei englischer Sprachauswahl keine Voice-Ausgabe, nur Beep-Sounds. `announceCountdown()` gibt `boolean` zurück für Beep-Fallback.
+- **Neue Ansagen**: Tournament Start ("Shuffle up and deal!"), Heads-Up Erkennung bei 2 verbleibenden Spielern
+- **PWA-Caching**: `.mp3` zu Workbox `globPatterns` hinzugefügt — Audio offline verfügbar
+- **156 Audio-Dateien** in `public/audio/de/` (~4.4MB, 7 Unterverzeichnisse)
+- **3 neue Tests**: audioPlayer Degradation, announceCountdown Return-Value, English-Silence (195 Tests gesamt)
+
 ### v2.2.1 — Dual Deployment (GitHub Pages + Vercel)
 
 - **Vercel-Deployment**: App jetzt auch über Vercel erreichbar (https://pokernupdehueh.vercel.app/). Automatisches Deploy bei Push auf `main`.
@@ -239,7 +251,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Neue Datei**: `src/domain/speech.ts` — Voice-Engine mit DE/EN-Sprachauswahl, Cancel-before-speak Queue, 11 Convenience-Funktionen
 - **Settings**: `voiceEnabled: boolean` in Settings, Toggle „Sprachansagen" im Einstellungspanel
 - **13 neue Translation-Keys**: `settings.voice` + 11× `voice.*` (DE + EN)
-- **5 neue Tests**: Speech-Modul Degradation + Announcement-Builder (192 Tests gesamt)
+- **5 neue Tests**: Speech-Modul Degradation + Announcement-Builder (195 Tests gesamt)
 
 ### v2.0.1 — Light-Mode-Fixes, Sektionsumbenennung & Clean-View-Button
 

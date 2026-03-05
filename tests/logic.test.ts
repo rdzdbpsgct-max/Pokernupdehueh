@@ -1961,13 +1961,8 @@ describe('computeBlindStructureSummary', () => {
 });
 
 describe('speech module', () => {
-  // Import speech functions — speechSynthesis is not available in jsdom,
+  // Import speech functions — speechSynthesis and Audio are not available in jsdom,
   // so these tests verify graceful degradation (no errors thrown)
-
-  it('announce does not throw without speechSynthesis', async () => {
-    const { announce } = await import('../src/domain/speech');
-    expect(() => announce('test')).not.toThrow();
-  });
 
   it('cancelSpeech does not throw without speechSynthesis', async () => {
     const { cancelSpeech } = await import('../src/domain/speech');
@@ -1985,13 +1980,28 @@ describe('speech module', () => {
     expect(() => setSpeechLanguage('en')).not.toThrow();
   });
 
-  it('announcement builders do not throw without speechSynthesis', async () => {
+  it('announceCountdown returns true for German, false for English', async () => {
+    const { setSpeechLanguage, announceCountdown, cancelSpeech } = await import('../src/domain/speech');
+    setSpeechLanguage('de');
+    expect(announceCountdown(5)).toBe(true);
+    cancelSpeech();
+    setSpeechLanguage('en');
+    expect(announceCountdown(5)).toBe(false);
+    cancelSpeech();
+    setSpeechLanguage('de'); // restore
+  });
+
+  it('announcement builders do not throw without speechSynthesis or Audio', async () => {
     const {
+      setSpeechLanguage,
       announceLevelChange, announceBreakStart, announceBreakWarning,
       announceCountdown, announceBubble, announceInTheMoney,
       announceElimination, announceWinner, announceAddOn,
-      announceRebuyEnded, announceColorUp,
+      announceRebuyEnded, announceColorUp, announceTournamentStart,
+      announceHeadsUp, cancelSpeech,
     } = await import('../src/domain/speech');
+
+    setSpeechLanguage('de');
 
     const mockT = ((key: string, params?: Record<string, string | number>) => {
       let text = key;
@@ -2011,5 +2021,40 @@ describe('speech module', () => {
     expect(() => announceAddOn(mockT)).not.toThrow();
     expect(() => announceRebuyEnded(mockT)).not.toThrow();
     expect(() => announceColorUp('500, 1000', mockT)).not.toThrow();
+    expect(() => announceTournamentStart()).not.toThrow();
+    expect(() => announceHeadsUp()).not.toThrow();
+    cancelSpeech();
+  });
+
+  it('convenience functions are silent when language is English', async () => {
+    const {
+      setSpeechLanguage, announceBubble, announceInTheMoney,
+      announceTournamentStart, announceHeadsUp, cancelSpeech,
+    } = await import('../src/domain/speech');
+
+    setSpeechLanguage('en');
+
+    const mockT = ((key: string) => key) as Parameters<typeof announceBubble>[0];
+
+    // These should do nothing (no throw, no speech) for English
+    expect(() => announceBubble(mockT)).not.toThrow();
+    expect(() => announceInTheMoney(mockT)).not.toThrow();
+    expect(() => announceTournamentStart()).not.toThrow();
+    expect(() => announceHeadsUp()).not.toThrow();
+    cancelSpeech();
+    setSpeechLanguage('de'); // restore
+  });
+});
+
+describe('audioPlayer module', () => {
+  it('cancelAudioPlayback does not throw', async () => {
+    const { cancelAudioPlayback } = await import('../src/domain/audioPlayer');
+    expect(() => cancelAudioPlayback()).not.toThrow();
+  });
+
+  it('playAudioSequence rejects without Audio constructor', async () => {
+    const { playAudioSequence } = await import('../src/domain/audioPlayer');
+    // jsdom does not have Audio — should reject gracefully
+    await expect(playAudioSequence(['test.mp3'])).rejects.toThrow();
   });
 });

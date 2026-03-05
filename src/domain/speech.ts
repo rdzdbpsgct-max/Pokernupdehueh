@@ -1,6 +1,7 @@
-// Voice announcements using Web Speech API (no external files, offline-capable)
+// Voice announcements — ElevenLabs MP3 for German, Web Speech API fallback, no voice for English
 
 import type { Language, TranslationKey } from '../i18n/translations';
+import { playAudioSequence, cancelAudioPlayback } from './audioPlayer';
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -8,12 +9,47 @@ let preferredVoice: SpeechSynthesisVoice | null = null;
 let voiceLanguage: Language = 'de';
 let voicesLoaded = false;
 
-// Speech queue — ensures utterances play one after another (no overlap)
-let speechQueue: Array<{ text: string; options?: { rate?: number; pitch?: number; volume?: number } }> = [];
+// ---------------------------------------------------------------------------
+// Audio file manifest — known pre-recorded files
+// ---------------------------------------------------------------------------
+
+const BLIND_PAIRS = new Set([
+  '2-3','2-4','3-5','4-8','5-10','6-11','7-13','8-15',
+  '10-19','10-20','12-23','13-25','15-30','19-38','20-40',
+  '23-45','25-50','30-60','32-63','38-75','40-80','45-90',
+  '50-100','55-110','60-120','65-130','75-150','80-160','90-180','95-190',
+  '100-200','120-230','120-240','130-250','150-300','160-310','190-380',
+  '200-400','230-450','250-500','300-600','320-630','380-750',
+  '400-800','450-900','500-1000','550-1100','600-1200','650-1300',
+  '750-1500','800-1600','950-1900','1000-2000','1200-2300','1300-2500',
+  '1500-3000','1600-3100','1900-3800','2000-4000','2300-4500','2500-5000',
+  '3000-6000','3200-6300','3800-7500','4000-8000','5000-10000',
+  '6500-13000','7500-15000','10000-20000','13000-25000','15000-30000',
+  '20000-40000','25000-50000',
+]);
+
+const ANTE_VALUES = new Set([
+  '1','1.5','2','2.5','5','10','15','20','25','50',
+  '100','150','200','250','500','1000','1500','2000','2500','5000',
+]);
+
+const BREAK_MINUTES = new Set([5, 10, 15, 20, 25, 30]);
+const MAX_LEVEL = 25;
+const MAX_COUNTDOWN = 10;
+
+// ---------------------------------------------------------------------------
+// Unified speech queue — supports both MP3 audio and Web Speech API
+// ---------------------------------------------------------------------------
+
+type QueueItem =
+  | { mode: 'audio'; files: string[]; fallbackText?: string; fallbackOptions?: { rate?: number; pitch?: number; volume?: number } }
+  | { mode: 'speech'; text: string; options?: { rate?: number; pitch?: number; volume?: number } };
+
+let speechQueue: QueueItem[] = [];
 let isSpeaking = false;
 
 // ---------------------------------------------------------------------------
-// Voice selection
+// Voice selection (Web Speech API fallback)
 // ---------------------------------------------------------------------------
 
 function findVoice(lang: Language): SpeechSynthesisVoice | null {
@@ -21,10 +57,8 @@ function findVoice(lang: Language): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices();
   const langPrefix = lang === 'de' ? 'de' : 'en';
 
-  // Prefer local/offline voices that match the language
   const localMatch = voices.find(v => v.lang.startsWith(langPrefix) && v.localService);
   if (localMatch) return localMatch;
-  // Fallback to any matching voice (may be network-based)
   const anyMatch = voices.find(v => v.lang.startsWith(langPrefix));
   if (anyMatch) return anyMatch;
   return null;
@@ -46,16 +80,12 @@ export function setSpeechLanguage(lang: Language): void {
 }
 
 /**
- * Initialize speech synthesis voices. Call from a user gesture handler
- * (same place as initAudio()). Some browsers only populate voices after
- * user interaction or after the 'voiceschanged' event.
+ * Initialize speech synthesis voices. Call from a user gesture handler.
  */
 export function initSpeech(): void {
   if (typeof window === 'undefined' || !window.speechSynthesis) return;
   try {
-    // Force voice list population
     window.speechSynthesis.getVoices();
-    // Chrome loads voices asynchronously
     if (!voicesLoaded) {
       window.speechSynthesis.addEventListener('voiceschanged', () => {
         voicesLoaded = false;
@@ -68,99 +98,125 @@ export function initSpeech(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Core speech function with sequential queue
+// Queue processor
 // ---------------------------------------------------------------------------
 
-/**
- * Process the next item in the speech queue. Called after the current
- * utterance finishes (via onend) or when a new item is enqueued while idle.
- */
 function processQueue(): void {
   if (isSpeaking || speechQueue.length === 0) return;
 
   const next = speechQueue.shift()!;
   isSpeaking = true;
 
+  if (next.mode === 'audio') {
+    playAudioSequence(next.files)
+      .then(() => {
+        isSpeaking = false;
+        processQueue();
+      })
+      .catch(() => {
+        // MP3 failed — try Web Speech API fallback
+        if (next.fallbackText) {
+          speakUtterance(next.fallbackText, next.fallbackOptions, () => {
+            isSpeaking = false;
+            processQueue();
+          });
+        } else {
+          isSpeaking = false;
+          processQueue();
+        }
+      });
+  } else {
+    speakUtterance(next.text, next.options, () => {
+      isSpeaking = false;
+      processQueue();
+    });
+  }
+}
+
+function speakUtterance(
+  text: string,
+  options: { rate?: number; pitch?: number; volume?: number } | undefined,
+  onDone: () => void,
+): void {
   try {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
-      isSpeaking = false;
+      onDone();
       return;
     }
 
     ensureVoice();
 
-    const utterance = new SpeechSynthesisUtterance(next.text);
+    const utterance = new SpeechSynthesisUtterance(text);
     if (preferredVoice) {
       utterance.voice = preferredVoice;
       utterance.lang = preferredVoice.lang;
     } else {
       utterance.lang = voiceLanguage === 'de' ? 'de-DE' : 'en-US';
     }
-    utterance.rate = next.options?.rate ?? 1.0;
-    utterance.pitch = next.options?.pitch ?? 1.0;
-    utterance.volume = next.options?.volume ?? 0.8;
+    utterance.rate = options?.rate ?? 1.0;
+    utterance.pitch = options?.pitch ?? 1.0;
+    utterance.volume = options?.volume ?? 0.8;
 
-    utterance.onend = () => {
-      isSpeaking = false;
-      processQueue();
-    };
-    utterance.onerror = () => {
-      isSpeaking = false;
-      processQueue();
-    };
+    utterance.onend = onDone;
+    utterance.onerror = onDone;
 
     window.speechSynthesis.speak(utterance);
   } catch {
-    isSpeaking = false;
-    processQueue();
+    onDone();
   }
 }
 
-/**
- * Speak an announcement using a single consistent voice. Announcements
- * are queued and played sequentially — each utterance finishes before
- * the next one begins. Silently does nothing if speechSynthesis is
- * unavailable.
- */
-export function announce(
-  text: string,
-  options?: { rate?: number; pitch?: number; volume?: number },
-): void {
-  speechQueue.push({ text, options });
+// ---------------------------------------------------------------------------
+// Public API — enqueue and cancel
+// ---------------------------------------------------------------------------
+
+function enqueue(item: QueueItem): void {
+  speechQueue.push(item);
   if (!isSpeaking) processQueue();
 }
 
 /**
- * Cancel any currently speaking announcement and clear the queue.
+ * Cancel any currently playing announcement (audio + speech) and clear queue.
  */
 export function cancelSpeech(): void {
   speechQueue = [];
   isSpeaking = false;
+  cancelAudioPlayback();
   try {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
   } catch {
     // silent
   }
 }
 
 /**
- * Cancel the queue and speak a single announcement immediately
+ * Cancel queue and enqueue a single item immediately
  * (used for countdown numbers that must not be delayed).
  */
-export function announceImmediate(
-  text: string,
-  options?: { rate?: number; pitch?: number; volume?: number },
-): void {
+function enqueueImmediate(item: QueueItem): void {
   cancelSpeech();
-  announce(text, options);
+  enqueue(item);
 }
 
 // ---------------------------------------------------------------------------
-// Announcement convenience functions
+// Helper — build audio item with speech fallback
 // ---------------------------------------------------------------------------
 
-/** Tier 1: Level change — "Level 5 — Blinds 200 / 400" */
+function audioOrSpeech(
+  files: string[],
+  fallbackText: string,
+  fallbackOptions?: { rate?: number; pitch?: number; volume?: number },
+): QueueItem {
+  return { mode: 'audio', files, fallbackText, fallbackOptions };
+}
+
+// ---------------------------------------------------------------------------
+// Convenience functions
+// ---------------------------------------------------------------------------
+
+/** Level change — "Level 5" + "Blinds" + "200 auf 400" [+ "Ante" + "25"] */
 export function announceLevelChange(
   levelNumber: number,
   smallBlind: number,
@@ -168,65 +224,126 @@ export function announceLevelChange(
   ante: number | undefined,
   t: TranslateFn,
 ): void {
-  const text = ante && ante > 0
-    ? t('voice.levelChangeWithAnte', { level: levelNumber, sb: smallBlind, bb: bigBlind, ante })
-    : t('voice.levelChange', { level: levelNumber, sb: smallBlind, bb: bigBlind });
-  announce(text);
+  if (voiceLanguage !== 'de') return;
+
+  const pairKey = `${smallBlind}-${bigBlind}`;
+  const canMp3 = levelNumber >= 1 && levelNumber <= MAX_LEVEL && BLIND_PAIRS.has(pairKey);
+  const anteOk = !ante || ante <= 0 || ANTE_VALUES.has(String(ante));
+
+  if (canMp3 && anteOk) {
+    const files: string[] = [
+      `levels/level-${String(levelNumber).padStart(2, '0')}.mp3`,
+      'building-blocks/blinds.mp3',
+      `blind-pairs/${pairKey}.mp3`,
+    ];
+    if (ante && ante > 0) {
+      files.push('building-blocks/ante.mp3', `ante/ante-${ante}.mp3`);
+    }
+    const fallback = ante && ante > 0
+      ? t('voice.levelChangeWithAnte', { level: levelNumber, sb: smallBlind, bb: bigBlind, ante })
+      : t('voice.levelChange', { level: levelNumber, sb: smallBlind, bb: bigBlind });
+    enqueue(audioOrSpeech(files, fallback));
+  } else {
+    const text = ante && ante > 0
+      ? t('voice.levelChangeWithAnte', { level: levelNumber, sb: smallBlind, bb: bigBlind, ante })
+      : t('voice.levelChange', { level: levelNumber, sb: smallBlind, bb: bigBlind });
+    enqueue({ mode: 'speech', text });
+  }
 }
 
-/** Tier 1: Break start — "Pause — 10 Minuten" */
+/** Break start — "Pause — 10 Minuten" */
 export function announceBreakStart(
   durationMinutes: number,
   t: TranslateFn,
 ): void {
-  announce(t('voice.breakStart', { minutes: durationMinutes }));
+  if (voiceLanguage !== 'de') return;
+
+  if (BREAK_MINUTES.has(durationMinutes)) {
+    const file = `breaks/break-${String(durationMinutes).padStart(2, '0')}min.mp3`;
+    enqueue(audioOrSpeech([file], t('voice.breakStart', { minutes: durationMinutes })));
+  } else {
+    enqueue({ mode: 'speech', text: t('voice.breakStart', { minutes: durationMinutes }) });
+  }
 }
 
-/** Tier 1: Break warning — "Noch 30 Sekunden Pause" */
+/** Break warning — "Noch 30 Sekunden Pause" */
 export function announceBreakWarning(t: TranslateFn): void {
-  announce(t('voice.breakWarning'));
+  if (voiceLanguage !== 'de') return;
+  enqueue(audioOrSpeech(['fixed/break-warning.mp3'], t('voice.breakWarning')));
 }
 
-/** Tier 1: Countdown number (last 10 seconds) — uses immediate mode */
-export function announceCountdown(second: number): void {
-  announceImmediate(String(second), { rate: 0.85 });
+/**
+ * Countdown number (last 10 seconds) — uses immediate mode.
+ * Returns true if voice will play (German), false otherwise (so caller can beep).
+ */
+export function announceCountdown(second: number): boolean {
+  if (voiceLanguage !== 'de') return false;
+  if (second >= 1 && second <= MAX_COUNTDOWN) {
+    const file = `countdown/countdown-${String(second).padStart(2, '0')}.mp3`;
+    enqueueImmediate(audioOrSpeech([file], String(second), { rate: 0.85 }));
+  } else {
+    enqueueImmediate({ mode: 'speech', text: String(second), options: { rate: 0.85 } });
+  }
+  return true;
 }
 
-/** Tier 2: Bubble — "Wir sind auf der Bubble!" */
+/** Bubble — "Wir sind auf der Bubble!" */
 export function announceBubble(t: TranslateFn): void {
-  announce(t('voice.bubble'));
+  if (voiceLanguage !== 'de') return;
+  enqueue(audioOrSpeech(['fixed/bubble.mp3'], t('voice.bubble')));
 }
 
-/** Tier 2: In The Money — "In The Money! Glückwunsch!" */
+/** In The Money — "In The Money! Glückwunsch!" */
 export function announceInTheMoney(t: TranslateFn): void {
-  announce(t('voice.inTheMoney'));
+  if (voiceLanguage !== 'de') return;
+  enqueue(audioOrSpeech(['fixed/itm.mp3'], t('voice.inTheMoney')));
 }
 
-/** Tier 2: Player eliminated — "[Name] ausgeschieden auf Platz [X]" */
+/** Player eliminated — always Web Speech API (dynamic player name) */
 export function announceElimination(
   playerName: string,
   place: number,
   t: TranslateFn,
 ): void {
-  announce(t('voice.playerEliminated', { name: playerName, place }));
+  if (voiceLanguage !== 'de') return;
+  enqueue({ mode: 'speech', text: t('voice.playerEliminated', { name: playerName, place }) });
 }
 
-/** Tier 2: Tournament winner — "[Name] gewinnt das Turnier!" */
+/** Tournament winner — always Web Speech API (dynamic player name) */
 export function announceWinner(playerName: string, t: TranslateFn): void {
-  announce(t('voice.tournamentWinner', { name: playerName }));
+  if (voiceLanguage !== 'de') return;
+  enqueue({ mode: 'speech', text: t('voice.tournamentWinner', { name: playerName }) });
 }
 
-/** Tier 3: Add-On available — "Add-On jetzt verfügbar!" */
+/** Add-On available */
 export function announceAddOn(t: TranslateFn): void {
-  announce(t('voice.addOnAvailable'));
+  if (voiceLanguage !== 'de') return;
+  enqueue(audioOrSpeech(['fixed/addon-available.mp3'], t('voice.addOnAvailable')));
 }
 
-/** Tier 3: Rebuy phase ended — "Die Rebuy-Phase ist beendet" */
+/** Rebuy phase ended */
 export function announceRebuyEnded(t: TranslateFn): void {
-  announce(t('voice.rebuyEnded'));
+  if (voiceLanguage !== 'de') return;
+  enqueue(audioOrSpeech(['fixed/rebuy-ended.mp3'], t('voice.rebuyEnded')));
 }
 
-/** Tier 3: Color-Up — "Color-Up: [Chips] werden eingetauscht" */
+/** Color-Up — "Color-Up: Chips werden eingetauscht" */
 export function announceColorUp(chipLabels: string, t: TranslateFn): void {
-  announce(t('voice.colorUp', { chips: chipLabels }));
+  if (voiceLanguage !== 'de') return;
+  enqueue(audioOrSpeech(
+    ['building-blocks/color-up.mp3', 'fixed/colorup-action.mp3'],
+    t('voice.colorUp', { chips: chipLabels }),
+  ));
+}
+
+/** Tournament start — "Shuffle up and deal!" */
+export function announceTournamentStart(): void {
+  if (voiceLanguage !== 'de') return;
+  enqueue({ mode: 'audio', files: ['fixed/shuffle-up-and-deal.mp3'] });
+}
+
+/** Heads-Up — "Heads-Up!" */
+export function announceHeadsUp(): void {
+  if (voiceLanguage !== 'de') return;
+  enqueue({ mode: 'audio', files: ['fixed/heads-up.mp3'] });
 }

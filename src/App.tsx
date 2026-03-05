@@ -43,6 +43,8 @@ import {
   announceAddOn,
   announceRebuyEnded,
   announceColorUp,
+  announceTournamentStart,
+  announceHeadsUp,
 } from './domain/speech';
 // Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
@@ -695,6 +697,15 @@ function App() {
     }
   }, [mode, config.players, settings.voiceEnabled, t]);
 
+  // Voice: Heads-Up announcement when exactly 2 players remain
+  const prevActiveCountRef = useRef(activePlayerCount);
+  useEffect(() => {
+    if (mode === 'game' && settings.voiceEnabled && activePlayerCount === 2 && prevActiveCountRef.current > 2) {
+      announceHeadsUp();
+    }
+    prevActiveCountRef.current = activePlayerCount;
+  }, [mode, activePlayerCount, settings.voiceEnabled]);
+
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
     setConfig((prev) => ({
@@ -717,6 +728,7 @@ function App() {
     setMode('game');
     timer.restart();
     initSpeech();
+    if (settings.voiceEnabled) announceTournamentStart();
   };
 
   const switchToSetup = () => {
