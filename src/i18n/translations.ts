@@ -353,6 +353,14 @@ const de = {
   'voice.addOnAvailable': 'Ädd-On ist einmalig verfügbar!',
   'voice.rebuyEnded': 'Die Riebai-Phase ist beendet',
   'voice.colorUp': 'Kaller-App: {chips} Chips werden eingetauscht',
+  'voice.lastHand': 'Letzte Hand des Levels',
+  'voice.lastHandBeforeBreak': 'Letzte Hand vor der Pause',
+  'voice.fiveMinutes': 'Noch fünf Minuten in diesem Level',
+  'voice.threeRemaining': 'Noch drei Spieler im Turnier',
+  'voice.breakOver': 'Pause vorbei. Bitte Plätze einnehmen.',
+  'voice.colorUpNextBreak': 'Nächste Pause: Kaller-App',
+  'voice.paused': 'Pausiert',
+  'voice.resumed': 'Weiter geht\'s',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -707,6 +715,14 @@ const en: Record<TranslationKey, string> = {
   'voice.addOnAvailable': 'Add-on is available once!',
   'voice.rebuyEnded': 'The rebuy phase has ended',
   'voice.colorUp': 'Color-up: exchange {chips} chips',
+  'voice.lastHand': 'Last hand of the level',
+  'voice.lastHandBeforeBreak': 'Last hand before the break',
+  'voice.fiveMinutes': 'Five minutes remaining in this level',
+  'voice.threeRemaining': 'Three players remaining',
+  'voice.breakOver': 'Break is over. Please take your seats.',
+  'voice.colorUpNextBreak': 'Next break: Color-Up',
+  'voice.paused': 'Paused',
+  'voice.resumed': 'Resuming play',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

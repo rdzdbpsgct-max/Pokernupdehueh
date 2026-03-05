@@ -334,3 +334,42 @@ export function announceTournamentStart(): void {
 export function announceHeadsUp(): void {
   enqueue({ mode: 'audio', files: ['fixed/heads-up.mp3'] });
 }
+
+/** Last hand of the level (or before break) */
+export function announceLastHand(nextIsBreak: boolean, t: TranslateFn): void {
+  if (nextIsBreak) {
+    enqueue(audioOrSpeech(['fixed/last-hand-before-break.mp3'], t('voice.lastHandBeforeBreak')));
+  } else {
+    enqueue(audioOrSpeech(['fixed/last-hand.mp3'], t('voice.lastHand')));
+  }
+}
+
+/** Five minutes remaining in this level */
+export function announceFiveMinutes(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/five-minutes.mp3'], t('voice.fiveMinutes')));
+}
+
+/** Three players remaining */
+export function announceThreeRemaining(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/three-remaining.mp3'], t('voice.threeRemaining')));
+}
+
+/** Break is over — please take your seats */
+export function announceBreakOver(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/break-over.mp3'], t('voice.breakOver')));
+}
+
+/** Color-Up warning — next break */
+export function announceColorUpWarning(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/colorup-next-break.mp3'], t('voice.colorUpNextBreak')));
+}
+
+/** Timer paused */
+export function announceTimerPaused(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/paused.mp3'], t('voice.paused')));
+}
+
+/** Timer resumed */
+export function announceTimerResumed(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/resumed.mp3'], t('voice.resumed')));
+}
