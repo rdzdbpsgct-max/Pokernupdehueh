@@ -1017,7 +1017,7 @@ export function defaultSettings(): Settings {
     countdownEnabled: true,
     autoAdvance: true,
     largeDisplay: true,
-    voiceEnabled: false,
+    voiceEnabled: true,
   };
 }
 

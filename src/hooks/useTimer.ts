@@ -8,6 +8,7 @@ import {
   restartTournament,
 } from '../domain/logic';
 import { initAudio, playBeep } from '../domain/sounds';
+import { initAudioContext } from '../domain/audioPlayer';
 import { initSpeech, announceCountdown } from '../domain/speech';
 
 const TICK_INTERVAL_MS = 100;
@@ -41,17 +42,17 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
       // Countdown for last 10 seconds — uses Math.floor to match the
       // displayed time (formatTime also uses Math.floor)
       const displaySec = Math.floor(remaining);
+      const isPlayLevel = levels[prev.currentLevelIndex]?.type === 'level';
 
       if (settings.countdownEnabled) {
         if (displaySec <= 10 && displaySec >= 0 && displaySec !== lastCountdownSecRef.current) {
           lastCountdownSecRef.current = displaySec;
           if (displaySec === 0) {
             // Don't announce zero — level end beep handles this (below)
-          } else if (settings.voiceEnabled) {
-            // Voice countdown replaces beep for all 10 seconds
-            announceCountdown(displaySec);
+          } else if (settings.voiceEnabled && isPlayLevel && announceCountdown(displaySec)) {
+            // Voice countdown (MP3 or speech) — plays for play levels only (not breaks)
           } else if (settings.soundEnabled) {
-            // Beep only when voice is off
+            // Beep when voice is off or during breaks
             playBeep(displaySec <= 3 ? 880 : 660, 100);
           }
         }
@@ -124,7 +125,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
   }, [levels]);
 
   const start = useCallback(() => {
-    initAudio(); initSpeech(); // Unlock AudioContext + Speech from user gesture
+    initAudio(); initAudioContext(); initSpeech(); // Unlock AudioContext + Speech from user gesture
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
     setTimerState((prev) => {
@@ -156,7 +157,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
   }, []);
 
   const toggleStartPause = useCallback(() => {
-    initAudio(); initSpeech(); // Unlock AudioContext + Speech from user gesture
+    initAudio(); initAudioContext(); initSpeech(); // Unlock AudioContext + Speech from user gesture
     setTimerState((prev) => {
       if (prev.status === 'running') {
         // Pause
@@ -188,7 +189,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
   }, []);
 
   const nextLevel = useCallback(() => {
-    initAudio(); initSpeech(); // Unlock AudioContext + Speech from user gesture
+    initAudio(); initAudioContext(); initSpeech(); // Unlock AudioContext + Speech from user gesture
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
@@ -207,7 +208,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
   }, [levels, clearTick, tick]);
 
   const previousLevel = useCallback(() => {
-    initAudio(); initSpeech(); // Unlock AudioContext + Speech from user gesture
+    initAudio(); initAudioContext(); initSpeech(); // Unlock AudioContext + Speech from user gesture
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;

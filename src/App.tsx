@@ -39,11 +39,20 @@ import {
   announceBreakWarning,
   announceBubble,
   announceInTheMoney,
-  announceElimination,
   announceWinner,
   announceAddOn,
   announceRebuyEnded,
   announceColorUp,
+  announceTournamentStart,
+  announceHeadsUp,
+  announceBounty,
+  announceFiveMinutes,
+  announceThreeRemaining,
+  announcePlayersRemaining,
+  announceBreakOver,
+  announceColorUpWarning,
+  announceTimerPaused,
+  announceTimerResumed,
 } from './domain/speech';
 // Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
@@ -586,17 +595,17 @@ function App() {
         victorySoundPlayedRef.current = true;
         playVictorySound();
       }
-      if (settings.voiceEnabled && winner && !victoryVoicePlayedRef.current) {
+      if (settings.voiceEnabled && !victoryVoicePlayedRef.current) {
         victoryVoicePlayedRef.current = true;
         // Voice after victory melody finishes (~1800ms)
-        setTimeout(() => announceWinner(winner.name, t), settings.soundEnabled ? 1800 : 0);
+        setTimeout(() => announceWinner(), settings.soundEnabled ? 1800 : 0);
       }
     }
     if (!tournamentFinished) {
       victorySoundPlayedRef.current = false;
       victoryVoicePlayedRef.current = false;
     }
-  }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled, winner, t]);
+  }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled]);
 
   // Bubble & ITM sound/voice/visual effects
   const prevBubbleRef = useRef(false);
@@ -637,6 +646,7 @@ function App() {
     if (mode !== 'game' || !settings.voiceEnabled) return;
     const idx = timer.timerState.currentLevelIndex;
     if (idx === prevLevelIdxVoiceRef.current) return;
+    const prevIdx = prevLevelIdxVoiceRef.current;
     prevLevelIdxVoiceRef.current = idx;
 
     const level = config.levels[idx];
@@ -646,8 +656,25 @@ function App() {
       const minutes = Math.round(level.durationSeconds / 60);
       announceBreakStart(minutes, t);
     } else {
+      // Break over: previous level was a break, now we're on a play level
+      const prevLevel = config.levels[prevIdx];
+      if (prevLevel?.type === 'break') {
+        announceBreakOver(t);
+      }
+
       const playLevelNum = config.levels.slice(0, idx + 1).filter(l => l.type === 'level').length;
       announceLevelChange(playLevelNum, level.smallBlind ?? 0, level.bigBlind ?? 0, level.ante, t);
+
+      // Color-up warning: next level is a break with color-up event
+      if (config.chips.enabled && config.chips.colorUpEnabled) {
+        const nextLevel = config.levels[idx + 1];
+        if (nextLevel?.type === 'break') {
+          const nextColorUpChips = colorUpMap.get(idx + 1);
+          if (nextColorUpChips && nextColorUpChips.length > 0) {
+            announceColorUpWarning(t);
+          }
+        }
+      }
     }
 
     // Color-up announcement — queued after the level/break announcement
@@ -679,7 +706,26 @@ function App() {
     }
   }, [mode, settings.voiceEnabled, config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, t]);
 
-  // Voice: Player elimination
+  // Voice: Five-minute warning (play levels > 5 min only)
+  const fiveMinWarningRef = useRef(false);
+  useEffect(() => {
+    if (mode !== 'game' || !settings.voiceEnabled) return;
+    const level = config.levels[timer.timerState.currentLevelIndex];
+    if (!level || level.type !== 'level' || level.durationSeconds <= 300) {
+      fiveMinWarningRef.current = false;
+      return;
+    }
+    const remaining = timer.timerState.remainingSeconds;
+    if (remaining <= 300 && remaining > 298 && !fiveMinWarningRef.current) {
+      fiveMinWarningRef.current = true;
+      announceFiveMinutes(t);
+    }
+    if (remaining > 300) {
+      fiveMinWarningRef.current = false;
+    }
+  }, [mode, settings.voiceEnabled, config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, t]);
+
+  // Voice: Bounty collected on player elimination
   const prevPlayersRef = useRef(config.players);
   useEffect(() => {
     if (mode !== 'game' || !settings.voiceEnabled) return;
@@ -689,12 +735,50 @@ function App() {
       if (player.status === 'eliminated' && player.placement !== null) {
         const prevPlayer = prev.find(p => p.id === player.id);
         if (prevPlayer && prevPlayer.status === 'active') {
-          announceElimination(player.name, player.placement, t);
+          if (config.bounty.enabled) announceBounty();
           break;
         }
       }
     }
-  }, [mode, config.players, settings.voiceEnabled, t]);
+  }, [mode, config.players, settings.voiceEnabled, config.bounty.enabled]);
+
+  // Voice: Player count milestones (dynamic based on paidPlaces) + Heads-Up
+  const prevActiveCountRef = useRef(activePlayerCount);
+  useEffect(() => {
+    if (mode === 'game' && settings.voiceEnabled) {
+      const prev = prevActiveCountRef.current;
+      // Only announce on decreasing player count
+      if (activePlayerCount < prev) {
+        if (activePlayerCount === 2) {
+          announceHeadsUp();
+        } else if (activePlayerCount === 3) {
+          announceThreeRemaining(t);
+        } else if (activePlayerCount >= 4 && activePlayerCount <= paidPlaces) {
+          // Announce milestones from paidPlaces down to 4
+          // (bubble = paidPlaces+1 is handled by the bubble effect)
+          announcePlayersRemaining(activePlayerCount, t);
+        }
+      }
+    }
+    prevActiveCountRef.current = activePlayerCount;
+  }, [mode, activePlayerCount, paidPlaces, settings.voiceEnabled, t]);
+
+  // Voice: Timer paused/resumed (user-initiated only, not on tournament finish)
+  const prevTimerStatusRef = useRef(timer.timerState.status);
+  useEffect(() => {
+    const status = timer.timerState.status;
+    const prevStatus = prevTimerStatusRef.current;
+    prevTimerStatusRef.current = status;
+
+    if (mode !== 'game' || !settings.voiceEnabled || tournamentFinished) return;
+
+    if (status === 'paused' && prevStatus === 'running') {
+      announceTimerPaused(t);
+    }
+    if (status === 'running' && prevStatus === 'paused') {
+      announceTimerResumed(t);
+    }
+  }, [mode, settings.voiceEnabled, timer.timerState.status, tournamentFinished, t]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
@@ -718,6 +802,7 @@ function App() {
     setMode('game');
     timer.restart();
     initSpeech();
+    if (settings.voiceEnabled) announceTournamentStart();
   };
 
   const switchToSetup = () => {
@@ -727,6 +812,8 @@ function App() {
     setShowItmFlash(false);
     prevBubbleRef.current = false;
     victorySoundPlayedRef.current = false;
+    fiveMinWarningRef.current = false;
+    breakWarningRef.current = false;
     if (itmFlashTimeoutRef.current) {
       clearTimeout(itmFlashTimeoutRef.current);
       itmFlashTimeoutRef.current = null;

@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.2.1
+**Version**: 2.3.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (192 tests, single run)
+npm run test         # Vitest run (195 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -70,7 +70,8 @@ src/
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
 │   ├── logic.ts                 # Core logic (~900 lines): validation, payouts, blinds, chips, templates, persistence, checkpoint
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
-│   └── speech.ts                # Web Speech API voice announcements (level, break, bubble, ITM, elimination, winner)
+│   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
+│   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
 ├── hooks/
 │   └── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
 ├── theme/                       # Dark/Light mode system
@@ -153,7 +154,7 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files
-- **Voice announcements**: Web Speech API (`speechSynthesis`) — offline, zero sound files, zero cost. Voice selection by app language (DE/EN, prefers local voices). Sequential speech queue (`onend`-chained) prevents overlapping; `announceImmediate()` for time-critical countdown. `VoiceSwitcher` header toggle (sound-only / voice). Phonetic pronunciation hints for English poker terms in German TTS (e.g. "Bleindz", "Riebai", "Babbl"). Announces: level changes, breaks (start + 30s warning), bubble, ITM, eliminations, tournament winner, add-on, rebuy end, color-up. Verbal countdown for last 10 seconds. Sound effects finish before voice starts (delay-based coordination).
+- **Voice announcements**: Dual-engine system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), Web Speech API (`speechSynthesis`) as fallback. 227 MP3 files per language in `public/audio/de/` and `public/audio/en/` (454 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (104 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
@@ -218,6 +219,20 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ## Changelog
 
+### v2.3.0 — ElevenLabs MP3 Voice (Deutsch + Englisch)
+
+- **ElevenLabs MP3 Sprachausgabe**: 454 professionelle MP3-Audiodateien — Deutsch (Stimme: Ava) und Englisch (ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks (`blinds.mp3`, `ante.mp3`, `color-up.mp3`) + einzelne Dateien für Levels, Blind-Paare, Ante-Werte, Countdowns, Pausen (minutengenau 1–30 Min) und 35 feste Ansagen.
+- **Gapless Audio-Playback**: Web Audio API (`AudioContext`, `AudioBufferSourceNode`) mit Trailing-Silence-Trimming und präzisem `start(when)`-Scheduling für nahtlose Wiedergabe.
+- **Neue Datei**: `src/domain/audioPlayer.ts` — MP3-Playback-Engine mit Web Audio API, dynamischem Sprachpfad (`audio/de/` / `audio/en/`)
+- **speech.ts Refactoring**: Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung (104 Blind-Paare, 20 Ante-Werte, 25 Levels, 30 Pausen-Dauern). Automatischer Web Speech API Fallback bei fehlenden Dateien oder dynamischen Inhalten (Spielernamen).
+- **Beide Sprachen mit Voice**: Sowohl Deutsch als auch Englisch nutzen ElevenLabs MP3s. Voice standardmäßig aktiviert. Bei deaktivierter Sprachausgabe nur Beep-Sounds.
+- **Erweiterte Ansagen**: Turnierstart ("Shuffle up and deal!"), Heads-Up, dynamische Spieleranzahl-Ansagen (4–10 Spieler basierend auf ausgezahlten Plätzen), Letzte Hand / Letzte Hand vor der Pause, Noch 5 Minuten, Pause vorbei, Color-Up nächste Pause, Timer pausiert/fortgesetzt. Voice-Countdown nur in Spiellevels (Beeps in Pausen).
+- **Vollständige Blind-Pair-Abdeckung**: Alle 104 Blind-Kombinationen vorhanden — Generator-Blinds für Startstacks 1k–50k (schnell/normal/langsam) plus Standard-Kombinationen aus Poker-Turnierformaten (Home Games, WSOP). Kein Speech-Fallback mehr für übliche Blindstrukturen.
+- **Pausenzeiten minutengenau**: Alle Pausenansagen von 1 bis 30 Minuten als eigene MP3-Dateien (vorher nur 5/10/15/20/25/30)
+- **PWA-Caching**: `.mp3` zu Workbox `globPatterns` hinzugefügt — Audio offline verfügbar
+- **454 Audio-Dateien** in `public/audio/de/` + `public/audio/en/` (227 pro Sprache, 7 Unterverzeichnisse)
+- **3 neue Tests**: audioPlayer Degradation, announceCountdown Return-Value, Dual-Language-Support (195 Tests gesamt)
+
 ### v2.2.1 — Dual Deployment (GitHub Pages + Vercel)
 
 - **Vercel-Deployment**: App jetzt auch über Vercel erreichbar (https://pokernupdehueh.vercel.app/). Automatisches Deploy bei Push auf `main`.
@@ -239,7 +254,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Neue Datei**: `src/domain/speech.ts` — Voice-Engine mit DE/EN-Sprachauswahl, Cancel-before-speak Queue, 11 Convenience-Funktionen
 - **Settings**: `voiceEnabled: boolean` in Settings, Toggle „Sprachansagen" im Einstellungspanel
 - **13 neue Translation-Keys**: `settings.voice` + 11× `voice.*` (DE + EN)
-- **5 neue Tests**: Speech-Modul Degradation + Announcement-Builder (192 Tests gesamt)
+- **5 neue Tests**: Speech-Modul Degradation + Announcement-Builder (195 Tests gesamt)
 
 ### v2.0.1 — Light-Mode-Fixes, Sektionsumbenennung & Clean-View-Button
 

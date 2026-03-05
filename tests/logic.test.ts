@@ -1961,13 +1961,8 @@ describe('computeBlindStructureSummary', () => {
 });
 
 describe('speech module', () => {
-  // Import speech functions — speechSynthesis is not available in jsdom,
+  // Import speech functions — speechSynthesis and Audio are not available in jsdom,
   // so these tests verify graceful degradation (no errors thrown)
-
-  it('announce does not throw without speechSynthesis', async () => {
-    const { announce } = await import('../src/domain/speech');
-    expect(() => announce('test')).not.toThrow();
-  });
 
   it('cancelSpeech does not throw without speechSynthesis', async () => {
     const { cancelSpeech } = await import('../src/domain/speech');
@@ -1985,13 +1980,28 @@ describe('speech module', () => {
     expect(() => setSpeechLanguage('en')).not.toThrow();
   });
 
-  it('announcement builders do not throw without speechSynthesis', async () => {
+  it('announceCountdown returns true for both German and English', async () => {
+    const { setSpeechLanguage, announceCountdown, cancelSpeech } = await import('../src/domain/speech');
+    setSpeechLanguage('de');
+    expect(announceCountdown(5)).toBe(true);
+    cancelSpeech();
+    setSpeechLanguage('en');
+    expect(announceCountdown(5)).toBe(true);
+    cancelSpeech();
+    setSpeechLanguage('de'); // restore
+  });
+
+  it('announcement builders do not throw without speechSynthesis or Audio', async () => {
     const {
+      setSpeechLanguage,
       announceLevelChange, announceBreakStart, announceBreakWarning,
       announceCountdown, announceBubble, announceInTheMoney,
-      announceElimination, announceWinner, announceAddOn,
-      announceRebuyEnded, announceColorUp,
+      announceElimination, announceWinner, announceBounty, announceAddOn,
+      announceRebuyEnded, announceColorUp, announceTournamentStart,
+      announceHeadsUp, cancelSpeech,
     } = await import('../src/domain/speech');
+
+    setSpeechLanguage('de');
 
     const mockT = ((key: string, params?: Record<string, string | number>) => {
       let text = key;
@@ -2006,10 +2016,46 @@ describe('speech module', () => {
     expect(() => announceCountdown(5)).not.toThrow();
     expect(() => announceBubble(mockT)).not.toThrow();
     expect(() => announceInTheMoney(mockT)).not.toThrow();
-    expect(() => announceElimination('Alice', 3, mockT)).not.toThrow();
-    expect(() => announceWinner('Bob', mockT)).not.toThrow();
+    expect(() => announceElimination()).not.toThrow();
+    expect(() => announceWinner()).not.toThrow();
+    expect(() => announceBounty()).not.toThrow();
     expect(() => announceAddOn(mockT)).not.toThrow();
     expect(() => announceRebuyEnded(mockT)).not.toThrow();
     expect(() => announceColorUp('500, 1000', mockT)).not.toThrow();
+    expect(() => announceTournamentStart()).not.toThrow();
+    expect(() => announceHeadsUp()).not.toThrow();
+    cancelSpeech();
+  });
+
+  it('convenience functions do not throw when language is English', async () => {
+    const {
+      setSpeechLanguage, announceBubble, announceInTheMoney,
+      announceTournamentStart, announceHeadsUp, cancelSpeech,
+    } = await import('../src/domain/speech');
+
+    setSpeechLanguage('en');
+
+    const mockT = ((key: string) => key) as Parameters<typeof announceBubble>[0];
+
+    // English now has MP3 audio files — these should not throw
+    expect(() => announceBubble(mockT)).not.toThrow();
+    expect(() => announceInTheMoney(mockT)).not.toThrow();
+    expect(() => announceTournamentStart()).not.toThrow();
+    expect(() => announceHeadsUp()).not.toThrow();
+    cancelSpeech();
+    setSpeechLanguage('de'); // restore
+  });
+});
+
+describe('audioPlayer module', () => {
+  it('cancelAudioPlayback does not throw', async () => {
+    const { cancelAudioPlayback } = await import('../src/domain/audioPlayer');
+    expect(() => cancelAudioPlayback()).not.toThrow();
+  });
+
+  it('playAudioSequence rejects without AudioContext', async () => {
+    const { playAudioSequence } = await import('../src/domain/audioPlayer');
+    // jsdom does not have AudioContext — should reject gracefully
+    await expect(playAudioSequence(['test.mp3'])).rejects.toThrow();
   });
 });
