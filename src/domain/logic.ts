@@ -361,9 +361,10 @@ export function generateBlindStructure(params: GenerateBlindParams): Level[] {
   let lastBB = 0;
 
   for (const refBB of BB_SEQUENCES[speed]) {
-    const bb = round(refBB * scale);
-    if (bb <= lastBB) continue; // skip duplicates after rounding
-    const sb = round(bb / 2);
+    const rawBB = round(refBB * scale);
+    if (rawBB <= lastBB) continue; // skip duplicates after rounding
+    const sb = round(rawBB / 2);
+    const bb = sb * 2; // ensure BB is always exactly double SB
     if (sb >= bb) continue; // safety: SB must be < BB
     const rawAnte = anteEnabled ? computeDefaultAnte(bb) : 0;
     const ante = rawAnte > 0 && smallestChip ? round(rawAnte) : rawAnte;

@@ -68,7 +68,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
-| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Web Speech API als Fallback. 454 Audio-Dateien (227 pro Sprache), offline via PWA. |
+| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Web Speech API als Fallback. 456 Audio-Dateien (228 pro Sprache), offline via PWA. |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
@@ -147,7 +147,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
-| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, dynamic player count milestones (based on paid places), heads-up, ITM, eliminations, winner, tournament start, color-up, timer status. Web Speech API fallback. 454 audio files (227 per language), offline via PWA. |
+| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, dynamic player count milestones (based on paid places), heads-up, ITM, eliminations, winner, tournament start, color-up, timer status. Web Speech API fallback. 456 audio files (228 per language), offline via PWA. |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
