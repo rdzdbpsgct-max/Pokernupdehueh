@@ -49,9 +49,9 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
           if (displaySec === 0) {
             // Don't announce zero — level end beep handles this (below)
           } else if (settings.voiceEnabled && announceCountdown(displaySec)) {
-            // Voice countdown (MP3 or speech) — returns true if German
+            // Voice countdown (MP3 or speech) — plays for both DE and EN
           } else if (settings.soundEnabled) {
-            // Beep when voice is off or language is not German
+            // Beep when voice is off
             playBeep(displaySec <= 3 ? 880 : 660, 100);
           }
         }

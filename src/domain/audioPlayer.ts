@@ -1,8 +1,11 @@
 // MP3 audio playback engine — Web Audio API for gapless sequential playback
 
+import type { Language } from '../i18n/translations';
+
 let audioContext: AudioContext | null = null;
 let scheduledSources: AudioBufferSourceNode[] = [];
 let cancelRequested = false;
+let audioLanguage: Language = 'de';
 
 function getOrCreateContext(): AudioContext | null {
   if (typeof AudioContext === 'undefined') return null;
@@ -14,7 +17,14 @@ function getOrCreateContext(): AudioContext | null {
 
 function getBasePath(): string {
   // import.meta.env.BASE_URL always ends with '/'
-  return `${import.meta.env.BASE_URL}audio/de/`;
+  return `${import.meta.env.BASE_URL}audio/${audioLanguage}/`;
+}
+
+/**
+ * Set the language for audio file paths.
+ */
+export function setAudioLanguage(lang: Language): void {
+  audioLanguage = lang;
 }
 
 /**

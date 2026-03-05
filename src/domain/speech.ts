@@ -1,7 +1,7 @@
-// Voice announcements — ElevenLabs MP3 for German, Web Speech API fallback, no voice for English
+// Voice announcements — ElevenLabs MP3 for German + English, Web Speech API fallback
 
 import type { Language, TranslationKey } from '../i18n/translations';
-import { playAudioSequence, cancelAudioPlayback } from './audioPlayer';
+import { playAudioSequence, cancelAudioPlayback, setAudioLanguage } from './audioPlayer';
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -10,7 +10,7 @@ let voiceLanguage: Language = 'de';
 let voicesLoaded = false;
 
 // ---------------------------------------------------------------------------
-// Audio file manifest — known pre-recorded files
+// Audio file manifest — known pre-recorded files (identical for DE + EN)
 // ---------------------------------------------------------------------------
 
 const BLIND_PAIRS = new Set([
@@ -77,6 +77,7 @@ export function setSpeechLanguage(lang: Language): void {
   voiceLanguage = lang;
   voicesLoaded = false;
   preferredVoice = null;
+  setAudioLanguage(lang);
 }
 
 /**
@@ -213,10 +214,10 @@ function audioOrSpeech(
 }
 
 // ---------------------------------------------------------------------------
-// Convenience functions
+// Convenience functions — both DE and EN have MP3 audio files
 // ---------------------------------------------------------------------------
 
-/** Level change — "Level 5" + "Blinds" + "200 auf 400" [+ "Ante" + "25"] */
+/** Level change — "Level 5" + "Blinds" + "200 to 400" [+ "Ante" + "25"] */
 export function announceLevelChange(
   levelNumber: number,
   smallBlind: number,
@@ -224,8 +225,6 @@ export function announceLevelChange(
   ante: number | undefined,
   t: TranslateFn,
 ): void {
-  if (voiceLanguage !== 'de') return;
-
   const pairKey = `${smallBlind}-${bigBlind}`;
   const canMp3 = levelNumber >= 1 && levelNumber <= MAX_LEVEL && BLIND_PAIRS.has(pairKey);
   const anteOk = !ante || ante <= 0 || ANTE_VALUES.has(String(ante));
@@ -251,13 +250,11 @@ export function announceLevelChange(
   }
 }
 
-/** Break start — "Pause — 10 Minuten" */
+/** Break start — "Break — 10 minutes" / "Pause — 10 Minuten" */
 export function announceBreakStart(
   durationMinutes: number,
   t: TranslateFn,
 ): void {
-  if (voiceLanguage !== 'de') return;
-
   if (BREAK_MINUTES.has(durationMinutes)) {
     const file = `breaks/break-${String(durationMinutes).padStart(2, '0')}min.mp3`;
     enqueue(audioOrSpeech([file], t('voice.breakStart', { minutes: durationMinutes })));
@@ -266,18 +263,16 @@ export function announceBreakStart(
   }
 }
 
-/** Break warning — "Noch 30 Sekunden Pause" */
+/** Break warning — "30 seconds left in the break" */
 export function announceBreakWarning(t: TranslateFn): void {
-  if (voiceLanguage !== 'de') return;
   enqueue(audioOrSpeech(['fixed/break-warning.mp3'], t('voice.breakWarning')));
 }
 
 /**
  * Countdown number (last 10 seconds) — uses immediate mode.
- * Returns true if voice will play (German), false otherwise (so caller can beep).
+ * Returns true so caller knows voice is handling it (no beep needed).
  */
 export function announceCountdown(second: number): boolean {
-  if (voiceLanguage !== 'de') return false;
   if (second >= 1 && second <= MAX_COUNTDOWN) {
     const file = `countdown/countdown-${String(second).padStart(2, '0')}.mp3`;
     enqueueImmediate(audioOrSpeech([file], String(second), { rate: 0.85 }));
@@ -287,15 +282,13 @@ export function announceCountdown(second: number): boolean {
   return true;
 }
 
-/** Bubble — "Wir sind auf der Bubble!" */
+/** Bubble — "We're on the bubble!" */
 export function announceBubble(t: TranslateFn): void {
-  if (voiceLanguage !== 'de') return;
   enqueue(audioOrSpeech(['fixed/bubble.mp3'], t('voice.bubble')));
 }
 
-/** In The Money — "In The Money! Glückwunsch!" */
+/** In The Money — "In the money! Congratulations!" */
 export function announceInTheMoney(t: TranslateFn): void {
-  if (voiceLanguage !== 'de') return;
   enqueue(audioOrSpeech(['fixed/itm.mp3'], t('voice.inTheMoney')));
 }
 
@@ -306,31 +299,26 @@ export function announceElimination(): void {
 
 /** Tournament winner — generic announcement without player name */
 export function announceWinner(): void {
-  if (voiceLanguage !== 'de') return;
   enqueue({ mode: 'audio', files: ['fixed/tournament-winner.mp3'] });
 }
 
-/** Bounty collected — "Bounty kassiert! Was für ein Knockout!" */
+/** Bounty collected — "Bounty collected! What a knockout!" */
 export function announceBounty(): void {
-  if (voiceLanguage !== 'de') return;
   enqueue({ mode: 'audio', files: ['fixed/bounty-collected.mp3'] });
 }
 
 /** Add-On available */
 export function announceAddOn(t: TranslateFn): void {
-  if (voiceLanguage !== 'de') return;
   enqueue(audioOrSpeech(['fixed/addon-available.mp3'], t('voice.addOnAvailable')));
 }
 
 /** Rebuy phase ended */
 export function announceRebuyEnded(t: TranslateFn): void {
-  if (voiceLanguage !== 'de') return;
   enqueue(audioOrSpeech(['fixed/rebuy-ended.mp3'], t('voice.rebuyEnded')));
 }
 
-/** Color-Up — "Color-Up: Chips werden eingetauscht" */
+/** Color-Up — "Color-Up: Chips will be colored up" */
 export function announceColorUp(chipLabels: string, t: TranslateFn): void {
-  if (voiceLanguage !== 'de') return;
   enqueue(audioOrSpeech(
     ['building-blocks/color-up.mp3', 'fixed/colorup-action.mp3'],
     t('voice.colorUp', { chips: chipLabels }),
@@ -339,12 +327,10 @@ export function announceColorUp(chipLabels: string, t: TranslateFn): void {
 
 /** Tournament start — "Shuffle up and deal!" */
 export function announceTournamentStart(): void {
-  if (voiceLanguage !== 'de') return;
   enqueue({ mode: 'audio', files: ['fixed/shuffle-up-and-deal.mp3'] });
 }
 
 /** Heads-Up — "Heads-Up!" */
 export function announceHeadsUp(): void {
-  if (voiceLanguage !== 'de') return;
   enqueue({ mode: 'audio', files: ['fixed/heads-up.mp3'] });
 }

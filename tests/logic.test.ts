@@ -1980,13 +1980,13 @@ describe('speech module', () => {
     expect(() => setSpeechLanguage('en')).not.toThrow();
   });
 
-  it('announceCountdown returns true for German, false for English', async () => {
+  it('announceCountdown returns true for both German and English', async () => {
     const { setSpeechLanguage, announceCountdown, cancelSpeech } = await import('../src/domain/speech');
     setSpeechLanguage('de');
     expect(announceCountdown(5)).toBe(true);
     cancelSpeech();
     setSpeechLanguage('en');
-    expect(announceCountdown(5)).toBe(false);
+    expect(announceCountdown(5)).toBe(true);
     cancelSpeech();
     setSpeechLanguage('de'); // restore
   });
@@ -2027,7 +2027,7 @@ describe('speech module', () => {
     cancelSpeech();
   });
 
-  it('convenience functions are silent when language is English', async () => {
+  it('convenience functions do not throw when language is English', async () => {
     const {
       setSpeechLanguage, announceBubble, announceInTheMoney,
       announceTournamentStart, announceHeadsUp, cancelSpeech,
@@ -2037,7 +2037,7 @@ describe('speech module', () => {
 
     const mockT = ((key: string) => key) as Parameters<typeof announceBubble>[0];
 
-    // These should do nothing (no throw, no speech) for English
+    // English now has MP3 audio files — these should not throw
     expect(() => announceBubble(mockT)).not.toThrow();
     expect(() => announceInTheMoney(mockT)).not.toThrow();
     expect(() => announceTournamentStart()).not.toThrow();
