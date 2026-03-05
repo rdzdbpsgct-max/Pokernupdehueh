@@ -1,6 +1,16 @@
-// MP3 audio playback engine — sequential file playback for pre-recorded announcements
+// MP3 audio playback engine — Web Audio API for gapless sequential playback
 
-let currentAudio: HTMLAudioElement | null = null;
+let audioContext: AudioContext | null = null;
+let currentSource: AudioBufferSourceNode | null = null;
+let cancelRequested = false;
+
+function getOrCreateContext(): AudioContext | null {
+  if (typeof AudioContext === 'undefined') return null;
+  if (!audioContext || audioContext.state === 'closed') {
+    audioContext = new AudioContext();
+  }
+  return audioContext;
+}
 
 function getBasePath(): string {
   // import.meta.env.BASE_URL always ends with '/'
@@ -8,55 +18,70 @@ function getBasePath(): string {
 }
 
 /**
- * Play a sequence of MP3 files one after another.
- * Preloads all files upfront to minimize gaps between sequential playback.
+ * Play a sequence of MP3 files one after another using Web Audio API.
+ * Decodes all files upfront, then schedules gapless playback.
  * Resolves when all files have finished. Rejects on the first error.
  */
 export function playAudioSequence(files: string[]): Promise<void> {
   if (files.length === 0) return Promise.resolve();
-  if (typeof window === 'undefined' || typeof Audio === 'undefined') {
+  if (typeof window === 'undefined') {
     return Promise.reject(new Error('Audio not available'));
   }
 
+  cancelRequested = false;
+  const maybeCtx = getOrCreateContext();
+  if (!maybeCtx) return Promise.reject(new Error('AudioContext not available'));
+  const ctx = maybeCtx;
   const basePath = getBasePath();
 
-  // Preload all audio elements upfront — reduces gaps between sequential files
-  const audioElements = files.map((file) => {
-    const audio = new Audio(basePath + file);
-    audio.preload = 'auto';
-    return audio;
-  });
+  // Resume context if suspended (autoplay policy)
+  const resumePromise = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
 
-  return new Promise<void>((resolve, reject) => {
-    let index = 0;
+  return resumePromise.then(() => {
+    // Fetch and decode all audio files in parallel
+    const decodePromises = files.map((file) =>
+      fetch(basePath + file)
+        .then((res) => {
+          if (!res.ok) throw new Error(`Failed to fetch: ${file}`);
+          return res.arrayBuffer();
+        })
+        .then((buf) => ctx.decodeAudioData(buf)),
+    );
 
-    function playNext(): void {
-      if (index >= audioElements.length) {
-        currentAudio = null;
-        resolve();
-        return;
+    return Promise.all(decodePromises);
+  }).then((buffers) => {
+    if (cancelRequested) return;
+
+    return new Promise<void>((resolve, reject) => {
+      let index = 0;
+
+      function playNext(): void {
+        if (cancelRequested || index >= buffers.length) {
+          currentSource = null;
+          resolve();
+          return;
+        }
+
+        try {
+          const source = ctx.createBufferSource();
+          source.buffer = buffers[index];
+          source.connect(ctx.destination);
+          currentSource = source;
+
+          source.onended = () => {
+            index++;
+            playNext();
+          };
+
+          source.start(0);
+        } catch (err) {
+          currentSource = null;
+          reject(err);
+        }
       }
 
-      const audio = audioElements[index];
-      currentAudio = audio;
-
-      audio.onended = () => {
-        index++;
-        playNext();
-      };
-
-      audio.onerror = () => {
-        currentAudio = null;
-        reject(new Error(`Failed to play: ${files[index]}`));
-      };
-
-      audio.play().catch((err) => {
-        currentAudio = null;
-        reject(err);
-      });
-    }
-
-    playNext();
+      playNext();
+    });
   });
 }
 
@@ -64,9 +89,25 @@ export function playAudioSequence(files: string[]): Promise<void> {
  * Stop any currently playing audio immediately.
  */
 export function cancelAudioPlayback(): void {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.currentTime = 0;
-    currentAudio = null;
+  cancelRequested = true;
+  if (currentSource) {
+    try {
+      currentSource.stop();
+    } catch {
+      // already stopped
+    }
+    currentSource = null;
+  }
+}
+
+/**
+ * Initialize AudioContext from a user gesture (unlocks autoplay).
+ */
+export function initAudioContext(): void {
+  try {
+    const ctx = getOrCreateContext();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+  } catch {
+    // Web Audio API not available
   }
 }

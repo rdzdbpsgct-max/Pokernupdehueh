@@ -8,6 +8,7 @@ import {
   restartTournament,
 } from '../domain/logic';
 import { initAudio, playBeep } from '../domain/sounds';
+import { initAudioContext } from '../domain/audioPlayer';
 import { initSpeech, announceCountdown } from '../domain/speech';
 
 const TICK_INTERVAL_MS = 100;
@@ -123,7 +124,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
   }, [levels]);
 
   const start = useCallback(() => {
-    initAudio(); initSpeech(); // Unlock AudioContext + Speech from user gesture
+    initAudio(); initAudioContext(); initSpeech(); // Unlock AudioContext + Speech from user gesture
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
     setTimerState((prev) => {
@@ -155,7 +156,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
   }, []);
 
   const toggleStartPause = useCallback(() => {
-    initAudio(); initSpeech(); // Unlock AudioContext + Speech from user gesture
+    initAudio(); initAudioContext(); initSpeech(); // Unlock AudioContext + Speech from user gesture
     setTimerState((prev) => {
       if (prev.status === 'running') {
         // Pause
@@ -187,7 +188,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
   }, []);
 
   const nextLevel = useCallback(() => {
-    initAudio(); initSpeech(); // Unlock AudioContext + Speech from user gesture
+    initAudio(); initAudioContext(); initSpeech(); // Unlock AudioContext + Speech from user gesture
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;
@@ -206,7 +207,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
   }, [levels, clearTick, tick]);
 
   const previousLevel = useCallback(() => {
-    initAudio(); initSpeech(); // Unlock AudioContext + Speech from user gesture
+    initAudio(); initAudioContext(); initSpeech(); // Unlock AudioContext + Speech from user gesture
     clearTick();
     lastCountdownSecRef.current = null;
     levelEndAudioPlayedRef.current = false;

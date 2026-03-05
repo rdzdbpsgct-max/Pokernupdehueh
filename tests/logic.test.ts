@@ -2053,9 +2053,9 @@ describe('audioPlayer module', () => {
     expect(() => cancelAudioPlayback()).not.toThrow();
   });
 
-  it('playAudioSequence rejects without Audio constructor', async () => {
+  it('playAudioSequence rejects without AudioContext', async () => {
     const { playAudioSequence } = await import('../src/domain/audioPlayer');
-    // jsdom does not have Audio — should reject gracefully
+    // jsdom does not have AudioContext — should reject gracefully
     await expect(playAudioSequence(['test.mp3'])).rejects.toThrow();
   });
 });
