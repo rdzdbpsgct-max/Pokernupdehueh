@@ -9,8 +9,8 @@ All notable changes to the Pokern up de Hüh app.
 
 ### ElevenLabs MP3 Sprachausgabe (Deutsch + Englisch) / ElevenLabs MP3 Voice (German + English)
 
-- **ElevenLabs MP3 Sprachausgabe** — 466 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (110), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 35 feste Ansagen. 233 Dateien pro Sprache, offline via PWA gecached.
-- **ElevenLabs MP3 voice** — 466 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (110), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 35 fixed announcements. 233 files per language, offline-cached via PWA.
+- **ElevenLabs MP3 Sprachausgabe** — 446 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (110), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 25 feste Ansagen. 223 Dateien pro Sprache, offline via PWA gecached.
+- **ElevenLabs MP3 voice** — 446 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (110), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 25 fixed announcements. 223 files per language, offline-cached via PWA.
 
 - **Dreistufiger Audio-Fallback** — Web Audio API (gapless, Trailing-Silence-Trimming) → HTMLAudioElement (sequentiell, maximale Browser-Kompatibilität) → Web Speech API (Browser-Stimme als letzter Ausweg). Behebt stille MP3-Fehler in bestimmten Browsern.
 - **Triple audio fallback** — Web Audio API (gapless, trailing silence trimming) → HTMLAudioElement (sequential, maximum browser compatibility) → Web Speech API (browser voice as last resort). Fixes silent MP3 failures in certain browsers.
@@ -35,6 +35,9 @@ All notable changes to the Pokern up de Hüh app.
 
 - **PWA-Caching** — `.mp3` zu Workbox `globPatterns` hinzugefügt. Audio-Dateien offline verfügbar.
 - **PWA caching** — `.mp3` added to Workbox `globPatterns`. Audio files available offline.
+
+- **Qualitätsverbesserungen** — Race-Condition-Fix in `audioPlayer.ts` (onended bei `source.stop()`), Speech-Fallback für alle Ansagen (Winner, Bounty, Heads-Up, Turnierstart), HTMLAudioElement überspringt fehlerhafte Dateien statt Abbruch, `victoryVoicePlayedRef` Reset korrigiert, 20 ungenutzte MP3s entfernt, 4 neue Translation-Keys.
+- **Quality improvements** — Race condition fix in `audioPlayer.ts` (onended on `source.stop()`), speech fallback for all announcements (winner, bounty, heads-up, tournament start), HTMLAudioElement skips failed files instead of aborting, `victoryVoicePlayedRef` reset fixed, 20 unused MP3s removed, 4 new translation keys.
 
 - **3 neue Tests** — audioPlayer Degradation, announceCountdown Return-Value, Dual-Language-Support (195 Tests gesamt).
 - **3 new tests** — audioPlayer degradation, announceCountdown return value, dual-language support (195 tests total).

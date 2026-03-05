@@ -2017,13 +2017,13 @@ describe('speech module', () => {
     expect(() => announceBubble(mockT)).not.toThrow();
     expect(() => announceInTheMoney(mockT)).not.toThrow();
     expect(() => announceElimination()).not.toThrow();
-    expect(() => announceWinner()).not.toThrow();
-    expect(() => announceBounty()).not.toThrow();
+    expect(() => announceWinner(mockT)).not.toThrow();
+    expect(() => announceBounty(mockT)).not.toThrow();
     expect(() => announceAddOn(mockT)).not.toThrow();
     expect(() => announceRebuyEnded(mockT)).not.toThrow();
     expect(() => announceColorUp('500, 1000', mockT)).not.toThrow();
-    expect(() => announceTournamentStart()).not.toThrow();
-    expect(() => announceHeadsUp()).not.toThrow();
+    expect(() => announceTournamentStart(mockT)).not.toThrow();
+    expect(() => announceHeadsUp(mockT)).not.toThrow();
     cancelSpeech();
   });
 
@@ -2040,8 +2040,8 @@ describe('speech module', () => {
     // English now has MP3 audio files — these should not throw
     expect(() => announceBubble(mockT)).not.toThrow();
     expect(() => announceInTheMoney(mockT)).not.toThrow();
-    expect(() => announceTournamentStart()).not.toThrow();
-    expect(() => announceHeadsUp()).not.toThrow();
+    expect(() => announceTournamentStart(mockT)).not.toThrow();
+    expect(() => announceHeadsUp(mockT)).not.toThrow();
     cancelSpeech();
     setSpeechLanguage('de'); // restore
   });

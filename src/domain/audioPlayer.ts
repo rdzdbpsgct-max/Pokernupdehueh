@@ -92,9 +92,9 @@ function playWithWebAudio(files: string[], basePath: string): Promise<void> {
   const resumePromise = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
 
   return resumePromise.then(() => {
-    // Fetch and decode all audio files in parallel (no-cache to bust stale SW/browser cache)
+    // Fetch and decode all audio files in parallel
     const decodePromises = files.map((file) =>
-      fetch(basePath + file, { cache: 'no-store' })
+      fetch(basePath + file)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status} for ${file}`);
           return res.arrayBuffer();
@@ -124,11 +124,12 @@ function playWithWebAudio(files: string[], basePath: string): Promise<void> {
         startTime += buffers[i].duration;
       }
 
-      // Resolve when the last buffer finishes
+      // Resolve when the last buffer finishes (guard against cancelled sources
+      // — source.stop() also fires onended, which would corrupt isSpeaking state)
       const lastSource = scheduledSources[scheduledSources.length - 1];
       lastSource.onended = () => {
         scheduledSources = [];
-        resolve();
+        if (!cancelRequested) resolve();
       };
     });
   });
@@ -142,33 +143,39 @@ function playWithHtmlAudio(files: string[], basePath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let index = 0;
 
+    let anyPlayed = false;
+
     function playNext(): void {
       if (cancelRequested || index >= files.length) {
         currentHtmlAudio = null;
-        resolve();
+        if (anyPlayed) {
+          resolve();
+        } else {
+          reject(new Error('All files failed in HTMLAudioElement fallback'));
+        }
         return;
       }
 
-      const audio = new Audio(basePath + files[index] + '?v=' + Date.now());
+      const audio = new Audio(basePath + files[index]);
       currentHtmlAudio = audio;
       index++;
 
       audio.onended = () => {
         currentHtmlAudio = null;
+        anyPlayed = true;
         playNext();
       };
 
       audio.onerror = () => {
         currentHtmlAudio = null;
-        const errorMsg = `HTMLAudioElement failed for: ${files[index - 1]}`;
-        console.error('[audioPlayer]', errorMsg);
-        reject(new Error(errorMsg));
+        console.warn('[audioPlayer] HTMLAudioElement skipping failed file:', files[index - 1]);
+        playNext(); // Continue with remaining files instead of aborting
       };
 
-      audio.play().catch((err) => {
+      audio.play().catch(() => {
         currentHtmlAudio = null;
-        console.error('[audioPlayer] HTMLAudioElement play() rejected:', err);
-        reject(err);
+        console.warn('[audioPlayer] HTMLAudioElement play() rejected, skipping:', files[index - 1]);
+        playNext(); // Continue with remaining files
       });
     }
 

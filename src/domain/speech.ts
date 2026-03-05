@@ -300,13 +300,13 @@ export function announceElimination(): void {
 }
 
 /** Tournament winner — generic announcement without player name */
-export function announceWinner(): void {
-  enqueue({ mode: 'audio', files: ['fixed/tournament-winner.mp3'] });
+export function announceWinner(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/tournament-winner.mp3'], t('voice.winner')));
 }
 
 /** Bounty collected — "Bounty collected! What a knockout!" */
-export function announceBounty(): void {
-  enqueue({ mode: 'audio', files: ['fixed/bounty-collected.mp3'] });
+export function announceBounty(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/bounty-collected.mp3'], t('voice.bountyCollected')));
 }
 
 /** Add-On available */
@@ -328,13 +328,13 @@ export function announceColorUp(chipLabels: string, t: TranslateFn): void {
 }
 
 /** Tournament start — "Shuffle up and deal!" */
-export function announceTournamentStart(): void {
-  enqueue({ mode: 'audio', files: ['fixed/shuffle-up-and-deal.mp3'] });
+export function announceTournamentStart(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/shuffle-up-and-deal.mp3'], t('voice.tournamentStart')));
 }
 
 /** Heads-Up — "Heads-Up!" */
-export function announceHeadsUp(): void {
-  enqueue({ mode: 'audio', files: ['fixed/heads-up.mp3'] });
+export function announceHeadsUp(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/heads-up.mp3'], t('voice.headsUp')));
 }
 
 /** Last hand of the level (or before break) */

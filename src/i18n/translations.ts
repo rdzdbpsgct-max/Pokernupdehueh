@@ -362,6 +362,10 @@ const de = {
   'voice.colorUpNextBreak': 'Nächste Pause: Kaller-App',
   'voice.paused': 'Pausiert',
   'voice.resumed': 'Weiter geht\'s',
+  'voice.tournamentStart': 'Shuffle up and deal! Los geht\'s!',
+  'voice.headsUp': 'Heads-Up!',
+  'voice.winner': 'Turniersieger! Herzlichen Glückwunsch!',
+  'voice.bountyCollected': 'Bounty kassiert!',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -725,6 +729,10 @@ const en: Record<TranslationKey, string> = {
   'voice.colorUpNextBreak': 'Next break: Color-Up',
   'voice.paused': 'Paused',
   'voice.resumed': 'Resuming play',
+  'voice.tournamentStart': 'Shuffle up and deal! Let\'s go!',
+  'voice.headsUp': 'Heads-Up!',
+  'voice.winner': 'Tournament winner! Congratulations!',
+  'voice.bountyCollected': 'Bounty collected!',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

@@ -598,14 +598,14 @@ function App() {
       if (settings.voiceEnabled && !victoryVoicePlayedRef.current) {
         victoryVoicePlayedRef.current = true;
         // Voice after victory melody finishes (~1800ms)
-        setTimeout(() => announceWinner(), settings.soundEnabled ? 1800 : 0);
+        setTimeout(() => announceWinner(t), settings.soundEnabled ? 1800 : 0);
       }
     }
     if (!tournamentFinished) {
       victorySoundPlayedRef.current = false;
       victoryVoicePlayedRef.current = false;
     }
-  }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled]);
+  }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled, t]);
 
   // Bubble & ITM sound/voice/visual effects
   const prevBubbleRef = useRef(false);
@@ -735,12 +735,12 @@ function App() {
       if (player.status === 'eliminated' && player.placement !== null) {
         const prevPlayer = prev.find(p => p.id === player.id);
         if (prevPlayer && prevPlayer.status === 'active') {
-          if (config.bounty.enabled) announceBounty();
+          if (config.bounty.enabled) announceBounty(t);
           break;
         }
       }
     }
-  }, [mode, config.players, settings.voiceEnabled, config.bounty.enabled]);
+  }, [mode, config.players, settings.voiceEnabled, config.bounty.enabled, t]);
 
   // Voice: Player count milestones (dynamic based on paidPlaces) + Heads-Up
   const prevActiveCountRef = useRef(activePlayerCount);
@@ -750,7 +750,7 @@ function App() {
       // Only announce on decreasing player count
       if (activePlayerCount < prev) {
         if (activePlayerCount === 2) {
-          announceHeadsUp();
+          announceHeadsUp(t);
         } else if (activePlayerCount === 3) {
           announceThreeRemaining(t);
         } else if (activePlayerCount >= 4 && activePlayerCount <= paidPlaces) {
@@ -802,7 +802,7 @@ function App() {
     setMode('game');
     timer.restart();
     initSpeech();
-    if (settings.voiceEnabled) announceTournamentStart();
+    if (settings.voiceEnabled) announceTournamentStart(t);
   };
 
   const switchToSetup = () => {
@@ -812,6 +812,7 @@ function App() {
     setShowItmFlash(false);
     prevBubbleRef.current = false;
     victorySoundPlayedRef.current = false;
+    victoryVoicePlayedRef.current = false;
     fiveMinWarningRef.current = false;
     breakWarningRef.current = false;
     if (itmFlashTimeoutRef.current) {
