@@ -9,8 +9,8 @@ All notable changes to the Pokern up de Hüh app.
 
 ### ElevenLabs MP3 Sprachausgabe (Deutsch + Englisch) / ElevenLabs MP3 Voice (German + English)
 
-- **ElevenLabs MP3 Sprachausgabe** — 378 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (73), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 28 feste Ansagen. 189 Dateien pro Sprache, offline via PWA gecached.
-- **ElevenLabs MP3 voice** — 378 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (73), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 28 fixed announcements. 189 files per language, offline-cached via PWA.
+- **ElevenLabs MP3 Sprachausgabe** — 454 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (104), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 35 feste Ansagen. 227 Dateien pro Sprache, offline via PWA gecached.
+- **ElevenLabs MP3 voice** — 454 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (104), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 35 fixed announcements. 227 files per language, offline-cached via PWA.
 
 - **Gapless Audio-Playback** — Web Audio API (`AudioContext`, `AudioBufferSourceNode`) mit Trailing-Silence-Trimming und präzisem `start(when)`-Scheduling. Keine Lücken zwischen sequentiellen Dateien.
 - **Gapless audio playback** — Web Audio API (`AudioContext`, `AudioBufferSourceNode`) with trailing silence trimming and precise `start(when)` scheduling. No gaps between sequential files.
@@ -18,8 +18,8 @@ All notable changes to the Pokern up de Hüh app.
 - **Neue Datei: `audioPlayer.ts`** — MP3-Playback-Engine mit Web Audio API, dynamischem Sprachpfad (`audio/de/` / `audio/en/`). `playAudioSequence()` dekodiert alle Dateien parallel, trimmt Stille, schedulet nahtlos.
 - **New file: `audioPlayer.ts`** — MP3 playback engine with Web Audio API, dynamic language path (`audio/de/` / `audio/en/`). `playAudioSequence()` decodes all files in parallel, trims silence, schedules seamlessly.
 
-- **speech.ts Refactoring** — Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung: 73 Blind-Paare, 20 Ante-Werte, 25 Levels, 30 Pausen-Dauern (1–30 Min). Automatischer Web Speech API Fallback bei fehlenden Dateien oder dynamischen Inhalten.
-- **speech.ts refactoring** — Unified queue supporting `audio` and `speech` items. Manifest-based file lookup: 73 blind pairs, 20 ante values, 25 levels, 30 break durations (1–30 min). Automatic Web Speech API fallback for missing files or dynamic content.
+- **speech.ts Refactoring** — Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung: 104 Blind-Paare, 20 Ante-Werte, 25 Levels, 30 Pausen-Dauern (1–30 Min). Automatischer Web Speech API Fallback bei fehlenden Dateien oder dynamischen Inhalten.
+- **speech.ts refactoring** — Unified queue supporting `audio` and `speech` items. Manifest-based file lookup: 104 blind pairs, 20 ante values, 25 levels, 30 break durations (1–30 min). Automatic Web Speech API fallback for missing files or dynamic content.
 
 - **Beide Sprachen mit Voice** — Sowohl Deutsch als auch Englisch nutzen ElevenLabs MP3s. Voice standardmäßig aktiviert. Bei deaktivierter Sprachausgabe nur Beep-Sounds.
 - **Both languages with voice** — Both German and English use ElevenLabs MP3s. Voice enabled by default. When voice is disabled, beep sounds only.
@@ -27,8 +27,11 @@ All notable changes to the Pokern up de Hüh app.
 - **Pausenzeiten minutengenau** — Alle Pausenansagen von 1 bis 30 Minuten als eigene MP3-Dateien (vorher nur 5/10/15/20/25/30).
 - **Break announcements per minute** — All break announcements from 1 to 30 minutes as individual MP3 files (previously only 5/10/15/20/25/30).
 
-- **Erweiterte Ansagen** — Turnierstart („Shuffle up and deal!"), Heads-Up, 3 Spieler verbleiben, Letzte Hand / Letzte Hand vor der Pause, Noch 5 Minuten, Pause vorbei, Color-Up nächste Pause, Timer pausiert/fortgesetzt. Voice-Countdown nur in Spiellevels (Beeps in Pausen).
-- **Extended announcements** — Tournament start ("Shuffle up and deal!"), heads-up, 3 players remaining, last hand / last hand before break, 5 minutes remaining, break over, color-up next break warning, timer paused/resumed. Voice countdown on play levels only (beeps during breaks).
+- **Erweiterte Ansagen** — Turnierstart („Shuffle up and deal!"), Heads-Up, dynamische Spieleranzahl-Ansagen (4–10 Spieler basierend auf Auszahlungsplätzen), Letzte Hand / Letzte Hand vor der Pause, Noch 5 Minuten, Pause vorbei, Color-Up nächste Pause, Timer pausiert/fortgesetzt. Voice-Countdown nur in Spiellevels (Beeps in Pausen).
+- **Extended announcements** — Tournament start ("Shuffle up and deal!"), heads-up, dynamic player count milestones (4–10 players based on paid places), last hand / last hand before break, 5 minutes remaining, break over, color-up next break warning, timer paused/resumed. Voice countdown on play levels only (beeps during breaks).
+
+- **Vollständige Blind-Pair-Abdeckung** — Alle 104 Blind-Kombinationen vorhanden: Generator-Blinds für Startstacks 1k–50k (schnell/normal/langsam) plus Standard-Kombinationen aus gängigen Poker-Turnierformaten (Home Games, WSOP). Kein Speech-Fallback mehr für übliche Blindstrukturen.
+- **Complete blind pair coverage** — All 104 blind combinations covered: generator blinds for starting stacks 1k–50k (fast/normal/slow) plus standard combinations from common poker tournament formats (home games, WSOP). No more Speech API fallback for common blind structures.
 
 - **PWA-Caching** — `.mp3` zu Workbox `globPatterns` hinzugefügt. Audio-Dateien offline verfügbar.
 - **PWA caching** — `.mp3` added to Workbox `globPatterns`. Audio files available offline.

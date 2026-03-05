@@ -47,6 +47,7 @@ import {
   announceBounty,
   announceFiveMinutes,
   announceThreeRemaining,
+  announcePlayersRemaining,
   announceBreakOver,
   announceColorUpWarning,
   announceTimerPaused,
@@ -740,19 +741,26 @@ function App() {
     }
   }, [mode, config.players, settings.voiceEnabled, config.bounty.enabled]);
 
-  // Voice: Three remaining + Heads-Up announcements
+  // Voice: Player count milestones (dynamic based on paidPlaces) + Heads-Up
   const prevActiveCountRef = useRef(activePlayerCount);
   useEffect(() => {
     if (mode === 'game' && settings.voiceEnabled) {
-      if (activePlayerCount === 3 && prevActiveCountRef.current > 3) {
-        announceThreeRemaining(t);
-      }
-      if (activePlayerCount === 2 && prevActiveCountRef.current > 2) {
-        announceHeadsUp();
+      const prev = prevActiveCountRef.current;
+      // Only announce on decreasing player count
+      if (activePlayerCount < prev) {
+        if (activePlayerCount === 2) {
+          announceHeadsUp();
+        } else if (activePlayerCount === 3) {
+          announceThreeRemaining(t);
+        } else if (activePlayerCount >= 4 && activePlayerCount <= paidPlaces) {
+          // Announce milestones from paidPlaces down to 4
+          // (bubble = paidPlaces+1 is handled by the bubble effect)
+          announcePlayersRemaining(activePlayerCount, t);
+        }
       }
     }
     prevActiveCountRef.current = activePlayerCount;
-  }, [mode, activePlayerCount, settings.voiceEnabled, t]);
+  }, [mode, activePlayerCount, paidPlaces, settings.voiceEnabled, t]);
 
   // Voice: Timer paused/resumed (user-initiated only, not on tournament finish)
   const prevTimerStatusRef = useRef(timer.timerState.status);
