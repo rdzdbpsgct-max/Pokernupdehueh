@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import type { TournamentConfig, Settings, TournamentCheckpoint } from './domain/types';
 import {
   defaultConfig,
@@ -1391,6 +1392,7 @@ function App() {
           </div>
         </div>
       )}
+      <Analytics />
     </div>
   );
 }
