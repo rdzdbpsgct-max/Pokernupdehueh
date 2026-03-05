@@ -1,7 +1,7 @@
 // MP3 audio playback engine — Web Audio API for gapless sequential playback
 
 let audioContext: AudioContext | null = null;
-let currentSource: AudioBufferSourceNode | null = null;
+let scheduledSources: AudioBufferSourceNode[] = [];
 let cancelRequested = false;
 
 function getOrCreateContext(): AudioContext | null {
@@ -18,8 +18,55 @@ function getBasePath(): string {
 }
 
 /**
- * Play a sequence of MP3 files one after another using Web Audio API.
- * Decodes all files upfront, then schedules gapless playback.
+ * Trim trailing silence from an AudioBuffer.
+ * Scans backwards from the end to find the last sample above the threshold,
+ * then returns a new buffer trimmed to that point (+ small fade-out pad).
+ */
+function trimTrailingSilence(ctx: AudioContext, buffer: AudioBuffer): AudioBuffer {
+  const threshold = 0.01;
+  const fadeSamples = 128; // ~3ms fade-out to avoid clicks
+  const channels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+
+  // Find last non-silent sample across all channels
+  let lastSample = 0;
+  for (let ch = 0; ch < channels; ch++) {
+    const data = buffer.getChannelData(ch);
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (Math.abs(data[i]) > threshold) {
+        if (i > lastSample) lastSample = i;
+        break;
+      }
+    }
+  }
+
+  // Add fade-out padding, but don't exceed original length
+  const trimmedLength = Math.min(lastSample + fadeSamples, buffer.length);
+
+  // Only trim if we save at least 5% of the buffer
+  if (trimmedLength > buffer.length * 0.95) return buffer;
+
+  const trimmed = ctx.createBuffer(channels, trimmedLength, sampleRate);
+  for (let ch = 0; ch < channels; ch++) {
+    const src = buffer.getChannelData(ch);
+    const dst = trimmed.getChannelData(ch);
+    // Copy data up to lastSample
+    for (let i = 0; i < Math.min(lastSample + 1, trimmedLength); i++) {
+      dst[i] = src[i];
+    }
+    // Fade out the padding region
+    for (let i = lastSample + 1; i < trimmedLength; i++) {
+      const fadePos = (i - lastSample) / fadeSamples;
+      dst[i] = src[i] * (1 - fadePos);
+    }
+  }
+
+  return trimmed;
+}
+
+/**
+ * Play a sequence of MP3 files using Web Audio API with precise scheduling.
+ * Decodes all files, trims trailing silence, then schedules back-to-back.
  * Resolves when all files have finished. Rejects on the first error.
  */
 export function playAudioSequence(files: string[]): Promise<void> {
@@ -49,38 +96,33 @@ export function playAudioSequence(files: string[]): Promise<void> {
     );
 
     return Promise.all(decodePromises);
-  }).then((buffers) => {
+  }).then((rawBuffers) => {
     if (cancelRequested) return;
 
-    return new Promise<void>((resolve, reject) => {
-      let index = 0;
+    // Trim trailing silence from each buffer
+    const buffers = rawBuffers.map((buf) => trimTrailingSilence(ctx, buf));
 
-      function playNext(): void {
-        if (cancelRequested || index >= buffers.length) {
-          currentSource = null;
-          resolve();
-          return;
-        }
+    // Schedule all buffers back-to-back with precise timing
+    return new Promise<void>((resolve) => {
+      scheduledSources = [];
+      let startTime = ctx.currentTime;
 
-        try {
-          const source = ctx.createBufferSource();
-          source.buffer = buffers[index];
-          source.connect(ctx.destination);
-          currentSource = source;
+      for (let i = 0; i < buffers.length; i++) {
+        const source = ctx.createBufferSource();
+        source.buffer = buffers[i];
+        source.connect(ctx.destination);
+        scheduledSources.push(source);
 
-          source.onended = () => {
-            index++;
-            playNext();
-          };
-
-          source.start(0);
-        } catch (err) {
-          currentSource = null;
-          reject(err);
-        }
+        source.start(startTime);
+        startTime += buffers[i].duration;
       }
 
-      playNext();
+      // Resolve when the last buffer finishes
+      const lastSource = scheduledSources[scheduledSources.length - 1];
+      lastSource.onended = () => {
+        scheduledSources = [];
+        resolve();
+      };
     });
   });
 }
@@ -90,14 +132,14 @@ export function playAudioSequence(files: string[]): Promise<void> {
  */
 export function cancelAudioPlayback(): void {
   cancelRequested = true;
-  if (currentSource) {
+  for (const source of scheduledSources) {
     try {
-      currentSource.stop();
+      source.stop();
     } catch {
       // already stopped
     }
-    currentSource = null;
   }
+  scheduledSources = [];
 }
 
 /**
