@@ -9,17 +9,17 @@ All notable changes to the Pokern up de Hüh app.
 
 ### ElevenLabs MP3 Sprachausgabe (Deutsch + Englisch) / ElevenLabs MP3 Voice (German + English)
 
-- **ElevenLabs MP3 Sprachausgabe** — 456 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (105), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 35 feste Ansagen. 228 Dateien pro Sprache, offline via PWA gecached.
-- **ElevenLabs MP3 voice** — 456 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (105), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 35 fixed announcements. 228 files per language, offline-cached via PWA.
+- **ElevenLabs MP3 Sprachausgabe** — 466 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (110), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 35 feste Ansagen. 233 Dateien pro Sprache, offline via PWA gecached.
+- **ElevenLabs MP3 voice** — 466 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (110), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 35 fixed announcements. 233 files per language, offline-cached via PWA.
 
-- **Gapless Audio-Playback** — Web Audio API (`AudioContext`, `AudioBufferSourceNode`) mit Trailing-Silence-Trimming und präzisem `start(when)`-Scheduling. Keine Lücken zwischen sequentiellen Dateien.
-- **Gapless audio playback** — Web Audio API (`AudioContext`, `AudioBufferSourceNode`) with trailing silence trimming and precise `start(when)` scheduling. No gaps between sequential files.
+- **Dreistufiger Audio-Fallback** — Web Audio API (gapless, Trailing-Silence-Trimming) → HTMLAudioElement (sequentiell, maximale Browser-Kompatibilität) → Web Speech API (Browser-Stimme als letzter Ausweg). Behebt stille MP3-Fehler in bestimmten Browsern.
+- **Triple audio fallback** — Web Audio API (gapless, trailing silence trimming) → HTMLAudioElement (sequential, maximum browser compatibility) → Web Speech API (browser voice as last resort). Fixes silent MP3 failures in certain browsers.
 
-- **Neue Datei: `audioPlayer.ts`** — MP3-Playback-Engine mit Web Audio API, dynamischem Sprachpfad (`audio/de/` / `audio/en/`). `playAudioSequence()` dekodiert alle Dateien parallel, trimmt Stille, schedulet nahtlos.
-- **New file: `audioPlayer.ts`** — MP3 playback engine with Web Audio API, dynamic language path (`audio/de/` / `audio/en/`). `playAudioSequence()` decodes all files in parallel, trims silence, schedules seamlessly.
+- **Neue Datei: `audioPlayer.ts`** — MP3-Playback-Engine mit Web Audio API + HTMLAudioElement-Fallback, dynamischem Sprachpfad (`audio/de/` / `audio/en/`).
+- **New file: `audioPlayer.ts`** — MP3 playback engine with Web Audio API + HTMLAudioElement fallback, dynamic language path (`audio/de/` / `audio/en/`).
 
-- **speech.ts Refactoring** — Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung: 105 Blind-Paare, 20 Ante-Werte, 25 Levels, 30 Pausen-Dauern (1–30 Min). Automatischer Web Speech API Fallback bei fehlenden Dateien oder dynamischen Inhalten.
-- **speech.ts refactoring** — Unified queue supporting `audio` and `speech` items. Manifest-based file lookup: 105 blind pairs, 20 ante values, 25 levels, 30 break durations (1–30 min). Automatic Web Speech API fallback for missing files or dynamic content.
+- **speech.ts Refactoring** — Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung: 110 Blind-Paare, 20 Ante-Werte, 25 Levels, 30 Pausen-Dauern (1–30 Min). Fehler-Logging im Catch-Handler für Diagnose.
+- **speech.ts refactoring** — Unified queue supporting `audio` and `speech` items. Manifest-based file lookup: 110 blind pairs, 20 ante values, 25 levels, 30 break durations (1–30 min). Error logging in catch handler for diagnostics.
 
 - **Beide Sprachen mit Voice** — Sowohl Deutsch als auch Englisch nutzen ElevenLabs MP3s. Voice standardmäßig aktiviert. Bei deaktivierter Sprachausgabe nur Beep-Sounds.
 - **Both languages with voice** — Both German and English use ElevenLabs MP3s. Voice enabled by default. When voice is disabled, beep sounds only.
@@ -30,8 +30,8 @@ All notable changes to the Pokern up de Hüh app.
 - **Erweiterte Ansagen** — Turnierstart („Shuffle up and deal!"), Heads-Up, dynamische Spieleranzahl-Ansagen (4–10 Spieler basierend auf Auszahlungsplätzen), Letzte Hand / Letzte Hand vor der Pause, Noch 5 Minuten, Pause vorbei, Color-Up nächste Pause, Timer pausiert/fortgesetzt. Voice-Countdown nur in Spiellevels (Beeps in Pausen).
 - **Extended announcements** — Tournament start ("Shuffle up and deal!"), heads-up, dynamic player count milestones (4–10 players based on paid places), last hand / last hand before break, 5 minutes remaining, break over, color-up next break warning, timer paused/resumed. Voice countdown on play levels only (beeps during breaks).
 
-- **Vollständige Blind-Pair-Abdeckung** — Alle 105 Blind-Kombinationen vorhanden: Generator-Blinds für Startstacks 1k–50k (schnell/normal/langsam) plus Standard-Kombinationen aus gängigen Poker-Turnierformaten (Home Games, WSOP). BB immer exakt doppelter SB. Kein Speech-Fallback mehr für übliche Blindstrukturen.
-- **Complete blind pair coverage** — All 105 blind combinations covered: generator blinds for starting stacks 1k–50k (fast/normal/slow) plus standard combinations from common poker tournament formats (home games, WSOP). BB always exactly double SB. No more Speech API fallback for common blind structures.
+- **Vollständige Blind-Pair-Abdeckung** — Alle 110 Blind-Kombinationen vorhanden: Generator-Blinds für Startstacks 1k–100k (schnell/normal/langsam) plus Standard-Kombinationen aus gängigen Poker-Turnierformaten (Home Games, WSOP). BB immer exakt doppelter SB. Kein Speech-Fallback mehr für übliche Blindstrukturen.
+- **Complete blind pair coverage** — All 110 blind combinations covered: generator blinds for starting stacks 1k–100k (fast/normal/slow) plus standard combinations from common poker tournament formats (home games, WSOP). BB always exactly double SB. No more Speech API fallback for common blind structures.
 
 - **PWA-Caching** — `.mp3` zu Workbox `globPatterns` hinzugefügt. Audio-Dateien offline verfügbar.
 - **PWA caching** — `.mp3` added to Workbox `globPatterns`. Audio files available offline.
