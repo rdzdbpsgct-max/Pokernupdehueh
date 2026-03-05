@@ -5,6 +5,21 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.2.1] – 2026-03-04
+
+### Dual Deployment: GitHub Pages + Vercel
+
+- **Vercel-Deployment** — App jetzt zusätzlich über Vercel erreichbar: [pokernupdehueh.vercel.app](https://pokernupdehueh.vercel.app/). Automatisches Deploy bei Push auf `main`. Edge Network für schnellere Ladezeiten weltweit. Preview-Deployments bei Branches.
+- **Vercel deployment** — App now also available via Vercel: [pokernupdehueh.vercel.app](https://pokernupdehueh.vercel.app/). Auto-deploy on push to `main`. Edge network for faster load times worldwide. Preview deployments on branches.
+
+- **Dynamischer Base-Pfad** — `vite.config.ts` nutzt `VITE_BASE_PATH` Umgebungsvariable statt hardcodiertem `/Pokernupdehueh/`. Default: `/` (Vercel). GitHub Actions setzt `/Pokernupdehueh/` für GitHub Pages. `index.html` enthält keine hardcodierten Pfade mehr — Vite ergänzt den Base-Pfad beim Build automatisch.
+- **Dynamic base path** — `vite.config.ts` uses `VITE_BASE_PATH` environment variable instead of hardcoded `/Pokernupdehueh/`. Default: `/` (Vercel). GitHub Actions sets `/Pokernupdehueh/` for GitHub Pages. `index.html` no longer contains hardcoded paths — Vite prepends the base path during build automatically.
+
+- **PWA-Pfade dynamisch** — `start_url` und `scope` im PWA-Manifest nutzen dieselbe Base-Variable. PWA funktioniert auf beiden Plattformen korrekt.
+- **Dynamic PWA paths** — `start_url` and `scope` in PWA manifest use the same base variable. PWA works correctly on both platforms.
+
+---
+
 ## [2.2.0] – 2026-03-03
 
 ### Sprachausgabe-Verfeinerung & VoiceSwitcher / Voice Refinement & VoiceSwitcher

@@ -4,8 +4,8 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.2.0
-**Live**: Deployed to GitHub Pages at `/Pokernupdehueh/`
+**Version**: 2.2.1
+**Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
 
@@ -20,7 +20,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 ## Commands
 
 ```bash
-npm run dev          # Start dev server (http://localhost:5173)
+npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
 npm run test         # Vitest run (192 tests, single run)
@@ -28,7 +28,9 @@ npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
 
-**CI pipeline** (`.github/workflows/deploy.yml`): install → lint → test → build → deploy to GitHub Pages (Node 20).
+**CI/CD pipelines**:
+- **GitHub Pages** (`.github/workflows/deploy.yml`): install → lint → test → build (with `VITE_BASE_PATH=/Pokernupdehueh/`) → deploy to GitHub Pages (Node 20)
+- **Vercel**: Auto-deploy on push to `main`, builds with default base `/`
 
 ## Project Structure
 
@@ -206,7 +208,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ## Gotchas
 
-- The Vite base path is `/Pokernupdehueh/` — asset URLs must be relative or respect this base
+- The Vite base path is configurable via `VITE_BASE_PATH` env var (defaults to `/`). GitHub Actions sets it to `/Pokernupdehueh/` for GitHub Pages; Vercel uses the default `/`. Never hardcode base paths in `index.html` — Vite prepends the base during build
 - TypeScript strict mode is on — no implicit any, strict null checks enforced
 - ESLint uses flat config format (not `.eslintrc`) in `eslint.config.js`
 - The project language is bilingual — commit messages and docs are in German, code and comments are in English
@@ -215,6 +217,12 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.2.1 — Dual Deployment (GitHub Pages + Vercel)
+
+- **Vercel-Deployment**: App jetzt auch über Vercel erreichbar (https://pokernupdehueh.vercel.app/). Automatisches Deploy bei Push auf `main`.
+- **Dynamischer Base-Pfad**: `vite.config.ts` nutzt `VITE_BASE_PATH` Umgebungsvariable (Default: `/`). GitHub Actions setzt `/Pokernupdehueh/` für GitHub Pages. Keine hardcodierten Pfade mehr in `index.html`.
+- **PWA-Pfade dynamisch**: `start_url` und `scope` im PWA-Manifest nutzen dieselbe Base-Variable.
 
 ### v2.2.0 — Sprachausgabe-Verfeinerung & VoiceSwitcher
 

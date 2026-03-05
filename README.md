@@ -6,8 +6,9 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.2.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.2.1-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
+[![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
 [![Tests](https://img.shields.io/badge/Tests-192%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
@@ -188,6 +189,7 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 - **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
 - **Vitest** — 192 Unit-Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
+- **Vercel** — Automatisches Deploy / Auto-deploy on push
 - **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
 
 ---
@@ -213,7 +215,7 @@ npm install
 npm run dev
 ```
 
-App: `http://localhost:5173/Pokernupdehueh/`
+App: `http://localhost:5173/`
 
 ### Build & Test
 
@@ -292,9 +294,9 @@ tests/
 
 <div align="center">
 
-> **Live-Demo / Live Demo:** [rdzdbpsgct-max.github.io/Pokernupdehueh](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
+> **Live-Demo / Live Demo:** [pokernupdehueh.vercel.app](https://pokernupdehueh.vercel.app/) · [rdzdbpsgct-max.github.io/Pokernupdehueh](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 
-**[Live Demo](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)** · **[Issues](https://github.com/rdzdbpsgct-max/Pokernupdehueh/issues)**
+**[Vercel](https://pokernupdehueh.vercel.app/)** · **[GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)** · **[Issues](https://github.com/rdzdbpsgct-max/Pokernupdehueh/issues)**
 
 Gebaut mit React, TypeScript und viel Liebe zum Pokern.
 Built with React, TypeScript and a love for poker.
