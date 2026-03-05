@@ -92,9 +92,9 @@ function playWithWebAudio(files: string[], basePath: string): Promise<void> {
   const resumePromise = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
 
   return resumePromise.then(() => {
-    // Fetch and decode all audio files in parallel
+    // Fetch and decode all audio files in parallel (no-cache to bust stale SW/browser cache)
     const decodePromises = files.map((file) =>
-      fetch(basePath + file)
+      fetch(basePath + file, { cache: 'no-store' })
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status} for ${file}`);
           return res.arrayBuffer();
@@ -149,7 +149,7 @@ function playWithHtmlAudio(files: string[], basePath: string): Promise<void> {
         return;
       }
 
-      const audio = new Audio(basePath + files[index]);
+      const audio = new Audio(basePath + files[index] + '?v=' + Date.now());
       currentHtmlAudio = audio;
       index++;
 
