@@ -154,7 +154,7 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files
-- **Voice announcements**: Dual-engine system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), Web Speech API (`speechSynthesis`) as fallback. 181 MP3 files per language in `public/audio/de/` and `public/audio/en/` (362 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (73 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning), bubble, heads-up, ITM, eliminations, tournament winner, add-on, rebuy end, color-up. Verbal countdown for last 10 seconds. Sound effects finish before voice starts (delay-based coordination).
+- **Voice announcements**: Dual-engine system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), Web Speech API (`speechSynthesis`) as fallback. 189 MP3 files per language in `public/audio/de/` and `public/audio/en/` (378 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (73 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, 3 players remaining, heads-up, ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
@@ -221,15 +221,15 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ### v2.3.0 — ElevenLabs MP3 Voice (Deutsch + Englisch)
 
-- **ElevenLabs MP3 Sprachausgabe**: 362 professionelle MP3-Audiodateien — Deutsch (Stimme: Ava) und Englisch (ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks (`blinds.mp3`, `ante.mp3`, `color-up.mp3`) + einzelne Dateien für Levels, Blind-Paare, Ante-Werte, Countdowns, Pausen (minutengenau 1–30 Min) und feste Ansagen.
+- **ElevenLabs MP3 Sprachausgabe**: 378 professionelle MP3-Audiodateien — Deutsch (Stimme: Ava) und Englisch (ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks (`blinds.mp3`, `ante.mp3`, `color-up.mp3`) + einzelne Dateien für Levels, Blind-Paare, Ante-Werte, Countdowns, Pausen (minutengenau 1–30 Min) und 28 feste Ansagen.
 - **Gapless Audio-Playback**: Web Audio API (`AudioContext`, `AudioBufferSourceNode`) mit Trailing-Silence-Trimming und präzisem `start(when)`-Scheduling für nahtlose Wiedergabe.
 - **Neue Datei**: `src/domain/audioPlayer.ts` — MP3-Playback-Engine mit Web Audio API, dynamischem Sprachpfad (`audio/de/` / `audio/en/`)
 - **speech.ts Refactoring**: Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung (73 Blind-Paare, 20 Ante-Werte, 25 Levels, 30 Pausen-Dauern). Automatischer Web Speech API Fallback bei fehlenden Dateien oder dynamischen Inhalten (Spielernamen).
 - **Beide Sprachen mit Voice**: Sowohl Deutsch als auch Englisch nutzen ElevenLabs MP3s. Voice standardmäßig aktiviert. Bei deaktivierter Sprachausgabe nur Beep-Sounds.
-- **Neue Ansagen**: Tournament Start ("Shuffle up and deal!"), Heads-Up Erkennung bei 2 verbleibenden Spielern
+- **Erweiterte Ansagen**: Turnierstart ("Shuffle up and deal!"), Heads-Up, 3 Spieler verbleiben, Letzte Hand / Letzte Hand vor der Pause, Noch 5 Minuten, Pause vorbei, Color-Up nächste Pause, Timer pausiert/fortgesetzt. Voice-Countdown nur in Spiellevels (Beeps in Pausen).
 - **Pausenzeiten minutengenau**: Alle Pausenansagen von 1 bis 30 Minuten als eigene MP3-Dateien (vorher nur 5/10/15/20/25/30)
-- **PWA-Caching**: `.mp3` zu Workbox `globPatterns` hinzugefügt — Audio offline verfügbar (383 Precache-Einträge)
-- **362 Audio-Dateien** in `public/audio/de/` + `public/audio/en/` (181 pro Sprache, 7 Unterverzeichnisse)
+- **PWA-Caching**: `.mp3` zu Workbox `globPatterns` hinzugefügt — Audio offline verfügbar
+- **378 Audio-Dateien** in `public/audio/de/` + `public/audio/en/` (189 pro Sprache, 7 Unterverzeichnisse)
 - **3 neue Tests**: audioPlayer Degradation, announceCountdown Return-Value, Dual-Language-Support (195 Tests gesamt)
 
 ### v2.2.1 — Dual Deployment (GitHub Pages + Vercel)

@@ -9,8 +9,8 @@ All notable changes to the Pokern up de Hüh app.
 
 ### ElevenLabs MP3 Sprachausgabe (Deutsch + Englisch) / ElevenLabs MP3 Voice (German + English)
 
-- **ElevenLabs MP3 Sprachausgabe** — 362 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (73), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 20+ feste Ansagen. 181 Dateien pro Sprache, offline via PWA gecached (383 Precache-Einträge).
-- **ElevenLabs MP3 voice** — 362 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (73), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 20+ fixed announcements. 181 files per language, offline-cached via PWA (383 precache entries).
+- **ElevenLabs MP3 Sprachausgabe** — 378 professionelle Audio-Dateien (Deutsch: Stimme Ava, Englisch: ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks für Pokerbegriffe (`Blinds`, `Ante`, `Color-Up`) + einzelne Dateien für Levels (1–25), Blind-Paare (73), Ante-Werte (20), Countdowns (1–10), Pausen (minutengenau 1–30 Min) und 28 feste Ansagen. 189 Dateien pro Sprache, offline via PWA gecached.
+- **ElevenLabs MP3 voice** — 378 professional audio files (German: voice Ava, English: ElevenLabs Voice Library). Modular architecture: building blocks for poker terms (`Blinds`, `Ante`, `Color-Up`) + individual files for levels (1–25), blind pairs (73), ante values (20), countdowns (1–10), breaks (every minute 1–30), and 28 fixed announcements. 189 files per language, offline-cached via PWA.
 
 - **Gapless Audio-Playback** — Web Audio API (`AudioContext`, `AudioBufferSourceNode`) mit Trailing-Silence-Trimming und präzisem `start(when)`-Scheduling. Keine Lücken zwischen sequentiellen Dateien.
 - **Gapless audio playback** — Web Audio API (`AudioContext`, `AudioBufferSourceNode`) with trailing silence trimming and precise `start(when)` scheduling. No gaps between sequential files.
@@ -27,8 +27,8 @@ All notable changes to the Pokern up de Hüh app.
 - **Pausenzeiten minutengenau** — Alle Pausenansagen von 1 bis 30 Minuten als eigene MP3-Dateien (vorher nur 5/10/15/20/25/30).
 - **Break announcements per minute** — All break announcements from 1 to 30 minutes as individual MP3 files (previously only 5/10/15/20/25/30).
 
-- **Neue Ansagen** — Turnierstart („Shuffle up and deal!"), Heads-Up-Erkennung bei 2 verbleibenden Spielern.
-- **New announcements** — Tournament start ("Shuffle up and deal!"), heads-up detection when 2 players remain.
+- **Erweiterte Ansagen** — Turnierstart („Shuffle up and deal!"), Heads-Up, 3 Spieler verbleiben, Letzte Hand / Letzte Hand vor der Pause, Noch 5 Minuten, Pause vorbei, Color-Up nächste Pause, Timer pausiert/fortgesetzt. Voice-Countdown nur in Spiellevels (Beeps in Pausen).
+- **Extended announcements** — Tournament start ("Shuffle up and deal!"), heads-up, 3 players remaining, last hand / last hand before break, 5 minutes remaining, break over, color-up next break warning, timer paused/resumed. Voice countdown on play levels only (beeps during breaks).
 
 - **PWA-Caching** — `.mp3` zu Workbox `globPatterns` hinzugefügt. Audio-Dateien offline verfügbar.
 - **PWA caching** — `.mp3` added to Workbox `globPatterns`. Audio files available offline.

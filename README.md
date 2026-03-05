@@ -68,7 +68,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
-| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (minutengenau 1–30 Min), Bubble, Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart. Web Speech API als Fallback. 362 Audio-Dateien (181 pro Sprache), offline via PWA. |
+| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, 3 Spieler, Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Web Speech API als Fallback. 378 Audio-Dateien (189 pro Sprache), offline via PWA. |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
@@ -147,7 +147,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
-| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (every minute 1–30), bubble, heads-up, ITM, eliminations, winner, tournament start. Web Speech API fallback. 362 audio files (181 per language), offline via PWA. |
+| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, 3 players, heads-up, ITM, eliminations, winner, tournament start, color-up, timer status. Web Speech API fallback. 378 audio files (189 per language), offline via PWA. |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
