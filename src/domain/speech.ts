@@ -237,7 +237,7 @@ export function announceLevelChange(
       `blind-pairs/${pairKey}.mp3`,
     ];
     if (ante && ante > 0) {
-      files.push('building-blocks/ante.mp3', `ante/ante-${ante}.mp3`);
+      files.push(`ante/ante-${ante}.mp3`);
     }
     const fallback = ante && ante > 0
       ? t('voice.levelChangeWithAnte', { level: levelNumber, sb: smallBlind, bb: bigBlind, ante })
