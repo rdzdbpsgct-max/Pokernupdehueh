@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.6.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.7.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-203%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-218%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -56,7 +56,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Sprache | DE/EN-Umschalter im Setup, alle Texte zweisprachig |
 | Timer | Drift-freier Countdown mit Fortschrittsbalken und Countdown-Warnung (letzte 10 Sek.) |
 | Blindstruktur | Generator mit 3 Geschwindigkeiten + vollständig anpassbare Levels und Pausen |
-| Ante | Optional, automatische Vorbelegung (~12,5 % des Big Blind) |
+| Ante | Standard (~12,5 % BB) oder Big Blind Ante (BBA) — umschaltbar im Setup |
 | Chip-Management | Chip-Farben/-Werte verwalten, editierbarer Color-Up Plan, Chip-Blind-Kompatibilitätsprüfung |
 | Spielerverwaltung | Drag & Drop Sitzordnung, Shuffle, Dealer-Button, Eliminierung mit Killer-Auswahl |
 | Rebuys & Add-Ons | Konfigurierbares Limit (nach Levels oder Zeit), Add-On einmalig pro Spieler |
@@ -135,7 +135,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Language | DE/EN toggle in setup, all texts bilingual |
 | Timer | Drift-free countdown with progress bar and countdown warning (last 10 sec.) |
 | Blind structure | Generator with 3 speeds + fully customizable levels and breaks |
-| Ante | Optional, auto-populated (~12.5% of big blind) |
+| Ante | Standard (~12.5% BB) or Big Blind Ante (BBA) — switchable in setup |
 | Chip management | Manage chip colors/values, editable color-up schedule, blind-chip compatibility check |
 | Player management | Drag & drop seating, shuffle, dealer button, elimination with killer selection |
 | Rebuys & add-ons | Configurable limit (by levels or time), add-on once per player |
@@ -244,7 +244,9 @@ src/
     speech.ts           # Sprachansagen (ElevenLabs MP3 + Web Speech API Fallback)
     audioPlayer.ts      # MP3-Playback-Engine
   hooks/
-    useTimer.ts         # Timer-Hook (drift-free, shared AudioContext)
+    useTimer.ts              # Timer-Hook (drift-free, shared AudioContext)
+    useVoiceAnnouncements.ts # Voice-Announcement-Effects (extrahiert aus App.tsx)
+    useGameEvents.ts         # Game-Event-Effects: Victory, Bubble, ITM
   theme/
     ThemeContext.tsx     # Dark/Light Mode Provider
     useTheme.ts         # useTheme() Hook

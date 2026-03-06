@@ -78,10 +78,13 @@ export interface ChipConfig {
   colorUpSchedule: ColorUpEntry[];
 }
 
+export type AnteMode = 'standard' | 'bigBlindAnte';
+
 export interface TournamentConfig {
   name: string;
   levels: Level[];
   anteEnabled: boolean;
+  anteMode: AnteMode;
   players: Player[];
   dealerIndex: number;
   payout: PayoutConfig;

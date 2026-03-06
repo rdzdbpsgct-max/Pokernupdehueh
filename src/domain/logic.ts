@@ -4,6 +4,7 @@ import type {
   TournamentCheckpoint,
   TournamentResult,
   PlayerResult,
+  AnteMode,
   TimerState,
   Settings,
   Player,
@@ -322,6 +323,7 @@ export interface GenerateBlindParams {
   startingChips: number;
   speed: BlindSpeed;
   anteEnabled: boolean;
+  anteMode?: AnteMode;
   /** Smallest chip denomination — when provided, all blind values snap to its multiples. */
   smallestChip?: number;
 }
@@ -365,7 +367,7 @@ export function checkBlindChipCompatibility(
  * When smallestChip is provided, all values snap to chip multiples.
  */
 export function generateBlindStructure(params: GenerateBlindParams): Level[] {
-  const { startingChips, speed, anteEnabled, smallestChip } = params;
+  const { startingChips, speed, anteEnabled, anteMode = 'standard', smallestChip } = params;
   const cfg = SPEED_CONFIGS[speed];
   const scale = startingChips / REFERENCE_STACKS;
   const round = smallestChip != null && smallestChip > 0
@@ -381,7 +383,7 @@ export function generateBlindStructure(params: GenerateBlindParams): Level[] {
     const sb = round(rawBB / 2);
     const bb = sb * 2; // ensure BB is always exactly double SB
     if (sb >= bb) continue; // safety: SB must be < BB
-    const rawAnte = anteEnabled ? computeDefaultAnte(bb) : 0;
+    const rawAnte = anteEnabled ? computeDefaultAnte(bb, anteMode) : 0;
     const ante = rawAnte > 0 && smallestChip ? round(rawAnte) : rawAnte;
 
     playLevels.push({
@@ -457,10 +459,11 @@ export function estimateAllDurations(
   anteEnabled: boolean,
   playerCount: number,
   smallestChip?: number,
+  anteMode?: AnteMode,
 ): DurationEstimate[] {
   const speeds: BlindSpeed[] = ['fast', 'normal', 'slow'];
   return speeds.map((speed) => {
-    const allLevels = generateBlindStructure({ startingChips, speed, anteEnabled, smallestChip });
+    const allLevels = generateBlindStructure({ startingChips, speed, anteEnabled, anteMode, smallestChip });
     const playedLevels = playerCount >= 2
       ? estimatePlayedLevels(allLevels, playerCount, startingChips)
       : allLevels;
@@ -972,12 +975,16 @@ export function stripAnteFromLevels(levels: Level[]): Level[] {
  * Compute a standard ante value based on the big blind.
  * Typical poker tournament ante ≈ 10-12.5% of BB, rounded to a "nice" value.
  */
-export function computeDefaultAnte(bigBlind: number): number {
+export function computeDefaultAnte(bigBlind: number, anteMode: AnteMode = 'standard'): number {
   if (bigBlind <= 0) return 0;
-  const raw = Math.round(bigBlind * 0.125); // 12.5% of BB
+
+  // Big Blind Ante: ante equals the big blind
+  if (anteMode === 'bigBlindAnte') return bigBlind;
+
+  // Standard: ~12.5% of BB, rounded to nice values
+  const raw = Math.round(bigBlind * 0.125);
   if (raw <= 0) return 0;
 
-  // Round to nearest "nice" value
   if (raw <= 5) return raw;
   if (raw <= 10) return Math.round(raw / 5) * 5;
   if (raw <= 50) return Math.round(raw / 5) * 5;
@@ -987,12 +994,12 @@ export function computeDefaultAnte(bigBlind: number): number {
 }
 
 /**
- * Apply standard ante values to all play levels based on their big blind.
+ * Apply ante values to all play levels based on their big blind and ante mode.
  */
-export function applyDefaultAntes(levels: Level[]): Level[] {
+export function applyDefaultAntes(levels: Level[], anteMode: AnteMode = 'standard'): Level[] {
   return levels.map((level) => {
     if (level.type !== 'level') return level;
-    const ante = computeDefaultAnte(level.bigBlind ?? 0);
+    const ante = computeDefaultAnte(level.bigBlind ?? 0, anteMode);
     return { ...level, ante };
   });
 }
@@ -1010,6 +1017,7 @@ export function defaultConfig(): TournamentConfig {
   return {
     name: '',
     anteEnabled: false,
+    anteMode: 'standard',
     levels: generateBlindStructure({ startingChips, speed: 'normal', anteEnabled: false }),
     players: [] as Player[],
     dealerIndex: 0,
@@ -1079,6 +1087,7 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
     name: typeof parsed.name === 'string' ? parsed.name : 'Tournament',
     levels: parsed.levels as Level[],
     anteEnabled: (parsed.anteEnabled as boolean) ?? false,
+    anteMode: (parsed.anteMode === 'bigBlindAnte' ? 'bigBlindAnte' : 'standard'),
     players: Array.isArray(parsed.players)
       ? ((parsed.players as Record<string, unknown>[]).map((p) => ({
           ...p,

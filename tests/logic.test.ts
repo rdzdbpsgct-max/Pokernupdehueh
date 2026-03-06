@@ -66,6 +66,7 @@ import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Pl
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
   return {
     anteEnabled: false,
+    anteMode: 'standard' as const,
     players: [],
     dealerIndex: 0,
     payout: defaultPayoutConfig(),
@@ -312,6 +313,7 @@ describe('import/export', () => {
         { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 },
       ],
       anteEnabled: true,
+      anteMode: 'standard',
       players: [makePlayer({ id: 'p1', name: 'Alice' })],
       dealerIndex: 0,
       payout: defaultPayoutConfig(),
@@ -610,6 +612,42 @@ describe('applyDefaultAntes', () => {
     expect(result[1].type).toBe('break');
     expect(result[1].ante).toBeUndefined();
     expect(result[2].ante).toBe(50);  // 400 * 0.125 = 50
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Big Blind Ante
+// ---------------------------------------------------------------------------
+describe('Big Blind Ante', () => {
+  it('computeDefaultAnte returns bigBlind in BBA mode', () => {
+    expect(computeDefaultAnte(200, 'bigBlindAnte')).toBe(200);
+    expect(computeDefaultAnte(1000, 'bigBlindAnte')).toBe(1000);
+    expect(computeDefaultAnte(0, 'bigBlindAnte')).toBe(0);
+  });
+
+  it('computeDefaultAnte returns ~12.5% in standard mode', () => {
+    expect(computeDefaultAnte(200, 'standard')).toBe(25);
+    expect(computeDefaultAnte(200)).toBe(25); // default is standard
+  });
+
+  it('applyDefaultAntes uses BBA mode', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 100, bigBlind: 200, ante: 0 },
+      { id: '2', type: 'break', durationSeconds: 300, label: 'Pause' },
+      { id: '3', type: 'level', durationSeconds: 600, smallBlind: 200, bigBlind: 400, ante: 0 },
+    ];
+    const result = applyDefaultAntes(levels, 'bigBlindAnte');
+    expect(result[0].ante).toBe(200);  // equals bigBlind
+    expect(result[1].ante).toBeUndefined(); // break unchanged
+    expect(result[2].ante).toBe(400);  // equals bigBlind
+  });
+
+  it('importConfigJSON defaults anteMode to standard for old configs', () => {
+    const oldConfig = { name: 'Old', levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 }], players: [] };
+    const json = JSON.stringify(oldConfig);
+    const result = importConfigJSON(json);
+    expect(result).not.toBeNull();
+    expect(result!.anteMode).toBe('standard');
   });
 });
 

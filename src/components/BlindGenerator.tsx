@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { Level, ChipConfig } from '../domain/types';
+import type { Level, ChipConfig, AnteMode } from '../domain/types';
 import type { BlindSpeed } from '../domain/logic';
 import { generateBlindStructure, estimateAllDurations, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -8,12 +8,13 @@ import { CollapsibleSubSection } from './CollapsibleSubSection';
 interface Props {
   startingChips: number;
   anteEnabled: boolean;
+  anteMode: AnteMode;
   playerCount: number;
   chipConfig: ChipConfig;
   onApply: (levels: Level[]) => void;
 }
 
-export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipConfig, onApply }: Props) {
+export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCount, chipConfig, onApply }: Props) {
   const { t } = useTranslation();
   const [selectedSpeed, setSelectedSpeed] = useState<BlindSpeed>('normal');
 
@@ -24,13 +25,13 @@ export function BlindGenerator({ startingChips, anteEnabled, playerCount, chipCo
   }, [chipConfig.enabled, chipConfig.denominations]);
 
   const estimates = useMemo(
-    () => estimateAllDurations(startingChips, anteEnabled, playerCount, smallestChip),
-    [startingChips, anteEnabled, playerCount, smallestChip],
+    () => estimateAllDurations(startingChips, anteEnabled, playerCount, smallestChip, anteMode),
+    [startingChips, anteEnabled, playerCount, smallestChip, anteMode],
   );
 
   const preview = useMemo(
-    () => generateBlindStructure({ startingChips, speed: selectedSpeed, anteEnabled, smallestChip }),
-    [startingChips, selectedSpeed, anteEnabled, smallestChip],
+    () => generateBlindStructure({ startingChips, speed: selectedSpeed, anteEnabled, anteMode, smallestChip }),
+    [startingChips, selectedSpeed, anteEnabled, anteMode, smallestChip],
   );
 
   const previewPlayLevels = preview.filter((l) => l.type === 'level');

@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.6.0
+**Version**: 2.7.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (214 tests, single run)
+npm run test         # Vitest run (218 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -76,7 +76,9 @@ src/
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
 │   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
 ├── hooks/
-│   └── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
+│   ├── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
+│   ├── useVoiceAnnouncements.ts # Voice announcement effects (extracted from App.tsx)
+│   └── useGameEvents.ts         # Game event effects: victory, bubble, ITM sounds
 ├── theme/                       # Dark/Light mode system
 │   ├── index.ts                 # Public re-exports
 │   ├── ThemeContext.tsx          # React Context provider, system preference listener, localStorage persistence
@@ -90,7 +92,7 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 187 unit tests for domain/logic.ts
+└── logic.test.ts                # 218 unit tests for domain/logic.ts
 
 public/
 ├── favicon.svg                  # Spade symbol favicon
@@ -160,7 +162,7 @@ public/
 - **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 223 MP3 files per language in `public/audio/de/` and `public/audio/en/` (446 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle)
 - **TV Display Mode**: Dedicated fullscreen overlay (`DisplayMode.tsx`) optimized for projectors/TVs at 3+ meter distance. Dark background, very large timer (12rem), no sensitive data (no prizepool, no standings, no controls). Three rotating screens: Timer (blinds + countdown + progress), Blind Schedule (14 visible levels, current highlighted), Chip Values (grid with color-up info). Auto-rotation every 15 seconds, manual navigation via arrow keys. Screen indicator dots in top bar. Exit via T/Escape. Lazy-loaded (~8.5 KB chunk). 📺 button in header during game mode.
-- **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
+- **Ante calculation**: Two modes — Standard (~12.5% of big blind, rounded to "nice" values) or Big Blind Ante (BBA, ante = big blind). Toggle in setup when ante is enabled. `AnteMode` type in `types.ts`
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
 - **Chip management**: Editable color-up schedule with auto-suggestion; color-up events coupled with next break; duplicate color warnings; auto-sort by value
 - **Chip-blind compatibility**: `checkBlindChipCompatibility()` detects blind values not expressible with current chip denominations
@@ -227,6 +229,16 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.7.0 — Refactoring + Big Blind Ante
+
+- **Hook-Extraktion `useVoiceAnnouncements()`**: 8 Voice-Announcement-Effects mit Refs aus App.tsx in eigenen Hook extrahiert (~200 Zeilen). Returns `{ reset }` Callback. App.tsx um ~160 Zeilen reduziert.
+- **Hook-Extraktion `useGameEvents()`**: Victory-Sound/Pause, Bubble-Sound, ITM-Sound/Flash in eigenen Hook extrahiert (~100 Zeilen). Verwaltet `showItmFlash` State intern. Returns `{ showItmFlash, reset }`.
+- **Big Blind Ante (BBA)**: Neuer `AnteMode`-Typ (`'standard' | 'bigBlindAnte'`) in TournamentConfig. BBA-Modus setzt Ante = Big Blind (WSOP/EPT-Standard). Segmentierter Toggle im Setup (Standard / Big Blind Ante), nur sichtbar wenn Ante aktiviert. TimerDisplay zeigt „BBA" statt „Ante". Backward-kompatibles Parsing in `parseConfigObject`.
+- **App.tsx Reduktion**: Von ~1500 auf ~1284 Zeilen durch Hook-Extraktion.
+- **2 neue Dateien**: `src/hooks/useVoiceAnnouncements.ts`, `src/hooks/useGameEvents.ts`
+- **6 neue Translation-Keys** (3 DE + 3 EN): `app.anteStandard`, `app.anteBBA`, `timer.bba`
+- **4 neue Tests**: BBA computeDefaultAnte, Standard mode, applyDefaultAntes BBA, importConfigJSON backward compat — **218 Tests gesamt**
 
 ### v2.6.0 — Turnier-Historie, Spieler-Statistiken & Export
 

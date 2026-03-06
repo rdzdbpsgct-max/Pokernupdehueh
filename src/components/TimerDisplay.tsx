@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import type { Level, TimerState, ChipConfig, ChipDenomination } from '../domain/types';
+import type { Level, TimerState, ChipConfig, ChipDenomination, AnteMode } from '../domain/types';
 import { formatTime, getLevelLabel, getBlindsText } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
@@ -13,6 +13,7 @@ interface Props {
   chipConfig?: ChipConfig;
   colorUpMap?: Map<number, ChipDenomination[]>;
   cleanView?: boolean;
+  anteMode?: AnteMode;
 }
 
 function NextLevelInfo({ levels, currentLevelIndex, largeDisplay }: { levels: Level[]; currentLevelIndex: number; largeDisplay: boolean }) {
@@ -139,7 +140,7 @@ function ScrubSlider({
   );
 }
 
-export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, onScrubEnd, chipConfig, colorUpMap, cleanView }: Props) {
+export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, onScrubEnd, chipConfig, colorUpMap, cleanView, anteMode }: Props) {
   const { t } = useTranslation();
   const [scrubbing, setScrubbing] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -190,7 +191,7 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
               <p className={`text-gray-500 dark:text-gray-400 font-semibold ${
                 largeDisplay ? 'text-lg sm:text-2xl' : 'text-base sm:text-lg'
               }`}>
-                {t('timer.ante')} {currentLevel.ante}
+                {anteMode === 'bigBlindAnte' ? t('timer.bba') : t('timer.ante')} {currentLevel.ante}
               </p>
             )}
           </div>

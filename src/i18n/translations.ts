@@ -31,6 +31,8 @@ const de = {
   'app.cancel': 'Abbrechen',
   'app.chipBlindConflict': 'Achtung: Die Blindstruktur enthält Werte ({values}), die nicht mit den aktuellen Chip-Werten darstellbar sind.',
   'app.chipBlindConflictHint': 'Generiere die Blindstruktur neu, um sie an die Chip-Werte anzupassen.',
+  'app.anteStandard': 'Standard',
+  'app.anteBBA': 'Big Blind Ante',
 
   // --- Confirm Dialogs ---
   'confirm.resetLevel.title': 'Level zurücksetzen?',
@@ -53,6 +55,7 @@ const de = {
   'timer.finished': 'Beendet',
   'timer.stopped': 'Gestoppt',
   'timer.ante': 'Ante',
+  'timer.bba': 'BBA',
 
   // --- Controls ---
   'controls.previous': '⏮ Zurück',
@@ -448,6 +451,8 @@ const en: Record<TranslationKey, string> = {
   'app.cancel': 'Cancel',
   'app.chipBlindConflict': 'Warning: The blind structure contains values ({values}) that cannot be represented with the current chip denominations.',
   'app.chipBlindConflictHint': 'Regenerate the blind structure to match the chip values.',
+  'app.anteStandard': 'Standard',
+  'app.anteBBA': 'Big Blind Ante',
 
   // --- Confirm Dialogs ---
   'confirm.resetLevel.title': 'Reset level?',
@@ -470,6 +475,7 @@ const en: Record<TranslationKey, string> = {
   'timer.finished': 'Finished',
   'timer.stopped': 'Stopped',
   'timer.ante': 'Ante',
+  'timer.bba': 'BBA',
 
   // --- Controls ---
   'controls.previous': '⏮ Back',

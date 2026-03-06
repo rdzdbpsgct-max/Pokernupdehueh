@@ -5,6 +5,20 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.7.0] – 2026-03-06
+
+### Refactoring + Big Blind Ante
+
+- **Hook-Extraktion `useVoiceAnnouncements()`**: 8 Voice-Announcement-Effects (Level-Change, Break-Warning, 5-Min-Warning, Bounty, Player-Milestones, Timer-Paused/Resumed, Rebuy-End/Add-On) mit zugehörigen Refs aus `App.tsx` in eigenen Hook extrahiert (~200 Zeilen). Returns `{ reset }` Callback für Cleanup. App.tsx um ~160 Zeilen reduziert.
+- **Hook-Extraktion `useGameEvents()`**: Victory-Sound/Pause, Bubble-Sound, ITM-Sound/Flash-Effekte in eigenen Hook extrahiert (~100 Zeilen). Verwaltet `showItmFlash` State intern. Returns `{ showItmFlash, reset }`.
+- **Big Blind Ante (BBA)**: Neuer `AnteMode`-Typ (`'standard' | 'bigBlindAnte'`) in `TournamentConfig`. Im BBA-Modus entspricht Ante dem Big Blind (WSOP/EPT-Standard). Segmentierter Toggle im Setup (Standard / Big Blind Ante), nur sichtbar wenn Ante aktiviert. `TimerDisplay` zeigt „BBA" statt „Ante". `computeDefaultAnte()` und `applyDefaultAntes()` unterstützen beide Modi. Backward-kompatibles Parsing in `parseConfigObject` für alte Configs ohne `anteMode`.
+- **App.tsx Reduktion**: Von ~1500 auf ~1284 Zeilen durch Hook-Extraktion — größte einzelne Verbesserung der Wartbarkeit.
+- **2 neue Dateien**: `src/hooks/useVoiceAnnouncements.ts`, `src/hooks/useGameEvents.ts`
+- **6 neue Translation-Keys** (3 DE + 3 EN): `app.anteStandard`, `app.anteBBA`, `timer.bba`
+- **4 neue Tests**: BBA computeDefaultAnte, Standard-Mode-Default, applyDefaultAntes mit BBA, importConfigJSON Backward-Compat — **218 Tests gesamt**
+
+---
+
 ## [2.6.0] – 2026-03-06
 
 ### Turnier-Historie, Spieler-Statistiken & Export

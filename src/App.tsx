@@ -31,32 +31,15 @@ import {
   saveTournamentResult,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
+import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
+import { useGameEvents } from './hooks/useGameEvents';
 import { useTranslation } from './i18n';
-import { playVictorySound, playBubbleSound, playInTheMoneySound } from './domain/sounds';
 import {
   setSpeechLanguage,
   initSpeech,
   cancelSpeech,
-  announceLevelChange,
-  announceBreakStart,
-  announceBreakWarning,
-  announceBubble,
-  announceInTheMoney,
-  announceWinner,
-  announceAddOn,
-  announceRebuyEnded,
-  announceColorUp,
   announceTournamentStart,
-  announceHeadsUp,
   announceLastHand,
-  announceBounty,
-  announceFiveMinutes,
-  announceThreeRemaining,
-  announcePlayersRemaining,
-  announceBreakOver,
-  announceColorUpWarning,
-  announceTimerPaused,
-  announceTimerResumed,
 } from './domain/speech';
 // Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
@@ -109,7 +92,6 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [showItmFlash, setShowItmFlash] = useState(false);
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
   const [displayMode, setDisplayMode] = useState(false);
@@ -358,7 +340,7 @@ function App() {
         ...prev,
         anteEnabled: newAnteEnabled,
         levels: newAnteEnabled
-          ? applyDefaultAntes(prev.levels)
+          ? applyDefaultAntes(prev.levels, prev.anteMode)
           : stripAnteFromLevels(prev.levels),
       };
     });
@@ -495,26 +477,6 @@ function App() {
       && idx === addOnEndLevelIndex;
   }, [config.addOn.enabled, config.rebuy, config.levels, lastRebuyLevelIndex, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, rebuyActive, addOnEndLevelIndex]);
 
-  // Voice: Rebuy ended + Add-On available when addOnWindowOpen becomes true
-  const prevAddOnWindowRef = useRef(false);
-  useEffect(() => {
-    if (addOnWindowOpen && !prevAddOnWindowRef.current && settings.voiceEnabled && mode === 'game') {
-      announceRebuyEnded(t);
-      announceAddOn(t);
-    }
-    prevAddOnWindowRef.current = addOnWindowOpen;
-  }, [addOnWindowOpen, settings.voiceEnabled, mode, t]);
-
-  // Voice: Rebuy ended (without add-on) — only announce rebuy end when not followed by add-on
-  const prevRebuyForVoice = useRef(rebuyActive);
-  useEffect(() => {
-    if (prevRebuyForVoice.current && !rebuyActive && !config.addOn.enabled && config.rebuy.enabled
-        && settings.voiceEnabled && mode === 'game') {
-      announceRebuyEnded(t);
-    }
-    prevRebuyForVoice.current = rebuyActive;
-  }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, settings.voiceEnabled, mode, t]);
-
   const currentPlayLevel = useMemo(() => {
     return config.levels
       .slice(0, timer.timerState.currentLevelIndex + 1)
@@ -635,202 +597,35 @@ function App() {
     return errors;
   }, [config, t]);
 
-  // Auto-pause timer and play victory sound/voice when tournament finishes
-  const victoryPlayedRef = useRef(false);
-  useEffect(() => {
-    if (mode === 'game' && tournamentFinished) {
-      timer.pause();
-      if (!victoryPlayedRef.current) {
-        victoryPlayedRef.current = true;
-        const play = async () => {
-          if (settings.soundEnabled) await playVictorySound();
-          if (settings.voiceEnabled) announceWinner(t);
-        };
-        play();
-      }
-    }
-    if (!tournamentFinished) {
-      victoryPlayedRef.current = false;
-    }
-  }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled, t]);
+  // Game events: victory sound/pause, bubble/ITM effects
+  const { showItmFlash, reset: resetGameEvents } = useGameEvents({
+    mode,
+    settings,
+    tournamentFinished,
+    bubbleActive,
+    inTheMoney,
+    pause: timer.pause,
+    t,
+  });
 
-  // Bubble & ITM sound/voice/visual effects
-  const prevBubbleRef = useRef(false);
-  const itmFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (mode !== 'game') return;
-
-    // Bubble just started
-    if (bubbleActive && !prevBubbleRef.current) {
-      const play = async () => {
-        if (settings.soundEnabled) await playBubbleSound();
-        if (settings.voiceEnabled) announceBubble(t);
-      };
-      play();
-    }
-
-    // Bubble just ended (burst) → show ITM flash
-    if (!bubbleActive && prevBubbleRef.current && inTheMoney) {
-      setShowItmFlash(true);
-      const play = async () => {
-        if (settings.soundEnabled) await playInTheMoneySound();
-        if (settings.voiceEnabled) announceInTheMoney(t);
-      };
-      play();
-      if (itmFlashTimeoutRef.current) clearTimeout(itmFlashTimeoutRef.current);
-      itmFlashTimeoutRef.current = setTimeout(() => setShowItmFlash(false), 5000);
-      prevBubbleRef.current = bubbleActive;
-      return () => {
-        if (itmFlashTimeoutRef.current) {
-          clearTimeout(itmFlashTimeoutRef.current);
-          itmFlashTimeoutRef.current = null;
-        }
-      };
-    }
-
-    prevBubbleRef.current = bubbleActive;
-  }, [mode, bubbleActive, inTheMoney, settings.soundEnabled, settings.voiceEnabled, t]);
-
-  // Voice: Level change announcement
-  const prevLevelIdxVoiceRef = useRef(timer.timerState.currentLevelIndex);
-  useEffect(() => {
-    if (mode !== 'game' || !settings.voiceEnabled) return;
-    const idx = timer.timerState.currentLevelIndex;
-    if (idx === prevLevelIdxVoiceRef.current) return;
-    const prevIdx = prevLevelIdxVoiceRef.current;
-    prevLevelIdxVoiceRef.current = idx;
-    setLastHandActive(false);
-
-    const level = config.levels[idx];
-    if (!level) return;
-
-    if (level.type === 'break') {
-      const minutes = Math.round(level.durationSeconds / 60);
-      announceBreakStart(minutes, t);
-    } else {
-      // Break over: previous level was a break, now we're on a play level
-      const prevLevel = config.levels[prevIdx];
-      if (prevLevel?.type === 'break') {
-        announceBreakOver(t);
-      }
-
-      const playLevelNum = config.levels.slice(0, idx + 1).filter(l => l.type === 'level').length;
-      announceLevelChange(playLevelNum, level.smallBlind ?? 0, level.bigBlind ?? 0, level.ante, t);
-
-      // Color-up warning: next level is a break with color-up event
-      if (config.chips.enabled && config.chips.colorUpEnabled) {
-        const nextLevel = config.levels[idx + 1];
-        if (nextLevel?.type === 'break') {
-          const nextColorUpChips = colorUpMap.get(idx + 1);
-          if (nextColorUpChips && nextColorUpChips.length > 0) {
-            announceColorUpWarning(t);
-          }
-        }
-      }
-    }
-
-    // Color-up announcement — queued after the level/break announcement
-    if (config.chips.enabled && config.chips.colorUpEnabled) {
-      const colorUpChips = colorUpMap.get(idx);
-      if (colorUpChips && colorUpChips.length > 0) {
-        const labels = colorUpChips.map((d: { label: string }) => d.label).join(', ');
-        announceColorUp(labels, t);
-      }
-    }
-  }, [mode, timer.timerState.currentLevelIndex, config.levels, config.chips, colorUpMap, settings.voiceEnabled, t]);
-
-  // Voice: Break warning (30 seconds remaining in break)
-  const breakWarningRef = useRef(false);
-  useEffect(() => {
-    if (mode !== 'game' || !settings.voiceEnabled) return;
-    const level = config.levels[timer.timerState.currentLevelIndex];
-    if (!level || level.type !== 'break') {
-      breakWarningRef.current = false;
-      return;
-    }
-    const remaining = timer.timerState.remainingSeconds;
-    if (remaining <= 30 && remaining > 28 && !breakWarningRef.current) {
-      breakWarningRef.current = true;
-      announceBreakWarning(t);
-    }
-    if (remaining > 30) {
-      breakWarningRef.current = false;
-    }
-  }, [mode, settings.voiceEnabled, config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, t]);
-
-  // Voice: Five-minute warning (play levels > 5 min only)
-  const fiveMinWarningRef = useRef(false);
-  useEffect(() => {
-    if (mode !== 'game' || !settings.voiceEnabled) return;
-    const level = config.levels[timer.timerState.currentLevelIndex];
-    if (!level || level.type !== 'level' || level.durationSeconds <= 300) {
-      fiveMinWarningRef.current = false;
-      return;
-    }
-    const remaining = timer.timerState.remainingSeconds;
-    if (remaining <= 300 && remaining > 298 && !fiveMinWarningRef.current) {
-      fiveMinWarningRef.current = true;
-      announceFiveMinutes(t);
-    }
-    if (remaining > 300) {
-      fiveMinWarningRef.current = false;
-    }
-  }, [mode, settings.voiceEnabled, config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, t]);
-
-  // Voice: Bounty collected on player elimination
-  const prevPlayersRef = useRef(config.players);
-  useEffect(() => {
-    if (mode !== 'game' || !settings.voiceEnabled) return;
-    const prev = prevPlayersRef.current;
-    prevPlayersRef.current = config.players;
-    for (const player of config.players) {
-      if (player.status === 'eliminated' && player.placement !== null) {
-        const prevPlayer = prev.find(p => p.id === player.id);
-        if (prevPlayer && prevPlayer.status === 'active') {
-          if (config.bounty.enabled) announceBounty(t);
-          break;
-        }
-      }
-    }
-  }, [mode, config.players, settings.voiceEnabled, config.bounty.enabled, t]);
-
-  // Voice: Player count milestones (dynamic based on paidPlaces) + Heads-Up
-  const prevActiveCountRef = useRef(activePlayerCount);
-  useEffect(() => {
-    if (mode === 'game' && settings.voiceEnabled) {
-      const prev = prevActiveCountRef.current;
-      // Only announce on decreasing player count
-      if (activePlayerCount < prev) {
-        if (activePlayerCount === 2) {
-          announceHeadsUp(t);
-        } else if (activePlayerCount === 3) {
-          announceThreeRemaining(t);
-        } else if (activePlayerCount >= 4 && activePlayerCount <= paidPlaces) {
-          // Announce milestones from paidPlaces down to 4
-          // (bubble = paidPlaces+1 is handled by the bubble effect)
-          announcePlayersRemaining(activePlayerCount, t);
-        }
-      }
-    }
-    prevActiveCountRef.current = activePlayerCount;
-  }, [mode, activePlayerCount, paidPlaces, settings.voiceEnabled, t]);
-
-  // Voice: Timer paused/resumed (user-initiated only, not on tournament finish)
-  const prevTimerStatusRef = useRef(timer.timerState.status);
-  useEffect(() => {
-    const status = timer.timerState.status;
-    const prevStatus = prevTimerStatusRef.current;
-    prevTimerStatusRef.current = status;
-
-    if (mode !== 'game' || !settings.voiceEnabled || tournamentFinished) return;
-
-    if (status === 'paused' && prevStatus === 'running') {
-      announceTimerPaused(t);
-    }
-    if (status === 'running' && prevStatus === 'paused') {
-      announceTimerResumed(t);
-    }
-  }, [mode, settings.voiceEnabled, timer.timerState.status, tournamentFinished, t]);
+  // Voice announcements: level change, break warning, 5-min warning, bounty, milestones, timer pause/resume
+  const handleLevelChange = useCallback(() => setLastHandActive(false), []);
+  const { reset: resetVoice } = useVoiceAnnouncements({
+    mode,
+    settings,
+    config,
+    timerState: timer.timerState,
+    colorUpMap,
+    activePlayerCount,
+    paidPlaces,
+    bubbleActive,
+    inTheMoney,
+    addOnWindowOpen,
+    rebuyActive,
+    tournamentFinished,
+    onLevelChange: handleLevelChange,
+    t,
+  });
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
@@ -861,17 +656,10 @@ function App() {
     cancelSpeech();
     timer.restart();
     setAddOnEndLevelIndex(null);
-    setShowItmFlash(false);
     setLastHandActive(false);
     setDisplayMode(false);
-    prevBubbleRef.current = false;
-    victoryPlayedRef.current = false;
-    fiveMinWarningRef.current = false;
-    breakWarningRef.current = false;
-    if (itmFlashTimeoutRef.current) {
-      clearTimeout(itmFlashTimeoutRef.current);
-      itmFlashTimeoutRef.current = null;
-    }
+    resetGameEvents();
+    resetVoice();
     clearCheckpoint();
     setMode('setup');
   };
@@ -936,13 +724,7 @@ function App() {
         }));
         // Reset all game state
         setAddOnEndLevelIndex(null);
-        setShowItmFlash(false);
-        prevBubbleRef.current = false;
-        victoryPlayedRef.current = false;
-        if (itmFlashTimeoutRef.current) {
-          clearTimeout(itmFlashTimeoutRef.current);
-          itmFlashTimeoutRef.current = null;
-        }
+        resetGameEvents();
       },
     );
   };
@@ -1147,13 +929,14 @@ function App() {
                   <BlindGenerator
                     startingChips={config.startingChips}
                     anteEnabled={config.anteEnabled}
+                    anteMode={config.anteMode}
                     playerCount={config.players.length}
                     chipConfig={config.chips}
                     onApply={(levels) =>
                       setConfig((prev) => ({ ...prev, levels }))
                     }
                   />
-                  <div className="flex items-center justify-end">
+                  <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={toggleAnte}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -1164,6 +947,38 @@ function App() {
                     >
                       {config.anteEnabled ? t('app.withAnte') : t('app.withoutAnte')}
                     </button>
+                    {config.anteEnabled && (
+                      <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700/40">
+                        <button
+                          onClick={() => setConfig((prev) => ({
+                            ...prev,
+                            anteMode: 'standard',
+                            levels: applyDefaultAntes(prev.levels, 'standard'),
+                          }))}
+                          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                            config.anteMode === 'standard'
+                              ? 'bg-emerald-700 text-white'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {t('app.anteStandard')}
+                        </button>
+                        <button
+                          onClick={() => setConfig((prev) => ({
+                            ...prev,
+                            anteMode: 'bigBlindAnte',
+                            levels: applyDefaultAntes(prev.levels, 'bigBlindAnte'),
+                          }))}
+                          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                            config.anteMode === 'bigBlindAnte'
+                              ? 'bg-emerald-700 text-white'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {t('app.anteBBA')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <CollapsibleSubSection title={t('config.levelTable')} summary={blindSummary} defaultOpen={false}>
                     <ConfigEditor
@@ -1348,6 +1163,7 @@ function App() {
                   chipConfig={config.chips}
                   cleanView={cleanView}
                   colorUpMap={colorUpMap}
+                  anteMode={config.anteMode}
                 />
                 <BubbleIndicator
                   isBubble={bubbleActive}
