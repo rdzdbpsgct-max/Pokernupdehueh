@@ -5,6 +5,18 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.9.3] – 2026-03-06
+
+### Sprachausgabe: Elimination + Hand-for-Hand MP3
+
+- **Spieler-Elimination Sprachansage**: Neue generische Ansage „Ein Spieler ist ausgeschieden!" (DE) / „A player has been eliminated!" (EN) bei jeder Elimination. `announceElimination(t)` in `speech.ts` jetzt mit MP3-Audio statt leer. Wird aus `useVoiceAnnouncements` automatisch getriggert (vor Bounty-Ansage falls aktiv).
+- **Hand-for-Hand MP3**: `announceHandForHand()` nutzt jetzt ElevenLabs MP3 (`fixed/hand-for-hand.mp3`) statt reinem Web Speech API Fallback. „Händ for Händ! Alle Tische spielen gleichzeitig." (DE) / „Hand for hand! All tables play simultaneously." (EN).
+- **4 neue MP3-Dateien**: `hand-for-hand.mp3` + `player-eliminated.mp3` je DE + EN (ElevenLabs generiert). **450 Audio-Dateien** gesamt (225 pro Sprache).
+- **Translation-Keys angepasst**: `voice.playerEliminated` von dynamisch (`{name} ausgeschieden...`) zu generisch („Ein Spieler ist ausgeschieden!") geändert — passend zum MP3.
+- **232 Tests** (unverändert)
+
+---
+
 ## [2.9.2] – 2026-03-06
 
 ### QR-Code Vereinfachung

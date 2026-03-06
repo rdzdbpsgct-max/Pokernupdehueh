@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.9.2
+**Version**: 2.9.3
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -160,7 +160,7 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files. Sound functions return Promises for precise voice coordination (victory: 1700ms, bubble: 1450ms, ITM: 700ms)
-- **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 223 MP3 files per language in `public/audio/de/` and `public/audio/en/` (446 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
+- **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 225 MP3 files per language in `public/audio/de/` and `public/audio/en/` (450 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle), H (hand-for-hand toggle)
 - **TV Display Mode**: Dedicated fullscreen overlay (`DisplayMode.tsx`) optimized for projectors/TVs at 3+ meter distance. Split-layout: **Timer always visible** (top ~55% — level label, blinds, countdown, progress bar, next level preview, banners) + **rotating secondary area** (bottom ~45% — alternates between Blind Schedule and Chip Values every 15 seconds). Dark background, large timer (8rem), no sensitive data (no prizepool, no standings, no controls). Manual navigation via arrow keys. Indicator dots for secondary screen only if chips enabled. Exit via T/Escape. Lazy-loaded (~8.7 KB chunk). 📺 button in header during game mode.
 - **Ante calculation**: Two modes — Standard (~12.5% of big blind, rounded to "nice" values) or Big Blind Ante (BBA, ante = big blind). Toggle in setup when ante is enabled. `AnteMode` type in `types.ts`
@@ -233,6 +233,13 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.9.3 — Sprachausgabe: Elimination + Hand-for-Hand MP3
+
+- **Spieler-Elimination Ansage**: `announceElimination(t)` spielt jetzt MP3 „Ein Spieler ist ausgeschieden!" statt leer. Wird bei jeder Elimination getriggert (vor Bounty-Ansage).
+- **Hand-for-Hand MP3**: `announceHandForHand()` nutzt jetzt ElevenLabs MP3 statt reinem Web Speech API Fallback.
+- **4 neue MP3-Dateien**: `hand-for-hand.mp3` + `player-eliminated.mp3` je DE + EN. **450 Audio-Dateien** (225 pro Sprache).
+- **Translation-Key**: `voice.playerEliminated` von dynamisch zu generisch geändert.
 
 ### v2.9.2 — QR-Code Vereinfachung
 
@@ -312,7 +319,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ### v2.3.0 — ElevenLabs MP3 Voice (Deutsch + Englisch)
 
-- **ElevenLabs MP3 Sprachausgabe**: 446 professionelle MP3-Audiodateien — Deutsch (Stimme: Ava) und Englisch (ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks (`blinds.mp3`, `ante.mp3`, `color-up.mp3`) + einzelne Dateien für Levels, Blind-Paare, Ante-Werte, Countdowns, Pausen (minutengenau 1–30 Min) und 25 feste Ansagen.
+- **ElevenLabs MP3 Sprachausgabe**: 450 professionelle MP3-Audiodateien — Deutsch (Stimme: Ava) und Englisch (ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks (`blinds.mp3`, `ante.mp3`, `color-up.mp3`) + einzelne Dateien für Levels, Blind-Paare, Ante-Werte, Countdowns, Pausen (minutengenau 1–30 Min) und 27 feste Ansagen.
 - **Dreistufiger Audio-Fallback**: Web Audio API (gapless, mit Trailing-Silence-Trimming) → HTMLAudioElement (sequentiell, maximale Browser-Kompatibilität) → Web Speech API (Browser-Stimme als letzter Ausweg). Behebt stille MP3-Fehler in bestimmten Browsern.
 - **Neue Datei**: `src/domain/audioPlayer.ts` — MP3-Playback-Engine mit Web Audio API + HTMLAudioElement-Fallback, dynamischem Sprachpfad (`audio/de/` / `audio/en/`)
 - **speech.ts Refactoring**: Unified Queue mit `audio`- und `speech`-Items. Manifest-basierte Dateiprüfung (110 Blind-Paare, 20 Ante-Werte, 25 Levels, 30 Pausen-Dauern). Fehler-Logging im Catch-Handler für Diagnose.
@@ -322,7 +329,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Pausenzeiten minutengenau**: Alle Pausenansagen von 1 bis 30 Minuten als eigene MP3-Dateien (vorher nur 5/10/15/20/25/30)
 - **PWA-Caching**: `.mp3` zu Workbox `globPatterns` hinzugefügt — Audio offline verfügbar
 - **Qualitätsverbesserungen**: Race-Condition-Fix in `audioPlayer.ts` (onended bei `source.stop()`), Speech-Fallback für alle Ansagen, HTMLAudioElement überspringt fehlerhafte Dateien statt Abbruch, `victoryVoicePlayedRef` Reset in `switchToSetup`, 20 ungenutzte MP3s entfernt, 4 neue Translation-Keys
-- **446 Audio-Dateien** in `public/audio/de/` + `public/audio/en/` (223 pro Sprache, 7 Unterverzeichnisse)
+- **450 Audio-Dateien** in `public/audio/de/` + `public/audio/en/` (225 pro Sprache, 7 Unterverzeichnisse)
 - **3 neue Tests**: audioPlayer Degradation, announceCountdown Return-Value, Dual-Language-Support (203 Tests gesamt)
 
 ### v2.2.1 — Dual Deployment (GitHub Pages + Vercel)

@@ -6,7 +6,7 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.9.2-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.9.3-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
 [![Tests](https://img.shields.io/badge/Tests-233%20passed-brightgreen?style=flat-square)](#)
@@ -71,7 +71,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | QR-Codes | App-URL + Turnierergebnis als QR-Code — scannen und Ergebnis in der App sehen |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
-| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Dreistufiger Fallback: Web Audio API → HTMLAudioElement → Web Speech API. 446 Audio-Dateien (223 pro Sprache), offline via PWA. |
+| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Dreistufiger Fallback: Web Audio API → HTMLAudioElement → Web Speech API. 450 Audio-Dateien (225 pro Sprache), offline via PWA. |
 | TV-Modus | Split-Layout: Timer + Blinds permanent oben, Blind-Schedule / Chip-Werte rotierend unten — optimiert für TV/Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
@@ -153,7 +153,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | QR Codes | App URL + tournament result as QR code — scan and view results in the app |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
-| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, dynamic player count milestones (based on paid places), heads-up, ITM, eliminations, winner, tournament start, color-up, timer status. Triple fallback: Web Audio API → HTMLAudioElement → Web Speech API. 446 audio files (223 per language), offline via PWA. |
+| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, dynamic player count milestones (based on paid places), heads-up, ITM, eliminations, winner, tournament start, color-up, timer status. Triple fallback: Web Audio API → HTMLAudioElement → Web Speech API. 450 audio files (225 per language), offline via PWA. |
 | Clock display | Real-time clock in game mode header — never lose track of time at the table |
 | Last Hand | Toggle button + keyboard shortcut (L) + amber banner + voice announcement (before break / end of level) |
 | Dealer rotation | One-click dealer button advance, skips eliminated players |

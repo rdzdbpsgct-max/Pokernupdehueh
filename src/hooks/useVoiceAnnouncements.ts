@@ -11,6 +11,7 @@ import {
   announceColorUp,
   announceColorUpWarning,
   announceBounty,
+  announceElimination,
   announceFiveMinutes,
   announceThreeRemaining,
   announcePlayersRemaining,
@@ -135,7 +136,7 @@ export function useVoiceAnnouncements({
     }
   }, [mode, settings.voiceEnabled, config.levels, timerState.currentLevelIndex, timerState.remainingSeconds, t]);
 
-  // Voice: Bounty collected on player elimination
+  // Voice: Player elimination + Bounty collected
   const prevPlayersRef = useRef(config.players);
   useEffect(() => {
     if (mode !== 'game' || !settings.voiceEnabled) return;
@@ -145,6 +146,7 @@ export function useVoiceAnnouncements({
       if (player.status === 'eliminated' && player.placement !== null) {
         const prevPlayer = prev.find(p => p.id === player.id);
         if (prevPlayer && prevPlayer.status === 'active') {
+          announceElimination(t);
           if (config.bounty.enabled) announceBounty(t);
           break;
         }

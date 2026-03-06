@@ -294,9 +294,9 @@ export function announceInTheMoney(t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/itm.mp3'], t('voice.inTheMoney')));
 }
 
-/** Player eliminated — no player name announced */
-export function announceElimination(): void {
-  // Intentionally empty — elimination is visual only (no name announcement)
+/** Player eliminated — generic announcement without player name */
+export function announceElimination(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/player-eliminated.mp3'], t('voice.playerEliminated')));
 }
 
 /** Tournament winner — generic announcement without player name */
@@ -390,5 +390,5 @@ export function announceTimerResumed(t: TranslateFn): void {
 
 /** Hand-for-Hand mode activated */
 export function announceHandForHand(t: TranslateFn): void {
-  enqueue({ mode: 'speech', text: t('voice.handForHand') });
+  enqueue(audioOrSpeech(['fixed/hand-for-hand.mp3'], t('voice.handForHand')));
 }
