@@ -5,6 +5,22 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.8.0] – 2026-03-06
+
+### QR-Codes auf dem Ergebnis-Screen
+
+- **QR-Code App-URL**: Statischer QR-Code auf dem Turnierergebnis-Screen verlinkt zur App (pokernupdehueh.vercel.app). Andere Spieler können die App direkt installieren — scannen und los.
+- **QR-Code Turnierergebnis**: Dynamischer QR-Code kodiert das komplette Turnierergebnis kompakt in einem URL-Hash (`#r=`). Empfänger scannen den Code und sehen Standings, Prizepool und Turnier-Info direkt in der App.
+- **SharedResultView**: Neues read-only Modal (`SharedResultView.tsx`, ~120 Zeilen) zeigt geteilte Turnierergebnisse mit Standings-Tabelle und Turnier-Zusammenfassung. Wird automatisch beim Öffnen der App mit `#r=` Hash angezeigt, Hash wird danach bereinigt.
+- **Kompakte Kodierung**: `encodeResultForQR()` / `decodeResultFromQR()` in `logic.ts` — Pipe-delimited Header (Name, Datum, Spieler, BuyIn, Prizepool, Bounty, Rebuys, AddOns, Minuten, Levels) + Semicolon-delimited Players (Name:Platz:Payout:Rebuys:AddOn:KOs). 8-Spieler-Turnier in ~375 Bytes URL-encoded.
+- **Theme-aware QR**: `QRCodeSVG` aus `qrcode.react` mit Dark/Light-Mode-Farben. Inline SVG wird von `html-to-image` korrekt in Screenshots miterfasst.
+- **Neue Dependency**: `qrcode.react` v4 (~13KB gzip, im TournamentFinished-Lazy-Chunk)
+- **Neue Datei**: `src/components/SharedResultView.tsx`
+- **12 neue Translation-Keys** (6 DE + 6 EN): `finished.qrCodes/qrApp/qrResult`, `shared.title/close/invalidData`
+- **4 neue Tests**: encodeResultForQR URL-Format, Round-Trip encode/decode, Invalid-Input-Handling — **222 Tests gesamt**
+
+---
+
 ## [2.7.0] – 2026-03-06
 
 ### Refactoring + Big Blind Ante

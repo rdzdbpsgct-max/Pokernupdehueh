@@ -59,8 +59,10 @@ import {
   formatResultAsText,
   formatResultAsCSV,
   computePlayerStats,
+  encodeResultForQR,
+  decodeResultFromQR,
 } from '../src/domain/logic';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, TournamentResult } from '../src/domain/types';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -2467,5 +2469,68 @@ describe('computePlayerStats', () => {
 
   it('returns empty array for empty history', () => {
     expect(computePlayerStats([])).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// QR Code Encoding / Decoding
+// ---------------------------------------------------------------------------
+describe('QR code encoding/decoding', () => {
+  const sampleResult: TournamentResult = {
+    id: 'test-id',
+    name: 'Freitagspoker',
+    date: '2026-03-06T20:00:00.000Z',
+    playerCount: 4,
+    buyIn: 10,
+    prizePool: 50,
+    players: [
+      { name: 'Alice', place: 1, payout: 30, rebuys: 0, addOn: false, knockouts: 2, bountyEarned: 10, netBalance: 30 },
+      { name: 'Bob', place: 2, payout: 15, rebuys: 1, addOn: true, knockouts: 1, bountyEarned: 5, netBalance: -10 },
+      { name: 'Charlie', place: 3, payout: 5, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -5 },
+      { name: 'Diana', place: 4, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+    ],
+    bountyEnabled: true,
+    bountyAmount: 5,
+    rebuyEnabled: true,
+    totalRebuys: 1,
+    addOnEnabled: true,
+    totalAddOns: 1,
+    elapsedSeconds: 7200,
+    levelsPlayed: 12,
+  };
+
+  it('encodeResultForQR produces a URL string', () => {
+    const url = encodeResultForQR(sampleResult);
+    expect(url).toContain('https://pokernupdehueh.vercel.app/#r=');
+    expect(url).toContain('Freitagspoker');
+  });
+
+  it('round-trips encode then decode', () => {
+    const url = encodeResultForQR(sampleResult);
+    const encoded = decodeURIComponent(url.split('#r=')[1]);
+    const decoded = decodeResultFromQR(encoded);
+    expect(decoded).not.toBeNull();
+    expect(decoded!.name).toBe('Freitagspoker');
+    expect(decoded!.playerCount).toBe(4);
+    expect(decoded!.buyIn).toBe(10);
+    expect(decoded!.prizePool).toBe(50);
+    expect(decoded!.bountyAmount).toBe(5);
+    expect(decoded!.players).toHaveLength(4);
+    expect(decoded!.players[0].name).toBe('Alice');
+    expect(decoded!.players[0].place).toBe(1);
+    expect(decoded!.players[0].payout).toBe(30);
+    expect(decoded!.players[1].rebuys).toBe(1);
+    expect(decoded!.players[1].addOn).toBe(true);
+    expect(decoded!.levelsPlayed).toBe(12);
+    expect(decoded!.elapsedSeconds).toBe(7200);
+  });
+
+  it('decodeResultFromQR returns null for invalid input', () => {
+    expect(decodeResultFromQR('')).toBeNull();
+    expect(decodeResultFromQR('not|enough|fields')).toBeNull();
+  });
+
+  it('decodeResultFromQR returns null for non-string', () => {
+    expect(decodeResultFromQR(null as unknown as string)).toBeNull();
   });
 });

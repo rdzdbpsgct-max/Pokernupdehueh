@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.7.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.8.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-218%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-222%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -67,6 +67,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Bubble / ITM | Rot pulsierender BUBBLE!-Banner, grüner In-The-Money-Flash mit Sound |
 | Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
+| QR-Codes | App-URL + Turnierergebnis als QR-Code — scannen und Ergebnis in der App sehen |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
 | Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Dreistufiger Fallback: Web Audio API → HTMLAudioElement → Web Speech API. 446 Audio-Dateien (223 pro Sprache), offline via PWA. |
 | Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
@@ -146,6 +147,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Bubble / ITM | Red pulsing BUBBLE! banner, green In The Money flash with sound |
 | Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
+| QR Codes | App URL + tournament result as QR code — scan and view results in the app |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
 | Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, dynamic player count milestones (based on paid places), heads-up, ITM, eliminations, winner, tournament start, color-up, timer status. Triple fallback: Web Audio API → HTMLAudioElement → Web Speech API. 446 audio files (223 per language), offline via PWA. |
 | Clock display | Real-time clock in game mode header — never lose track of time at the table |
@@ -276,7 +278,8 @@ src/
     TemplateManager.tsx  # Vorlagen + JSON Import/Export / Templates + JSON import/export
     TournamentStats.tsx  # Live-Statistiken / Live statistics
     BubbleIndicator.tsx  # Bubble / In The Money Banner
-    TournamentFinished.tsx # Ergebnisse & Screenshot / Results & screenshot
+    TournamentFinished.tsx # Ergebnisse, Screenshot & QR-Codes / Results, screenshot & QR codes
+    SharedResultView.tsx   # Geteilte Ergebnisse (QR) / Shared results modal (QR)
     SettingsPanel.tsx    # Einstellungen / Settings (custom checkboxes)
     Controls.tsx         # Start/Pause/Next/Prev/Reset
     ChevronIcon.tsx      # SVG-Chevron mit Animation / SVG chevron with animation

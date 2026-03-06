@@ -359,6 +359,14 @@ const de = {
   'finished.textCopied': 'Kopiert!',
   'finished.downloadCSV': 'CSV herunterladen',
   'finished.exportOptions': 'Teilen',
+  'finished.qrCodes': 'QR-Codes',
+  'finished.qrApp': 'App installieren',
+  'finished.qrResult': 'Ergebnis teilen',
+
+  // --- Shared Result ---
+  'shared.title': 'Geteiltes Turnierergebnis',
+  'shared.close': 'Schließen',
+  'shared.invalidData': 'Ungültige Turnierdaten im QR-Code.',
 
   // --- Section Summaries ---
   'app.tournamentFormat': 'Rebuy / Add-On / Bounty',
@@ -779,6 +787,14 @@ const en: Record<TranslationKey, string> = {
   'finished.textCopied': 'Copied!',
   'finished.downloadCSV': 'Download CSV',
   'finished.exportOptions': 'Share',
+  'finished.qrCodes': 'QR Codes',
+  'finished.qrApp': 'Install App',
+  'finished.qrResult': 'Share Results',
+
+  // --- Shared Result ---
+  'shared.title': 'Shared Tournament Result',
+  'shared.close': 'Close',
+  'shared.invalidData': 'Invalid tournament data in QR code.',
 
   // --- Section Summaries ---
   'app.tournamentFormat': 'Rebuy / Add-On / Bounty',

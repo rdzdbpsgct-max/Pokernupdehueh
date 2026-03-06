@@ -1360,6 +1360,92 @@ export function computePlayerStats(history: TournamentResult[]): import('./types
   return stats;
 }
 
+// ---------------------------------------------------------------------------
+// QR Code Encoding / Decoding (compact tournament result sharing)
+// ---------------------------------------------------------------------------
+
+const QR_BASE_URL = 'https://pokernupdehueh.vercel.app/';
+
+export function encodeResultForQR(result: TournamentResult): string {
+  const header = [
+    result.name,
+    result.date.slice(0, 10),
+    result.playerCount,
+    result.buyIn,
+    result.prizePool,
+    result.bountyEnabled ? result.bountyAmount : 0,
+    result.totalRebuys,
+    result.totalAddOns,
+    Math.floor(result.elapsedSeconds / 60),
+    result.levelsPlayed,
+  ].join('|');
+
+  const players = result.players
+    .map(p => [p.name, p.place, p.payout, p.rebuys, p.addOn ? 1 : 0, p.knockouts].join(':'))
+    .join(';');
+
+  return QR_BASE_URL + '#r=' + encodeURIComponent(header + '|' + players);
+}
+
+export function decodeResultFromQR(encoded: string): TournamentResult | null {
+  try {
+    const parts = encoded.split('|');
+    if (parts.length < 11) return null;
+
+    const name = parts[0];
+    const date = parts[1];
+    const playerCount = Number(parts[2]);
+    const buyIn = Number(parts[3]);
+    const prizePool = Number(parts[4]);
+    const bountyAmount = Number(parts[5]);
+    const totalRebuys = Number(parts[6]);
+    const totalAddOns = Number(parts[7]);
+    const elapsedMinutes = Number(parts[8]);
+    const levelsPlayed = Number(parts[9]);
+    const playersRaw = parts.slice(10).join('|');
+
+    if (!name || isNaN(playerCount)) return null;
+
+    const players: PlayerResult[] = playersRaw.split(';').filter(Boolean).map(entry => {
+      const [pName, place, payout, rebuys, addOn, knockouts] = entry.split(':');
+      const rebuyCount = Number(rebuys) || 0;
+      const hasAddOn = Number(addOn) === 1;
+      const totalCost = buyIn + rebuyCount * buyIn + (hasAddOn ? buyIn : 0);
+      const bountyEarned = bountyAmount > 0 ? (Number(knockouts) || 0) * bountyAmount : 0;
+      return {
+        name: pName,
+        place: Number(place),
+        payout: Number(payout) || 0,
+        rebuys: rebuyCount,
+        addOn: hasAddOn,
+        knockouts: Number(knockouts) || 0,
+        bountyEarned,
+        netBalance: (Number(payout) || 0) + bountyEarned - totalCost,
+      };
+    });
+
+    return {
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+      name,
+      date: new Date(date).toISOString(),
+      playerCount,
+      buyIn,
+      prizePool,
+      players,
+      bountyEnabled: bountyAmount > 0,
+      bountyAmount,
+      rebuyEnabled: totalRebuys > 0,
+      totalRebuys,
+      addOnEnabled: totalAddOns > 0,
+      totalAddOns,
+      elapsedSeconds: elapsedMinutes * 60,
+      levelsPlayed,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function exportConfigJSON(config: TournamentConfig): string {
   return JSON.stringify(config, null, 2);
 }

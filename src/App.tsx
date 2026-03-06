@@ -29,6 +29,7 @@ import {
   advanceDealer,
   buildTournamentResult,
   saveTournamentResult,
+  decodeResultFromQR,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
@@ -70,6 +71,7 @@ const BubbleIndicator = lazy(() => import('./components/BubbleIndicator').then(m
 const SettingsPanel = lazy(() => import('./components/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
 const TournamentFinished = lazy(() => import('./components/TournamentFinished').then(m => ({ default: m.TournamentFinished })));
 const DisplayMode = lazy(() => import('./components/DisplayMode').then(m => ({ default: m.DisplayMode })));
+const SharedResultView = lazy(() => import('./components/SharedResultView').then(m => ({ default: m.SharedResultView })));
 
 type Mode = 'setup' | 'game';
 
@@ -92,6 +94,18 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [sharedResult, setSharedResult] = useState(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#r=')) {
+      const encoded = decodeURIComponent(hash.slice(3));
+      const result = decodeResultFromQR(encoded);
+      if (result) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      return result;
+    }
+    return null;
+  });
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
   const [displayMode, setDisplayMode] = useState(false);
@@ -1282,6 +1296,13 @@ function App() {
 
       {showHistory && (
         <TournamentHistory onClose={() => setShowHistory(false)} />
+      )}
+
+      {/* Shared Result Modal (from QR code) */}
+      {sharedResult && (
+        <Suspense fallback={null}>
+          <SharedResultView result={sharedResult} onClose={() => setSharedResult(null)} />
+        </Suspense>
       )}
 
       {/* Confirm Action Modal */}

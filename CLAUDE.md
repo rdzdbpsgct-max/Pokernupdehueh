@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.7.0
+**Version**: 2.8.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (218 tests, single run)
+npm run test         # Vitest run (222 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -66,7 +66,8 @@ src/
 │   ├── ThemeSwitcher.tsx        # System/Light/Dark 3-way toggle
 │   ├── VoiceSwitcher.tsx        # Sound/Voice segmented toggle in header
 │   ├── TimerDisplay.tsx         # Main timer, blinds display, progress bar
-│   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share/text-copy/CSV
+│   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share/text-copy/CSV/QR
+│   ├── SharedResultView.tsx     # Read-only modal for QR-shared tournament results
 │   ├── TournamentHistory.tsx    # Tournament history modal with standings, player stats, export
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
 ├── domain/                      # Business logic (no React imports)
@@ -92,7 +93,7 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 218 unit tests for domain/logic.ts
+└── logic.test.ts                # 222 unit tests for domain/logic.ts
 
 public/
 ├── favicon.svg                  # Spade symbol favicon
@@ -178,6 +179,7 @@ public/
 - **SVG Chevrons**: `ChevronIcon` component with CSS rotation animation replaces Unicode triangles for collapsible sections
 - **NumberStepper**: Custom `+`/`-` stepper component replaces native number input spinners; long-press support via pointer events (400ms delay, 100ms repeat); optional `snap` function; used across all numeric inputs in setup
 - **Screenshot/share**: `html-to-image` (dynamic import) capture → Web Share API (mobile) or PNG download (desktop); theme-aware background color
+- **QR codes**: Two QR codes on TournamentFinished screen — App-URL (static, Vercel link) and tournament result data (compact pipe-delimited format in URL hash `#r=`). `qrcode.react` (`QRCodeSVG`) renders inline SVG captured by html-to-image. `encodeResultForQR()` / `decodeResultFromQR()` in logic.ts. `SharedResultView.tsx` modal for viewing shared results. Theme-aware QR colors.
 - **PWA**: `vite-plugin-pwa` with auto-update service worker, installable on mobile/desktop
 - **Wake Lock**: Screen stays on during active tournament (Wake Lock API, re-acquired on tab focus)
 - **Cross-device compatibility**: Safe area insets (notch/gesture-bar), `100dvh` viewport height, `inputmode="numeric"` on all number inputs, webkit fullscreen prefix, localStorage try-catch for private browsing, tablet breakpoint (`md:` at 768px), touch targets ≥32px
@@ -229,6 +231,18 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.8.0 — QR-Codes auf dem Ergebnis-Screen
+
+- **QR-Code App-URL**: Statischer QR-Code auf dem Ergebnis-Screen verlinkt zur App (Vercel-URL). Andere Spieler können die App direkt installieren.
+- **QR-Code Turnierergebnis**: Dynamischer QR-Code kodiert Turnierergebnis kompakt (Pipe-delimited Format in URL-Hash `#r=`). Empfänger sieht Ergebnisse in der App.
+- **SharedResultView**: Neues read-only Modal zeigt geteilte Turnierergebnisse (Standings, Turnier-Info). Wird automatisch geöffnet wenn App mit `#r=` Hash aufgerufen wird.
+- **Kompakte Kodierung**: `encodeResultForQR()` / `decodeResultFromQR()` — 8-Spieler-Turnier in ~375 Bytes URL-encoded. Pipe-delimited Header + Semicolon-delimited Players.
+- **Theme-aware QR**: `QRCodeSVG` aus `qrcode.react` mit angepassten Farben für Dark/Light Mode. Inline SVG wird von `html-to-image` korrekt in Screenshots erfasst.
+- **Neue Dependency**: `qrcode.react` (~13KB gzip, im TournamentFinished-Chunk)
+- **Neue Datei**: `src/components/SharedResultView.tsx` (~120 Zeilen)
+- **12 neue Translation-Keys** (6 DE + 6 EN): `finished.qrCodes/qrApp/qrResult`, `shared.title/close/invalidData`
+- **4 neue Tests**: encodeResultForQR URL-Format, Round-Trip encode/decode, Invalid-Input-Handling — **222 Tests gesamt**
 
 ### v2.7.0 — Refactoring + Big Blind Ante
 
