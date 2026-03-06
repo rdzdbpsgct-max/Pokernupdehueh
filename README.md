@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.3.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.4.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-195%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-203%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -148,6 +148,10 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
 | Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, dynamic player count milestones (based on paid places), heads-up, ITM, eliminations, winner, tournament start, color-up, timer status. Triple fallback: Web Audio API → HTMLAudioElement → Web Speech API. 446 audio files (223 per language), offline via PWA. |
+| Clock display | Real-time clock in game mode header — never lose track of time at the table |
+| Last Hand | Toggle button + keyboard shortcut (L) + amber banner + voice announcement (before break / end of level) |
+| Dealer rotation | One-click dealer button advance, skips eliminated players |
+| Error boundary | Catches React crashes with user-friendly reload page |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
@@ -252,6 +256,7 @@ src/
   components/
     TimerDisplay.tsx     # Timer-Anzeige / Timer display
     ConfigEditor.tsx     # Blindstruktur-Editor / Blind structure editor
+    ErrorBoundary.tsx    # React-Error-Boundary mit Reload / Error boundary with reload
     BlindGenerator.tsx   # Blindstruktur-Generator / Blind structure generator
     PlayerManager.tsx    # Spielerverwaltung / Player management (Drag & Drop)
     PlayerPanel.tsx      # Spieler-Panel / Player panel (during tournament)

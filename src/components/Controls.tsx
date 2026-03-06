@@ -11,6 +11,8 @@ interface Props {
   hideSecondaryControls?: boolean;
   cleanView?: boolean;
   onToggleCleanView?: () => void;
+  lastHandActive?: boolean;
+  onLastHand?: () => void;
 }
 
 export function Controls({
@@ -23,6 +25,8 @@ export function Controls({
   hideSecondaryControls,
   cleanView,
   onToggleCleanView,
+  lastHandActive,
+  onLastHand,
 }: Props) {
   const { t } = useTranslation();
   const isRunning = timerState.status === 'running';
@@ -64,20 +68,35 @@ export function Controls({
         </button>
       </div>
 
-      {/* Clean view toggle — always visible */}
-      {onToggleCleanView && (
-        <button
-          onClick={onToggleCleanView}
-          className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm ${
-            cleanView
-              ? 'bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white border-emerald-500 dark:border-emerald-600 shadow-emerald-300/30 dark:shadow-emerald-900/30'
-              : 'bg-white dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600/40 shadow-gray-200/30 dark:shadow-black/15'
-          }`}
-          title={cleanView ? t('game.cleanViewOff') : t('game.cleanViewOn')}
-        >
-          {cleanView ? t('game.cleanViewOn') : t('game.cleanViewOff')}
-        </button>
-      )}
+      {/* Last Hand + Clean view — always visible */}
+      <div className="flex items-center gap-2">
+        {onLastHand && (
+          <button
+            onClick={onLastHand}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm ${
+              lastHandActive
+                ? 'bg-amber-600 dark:bg-amber-700 hover:bg-amber-500 dark:hover:bg-amber-600 text-white border-amber-500 dark:border-amber-600 shadow-amber-300/30 dark:shadow-amber-900/30'
+                : 'bg-white dark:bg-gray-800/80 hover:bg-amber-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600/40 shadow-gray-200/30 dark:shadow-black/15'
+            }`}
+            title={t('controls.lastHandTooltip')}
+          >
+            {t('controls.lastHand')}
+          </button>
+        )}
+        {onToggleCleanView && (
+          <button
+            onClick={onToggleCleanView}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm ${
+              cleanView
+                ? 'bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white border-emerald-500 dark:border-emerald-600 shadow-emerald-300/30 dark:shadow-emerald-900/30'
+                : 'bg-white dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600/40 shadow-gray-200/30 dark:shadow-black/15'
+            }`}
+            title={cleanView ? t('game.cleanViewOff') : t('game.cleanViewOn')}
+          >
+            {cleanView ? t('game.cleanViewOn') : t('game.cleanViewOff')}
+          </button>
+        )}
+      </div>
 
       {!hideSecondaryControls && (
         <div className="flex items-center gap-3">

@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.3.0
+**Version**: 2.4.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (195 tests, single run)
+npm run test         # Vitest run (203 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -49,6 +49,7 @@ src/
 │   ├── CollapsibleSection.tsx   # Reusable collapsible card for setup sections
 │   ├── CollapsibleSubSection.tsx # Lighter collapsible for nesting inside cards
 │   ├── ConfigEditor.tsx         # Blind level table editor
+│   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
 │   ├── LevelPreview.tsx         # Next-level sidebar
@@ -153,9 +154,9 @@ public/
 ## Key Implementation Details
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
-- **Sound**: Web Audio API oscillators — no external audio files
+- **Sound**: Web Audio API oscillators — no external audio files. Sound functions return Promises for precise voice coordination (victory: 1700ms, bubble: 1450ms, ITM: 700ms)
 - **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 223 MP3 files per language in `public/audio/de/` and `public/audio/en/` (446 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
-- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle)
+- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle)
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
 - **Chip management**: Editable color-up schedule with auto-suggestion; color-up events coupled with next break; duplicate color warnings; auto-sort by value
@@ -179,6 +180,10 @@ public/
 - **Tournament checkpoint**: Auto-save game state to localStorage on every action in game mode; on restart, offer to resume with timer always paused (timestamps invalid after reload)
 - **Accessibility**: ARIA roles/labels on timer, controls, modals, collapsible sections; auto-focus and Escape-to-close on dialogs
 - **Premium UI**: Glassmorphism (`backdrop-blur-sm`, soft shadows), gradient buttons (`bg-gradient-to-b`), custom animations (9 `@keyframes` in `index.css`), tactile feedback (`active:scale-[0.97]`), timer glow (`animate-timer-glow`), dual body gradient, focus glow on all inputs, custom scrub slider matching progress bar, card hover glow, table row hover states
+- **Clock display**: Real-time clock in game mode header, updated every 30 seconds via `setInterval`
+- **Last Hand**: Toggle button (L key) + amber banner via `BubbleIndicator`, voice announcement via `announceLastHand()` (distinguishes before-break vs end-of-level), auto-reset on level change
+- **Dealer auto-rotation**: `advanceDealer()` in logic.ts skips eliminated players with wrap-around; button in PlayerPanel header
+- **ErrorBoundary**: React class component in `main.tsx` wrapping entire app; catches lazy-load failures and render errors; hardcoded English fallback UI with reload button
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -219,6 +224,17 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ## Changelog
 
+### v2.4.0 — Quick Wins: Uhrzeit, Letzte Hand, Dealer-Rotation, ErrorBoundary
+
+- **Uhrzeit im Spielmodus**: Echtzeit-Uhr im Game-Mode-Header, aktualisiert alle 30 Sekunden. Zeigt lokale Uhrzeit im `font-mono tabular-nums` Format.
+- **„Letzte Hand"-Banner + Ansage**: Toggle-Button in Controls (amber-Styling) + Tastenkürzel `L`. Zeigt amber Banner über `BubbleIndicator`, Voice-Ansage via `announceLastHand()` (unterscheidet „vor Pause" / „Ende des Levels"). Auto-Reset bei Level-Wechsel.
+- **Dealer Auto-Rotation**: Neuer `advanceDealer()` in `logic.ts` — überspringt eliminierte Spieler mit Wrap-Around. „Dealer weiter"-Button im PlayerPanel-Header neben Spieleranzahl.
+- **React ErrorBoundary**: `ErrorBoundary.tsx` Class Component in `main.tsx` wrapping gesamte App. Fängt Lazy-Load-Fehler und Render-Crashes ab. Hardcoded English Fallback-UI mit Reload-Button.
+- **Promise-basierte Sound-Voice-Koordination**: `playVictorySound()`, `playBubbleSound()`, `playInTheMoneySound()` geben jetzt `Promise<void>` zurück. `setTimeout`-Pattern in App.tsx durch `async/await` ersetzt — keine Race Conditions mehr bei langsamer AudioContext-Initialisierung.
+- **Neue Datei**: `src/components/ErrorBoundary.tsx`
+- **10 neue Translation-Keys**: `controls.lastHand`, `controls.lastHandTooltip`, `game.lastHand`, `game.lastHandHint`, `playerPanel.advanceDealer` (DE + EN)
+- **8 neue Tests**: advanceDealer (5), Promise-Sounds (3) — 203 Tests gesamt
+
 ### v2.3.0 — ElevenLabs MP3 Voice (Deutsch + Englisch)
 
 - **ElevenLabs MP3 Sprachausgabe**: 446 professionelle MP3-Audiodateien — Deutsch (Stimme: Ava) und Englisch (ElevenLabs Voice Library). Modular aufgebaut: Building-Blocks (`blinds.mp3`, `ante.mp3`, `color-up.mp3`) + einzelne Dateien für Levels, Blind-Paare, Ante-Werte, Countdowns, Pausen (minutengenau 1–30 Min) und 25 feste Ansagen.
@@ -232,7 +248,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **PWA-Caching**: `.mp3` zu Workbox `globPatterns` hinzugefügt — Audio offline verfügbar
 - **Qualitätsverbesserungen**: Race-Condition-Fix in `audioPlayer.ts` (onended bei `source.stop()`), Speech-Fallback für alle Ansagen, HTMLAudioElement überspringt fehlerhafte Dateien statt Abbruch, `victoryVoicePlayedRef` Reset in `switchToSetup`, 20 ungenutzte MP3s entfernt, 4 neue Translation-Keys
 - **446 Audio-Dateien** in `public/audio/de/` + `public/audio/en/` (223 pro Sprache, 7 Unterverzeichnisse)
-- **3 neue Tests**: audioPlayer Degradation, announceCountdown Return-Value, Dual-Language-Support (195 Tests gesamt)
+- **3 neue Tests**: audioPlayer Degradation, announceCountdown Return-Value, Dual-Language-Support (203 Tests gesamt)
 
 ### v2.2.1 — Dual Deployment (GitHub Pages + Vercel)
 
@@ -255,7 +271,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Neue Datei**: `src/domain/speech.ts` — Voice-Engine mit DE/EN-Sprachauswahl, Cancel-before-speak Queue, 11 Convenience-Funktionen
 - **Settings**: `voiceEnabled: boolean` in Settings, Toggle „Sprachansagen" im Einstellungspanel
 - **13 neue Translation-Keys**: `settings.voice` + 11× `voice.*` (DE + EN)
-- **5 neue Tests**: Speech-Modul Degradation + Announcement-Builder (195 Tests gesamt)
+- **5 neue Tests**: Speech-Modul Degradation + Announcement-Builder (203 Tests gesamt)
 
 ### v2.0.1 — Light-Mode-Fixes, Sektionsumbenennung & Clean-View-Button
 

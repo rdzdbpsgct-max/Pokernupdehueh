@@ -229,6 +229,19 @@ export function shufflePlayers(players: Player[]): { players: Player[]; dealerIn
   return { players: result, dealerIndex };
 }
 
+/**
+ * Advances the dealer button to the next active player (skipping eliminated ones).
+ */
+export function advanceDealer(players: Player[], currentDealerIndex: number): number {
+  const n = players.length;
+  if (n === 0) return 0;
+  for (let i = 1; i <= n; i++) {
+    const candidate = (currentDealerIndex + i) % n;
+    if (players[candidate].status === 'active') return candidate;
+  }
+  return currentDealerIndex;
+}
+
 // ---------------------------------------------------------------------------
 // Blind Structure Summary
 // ---------------------------------------------------------------------------

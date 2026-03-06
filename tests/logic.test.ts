@@ -50,6 +50,7 @@ import {
   exportTemplateToJSON,
   parseTemplateFile,
   computeBlindStructureSummary,
+  advanceDealer,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -2044,6 +2045,71 @@ describe('speech module', () => {
     expect(() => announceHeadsUp(mockT)).not.toThrow();
     cancelSpeech();
     setSpeechLanguage('de'); // restore
+  });
+});
+
+describe('advanceDealer', () => {
+  const makePlayers = (statuses: ('active' | 'eliminated')[]): Player[] =>
+    statuses.map((status, i) => ({
+      id: `p${i}`,
+      name: `Player ${i + 1}`,
+      rebuys: 0,
+      addOn: false,
+      status,
+      placement: status === 'eliminated' ? i + 1 : null,
+      eliminatedBy: null,
+      knockouts: 0,
+    }));
+
+  it('advances to next active player', () => {
+    const players = makePlayers(['active', 'active', 'active']);
+    expect(advanceDealer(players, 0)).toBe(1);
+    expect(advanceDealer(players, 1)).toBe(2);
+    expect(advanceDealer(players, 2)).toBe(0);
+  });
+
+  it('skips eliminated players', () => {
+    const players = makePlayers(['active', 'eliminated', 'active']);
+    expect(advanceDealer(players, 0)).toBe(2);
+    expect(advanceDealer(players, 2)).toBe(0);
+  });
+
+  it('wraps around correctly', () => {
+    const players = makePlayers(['eliminated', 'eliminated', 'active', 'active']);
+    expect(advanceDealer(players, 3)).toBe(2);
+    expect(advanceDealer(players, 2)).toBe(3);
+  });
+
+  it('returns currentDealerIndex when all eliminated', () => {
+    const players = makePlayers(['eliminated', 'eliminated']);
+    expect(advanceDealer(players, 0)).toBe(0);
+  });
+
+  it('returns 0 for empty array', () => {
+    expect(advanceDealer([], 0)).toBe(0);
+  });
+});
+
+describe('sound functions return Promises', () => {
+  it('playVictorySound returns a Promise', async () => {
+    const { playVictorySound } = await import('../src/domain/sounds');
+    const result = playVictorySound();
+    expect(result).toBeInstanceOf(Promise);
+    await result;
+  });
+
+  it('playBubbleSound returns a Promise', async () => {
+    const { playBubbleSound } = await import('../src/domain/sounds');
+    const result = playBubbleSound();
+    expect(result).toBeInstanceOf(Promise);
+    await result;
+  });
+
+  it('playInTheMoneySound returns a Promise', async () => {
+    const { playInTheMoneySound } = await import('../src/domain/sounds');
+    const result = playInTheMoneySound();
+    expect(result).toBeInstanceOf(Promise);
+    await result;
   });
 });
 

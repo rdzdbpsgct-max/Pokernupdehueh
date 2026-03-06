@@ -5,6 +5,30 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.4.0] – 2026-03-06
+
+### Quick Wins: Uhrzeit, Letzte Hand, Dealer-Rotation, ErrorBoundary
+
+- **Uhrzeit im Spielmodus** — Echtzeit-Uhr im Game-Mode-Header neben Turniernamen. Aktualisierung alle 30 Sekunden, `font-mono tabular-nums` Format.
+- **Clock display in game mode** — Real-time clock in game mode header next to tournament name. Updates every 30 seconds, monospace tabular format.
+
+- **„Letzte Hand"-Banner + Ansage** — Toggle-Button in Controls (amber-Styling) + Tastenkürzel `L`. Zeigt prominenten amber Banner, Voice-Ansage unterscheidet „vor Pause" / „Ende des Levels". Auto-Reset bei Level-Wechsel.
+- **"Last Hand" banner + announcement** — Toggle button in controls (amber style) + keyboard shortcut `L`. Prominent amber banner, voice distinguishes "before break" / "end of level". Auto-reset on level change.
+
+- **Dealer Auto-Rotation** — Neuer „Dealer weiter"-Button im PlayerPanel-Header. `advanceDealer()` überspringt eliminierte Spieler mit Wrap-Around.
+- **Dealer auto-rotation** — New "Move Dealer" button in PlayerPanel header. `advanceDealer()` skips eliminated players with wrap-around.
+
+- **React ErrorBoundary** — Fängt Lazy-Load-Fehler und Render-Crashes ab. Fallback-UI mit Reload-Button (hardcoded English, da i18n-Context evtl. nicht verfügbar).
+- **React ErrorBoundary** — Catches lazy-load failures and render crashes. Fallback UI with reload button (hardcoded English since i18n context may be unavailable).
+
+- **Promise-basierte Sound-Koordination** — `playVictorySound()`, `playBubbleSound()`, `playInTheMoneySound()` geben `Promise<void>` zurück. `setTimeout`-Pattern durch `async/await` ersetzt — keine Race Conditions mehr.
+- **Promise-based sound coordination** — Sound functions return `Promise<void>`. `setTimeout` pattern replaced with `async/await` — no more race conditions.
+
+- **8 neue Tests**: advanceDealer (5), Promise-Sounds (3) — 203 Tests gesamt
+- **8 new tests**: advanceDealer (5), Promise sounds (3) — 203 tests total
+
+---
+
 ## [2.3.0] – 2026-03-05
 
 ### ElevenLabs MP3 Sprachausgabe (Deutsch + Englisch) / ElevenLabs MP3 Voice (German + English)

@@ -67,6 +67,8 @@ const de = {
   'controls.levelResetTooltip': 'Level zurücksetzen (R)',
   'controls.tournamentRestart': '⟲ Turnier Restart',
   'controls.tournamentRestartTooltip': 'Turnier neu starten',
+  'controls.lastHand': 'Letzte Hand',
+  'controls.lastHandTooltip': 'Letzte Hand ansagen (L)',
 
   // --- Player Panel ---
   'playerPanel.prizePool': 'Preisgeld',
@@ -82,6 +84,7 @@ const de = {
   'playerPanel.eliminated': 'Ausgeschieden',
   'playerPanel.reinstateTooltip': 'Eliminierung rückgängig machen',
   'playerPanel.reinstate': 'Zurück',
+  'playerPanel.advanceDealer': 'Dealer weiter',
   'playerPanel.by': 'von',
   'playerPanel.addOnAvailable': 'Add-On jetzt verfügbar! (einmalig pro Spieler)',
   'addOn.announcement': 'Add-On jetzt verfügbar!',
@@ -304,6 +307,8 @@ const de = {
   // --- Clean View ---
   'game.cleanViewOn': 'Details einblenden',
   'game.cleanViewOff': 'Details ausblenden',
+  'game.lastHand': 'LETZTE HAND!',
+  'game.lastHandHint': 'Diese Hand ist die letzte des aktuellen Levels',
 
   // --- Screenshot/Share ---
   'finished.shareResults': 'Ergebnis teilen / Screenshot',
@@ -437,6 +442,8 @@ const en: Record<TranslationKey, string> = {
   'controls.levelResetTooltip': 'Reset Level (R)',
   'controls.tournamentRestart': '⟲ Restart',
   'controls.tournamentRestartTooltip': 'Restart tournament',
+  'controls.lastHand': 'Last Hand',
+  'controls.lastHandTooltip': 'Announce last hand (L)',
 
   // --- Player Panel ---
   'playerPanel.prizePool': 'Prize Pool',
@@ -452,6 +459,7 @@ const en: Record<TranslationKey, string> = {
   'playerPanel.eliminated': 'Eliminated',
   'playerPanel.reinstateTooltip': 'Undo elimination',
   'playerPanel.reinstate': 'Undo',
+  'playerPanel.advanceDealer': 'Move Dealer',
   'playerPanel.by': 'by',
   'playerPanel.addOnAvailable': 'Add-On now available! (once per player)',
   'addOn.announcement': 'Add-On now available!',
@@ -674,6 +682,8 @@ const en: Record<TranslationKey, string> = {
   // --- Clean View ---
   'game.cleanViewOn': 'Show details',
   'game.cleanViewOff': 'Hide details',
+  'game.lastHand': 'LAST HAND!',
+  'game.lastHandHint': 'This is the last hand of the current level',
 
   // --- Screenshot/Share ---
   'finished.shareResults': 'Share Results / Screenshot',

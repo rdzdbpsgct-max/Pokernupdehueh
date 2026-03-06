@@ -62,8 +62,8 @@ export function playBeep(frequency: number, durationMs: number): void {
   }
 }
 
-/** Victory melody for tournament winner */
-export function playVictorySound() {
+/** Victory melody for tournament winner. Resolves after melody finishes (~1700ms). */
+export function playVictorySound(): Promise<void> {
   try {
     const ctx = getAudioContext();
     const t = ctx.currentTime;
@@ -75,13 +75,14 @@ export function playVictorySound() {
     playNote(ctx, 659, t + 0.70, 0.15, 0.2, 'triangle');  // E5
     playNote(ctx, 784, t + 0.85, 0.2, 0.25, 'triangle');  // G5
     playNote(ctx, 1047, t + 1.10, 0.6, 0.3, 'triangle');  // C6 (lang)
+    return new Promise(resolve => setTimeout(resolve, 1700));
   } catch {
-    // audio not available
+    return Promise.resolve();
   }
 }
 
-/** Tension sound for reaching the bubble */
-export function playBubbleSound() {
+/** Tension sound for reaching the bubble. Resolves after sound finishes (~1450ms). */
+export function playBubbleSound(): Promise<void> {
   try {
     const ctx = getAudioContext();
     const t = ctx.currentTime;
@@ -89,20 +90,22 @@ export function playBubbleSound() {
     playNote(ctx, 554, t + 0.35, 0.3, 0.25, 'sawtooth');  // C#5
     playNote(ctx, 440, t + 0.70, 0.2, 0.2, 'sawtooth');   // A4
     playNote(ctx, 554, t + 0.95, 0.5, 0.3, 'sawtooth');   // C#5 (held)
+    return new Promise(resolve => setTimeout(resolve, 1450));
   } catch {
-    // audio not available
+    return Promise.resolve();
   }
 }
 
-/** Short celebratory fanfare for reaching In The Money */
-export function playInTheMoneySound() {
+/** Short celebratory fanfare for reaching In The Money. Resolves after sound finishes (~700ms). */
+export function playInTheMoneySound(): Promise<void> {
   try {
     const ctx = getAudioContext();
     const t = ctx.currentTime;
     playNote(ctx, 523, t, 0.15, 0.2, 'triangle');         // C5
     playNote(ctx, 659, t + 0.15, 0.15, 0.2, 'triangle');  // E5
     playNote(ctx, 784, t + 0.30, 0.4, 0.25, 'triangle');  // G5 (held)
+    return new Promise(resolve => setTimeout(resolve, 700));
   } catch {
-    // audio not available
+    return Promise.resolve();
   }
 }

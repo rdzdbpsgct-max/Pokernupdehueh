@@ -18,6 +18,7 @@ interface Props {
   onUpdateAddOn: (playerId: string, hasAddOn: boolean) => void;
   onEliminatePlayer: (playerId: string, eliminatedBy: string | null) => void;
   onReinstatePlayer: (playerId: string) => void;
+  onAdvanceDealer: () => void;
 }
 
 export function PlayerPanel({
@@ -35,6 +36,7 @@ export function PlayerPanel({
   onUpdateAddOn,
   onEliminatePlayer,
   onReinstatePlayer,
+  onAdvanceDealer,
 }: Props) {
   const { t } = useTranslation();
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
@@ -149,9 +151,19 @@ export function PlayerPanel({
 
       {/* Active Players */}
       <div>
-        <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-          {t('playerPanel.activePlayers')} ({activePlayers.length})
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            {t('playerPanel.activePlayers')} ({activePlayers.length})
+          </h3>
+          {activePlayers.length > 1 && (
+            <button
+              onClick={onAdvanceDealer}
+              className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+            >
+              {t('playerPanel.advanceDealer')}
+            </button>
+          )}
+        </div>
         <div className="mt-1 space-y-1">
           {activePlayers.map((player) => {
             const seatIndex = players.indexOf(player);

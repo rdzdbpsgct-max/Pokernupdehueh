@@ -26,6 +26,7 @@ import {
   isBubble,
   isInTheMoney,
   computeBlindStructureSummary,
+  advanceDealer,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
@@ -45,6 +46,7 @@ import {
   announceColorUp,
   announceTournamentStart,
   announceHeadsUp,
+  announceLastHand,
   announceBounty,
   announceFiveMinutes,
   announceThreeRemaining,
@@ -104,6 +106,7 @@ function App() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showItmFlash, setShowItmFlash] = useState(false);
   const [cleanView, setCleanView] = useState(false);
+  const [lastHandActive, setLastHandActive] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -112,6 +115,15 @@ function App() {
   } | null>(null);
 
   const [pendingCheckpoint, setPendingCheckpoint] = useState<TournamentCheckpoint | null>(() => loadCheckpoint());
+
+  // Clock display in game mode — update every 30 seconds
+  const [clockTime, setClockTime] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  useEffect(() => {
+    if (mode !== 'game') return;
+    setClockTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    const id = setInterval(() => setClockTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })), 30000);
+    return () => clearInterval(id);
+  }, [mode]);
 
   // Index of the last rebuy level (for level-based rebuy).
   // Used by addOnPauseLevelIndex, addOnWindowOpen, and voice announcements.
@@ -265,6 +277,16 @@ function App() {
     });
   }, []);
 
+  // Toggle last hand announcement
+  const handleLastHand = useCallback(() => {
+    setLastHandActive((prev) => {
+      if (prev) return false; // toggle off
+      const nextIsBreak = config.levels[timer.timerState.currentLevelIndex + 1]?.type === 'break';
+      if (settings.voiceEnabled) announceLastHand(nextIsBreak, t);
+      return true;
+    });
+  }, [config.levels, timer.timerState.currentLevelIndex, settings.voiceEnabled, t]);
+
   // Keyboard shortcuts (only in game mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -293,11 +315,14 @@ function App() {
         case 'KeyF':
           toggleCleanView();
           break;
+        case 'KeyL':
+          handleLastHand();
+          break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, timer, t, toggleCleanView]);
+  }, [mode, timer, t, toggleCleanView, handleLastHand]);
 
   const toggleFullscreen = useCallback(() => {
     try {
@@ -347,6 +372,14 @@ function App() {
       players: prev.players.map((p) =>
         p.id === playerId ? { ...p, addOn: hasAddOn } : p,
       ),
+    }));
+  }, []);
+
+  // --- Advance dealer ---
+  const handleAdvanceDealer = useCallback(() => {
+    setConfig((prev) => ({
+      ...prev,
+      dealerIndex: advanceDealer(prev.players, prev.dealerIndex),
     }));
   }, []);
 
@@ -586,24 +619,21 @@ function App() {
   }, [config, t]);
 
   // Auto-pause timer and play victory sound/voice when tournament finishes
-  const victorySoundPlayedRef = useRef(false);
-  const victoryVoicePlayedRef = useRef(false);
+  const victoryPlayedRef = useRef(false);
   useEffect(() => {
     if (mode === 'game' && tournamentFinished) {
       timer.pause();
-      if (settings.soundEnabled && !victorySoundPlayedRef.current) {
-        victorySoundPlayedRef.current = true;
-        playVictorySound();
-      }
-      if (settings.voiceEnabled && !victoryVoicePlayedRef.current) {
-        victoryVoicePlayedRef.current = true;
-        // Voice after victory melody finishes (~1800ms)
-        setTimeout(() => announceWinner(t), settings.soundEnabled ? 1800 : 0);
+      if (!victoryPlayedRef.current) {
+        victoryPlayedRef.current = true;
+        const play = async () => {
+          if (settings.soundEnabled) await playVictorySound();
+          if (settings.voiceEnabled) announceWinner(t);
+        };
+        play();
       }
     }
     if (!tournamentFinished) {
-      victorySoundPlayedRef.current = false;
-      victoryVoicePlayedRef.current = false;
+      victoryPlayedRef.current = false;
     }
   }, [mode, tournamentFinished, timer, settings.soundEnabled, settings.voiceEnabled, t]);
 
@@ -615,17 +645,21 @@ function App() {
 
     // Bubble just started
     if (bubbleActive && !prevBubbleRef.current) {
-      if (settings.soundEnabled) playBubbleSound();
-      // Voice after bubble sound finishes (~1500ms)
-      if (settings.voiceEnabled) setTimeout(() => announceBubble(t), settings.soundEnabled ? 1500 : 0);
+      const play = async () => {
+        if (settings.soundEnabled) await playBubbleSound();
+        if (settings.voiceEnabled) announceBubble(t);
+      };
+      play();
     }
 
     // Bubble just ended (burst) → show ITM flash
     if (!bubbleActive && prevBubbleRef.current && inTheMoney) {
       setShowItmFlash(true);
-      if (settings.soundEnabled) playInTheMoneySound();
-      // Voice after ITM fanfare finishes (~750ms)
-      if (settings.voiceEnabled) setTimeout(() => announceInTheMoney(t), settings.soundEnabled ? 750 : 0);
+      const play = async () => {
+        if (settings.soundEnabled) await playInTheMoneySound();
+        if (settings.voiceEnabled) announceInTheMoney(t);
+      };
+      play();
       if (itmFlashTimeoutRef.current) clearTimeout(itmFlashTimeoutRef.current);
       itmFlashTimeoutRef.current = setTimeout(() => setShowItmFlash(false), 5000);
       prevBubbleRef.current = bubbleActive;
@@ -648,6 +682,7 @@ function App() {
     if (idx === prevLevelIdxVoiceRef.current) return;
     const prevIdx = prevLevelIdxVoiceRef.current;
     prevLevelIdxVoiceRef.current = idx;
+    setLastHandActive(false);
 
     const level = config.levels[idx];
     if (!level) return;
@@ -810,9 +845,9 @@ function App() {
     timer.restart();
     setAddOnEndLevelIndex(null);
     setShowItmFlash(false);
+    setLastHandActive(false);
     prevBubbleRef.current = false;
-    victorySoundPlayedRef.current = false;
-    victoryVoicePlayedRef.current = false;
+    victoryPlayedRef.current = false;
     fiveMinWarningRef.current = false;
     breakWarningRef.current = false;
     if (itmFlashTimeoutRef.current) {
@@ -885,7 +920,7 @@ function App() {
         setAddOnEndLevelIndex(null);
         setShowItmFlash(false);
         prevBubbleRef.current = false;
-        victorySoundPlayedRef.current = false;
+        victoryPlayedRef.current = false;
         if (itmFlashTimeoutRef.current) {
           clearTimeout(itmFlashTimeoutRef.current);
           itmFlashTimeoutRef.current = null;
@@ -907,9 +942,14 @@ function App() {
     <div className="min-h-full flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700/30 bg-gray-50/90 dark:bg-gray-900/50 backdrop-blur-sm">
-        <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-          {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+            {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
+          </h1>
+          {mode === 'game' && (
+            <span className="text-sm text-gray-400 dark:text-gray-500 font-mono tabular-nums">{clockTime}</span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
           <LanguageSwitcher />
@@ -1236,6 +1276,7 @@ function App() {
                   onUpdateAddOn={updatePlayerAddOn}
                   onEliminatePlayer={eliminatePlayer}
                   onReinstatePlayer={reinstatePlayer}
+                  onAdvanceDealer={handleAdvanceDealer}
                 />
               </aside>
             )}
@@ -1279,6 +1320,7 @@ function App() {
                   addOnWindowOpen={addOnWindowOpen}
                   addOnCost={config.addOn.cost}
                   addOnChips={config.addOn.chips}
+                  lastHandActive={lastHandActive}
                 />
                 {!cleanView && (
                   <RebuyStatus
@@ -1298,6 +1340,8 @@ function App() {
                   hideSecondaryControls={cleanView}
                   cleanView={cleanView}
                   onToggleCleanView={toggleCleanView}
+                  lastHandActive={lastHandActive}
+                  onLastHand={handleLastHand}
                 />
               </div>
 
