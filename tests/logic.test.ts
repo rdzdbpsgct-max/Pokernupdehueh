@@ -51,6 +51,14 @@ import {
   parseTemplateFile,
   computeBlindStructureSummary,
   advanceDealer,
+  buildTournamentResult,
+  saveTournamentResult,
+  loadTournamentHistory,
+  deleteTournamentResult,
+  clearTournamentHistory,
+  formatResultAsText,
+  formatResultAsCSV,
+  computePlayerStats,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -2123,5 +2131,303 @@ describe('audioPlayer module', () => {
     const { playAudioSequence } = await import('../src/domain/audioPlayer');
     // jsdom does not have AudioContext — should reject gracefully
     await expect(playAudioSequence(['test.mp3'])).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tournament History
+// ---------------------------------------------------------------------------
+describe('buildTournamentResult', () => {
+  const levels: Level[] = [
+    { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 },
+    { id: '2', type: 'break', durationSeconds: 300 },
+    { id: '3', type: 'level', durationSeconds: 600, smallBlind: 50, bigBlind: 100 },
+  ];
+
+  it('builds a result with correct structure', () => {
+    const config = makeConfig({
+      name: 'Friday Night',
+      levels,
+      buyIn: 10,
+      players: [
+        makePlayer({ id: '1', name: 'Alice', status: 'active', knockouts: 2 }),
+        makePlayer({ id: '2', name: 'Bob', status: 'eliminated', placement: 3, eliminatedBy: '1' }),
+        makePlayer({ id: '3', name: 'Carol', status: 'eliminated', placement: 2, eliminatedBy: '1' }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 70 }, { place: 2, value: 30 }] },
+    });
+    const result = buildTournamentResult(config, 1500, 3);
+    expect(result.name).toBe('Friday Night');
+    expect(result.playerCount).toBe(3);
+    expect(result.prizePool).toBe(30);
+    expect(result.levelsPlayed).toBe(3);
+    expect(result.elapsedSeconds).toBe(1500);
+    expect(result.players).toHaveLength(3);
+    // Winner should be first
+    expect(result.players[0].name).toBe('Alice');
+    expect(result.players[0].place).toBe(1);
+    expect(result.players[0].payout).toBe(21); // 70% of 30
+    expect(result.players[0].netBalance).toBe(11); // 21 - 10
+    // Second place
+    expect(result.players[1].name).toBe('Carol');
+    expect(result.players[1].place).toBe(2);
+    expect(result.players[1].payout).toBe(9); // 30% of 30
+    // Third place — no payout
+    expect(result.players[2].name).toBe('Bob');
+    expect(result.players[2].place).toBe(3);
+    expect(result.players[2].payout).toBe(0);
+    expect(result.players[2].netBalance).toBe(-10);
+  });
+
+  it('accounts for rebuys and add-ons in net balance', () => {
+    const config = makeConfig({
+      name: 'Rebuy Night',
+      levels,
+      buyIn: 10,
+      rebuy: { enabled: true, limitType: 'levels', levelLimit: 4, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 },
+      addOn: { enabled: true, cost: 5, chips: 10000 },
+      players: [
+        makePlayer({ id: '1', name: 'Alice', status: 'active', rebuys: 2, addOn: true }),
+        makePlayer({ id: '2', name: 'Bob', status: 'eliminated', placement: 2, rebuys: 1 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
+    });
+    const result = buildTournamentResult(config, 900, 2);
+    // Prizepool: 2*10 + 3*10 + 1*5 = 55
+    expect(result.prizePool).toBe(55);
+    expect(result.totalRebuys).toBe(3);
+    expect(result.totalAddOns).toBe(1);
+    // Alice: payout=55, cost=10+20+5=35, net=20
+    expect(result.players[0].netBalance).toBe(20);
+    // Bob: payout=0, cost=10+10=20, net=-20
+    expect(result.players[1].netBalance).toBe(-20);
+  });
+});
+
+describe('Tournament History persistence', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('save and load round-trip', () => {
+    const levels: Level[] = [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }];
+    const config = makeConfig({
+      name: 'Test',
+      levels,
+      buyIn: 10,
+      players: [
+        makePlayer({ id: '1', name: 'A', status: 'active' }),
+        makePlayer({ id: '2', name: 'B', status: 'eliminated', placement: 2 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
+    });
+    const result = buildTournamentResult(config, 600, 1);
+    saveTournamentResult(result);
+    const history = loadTournamentHistory();
+    expect(history).toHaveLength(1);
+    expect(history[0].name).toBe('Test');
+    expect(history[0].id).toBe(result.id);
+  });
+
+  it('delete removes a specific entry', () => {
+    const levels: Level[] = [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }];
+    const config = makeConfig({
+      name: 'T1',
+      levels,
+      buyIn: 5,
+      players: [
+        makePlayer({ id: '1', name: 'A', status: 'active' }),
+        makePlayer({ id: '2', name: 'B', status: 'eliminated', placement: 2 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
+    });
+    const r1 = buildTournamentResult(config, 600, 1);
+    saveTournamentResult(r1);
+    const r2 = buildTournamentResult({ ...config, name: 'T2' }, 800, 2);
+    saveTournamentResult(r2);
+    expect(loadTournamentHistory()).toHaveLength(2);
+    deleteTournamentResult(r1.id);
+    const remaining = loadTournamentHistory();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].name).toBe('T2');
+  });
+
+  it('caps history at 50 entries', () => {
+    const levels: Level[] = [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }];
+    const config = makeConfig({
+      name: 'Cap',
+      levels,
+      buyIn: 5,
+      players: [
+        makePlayer({ id: '1', name: 'A', status: 'active' }),
+        makePlayer({ id: '2', name: 'B', status: 'eliminated', placement: 2 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
+    });
+    for (let i = 0; i < 55; i++) {
+      saveTournamentResult(buildTournamentResult({ ...config, name: `T${i}` }, 600, 1));
+    }
+    const history = loadTournamentHistory();
+    expect(history).toHaveLength(50);
+    // Most recent should be first
+    expect(history[0].name).toBe('T54');
+  });
+
+  it('clearTournamentHistory removes all', () => {
+    const levels: Level[] = [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }];
+    const config = makeConfig({
+      name: 'X',
+      levels,
+      buyIn: 5,
+      players: [
+        makePlayer({ id: '1', name: 'A', status: 'active' }),
+        makePlayer({ id: '2', name: 'B', status: 'eliminated', placement: 2 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
+    });
+    saveTournamentResult(buildTournamentResult(config, 600, 1));
+    expect(loadTournamentHistory()).toHaveLength(1);
+    clearTournamentHistory();
+    expect(loadTournamentHistory()).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Text & CSV Export
+// ---------------------------------------------------------------------------
+describe('formatResultAsText', () => {
+  it('produces WhatsApp-friendly text', () => {
+    const result = {
+      id: 'test-id',
+      name: 'Friday Night',
+      date: '2026-01-15T20:00:00.000Z',
+      playerCount: 3,
+      buyIn: 10,
+      prizePool: 30,
+      players: [
+        { name: 'Alice', place: 1, payout: 21, rebuys: 0, addOn: false, knockouts: 2, bountyEarned: 0, netBalance: 11 },
+        { name: 'Carol', place: 2, payout: 9, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -1 },
+        { name: 'Bob', place: 3, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+      ],
+      bountyEnabled: false, bountyAmount: 0,
+      rebuyEnabled: false, totalRebuys: 0,
+      addOnEnabled: false, totalAddOns: 0,
+      elapsedSeconds: 1500, levelsPlayed: 3,
+    };
+    const text = formatResultAsText(result);
+    expect(text).toContain('♠♥ Friday Night ♦♣');
+    expect(text).toContain('🏆 Alice → 21.00 €');
+    expect(text).toContain('🥈 Carol → 9.00 €');
+    expect(text).toContain('🥉 Bob');
+    expect(text).toContain('Prizepool: 30.00 €');
+  });
+});
+
+describe('formatResultAsCSV', () => {
+  it('produces valid CSV', () => {
+    const result = {
+      id: 'test-id',
+      name: 'Test',
+      date: '2026-01-15T20:00:00.000Z',
+      playerCount: 2,
+      buyIn: 10,
+      prizePool: 20,
+      players: [
+        { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 1, bountyEarned: 0, netBalance: 10 },
+        { name: 'Bob', place: 2, payout: 0, rebuys: 1, addOn: true, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+      ],
+      bountyEnabled: false, bountyAmount: 0,
+      rebuyEnabled: true, totalRebuys: 1,
+      addOnEnabled: true, totalAddOns: 1,
+      elapsedSeconds: 900, levelsPlayed: 2,
+    };
+    const csv = formatResultAsCSV(result);
+    const lines = csv.split('\n');
+    expect(lines[0]).toBe('Place,Name,Payout,Rebuys,AddOn,Knockouts,NetBalance');
+    expect(lines[1]).toContain('"Alice"');
+    expect(lines[2]).toContain('"Bob"');
+    expect(lines).toHaveLength(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Player Statistics
+// ---------------------------------------------------------------------------
+describe('computePlayerStats', () => {
+  it('aggregates across multiple tournaments', () => {
+    const history = [
+      {
+        id: '1', name: 'T1', date: '2026-01-01', playerCount: 3, buyIn: 10, prizePool: 30,
+        players: [
+          { name: 'Alice', place: 1, payout: 21, rebuys: 0, addOn: false, knockouts: 2, bountyEarned: 0, netBalance: 11 },
+          { name: 'Bob', place: 2, payout: 9, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -1 },
+          { name: 'Carol', place: 3, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+        bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false, totalRebuys: 0,
+        addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 1500, levelsPlayed: 3,
+      },
+      {
+        id: '2', name: 'T2', date: '2026-01-08', playerCount: 3, buyIn: 10, prizePool: 30,
+        players: [
+          { name: 'Bob', place: 1, payout: 21, rebuys: 0, addOn: false, knockouts: 1, bountyEarned: 0, netBalance: 11 },
+          { name: 'Alice', place: 2, payout: 9, rebuys: 0, addOn: false, knockouts: 1, bountyEarned: 0, netBalance: -1 },
+          { name: 'Carol', place: 3, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+        bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false, totalRebuys: 0,
+        addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 1200, levelsPlayed: 2,
+      },
+    ];
+    const stats = computePlayerStats(history);
+    expect(stats).toHaveLength(3);
+    // Alice: net 11 + -1 = 10, should be first
+    const alice = stats.find((s) => s.name === 'Alice')!;
+    expect(alice.tournaments).toBe(2);
+    expect(alice.wins).toBe(1);
+    expect(alice.cashes).toBe(2);
+    expect(alice.netBalance).toBe(10);
+    expect(alice.avgPlace).toBe(1.5);
+    expect(alice.bestPlace).toBe(1);
+    expect(alice.knockouts).toBe(3);
+    // Bob: net -1 + 11 = 10
+    const bob = stats.find((s) => s.name === 'Bob')!;
+    expect(bob.wins).toBe(1);
+    expect(bob.netBalance).toBe(10);
+    // Carol: always 3rd
+    const carol = stats.find((s) => s.name === 'Carol')!;
+    expect(carol.tournaments).toBe(2);
+    expect(carol.wins).toBe(0);
+    expect(carol.cashes).toBe(0);
+    expect(carol.netBalance).toBe(-20);
+    expect(carol.avgPlace).toBe(3);
+  });
+
+  it('normalizes player names (case-insensitive)', () => {
+    const history = [
+      {
+        id: '1', name: 'T1', date: '2026-01-01', playerCount: 2, buyIn: 10, prizePool: 20,
+        players: [
+          { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 10 },
+          { name: 'bob', place: 2, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+        bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false, totalRebuys: 0,
+        addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 600, levelsPlayed: 1,
+      },
+      {
+        id: '2', name: 'T2', date: '2026-01-08', playerCount: 2, buyIn: 10, prizePool: 20,
+        players: [
+          { name: 'Bob', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 10 },
+          { name: 'ALICE', place: 2, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+        bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false, totalRebuys: 0,
+        addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 600, levelsPlayed: 1,
+      },
+    ];
+    const stats = computePlayerStats(history);
+    // Should be 2 players, not 4
+    expect(stats).toHaveLength(2);
+  });
+
+  it('returns empty array for empty history', () => {
+    expect(computePlayerStats([])).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
-import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, formatResultAsText, formatResultAsCSV, loadTournamentHistory } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
 import { ChevronIcon } from './ChevronIcon';
@@ -30,7 +30,36 @@ export function TournamentFinished({
   const { resolved: theme } = useTheme();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const getLatestResult = useCallback(() => {
+    const history = loadTournamentHistory();
+    return history.length > 0 ? history[0] : null;
+  }, []);
+
+  const handleCopyText = useCallback(async () => {
+    const result = getLatestResult();
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(formatResultAsText(result));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard not available */ }
+  }, [getLatestResult]);
+
+  const handleDownloadCSV = useCallback(() => {
+    const result = getLatestResult();
+    if (!result) return;
+    const csv = formatResultAsCSV(result);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${result.name || 'tournament'}-${new Date(result.date).toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [getLatestResult]);
 
   const captureScreenshot = useCallback(async () => {
     if (!resultsRef.current || capturing) return;
@@ -330,8 +359,8 @@ export function TournamentFinished({
           </div>
         </div>
 
-        {/* Share / Screenshot */}
-        <div className="pt-2">
+        {/* Share / Screenshot / Export */}
+        <div className="pt-2 space-y-2">
           <button
             onClick={captureScreenshot}
             disabled={capturing}
@@ -339,6 +368,20 @@ export function TournamentFinished({
           >
             {capturing ? t('finished.capturing') : t('finished.shareResults')}
           </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleCopyText}
+              className="flex-1 px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40"
+            >
+              {copied ? t('finished.textCopied') : t('finished.copyText')}
+            </button>
+            <button
+              onClick={handleDownloadCSV}
+              className="flex-1 px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40"
+            >
+              {t('finished.downloadCSV')}
+            </button>
+          </div>
         </div>
 
         {/* Back to setup */}

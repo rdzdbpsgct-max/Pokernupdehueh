@@ -2,6 +2,8 @@ import type {
   Level,
   TournamentConfig,
   TournamentCheckpoint,
+  TournamentResult,
+  PlayerResult,
   TimerState,
   Settings,
   Player,
@@ -1172,6 +1174,181 @@ export function loadCheckpoint(): TournamentCheckpoint | null {
 
 export function clearCheckpoint(): void {
   try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament History (persistent results)
+// ---------------------------------------------------------------------------
+
+const HISTORY_KEY = 'poker-timer-history';
+const MAX_HISTORY = 50;
+
+export function buildTournamentResult(
+  config: TournamentConfig,
+  elapsedSeconds: number,
+  levelsPlayed: number,
+): TournamentResult {
+  const prizePool = computePrizePool(
+    config.players, config.buyIn,
+    config.rebuy.enabled ? config.rebuy.rebuyCost : undefined,
+    config.addOn.enabled ? config.addOn.cost : undefined,
+  );
+  const payouts = computePayouts(config.payout, prizePool);
+  const payoutMap = new Map(payouts.map((p) => [p.place, p.amount]));
+
+  const sorted = [...config.players].sort((a, b) => {
+    if (a.status === 'active' && b.status !== 'active') return -1;
+    if (b.status === 'active' && a.status !== 'active') return 1;
+    if (a.placement != null && b.placement != null) return a.placement - b.placement;
+    return 0;
+  });
+
+  const players: PlayerResult[] = sorted.map((p, i) => {
+    const place = p.status === 'active' ? 1 : (p.placement ?? i + 1);
+    const payout = payoutMap.get(place) ?? 0;
+    const totalCost = config.buyIn
+      + p.rebuys * (config.rebuy.enabled ? config.rebuy.rebuyCost : config.buyIn)
+      + (p.addOn ? (config.addOn.enabled ? config.addOn.cost : config.buyIn) : 0);
+    const bountyEarned = config.bounty.enabled ? p.knockouts * config.bounty.amount : 0;
+    return {
+      name: p.name,
+      place,
+      payout,
+      rebuys: p.rebuys,
+      addOn: p.addOn,
+      knockouts: p.knockouts,
+      bountyEarned,
+      netBalance: payout + bountyEarned - totalCost,
+    };
+  });
+
+  return {
+    id: crypto.randomUUID(),
+    name: config.name,
+    date: new Date().toISOString(),
+    playerCount: config.players.length,
+    buyIn: config.buyIn,
+    prizePool,
+    players,
+    bountyEnabled: config.bounty.enabled,
+    bountyAmount: config.bounty.amount,
+    rebuyEnabled: config.rebuy.enabled,
+    totalRebuys: computeTotalRebuys(config.players),
+    addOnEnabled: config.addOn.enabled,
+    totalAddOns: computeTotalAddOns(config.players),
+    elapsedSeconds,
+    levelsPlayed,
+  };
+}
+
+export function saveTournamentResult(result: TournamentResult): void {
+  try {
+    const history = loadTournamentHistory();
+    history.unshift(result);
+    if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch { /* private browsing or quota exceeded */ }
+}
+
+export function loadTournamentHistory(): TournamentResult[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as TournamentResult[];
+  } catch {
+    return [];
+  }
+}
+
+export function deleteTournamentResult(id: string): void {
+  try {
+    const history = loadTournamentHistory();
+    const filtered = history.filter((r) => r.id !== id);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
+  } catch { /* ignore */ }
+}
+
+export function clearTournamentHistory(): void {
+  try { localStorage.removeItem(HISTORY_KEY); } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament Result — Text & CSV Export
+// ---------------------------------------------------------------------------
+
+const PLACE_EMOJI = ['🏆', '🥈', '🥉'];
+
+export function formatResultAsText(result: TournamentResult): string {
+  const lines: string[] = [];
+  lines.push(`♠♥ ${result.name || 'Poker Tournament'} ♦♣`);
+  lines.push(new Date(result.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }));
+  lines.push('');
+  for (const p of result.players) {
+    const emoji = PLACE_EMOJI[p.place - 1] ?? `${p.place}.`;
+    const payoutStr = p.payout > 0 ? ` → ${p.payout.toFixed(2)} €` : '';
+    lines.push(`${emoji} ${p.name}${payoutStr}`);
+  }
+  lines.push('');
+  lines.push(`Prizepool: ${result.prizePool.toFixed(2)} € | ${result.playerCount} Spieler`);
+  if (result.totalRebuys > 0) lines.push(`Rebuys: ${result.totalRebuys}`);
+  return lines.join('\n');
+}
+
+export function formatResultAsCSV(result: TournamentResult): string {
+  const header = 'Place,Name,Payout,Rebuys,AddOn,Knockouts,NetBalance';
+  const rows = result.players.map((p) =>
+    [p.place, `"${p.name}"`, p.payout.toFixed(2), p.rebuys, p.addOn ? 1 : 0, p.knockouts, p.netBalance.toFixed(2)].join(','),
+  );
+  return [header, ...rows].join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Player Statistics (cross-tournament aggregation)
+// ---------------------------------------------------------------------------
+
+export function computePlayerStats(history: TournamentResult[]): import('./types').PlayerStat[] {
+  const map = new Map<string, import('./types').PlayerStat>();
+
+  for (const tournament of history) {
+    for (const p of tournament.players) {
+      const key = p.name.toLowerCase().trim();
+      let stat = map.get(key);
+      if (!stat) {
+        stat = {
+          name: p.name,
+          tournaments: 0,
+          wins: 0,
+          cashes: 0,
+          totalPayout: 0,
+          totalCost: 0,
+          netBalance: 0,
+          avgPlace: 0,
+          bestPlace: Infinity,
+          knockouts: 0,
+        };
+        map.set(key, stat);
+      }
+      stat.tournaments++;
+      if (p.place === 1) stat.wins++;
+      if (p.payout > 0) stat.cashes++;
+      stat.totalPayout += p.payout + p.bountyEarned;
+      stat.totalCost += p.payout + p.bountyEarned - p.netBalance; // totalCost = payout + bounty - netBalance
+      stat.netBalance += p.netBalance;
+      stat.avgPlace += p.place;
+      if (p.place < stat.bestPlace) stat.bestPlace = p.place;
+      stat.knockouts += p.knockouts;
+    }
+  }
+
+  const stats = [...map.values()];
+  for (const s of stats) {
+    s.avgPlace = Math.round((s.avgPlace / s.tournaments) * 10) / 10;
+    if (s.bestPlace === Infinity) s.bestPlace = 0;
+  }
+  stats.sort((a, b) => b.netBalance - a.netBalance);
+  return stats;
 }
 
 export function exportConfigJSON(config: TournamentConfig): string {

@@ -6,7 +6,7 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.5.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.6.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
 [![Tests](https://img.shields.io/badge/Tests-203%20passed-brightgreen?style=flat-square)](#)
@@ -158,6 +158,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
 | Persistence | Automatic saving in browser (localStorage) |
 | Tournament checkpoint | Auto-save game state, recovery after browser crash |
+| Tournament history | Persistent results across sessions (max 50), expandable standings, player statistics, WhatsApp text copy, CSV download |
 | Accessibility | ARIA labels, dialog roles, auto-focus, escape-to-close |
 | Compatibility | Safe area insets, dynamic viewport height, optimized touch targets, numeric keyboard, tablet layout |
 | Usability | Collapsible sections with summary badges, collapsible blind structure, sticky start button on mobile |
@@ -258,6 +259,7 @@ src/
     TimerDisplay.tsx     # Timer-Anzeige / Timer display
     ConfigEditor.tsx     # Blindstruktur-Editor / Blind structure editor
     DisplayMode.tsx      # TV-Display mit rotierenden Screens / TV display with rotating screens
+    TournamentHistory.tsx # Turnier-Historie mit Statistiken & Export / Tournament history with stats & export
     ErrorBoundary.tsx    # React-Error-Boundary mit Reload / Error boundary with reload
     BlindGenerator.tsx   # Blindstruktur-Generator / Blind structure generator
     PlayerManager.tsx    # Spielerverwaltung / Player management (Drag & Drop)

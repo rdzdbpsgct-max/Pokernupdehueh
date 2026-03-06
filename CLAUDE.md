@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.5.0
+**Version**: 2.6.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (203 tests, single run)
+npm run test         # Vitest run (214 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -66,7 +66,8 @@ src/
 │   ├── ThemeSwitcher.tsx        # System/Light/Dark 3-way toggle
 │   ├── VoiceSwitcher.tsx        # Sound/Voice segmented toggle in header
 │   ├── TimerDisplay.tsx         # Main timer, blinds display, progress bar
-│   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share
+│   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share/text-copy/CSV
+│   ├── TournamentHistory.tsx    # Tournament history modal with standings, player stats, export
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
@@ -85,7 +86,7 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~480+ keys)
+    ├── translations.ts          # DE/EN translation strings (~530+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
@@ -104,7 +105,7 @@ public/
 - **useTimer** hook manages timer state with drift-free wall-clock computation
 - **Props drilling** for passing state and callbacks to child components
 - **React Context** for i18n (language selection) and theme (dark/light mode)
-- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`
+- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`, `poker-timer-history`
 
 ### Component Conventions
 - Functional components with hooks only (no class components)
@@ -186,6 +187,7 @@ public/
 - **Last Hand**: Toggle button (L key) + amber banner via `BubbleIndicator`, voice announcement via `announceLastHand()` (distinguishes before-break vs end-of-level), auto-reset on level change
 - **Dealer auto-rotation**: `advanceDealer()` in logic.ts skips eliminated players with wrap-around; button in PlayerPanel header
 - **ErrorBoundary**: React class component in `main.tsx` wrapping entire app; catches lazy-load failures and render errors; hardcoded English fallback UI with reload button
+- **Tournament history**: Persistent result storage in `poker-timer-history` (localStorage, max 50 entries). Auto-save on tournament finish. `TournamentHistory.tsx` modal with expandable standings, player statistics tab (`computePlayerStats` aggregation by normalized name), text export (WhatsApp-friendly), CSV download. Accessible from setup header "Historie" button.
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -225,6 +227,18 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.6.0 — Turnier-Historie, Spieler-Statistiken & Export
+
+- **Turnier-Historie**: Ergebnisse werden automatisch nach Turnierende in localStorage gespeichert (max 50 Einträge). Neue `TournamentHistory.tsx` Modal-Komponente mit aufklappbaren Turniereinträgen (Datum, Name, Sieger, Spielerzahl, Prizepool), vollständiger Standings-Tabelle, Einzel-/Gesamt-Löschfunktion.
+- **Spieler-Statistiken**: Tab „Spielerstatistik" im Historie-Modal aggregiert alle Ergebnisse nach normalisiertem Spielernamen — zeigt Turniere, Siege, Cashes, Auszahlung, Einsatz, Bilanz, Ø Platz, Knockouts. Sortiert nach Netto-Bilanz.
+- **Text-Export (WhatsApp)**: „Text kopieren" Button in TournamentFinished + TournamentHistory — WhatsApp-freundliches Format mit Emoji-Platzierungen (🏆🥈🥉), Prizepool, Spielerzahl.
+- **CSV-Export**: „CSV herunterladen" Button — vollständige Turnierdaten als CSV (Place, Name, Payout, Rebuys, AddOn, Knockouts, NetBalance).
+- **Neue Interfaces**: `PlayerResult`, `TournamentResult`, `PlayerStat` in types.ts
+- **Neue Funktionen**: `buildTournamentResult`, `saveTournamentResult`, `loadTournamentHistory`, `deleteTournamentResult`, `clearTournamentHistory`, `formatResultAsText`, `formatResultAsCSV`, `computePlayerStats` in logic.ts
+- **Neue Datei**: `src/components/TournamentHistory.tsx`
+- **50 neue Translation-Keys** (27 DE + 27 EN): `history.*`, `app.history`, `finished.copyText/textCopied/downloadCSV/exportOptions`
+- **11 neue Tests**: buildTournamentResult (2), Persistence CRUD (4), formatResultAsText, formatResultAsCSV, computePlayerStats (3) — 214 Tests gesamt
 
 ### v2.5.0 — TV-Display-Modus
 

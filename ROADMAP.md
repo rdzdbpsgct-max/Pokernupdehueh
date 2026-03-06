@@ -229,7 +229,7 @@ Professionellere Präsentation, Differenzierung zum Wettbewerb.
 
 ---
 
-## Phase 3: Turnier-Historie (v2.6.0)
+## Phase 3: Turnier-Historie (v2.6.0) ✅ DONE
 
 Session-übergreifender Mehrwert — die App „erinnert sich".
 

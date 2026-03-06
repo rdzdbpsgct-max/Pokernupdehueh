@@ -27,6 +27,8 @@ import {
   isInTheMoney,
   computeBlindStructureSummary,
   advanceDealer,
+  buildTournamentResult,
+  saveTournamentResult,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useTranslation } from './i18n';
@@ -66,6 +68,7 @@ import { BountyEditor } from './components/BountyEditor';
 import { ChipEditor } from './components/ChipEditor';
 import { BlindGenerator } from './components/BlindGenerator';
 import { TemplateManager } from './components/TemplateManager';
+import { TournamentHistory } from './components/TournamentHistory';
 import { CollapsibleSection } from './components/CollapsibleSection';
 import { CollapsibleSubSection } from './components/CollapsibleSubSection';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -105,6 +108,7 @@ function App() {
   const [showPlayerPanel, setShowPlayerPanel] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [showItmFlash, setShowItmFlash] = useState(false);
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
@@ -598,12 +602,20 @@ function App() {
     return config.players.filter((p) => p.status === 'active').length === 1;
   }, [config.players]);
 
-  // Clear checkpoint when tournament finishes
+  // Clear checkpoint and save result when tournament finishes
+  const resultSavedRef = useRef(false);
   useEffect(() => {
     if (mode === 'game' && tournamentFinished) {
       clearCheckpoint();
+      if (!resultSavedRef.current) {
+        resultSavedRef.current = true;
+        saveTournamentResult(buildTournamentResult(config, tournamentElapsed, currentPlayLevel));
+      }
     }
-  }, [mode, tournamentFinished]);
+    if (!tournamentFinished) {
+      resultSavedRef.current = false;
+    }
+  }, [mode, tournamentFinished, config, tournamentElapsed, currentPlayLevel]);
 
   const winner = useMemo(() => {
     if (!tournamentFinished) return null;
@@ -986,12 +998,20 @@ function App() {
             {mode === 'setup' ? t('app.startGame') : t('app.setup')}
           </button>
           {mode === 'setup' && (
-            <button
-              onClick={() => setShowTemplates(true)}
-              className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
-            >
-              {t('app.templates')}
-            </button>
+            <>
+              <button
+                onClick={() => setShowTemplates(true)}
+                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+              >
+                {t('app.templates')}
+              </button>
+              <button
+                onClick={() => setShowHistory(true)}
+                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+              >
+                {t('app.history')}
+              </button>
+            </>
           )}
         </div>
       </header>
@@ -1442,6 +1462,10 @@ function App() {
           onLoad={setConfig}
           onClose={() => setShowTemplates(false)}
         />
+      )}
+
+      {showHistory && (
+        <TournamentHistory onClose={() => setShowHistory(false)} />
       )}
 
       {/* Confirm Action Modal */}

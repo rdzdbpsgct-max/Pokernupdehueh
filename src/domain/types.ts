@@ -112,6 +112,48 @@ export interface TournamentCheckpoint {
   savedAt: string; // ISO timestamp
 }
 
+export interface PlayerResult {
+  name: string;
+  place: number;
+  payout: number;
+  rebuys: number;
+  addOn: boolean;
+  knockouts: number;
+  bountyEarned: number;
+  netBalance: number;
+}
+
+export interface TournamentResult {
+  id: string;
+  name: string;
+  date: string; // ISO timestamp
+  playerCount: number;
+  buyIn: number;
+  prizePool: number;
+  players: PlayerResult[];
+  bountyEnabled: boolean;
+  bountyAmount: number;
+  rebuyEnabled: boolean;
+  totalRebuys: number;
+  addOnEnabled: boolean;
+  totalAddOns: number;
+  elapsedSeconds: number;
+  levelsPlayed: number;
+}
+
+export interface PlayerStat {
+  name: string;
+  tournaments: number;
+  wins: number;
+  cashes: number;
+  totalPayout: number;
+  totalCost: number;
+  netBalance: number;
+  avgPlace: number;
+  bestPlace: number;
+  knockouts: number;
+}
+
 export type TimerStatus = 'stopped' | 'running' | 'paused';
 
 export interface TimerState {

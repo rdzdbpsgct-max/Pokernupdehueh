@@ -5,6 +5,22 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.6.0] – 2026-03-06
+
+### Turnier-Historie, Spieler-Statistiken & Export
+
+- **Turnier-Historie**: Ergebnisse werden automatisch nach Turnierende in localStorage gespeichert (max 50 Einträge, `poker-timer-history`). Neue `TournamentHistory.tsx` Modal-Komponente mit aufklappbaren Turniereinträgen (ChevronIcon), vollständiger Standings-Tabelle mit Farbkodierung (Bilanz grün/rot), Einzel-/Gesamt-Löschfunktion mit Confirm-Dialog.
+- **Spieler-Statistiken**: Tab „Spielerstatistik" im Historie-Modal. `computePlayerStats()` aggregiert alle Ergebnisse nach normalisiertem Spielernamen (`toLowerCase().trim()`). Zeigt Turniere, Siege, Cashes, Auszahlung, Einsatz, Bilanz, Ø Platz, Knockouts. Sortiert nach Netto-Bilanz.
+- **Text-Export (WhatsApp)**: „Text kopieren" Button in TournamentFinished + TournamentHistory — `formatResultAsText()` erzeugt WhatsApp-freundliches Format mit Emoji-Platzierungen (🏆🥈🥉), Prizepool, Spielerzahl. Clipboard API.
+- **CSV-Export**: „CSV herunterladen" Button — `formatResultAsCSV()` erzeugt vollständige Turnierdaten (Place, Name, Payout, Rebuys, AddOn, Knockouts, NetBalance). Blob Download.
+- **Auto-Save**: Turnierergebnis wird automatisch beim Finish gespeichert (kein manueller Schritt). Ref-basierte Einmalausführung.
+- **Neue Interfaces**: `PlayerResult`, `TournamentResult`, `PlayerStat` in types.ts
+- **Neue Datei**: `src/components/TournamentHistory.tsx` (~290 Zeilen)
+- **50 neue Translation-Keys** (27 DE + 27 EN): `history.*`, `app.history`, `finished.copyText/textCopied/downloadCSV/exportOptions`
+- **11 neue Tests**: buildTournamentResult (2), Persistence CRUD (4), formatResultAsText, formatResultAsCSV, computePlayerStats (3) — **214 Tests gesamt**
+
+---
+
 ## [2.5.0] – 2026-03-06
 
 ### TV-Display-Modus
