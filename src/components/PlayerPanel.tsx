@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
-import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts } from '../domain/logic';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, findChipLeader } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
@@ -19,6 +19,9 @@ interface Props {
   onEliminatePlayer: (playerId: string, eliminatedBy: string | null) => void;
   onReinstatePlayer: (playerId: string) => void;
   onAdvanceDealer: () => void;
+  onUpdateStack?: (playerId: string, chips: number) => void;
+  onInitStacks?: () => void;
+  onClearStacks?: () => void;
 }
 
 export function PlayerPanel({
@@ -37,6 +40,9 @@ export function PlayerPanel({
   onEliminatePlayer,
   onReinstatePlayer,
   onAdvanceDealer,
+  onUpdateStack,
+  onInitStacks,
+  onClearStacks,
 }: Props) {
   const { t } = useTranslation();
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
@@ -54,6 +60,9 @@ export function PlayerPanel({
     if (maxLen <= 18) return 'text-[11px]';
     return 'text-[10px]';
   }, [players]);
+
+  const chipLeaderId = useMemo(() => findChipLeader(players), [players]);
+  const hasAnyStacks = useMemo(() => players.some((p) => p.chips !== undefined), [players]);
 
   const activePlayers = players.filter((p) => p.status === 'active');
   const eliminatedPlayers = [...players]
@@ -149,6 +158,32 @@ export function PlayerPanel({
         </div>
       )}
 
+      {/* Stack Tracking */}
+      {onInitStacks && onClearStacks && (
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            {t('playerPanel.stackTracking')}
+          </h3>
+          <div className="flex gap-1">
+            {!hasAnyStacks ? (
+              <button
+                onClick={onInitStacks}
+                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+              >
+                {t('playerPanel.initStacks')}
+              </button>
+            ) : (
+              <button
+                onClick={onClearStacks}
+                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+              >
+                {t('playerPanel.clearStacks')}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Active Players */}
       <div>
         <div className="flex items-center justify-between">
@@ -182,6 +217,9 @@ export function PlayerPanel({
                 <span className={`${nameSizeClass} text-gray-800 dark:text-gray-200 truncate`}>
                   {player.name}
                 </span>
+                {chipLeaderId === player.id && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-bold shrink-0 ring-2 ring-amber-400/30" title={t('playerPanel.chipLeader')}>C</span>
+                )}
                 {bountyConfig.enabled && player.knockouts > 0 && (
                   <span className="text-xs text-amber-600 dark:text-amber-400 shrink-0 ml-auto">
                     {player.knockouts} KO
@@ -192,7 +230,26 @@ export function PlayerPanel({
                     {player.rebuys} RB
                   </span>
                 )}
+                {player.chips !== undefined && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-mono shrink-0 ml-auto">
+                    {player.chips.toLocaleString()}
+                  </span>
+                )}
               </div>
+
+              {/* Stack edit row */}
+              {player.chips !== undefined && onUpdateStack && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">{t('playerPanel.stack')}</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={player.chips}
+                    onChange={(e) => onUpdateStack(player.id, Math.max(0, Number(e.target.value) || 0))}
+                    className="w-20 px-1 py-0.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/40 rounded text-xs text-right font-mono text-gray-800 dark:text-gray-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/25"
+                  />
+                </div>
+              )}
 
               {/* Controls row — below name */}
               <div className="flex items-center gap-1.5 mt-1">

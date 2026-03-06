@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.8.0
+**Version**: 2.9.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (222 tests, single run)
+npm run test         # Vitest run (233 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -89,7 +89,7 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~530+ keys)
+    ├── translations.ts          # DE/EN translation strings (~560+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
@@ -161,7 +161,7 @@ public/
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files. Sound functions return Promises for precise voice coordination (victory: 1700ms, bubble: 1450ms, ITM: 700ms)
 - **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 223 MP3 files per language in `public/audio/de/` and `public/audio/en/` (446 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
-- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle)
+- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle), H (hand-for-hand toggle)
 - **TV Display Mode**: Dedicated fullscreen overlay (`DisplayMode.tsx`) optimized for projectors/TVs at 3+ meter distance. Dark background, very large timer (12rem), no sensitive data (no prizepool, no standings, no controls). Three rotating screens: Timer (blinds + countdown + progress), Blind Schedule (14 visible levels, current highlighted), Chip Values (grid with color-up info). Auto-rotation every 15 seconds, manual navigation via arrow keys. Screen indicator dots in top bar. Exit via T/Escape. Lazy-loaded (~8.5 KB chunk). 📺 button in header during game mode.
 - **Ante calculation**: Two modes — Standard (~12.5% of big blind, rounded to "nice" values) or Big Blind Ante (BBA, ante = big blind). Toggle in setup when ante is enabled. `AnteMode` type in `types.ts`
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
@@ -173,6 +173,8 @@ public/
 - **Clean View**: Toggle to hide stats, sidebars, and secondary controls during game (keyboard: F)
 - **Auto-start on level jump**: Timer automatically starts when pressing Next/Previous level
 - **Bubble detection**: `isBubble()` and `isInTheMoney()` based on active players vs paid places; `BubbleIndicator` also shows Add-On announcement banner (amber, center-screen) when rebuy phase ends — with break: shown during break + next level (timer runs); without break: timer pauses automatically for add-on
+- **Hand-for-Hand mode**: Manual toggle (keyboard: H) during bubble phase. Activates pause/resume cycle — timer pauses, user clicks "Next Hand" to resume, manually pauses after each hand. Red banner in BubbleIndicator and DisplayMode. Voice announcement on activation. Auto-deactivates when bubble bursts.
+- **Stack Tracking**: Optional per-player `chips` field in Player interface. "Initialize stacks" button in PlayerPanel computes starting chips + rebuys + add-ons. Inline number input for editing stacks. Chip Leader badge ("C" amber circle). Auto-adjusts on rebuy/add-on/elimination. `initializePlayerStacks()`, `findChipLeader()`, `computeAverageStackFromPlayers()` in logic.ts.
 - **Tournament stats**: Live display of players, prizepool, avg stack in BB, elapsed/remaining time
 - **Dark/Light mode**: 3-way toggle (System/Light/Dark) in header; `ThemeProvider` manages mode + system preference listener + `dark` class on `<html>`; `useTheme()` hook; `poker-timer-theme` in localStorage; PWA `theme-color` meta tag updated dynamically
 - **Code splitting**: Game-mode components lazy-loaded via `React.lazy()` + `Suspense`; `html-to-image` dynamically imported only when capturing screenshots; main bundle ~302KB + ~30KB game chunks
@@ -231,6 +233,13 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.9.0 — Hand-for-Hand Mode + Stack Tracking
+
+- **Hand-for-Hand Mode**: Manueller Toggle (Tastenkürzel: H) während der Bubble-Phase. Roter Banner in BubbleIndicator und DisplayMode. „Nächste Hand"-Button startet Timer, User pausiert manuell. Voice-Ansage (`announceHandForHand`) bei Aktivierung via Web Speech API. Deaktiviert sich automatisch wenn Bubble platzt.
+- **Stack Tracking pro Spieler**: Optionales `chips?: number` Feld im Player-Interface. `initializePlayerStacks()` berechnet Starting-Stack + Rebuys + Add-Ons. `findChipLeader()` findet den Spieler mit den meisten Chips. `computeAverageStackFromPlayers()` berechnet Durchschnitt aus individuellen Stacks. Inline-Zahleneingabe im PlayerPanel. Chip-Leader-Badge (amber „C"-Kreis). Auto-Adjustment bei Rebuy/Add-On/Elimination. Backward-kompatibel via `parseConfigObject`.
+- **28 neue Translation-Keys** (14 DE + 14 EN): Hand-for-Hand (8 pro Sprache), Stack Tracking (5 pro Sprache), Voice (1 pro Sprache)
+- **11 neue Tests**: Stack-Tracking-Funktionen — **233 Tests gesamt**
 
 ### v2.8.0 — QR-Codes auf dem Ergebnis-Screen
 

@@ -387,3 +387,8 @@ export function announceTimerPaused(t: TranslateFn): void {
 export function announceTimerResumed(t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/resumed.mp3'], t('voice.resumed')));
 }
+
+/** Hand-for-Hand mode activated */
+export function announceHandForHand(t: TranslateFn): void {
+  enqueue({ mode: 'speech', text: t('voice.handForHand') });
+}

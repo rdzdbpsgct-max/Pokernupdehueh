@@ -13,6 +13,10 @@ interface Props {
   onToggleCleanView?: () => void;
   lastHandActive?: boolean;
   onLastHand?: () => void;
+  handForHandActive?: boolean;
+  onHandForHand?: () => void;
+  onNextHand?: () => void;
+  showHandForHand?: boolean;
 }
 
 export function Controls({
@@ -27,6 +31,10 @@ export function Controls({
   onToggleCleanView,
   lastHandActive,
   onLastHand,
+  handForHandActive,
+  onHandForHand,
+  onNextHand,
+  showHandForHand,
 }: Props) {
   const { t } = useTranslation();
   const isRunning = timerState.status === 'running';
@@ -68,8 +76,32 @@ export function Controls({
         </button>
       </div>
 
-      {/* Last Hand + Clean view — always visible */}
+      {/* Hand-for-Hand: Next Hand button */}
+      {handForHandActive && onNextHand && timerState.status !== 'running' && (
+        <button
+          onClick={onNextHand}
+          className="px-8 py-3 rounded-xl text-lg font-bold transition-all duration-200 active:scale-[0.97] active:shadow-md bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white shadow-lg shadow-emerald-900/30"
+          title={t('controls.nextHandTooltip')}
+        >
+          {t('controls.nextHand')}
+        </button>
+      )}
+
+      {/* Last Hand + Hand-for-Hand + Clean view */}
       <div className="flex items-center gap-2">
+        {showHandForHand && onHandForHand && (
+          <button
+            onClick={onHandForHand}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm ${
+              handForHandActive
+                ? 'bg-red-600 dark:bg-red-700 hover:bg-red-500 dark:hover:bg-red-600 text-white border-red-500 dark:border-red-600 shadow-red-300/30 dark:shadow-red-900/30'
+                : 'bg-white dark:bg-gray-800/80 hover:bg-red-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600/40 shadow-gray-200/30 dark:shadow-black/15'
+            }`}
+            title={t('controls.handForHandTooltip')}
+          >
+            {t('controls.handForHand')}
+          </button>
+        )}
         {onLastHand && (
           <button
             onClick={onLastHand}

@@ -15,6 +15,7 @@ interface Props {
   totalPlayerCount: number;
   isBubble: boolean;
   isLastHand: boolean;
+  isHandForHand?: boolean;
   onExit: () => void;
 }
 
@@ -30,6 +31,7 @@ export function DisplayMode({
   totalPlayerCount,
   isBubble,
   isLastHand,
+  isHandForHand,
   onExit,
 }: Props) {
   const { t } = useTranslation();
@@ -139,6 +141,7 @@ export function DisplayMode({
             levels={levels}
             isBubble={isBubble}
             isLastHand={isLastHand}
+            isHandForHand={isHandForHand}
           />
         )}
         {activeScreen === 'schedule' && (
@@ -178,6 +181,7 @@ function TimerScreen({
   levels,
   isBubble,
   isLastHand,
+  isHandForHand,
 }: {
   label: string;
   currentLevel: Level;
@@ -188,6 +192,7 @@ function TimerScreen({
   levels: Level[];
   isBubble: boolean;
   isLastHand: boolean;
+  isHandForHand?: boolean;
 }) {
   const { t } = useTranslation();
   const progress = 1 - remaining / currentLevel.durationSeconds;
@@ -207,6 +212,11 @@ function TimerScreen({
       {isBubble && (
         <div className="px-8 py-3 bg-red-900/40 border-2 border-red-500 rounded-xl text-center animate-bubble-pulse">
           <p className="text-red-300 text-2xl font-bold tracking-wider">🫧 {t('bubble.bubble')} 🫧</p>
+        </div>
+      )}
+      {isHandForHand && (
+        <div className="px-8 py-3 bg-red-900/40 border-2 border-red-500 rounded-xl text-center animate-bubble-pulse">
+          <p className="text-red-300 text-2xl font-bold tracking-wider">{t('display.handForHand')}</p>
         </div>
       )}
 

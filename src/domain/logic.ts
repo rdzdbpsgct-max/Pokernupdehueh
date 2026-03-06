@@ -948,6 +948,49 @@ export function computeAverageStackInBB(averageStack: number, currentBigBlind: n
 }
 
 // ---------------------------------------------------------------------------
+// Per-player stack tracking
+// ---------------------------------------------------------------------------
+
+export function initializePlayerStacks(
+  players: Player[],
+  startingChips: number,
+  rebuyChips: number,
+  addOnChips: number,
+): Player[] {
+  return players.map((p) => ({
+    ...p,
+    chips: p.status === 'active'
+      ? startingChips + p.rebuys * rebuyChips + (p.addOn ? addOnChips : 0)
+      : 0,
+  }));
+}
+
+export function findChipLeader(players: Player[]): string | null {
+  const withChips = players.filter((p) => p.status === 'active' && p.chips !== undefined && p.chips > 0);
+  if (withChips.length === 0) return null;
+  return withChips.reduce((leader, p) => (p.chips! > (leader.chips ?? 0) ? p : leader)).id;
+}
+
+export function computeAverageStackFromPlayers(players: Player[]): number | null {
+  const active = players.filter((p) => p.status === 'active');
+  if (active.length === 0) return null;
+  const tracked = active.filter((p) => p.chips !== undefined);
+  if (tracked.length === 0) return null;
+  const total = tracked.reduce((sum, p) => sum + (p.chips ?? 0), 0);
+  return Math.round(total / active.length);
+}
+
+export function addRebuyToStack(player: Player, rebuyChips: number): Player {
+  if (player.chips === undefined) return player;
+  return { ...player, chips: player.chips + rebuyChips };
+}
+
+export function addAddOnToStack(player: Player, addOnChips: number): Player {
+  if (player.chips === undefined) return player;
+  return { ...player, chips: player.chips + addOnChips };
+}
+
+// ---------------------------------------------------------------------------
 // Bubble detection
 // ---------------------------------------------------------------------------
 
@@ -1097,6 +1140,7 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
           placement: typeof p.placement === 'number' ? p.placement : null,
           eliminatedBy: typeof p.eliminatedBy === 'string' ? p.eliminatedBy : null,
           knockouts: typeof p.knockouts === 'number' ? p.knockouts : 0,
+          chips: typeof p.chips === 'number' ? p.chips : undefined,
         })) as Player[])
       : ([] as Player[]),
     dealerIndex: typeof parsed.dealerIndex === 'number' ? parsed.dealerIndex : 0,

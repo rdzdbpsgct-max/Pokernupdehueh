@@ -5,6 +5,19 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.9.0] – 2026-03-06
+
+### Hand-for-Hand Mode + Stack Tracking
+
+- **Hand-for-Hand Mode**: Manueller Toggle (Tastenkürzel: H) während der Bubble-Phase. Roter „HAND FOR HAND"-Banner in `BubbleIndicator` und `DisplayMode`. „Nächste Hand"-Button startet Timer, User pausiert manuell nach jeder Hand. Voice-Ansage bei Aktivierung. Deaktiviert sich automatisch wenn die Bubble platzt (Spieler eliminiert → ITM).
+- **Stack Tracking pro Spieler**: Optionales `chips`-Feld im `Player`-Interface. „Stacks initialisieren"-Button im PlayerPanel berechnet Starting-Stack + Rebuys + Add-Ons pro Spieler. Inline-Zahleneingabe zum Bearbeiten. Chip-Leader-Badge (amber „C"-Kreis). Automatische Anpassung bei Rebuy (+rebuyChips), Add-On (+addOnChips) und Elimination (→ 0). „Stacks löschen" setzt alle auf undefined zurück.
+- **Neue Funktionen in logic.ts**: `initializePlayerStacks()`, `findChipLeader()`, `computeAverageStackFromPlayers()`, `addRebuyToStack()`, `addAddOnToStack()`
+- **Neue Voice-Funktion**: `announceHandForHand()` in `speech.ts` — Web Speech API (kein MP3)
+- **28 neue Translation-Keys** (14 DE + 14 EN): `controls.handForHand/handForHandTooltip/nextHand/nextHandTooltip`, `game.handForHand/handForHandHint`, `display.handForHand`, `voice.handForHand`, `playerPanel.stack/chipLeader/stackTracking/initStacks/clearStacks`
+- **11 neue Tests**: initializePlayerStacks (3), findChipLeader (3), computeAverageStackFromPlayers (2), addRebuyToStack (2), addAddOnToStack (1) — **233 Tests gesamt**
+
+---
+
 ## [2.8.0] – 2026-03-06
 
 ### QR-Codes auf dem Ergebnis-Screen

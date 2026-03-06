@@ -21,6 +21,7 @@ import {
   validateConfig,
   snapSpinnerValue,
   computeAverageStack,
+  initializePlayerStacks,
   scheduleToColorUpMap,
   checkBlindChipCompatibility,
   isBubble,
@@ -41,6 +42,7 @@ import {
   cancelSpeech,
   announceTournamentStart,
   announceLastHand,
+  announceHandForHand,
 } from './domain/speech';
 // Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
@@ -108,6 +110,7 @@ function App() {
   });
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
+  const [handForHandActive, setHandForHandActive] = useState(false);
   const [displayMode, setDisplayMode] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
@@ -289,6 +292,49 @@ function App() {
     });
   }, [config.levels, timer.timerState.currentLevelIndex, settings.voiceEnabled, t]);
 
+  // Hand-for-Hand toggle
+  const handleHandForHand = useCallback(() => {
+    setHandForHandActive((prev) => {
+      if (prev) return false;
+      timer.pause();
+      if (settings.voiceEnabled) announceHandForHand(t);
+      return true;
+    });
+  }, [timer, settings.voiceEnabled, t]);
+
+  const handleNextHand = useCallback(() => {
+    timer.start();
+  }, [timer]);
+
+  // Stack tracking handlers
+  const updatePlayerStack = useCallback((playerId: string, chips: number) => {
+    setConfig((prev) => ({
+      ...prev,
+      players: prev.players.map((p) =>
+        p.id === playerId ? { ...p, chips } : p,
+      ),
+    }));
+  }, []);
+
+  const initStacks = useCallback(() => {
+    setConfig((prev) => ({
+      ...prev,
+      players: initializePlayerStacks(
+        prev.players,
+        prev.startingChips,
+        prev.rebuy.enabled ? prev.rebuy.rebuyChips : 0,
+        prev.addOn.enabled ? prev.addOn.chips : 0,
+      ),
+    }));
+  }, []);
+
+  const clearStacks = useCallback(() => {
+    setConfig((prev) => ({
+      ...prev,
+      players: prev.players.map((p) => ({ ...p, chips: undefined })),
+    }));
+  }, []);
+
   // Keyboard shortcuts (only in game mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -323,11 +369,14 @@ function App() {
         case 'KeyT':
           setDisplayMode((v) => !v);
           break;
+        case 'KeyH':
+          handleHandForHand();
+          break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, timer, t, toggleCleanView, handleLastHand]);
+  }, [mode, timer, t, toggleCleanView, handleLastHand, handleHandForHand]);
 
   const toggleFullscreen = useCallback(() => {
     try {
@@ -364,9 +413,15 @@ function App() {
   const updatePlayerRebuys = useCallback((playerId: string, newCount: number) => {
     setConfig((prev) => ({
       ...prev,
-      players: prev.players.map((p) =>
-        p.id === playerId ? { ...p, rebuys: newCount } : p,
-      ),
+      players: prev.players.map((p) => {
+        if (p.id !== playerId) return p;
+        const diff = newCount - p.rebuys;
+        const updated = { ...p, rebuys: newCount };
+        if (p.chips !== undefined && diff !== 0) {
+          updated.chips = Math.max(0, p.chips + diff * prev.rebuy.rebuyChips);
+        }
+        return updated;
+      }),
     }));
   }, []);
 
@@ -374,9 +429,16 @@ function App() {
   const updatePlayerAddOn = useCallback((playerId: string, hasAddOn: boolean) => {
     setConfig((prev) => ({
       ...prev,
-      players: prev.players.map((p) =>
-        p.id === playerId ? { ...p, addOn: hasAddOn } : p,
-      ),
+      players: prev.players.map((p) => {
+        if (p.id !== playerId) return p;
+        const updated = { ...p, addOn: hasAddOn };
+        if (p.chips !== undefined) {
+          updated.chips = hasAddOn
+            ? p.chips + prev.addOn.chips
+            : Math.max(0, p.chips - prev.addOn.chips);
+        }
+        return updated;
+      }),
     }));
   }, []);
 
@@ -396,7 +458,7 @@ function App() {
         ...prev,
         players: prev.players.map((p) => {
           if (p.id === playerId) {
-            return { ...p, status: 'eliminated' as const, placement, eliminatedBy };
+            return { ...p, status: 'eliminated' as const, placement, eliminatedBy, chips: p.chips !== undefined ? 0 : undefined };
           }
           if (eliminatedBy && p.id === eliminatedBy) {
             return { ...p, knockouts: p.knockouts + 1 };
@@ -573,6 +635,15 @@ function App() {
     [activePlayerCount, paidPlaces],
   );
 
+  // Auto-deactivate Hand-for-Hand when bubble bursts
+  const prevBubbleForHfH = useRef(bubbleActive);
+  useEffect(() => {
+    if (prevBubbleForHfH.current && !bubbleActive) {
+      setHandForHandActive(false);
+    }
+    prevBubbleForHfH.current = bubbleActive;
+  }, [bubbleActive]);
+
   const tournamentFinished = useMemo(() => {
     if (config.players.length < 2) return false;
     return config.players.filter((p) => p.status === 'active').length === 1;
@@ -671,6 +742,7 @@ function App() {
     timer.restart();
     setAddOnEndLevelIndex(null);
     setLastHandActive(false);
+    setHandForHandActive(false);
     setDisplayMode(false);
     resetGameEvents();
     resetVoice();
@@ -734,10 +806,12 @@ function App() {
             placement: null,
             eliminatedBy: null,
             knockouts: 0,
+            chips: undefined,
           })),
         }));
         // Reset all game state
         setAddOnEndLevelIndex(null);
+        setHandForHandActive(false);
         resetGameEvents();
       },
     );
@@ -1141,6 +1215,9 @@ function App() {
                   onEliminatePlayer={eliminatePlayer}
                   onReinstatePlayer={reinstatePlayer}
                   onAdvanceDealer={handleAdvanceDealer}
+                  onUpdateStack={updatePlayerStack}
+                  onInitStacks={initStacks}
+                  onClearStacks={clearStacks}
                 />
               </aside>
             )}
@@ -1186,6 +1263,7 @@ function App() {
                   addOnCost={config.addOn.cost}
                   addOnChips={config.addOn.chips}
                   lastHandActive={lastHandActive}
+                  handForHandActive={handForHandActive}
                 />
                 {!cleanView && (
                   <RebuyStatus
@@ -1207,6 +1285,10 @@ function App() {
                   onToggleCleanView={toggleCleanView}
                   lastHandActive={lastHandActive}
                   onLastHand={handleLastHand}
+                  handForHandActive={handForHandActive}
+                  onHandForHand={handleHandForHand}
+                  onNextHand={handleNextHand}
+                  showHandForHand={bubbleActive}
                 />
               </div>
 
@@ -1280,6 +1362,7 @@ function App() {
             totalPlayerCount={config.players.length}
             isBubble={bubbleActive}
             isLastHand={lastHandActive}
+            isHandForHand={handForHandActive}
             onExit={() => setDisplayMode(false)}
           />
         </Suspense>

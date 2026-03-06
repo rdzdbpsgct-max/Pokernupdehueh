@@ -7,9 +7,10 @@ interface Props {
   addOnCost: number;
   addOnChips: number;
   lastHandActive?: boolean;
+  handForHandActive?: boolean;
 }
 
-export function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOnCost, addOnChips, lastHandActive }: Props) {
+export function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOnCost, addOnChips, lastHandActive, handForHandActive }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -21,6 +22,17 @@ export function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOn
           </p>
           <p className="text-amber-600 dark:text-amber-400/70 text-xs mt-1">
             {t('game.lastHandHint')}
+          </p>
+        </div>
+      )}
+
+      {handForHandActive && (
+        <div className="w-full max-w-xl px-4 py-3 bg-red-50 dark:bg-red-900/30 border-2 border-red-400 dark:border-red-500 rounded-xl text-center animate-bubble-pulse backdrop-blur-sm" role="status" aria-live="assertive">
+          <p className="text-red-700 dark:text-red-300 text-lg font-bold tracking-wider">
+            {t('game.handForHand')}
+          </p>
+          <p className="text-red-600 dark:text-red-400/70 text-xs mt-1">
+            {t('game.handForHandHint')}
           </p>
         </div>
       )}

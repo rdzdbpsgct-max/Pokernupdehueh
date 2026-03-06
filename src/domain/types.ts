@@ -17,6 +17,7 @@ export interface Player {
   placement: number | null;
   eliminatedBy: string | null;
   knockouts: number;
+  chips?: number;
 }
 
 export type PayoutMode = 'percent' | 'euro';

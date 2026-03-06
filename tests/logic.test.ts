@@ -61,6 +61,11 @@ import {
   computePlayerStats,
   encodeResultForQR,
   decodeResultFromQR,
+  initializePlayerStacks,
+  findChipLeader,
+  computeAverageStackFromPlayers,
+  addRebuyToStack,
+  addAddOnToStack,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, TournamentResult } from '../src/domain/types';
 
@@ -2532,5 +2537,104 @@ describe('QR code encoding/decoding', () => {
 
   it('decodeResultFromQR returns null for non-string', () => {
     expect(decodeResultFromQR(null as unknown as string)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-player stack tracking
+// ---------------------------------------------------------------------------
+
+describe('initializePlayerStacks', () => {
+  it('sets starting chips for active players', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B' }),
+    ];
+    const result = initializePlayerStacks(players, 20000, 0, 0);
+    expect(result[0].chips).toBe(20000);
+    expect(result[1].chips).toBe(20000);
+  });
+
+  it('accounts for rebuys and add-ons', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', rebuys: 2, addOn: true }),
+    ];
+    const result = initializePlayerStacks(players, 20000, 20000, 15000);
+    expect(result[0].chips).toBe(20000 + 2 * 20000 + 15000);
+  });
+
+  it('sets 0 for eliminated players', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', status: 'eliminated' }),
+    ];
+    const result = initializePlayerStacks(players, 20000, 0, 0);
+    expect(result[0].chips).toBe(0);
+  });
+});
+
+describe('findChipLeader', () => {
+  it('returns player with most chips', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', chips: 30000 }),
+      makePlayer({ id: '2', name: 'B', chips: 50000 }),
+      makePlayer({ id: '3', name: 'C', chips: 20000 }),
+    ];
+    expect(findChipLeader(players)).toBe('2');
+  });
+
+  it('returns null when no stacks tracked', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+      makePlayer({ id: '2', name: 'B' }),
+    ];
+    expect(findChipLeader(players)).toBeNull();
+  });
+
+  it('ignores eliminated players', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', chips: 10000 }),
+      makePlayer({ id: '2', name: 'B', chips: 50000, status: 'eliminated' }),
+    ];
+    expect(findChipLeader(players)).toBe('1');
+  });
+});
+
+describe('computeAverageStackFromPlayers', () => {
+  it('computes average from tracked stacks', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', chips: 30000 }),
+      makePlayer({ id: '2', name: 'B', chips: 50000 }),
+      makePlayer({ id: '3', name: 'C', chips: 20000 }),
+    ];
+    expect(computeAverageStackFromPlayers(players)).toBe(Math.round(100000 / 3));
+  });
+
+  it('returns null when no stacks tracked', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A' }),
+    ];
+    expect(computeAverageStackFromPlayers(players)).toBeNull();
+  });
+});
+
+describe('addRebuyToStack', () => {
+  it('adds rebuy chips to existing stack', () => {
+    const player = makePlayer({ id: '1', name: 'A', chips: 15000 });
+    const result = addRebuyToStack(player, 20000);
+    expect(result.chips).toBe(35000);
+  });
+
+  it('returns unchanged player when chips undefined', () => {
+    const player = makePlayer({ id: '1', name: 'A' });
+    const result = addRebuyToStack(player, 20000);
+    expect(result.chips).toBeUndefined();
+  });
+});
+
+describe('addAddOnToStack', () => {
+  it('adds add-on chips to existing stack', () => {
+    const player = makePlayer({ id: '1', name: 'A', chips: 25000 });
+    const result = addAddOnToStack(player, 20000);
+    expect(result.chips).toBe(45000);
   });
 });

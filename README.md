@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.8.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.9.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-222%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-233%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -65,6 +65,8 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Vorlagen | Turnierkonfigurationen speichern/laden (Browser + JSON-Datei-Export/Import) |
 | Turnier-Statistiken | Live: Spieleranzahl, Preisgeld, Ø Stack in BB, Spielzeit, geschätzte Restzeit |
 | Bubble / ITM | Rot pulsierender BUBBLE!-Banner, grüner In-The-Money-Flash mit Sound |
+| Hand-for-Hand | Manueller Bubble-Modus (Taste: H) — Timer pausiert nach jeder Hand, „Nächste Hand"-Button |
+| Stack Tracking | Optionales Chip-Tracking pro Spieler, Chip-Leader-Badge, Auto-Anpassung bei Rebuy/Add-On |
 | Clean View | Reduzierte Ansicht im Spielmodus — nur Timer, Blinds und Bubble (Taste: F) |
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | QR-Codes | App-URL + Turnierergebnis als QR-Code — scannen und Ergebnis in der App sehen |
@@ -145,6 +147,8 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Templates | Save/load tournament configurations (browser + JSON file export/import) |
 | Tournament stats | Live: player count, prize pool, avg stack in BB, elapsed time, estimated remaining |
 | Bubble / ITM | Red pulsing BUBBLE! banner, green In The Money flash with sound |
+| Hand-for-Hand | Manual bubble mode (key: H) — timer pauses after each hand, "Next Hand" button |
+| Stack Tracking | Optional per-player chip tracking, chip leader badge, auto-adjust on rebuy/add-on |
 | Clean view | Reduced game mode — only timer, blinds and bubble visible (key: F) |
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | QR Codes | App URL + tournament result as QR code — scan and view results in the app |

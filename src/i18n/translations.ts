@@ -72,6 +72,10 @@ const de = {
   'controls.tournamentRestartTooltip': 'Turnier neu starten',
   'controls.lastHand': 'Letzte Hand',
   'controls.lastHandTooltip': 'Letzte Hand ansagen (L)',
+  'controls.handForHand': 'Hand for Hand',
+  'controls.handForHandTooltip': 'Hand-for-Hand-Modus (H)',
+  'controls.nextHand': 'Nächste Hand',
+  'controls.nextHandTooltip': 'Nächste Hand starten',
 
   // --- Player Panel ---
   'playerPanel.prizePool': 'Preisgeld',
@@ -89,6 +93,11 @@ const de = {
   'playerPanel.reinstate': 'Zurück',
   'playerPanel.advanceDealer': 'Dealer weiter',
   'playerPanel.by': 'von',
+  'playerPanel.stack': 'Stack',
+  'playerPanel.chipLeader': 'Chip Leader',
+  'playerPanel.stackTracking': 'Stack-Tracking',
+  'playerPanel.initStacks': 'Stacks initialisieren',
+  'playerPanel.clearStacks': 'Stacks löschen',
   'playerPanel.addOnAvailable': 'Add-On jetzt verfügbar! (einmalig pro Spieler)',
   'addOn.announcement': 'Add-On jetzt verfügbar!',
   'addOn.announcementDetail': '{cost} € → +{chips} Chips (einmalig pro Spieler)',
@@ -312,6 +321,8 @@ const de = {
   'game.cleanViewOff': 'Details ausblenden',
   'game.lastHand': 'LETZTE HAND!',
   'game.lastHandHint': 'Diese Hand ist die letzte des aktuellen Levels',
+  'game.handForHand': 'HAND FOR HAND',
+  'game.handForHandHint': 'Timer pausiert nach jeder Hand',
 
   // --- Display Mode (TV) ---
   'display.exit': 'TV-Modus beenden (T)',
@@ -325,6 +336,7 @@ const de = {
   'display.chips': 'Chip-Werte',
   'display.rotationHint': 'Automatischer Wechsel alle {n} Sek.',
   'display.navigate': 'navigieren',
+  'display.handForHand': 'HAND FOR HAND',
 
   // --- Tournament History ---
   'app.history': 'Historie',
@@ -424,6 +436,7 @@ const de = {
   'voice.headsUp': 'Heads-Up!',
   'voice.winner': 'Turniersieger! Herzlichen Glückwunsch!',
   'voice.bountyCollected': 'Bounty kassiert!',
+  'voice.handForHand': 'Händ for Händ! Alle Tische spielen gleichzeitig.',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -500,6 +513,10 @@ const en: Record<TranslationKey, string> = {
   'controls.tournamentRestartTooltip': 'Restart tournament',
   'controls.lastHand': 'Last Hand',
   'controls.lastHandTooltip': 'Announce last hand (L)',
+  'controls.handForHand': 'Hand for Hand',
+  'controls.handForHandTooltip': 'Hand-for-Hand mode (H)',
+  'controls.nextHand': 'Next Hand',
+  'controls.nextHandTooltip': 'Start next hand',
 
   // --- Player Panel ---
   'playerPanel.prizePool': 'Prize Pool',
@@ -517,6 +534,11 @@ const en: Record<TranslationKey, string> = {
   'playerPanel.reinstate': 'Undo',
   'playerPanel.advanceDealer': 'Move Dealer',
   'playerPanel.by': 'by',
+  'playerPanel.stack': 'Stack',
+  'playerPanel.chipLeader': 'Chip Leader',
+  'playerPanel.stackTracking': 'Stack Tracking',
+  'playerPanel.initStacks': 'Initialize stacks',
+  'playerPanel.clearStacks': 'Clear stacks',
   'playerPanel.addOnAvailable': 'Add-On now available! (once per player)',
   'addOn.announcement': 'Add-On now available!',
   'addOn.announcementDetail': '{cost} € → +{chips} Chips (once per player)',
@@ -740,6 +762,8 @@ const en: Record<TranslationKey, string> = {
   'game.cleanViewOff': 'Hide details',
   'game.lastHand': 'LAST HAND!',
   'game.lastHandHint': 'This is the last hand of the current level',
+  'game.handForHand': 'HAND FOR HAND',
+  'game.handForHandHint': 'Timer pauses after each hand',
 
   // --- Display Mode (TV) ---
   'display.exit': 'Exit TV Mode (T)',
@@ -753,6 +777,7 @@ const en: Record<TranslationKey, string> = {
   'display.chips': 'Chip Values',
   'display.rotationHint': 'Auto-rotate every {n} sec.',
   'display.navigate': 'navigate',
+  'display.handForHand': 'HAND FOR HAND',
 
   // --- Tournament History ---
   'app.history': 'History',
@@ -849,6 +874,7 @@ const en: Record<TranslationKey, string> = {
   'voice.headsUp': 'Heads-Up!',
   'voice.winner': 'Tournament winner! Congratulations!',
   'voice.bountyCollected': 'Bounty collected!',
+  'voice.handForHand': 'Hand for hand! All tables play simultaneously.',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };
