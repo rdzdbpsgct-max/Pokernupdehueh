@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.4.0
+**Version**: 2.5.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -49,8 +49,9 @@ src/
 │   ├── CollapsibleSection.tsx   # Reusable collapsible card for setup sections
 │   ├── CollapsibleSubSection.tsx # Lighter collapsible for nesting inside cards
 │   ├── ConfigEditor.tsx         # Blind level table editor
-│   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
+│   ├── DisplayMode.tsx          # TV/Projector display with rotating screens (timer, schedule, chips)
+│   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
 │   ├── LevelPreview.tsx         # Next-level sidebar
 │   ├── NumberStepper.tsx        # Custom +/- stepper with long-press support
@@ -156,7 +157,8 @@ public/
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files. Sound functions return Promises for precise voice coordination (victory: 1700ms, bubble: 1450ms, ITM: 700ms)
 - **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 223 MP3 files per language in `public/audio/de/` and `public/audio/en/` (446 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
-- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle)
+- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle)
+- **TV Display Mode**: Dedicated fullscreen overlay (`DisplayMode.tsx`) optimized for projectors/TVs at 3+ meter distance. Dark background, very large timer (12rem), no sensitive data (no prizepool, no standings, no controls). Three rotating screens: Timer (blinds + countdown + progress), Blind Schedule (14 visible levels, current highlighted), Chip Values (grid with color-up info). Auto-rotation every 15 seconds, manual navigation via arrow keys. Screen indicator dots in top bar. Exit via T/Escape. Lazy-loaded (~8.5 KB chunk). 📺 button in header during game mode.
 - **Ante calculation**: Auto ~12.5% of big blind, rounded to "nice" values
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
 - **Chip management**: Editable color-up schedule with auto-suggestion; color-up events coupled with next break; duplicate color warnings; auto-sort by value
@@ -223,6 +225,18 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.5.0 — TV-Display-Modus
+
+- **TV/Projector Display**: Neuer dedizierter Vollbild-Anzeigemodus (`DisplayMode.tsx`) optimiert für Projektoren und Fernseher. Dunkler Hintergrund, sehr großer Timer (bis 12rem), keine sensiblen Daten (kein Prizepool, keine Standings, keine Controls).
+- **Drei rotierende Screens**: Timer-Hauptanzeige (Blinds + Countdown + Fortschrittsbalken + Bubble/Last-Hand-Banner), Blindstruktur-Tabelle (14 sichtbare Levels, aktuelles Level hervorgehoben, vergangene durchgestrichen), Chip-Werte (Grid mit Farben, Werten und nächstem Color-Up).
+- **Auto-Rotation**: Automatischer Screen-Wechsel alle 15 Sekunden. Manuelle Navigation per Pfeiltasten (←/→). Screen-Indikator-Punkte in der Top-Bar.
+- **Keyboard-Shortcut**: `T` zum Ein-/Ausschalten des TV-Modus. `Escape` zum Beenden.
+- **Header-Button**: 📺-Button im Header während des Spielmodus (nicht bei Turnierende).
+- **Lazy-loaded**: ~8,5 KB separater Chunk, nur bei Bedarf geladen.
+- **11 neue Translation-Keys** pro Sprache: `display.exit`, `display.playersRemaining`, `display.nextLevel`, `display.blind`, `display.ante`, `display.break`, `display.activate`, `display.schedule`, `display.chips`, `display.rotationHint`, `display.navigate`
+- **Neue Datei**: `src/components/DisplayMode.tsx` (~320 Zeilen)
+- **App.tsx**: `displayMode` State, `KeyT` Shortcut, 📺 Header-Button, DisplayMode-Overlay-Rendering
 
 ### v2.4.0 — Quick Wins: Uhrzeit, Letzte Hand, Dealer-Rotation, ErrorBoundary
 

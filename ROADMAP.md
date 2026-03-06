@@ -10,7 +10,7 @@ Basierend auf Markt- und Gap-Analyse (Stand: März 2026).
 | Phase | Version | Thema | Features | Aufwand | Neue Tests |
 |-------|---------|-------|----------|---------|------------|
 | 1 | v2.4.0 | Quick Wins | 5 Features | ~185 LOC | +8 | **DONE** |
-| 2 | v2.5.0 | TV-Display-Modus | 2 Features | ~530 LOC | — |
+| 2 | v2.5.0 | TV-Display-Modus | 2 Features | ~530 LOC | — | **DONE** |
 | 3 | v2.6.0 | Turnier-Historie | 4 Features | ~500 LOC | +12 |
 | 4 | v2.7.0 | Refactoring + BBA | 3 Features | ~445 LOC | +4 |
 | **Gesamt** | | | **14 Features** | **~1660 LOC** | **+21** |

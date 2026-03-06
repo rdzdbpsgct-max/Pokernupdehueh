@@ -5,6 +5,21 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.5.0] – 2026-03-06
+
+### TV-Display-Modus
+
+- **TV/Projector Display**: Neuer dedizierter Vollbild-Anzeigemodus optimiert für Projektoren und Fernseher — dunkler Hintergrund, sehr großer Timer, keine sensiblen Daten (kein Prizepool, keine Standings, keine Controls)
+- **Drei rotierende Screens**: Timer (Blinds + Countdown + Fortschrittsbalken + Bubble/Last-Hand-Banner), Blindstruktur (14 Levels sichtbar, aktuelles hervorgehoben), Chip-Werte (Grid mit Farben und Color-Up)
+- **Auto-Rotation** alle 15 Sek., manuelle Navigation per Pfeiltasten, Screen-Indikator-Punkte
+- **Shortcut**: `T` zum Aktivieren/Deaktivieren, `Escape` zum Beenden
+- **📺-Button** im Header während des Spielmodus
+- **Lazy-loaded** (~8,5 KB separater Chunk)
+- **22 neue Translation-Keys** (11 pro Sprache): `display.*`
+- **Neue Datei**: `src/components/DisplayMode.tsx`
+
+---
+
 ## [2.4.0] – 2026-03-06
 
 ### Quick Wins: Uhrzeit, Letzte Hand, Dealer-Rotation, ErrorBoundary

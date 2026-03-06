@@ -310,6 +310,19 @@ const de = {
   'game.lastHand': 'LETZTE HAND!',
   'game.lastHandHint': 'Diese Hand ist die letzte des aktuellen Levels',
 
+  // --- Display Mode (TV) ---
+  'display.exit': 'TV-Modus beenden (T)',
+  'display.playersRemaining': 'Spieler',
+  'display.nextLevel': 'Nächstes',
+  'display.blind': 'Blinds',
+  'display.ante': 'Ante',
+  'display.break': 'Pause',
+  'display.activate': 'TV-Modus (T)',
+  'display.schedule': 'Blindstruktur',
+  'display.chips': 'Chip-Werte',
+  'display.rotationHint': 'Automatischer Wechsel alle {n} Sek.',
+  'display.navigate': 'navigieren',
+
   // --- Screenshot/Share ---
   'finished.shareResults': 'Ergebnis teilen / Screenshot',
   'finished.capturing': 'Wird erstellt...',
@@ -684,6 +697,19 @@ const en: Record<TranslationKey, string> = {
   'game.cleanViewOff': 'Hide details',
   'game.lastHand': 'LAST HAND!',
   'game.lastHandHint': 'This is the last hand of the current level',
+
+  // --- Display Mode (TV) ---
+  'display.exit': 'Exit TV Mode (T)',
+  'display.playersRemaining': 'Players',
+  'display.nextLevel': 'Next',
+  'display.blind': 'Blinds',
+  'display.ante': 'Ante',
+  'display.break': 'Break',
+  'display.activate': 'TV Mode (T)',
+  'display.schedule': 'Blind Schedule',
+  'display.chips': 'Chip Values',
+  'display.rotationHint': 'Auto-rotate every {n} sec.',
+  'display.navigate': 'navigate',
 
   // --- Screenshot/Share ---
   'finished.shareResults': 'Share Results / Screenshot',

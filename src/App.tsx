@@ -83,6 +83,7 @@ const RebuyStatus = lazy(() => import('./components/RebuyStatus').then(m => ({ d
 const BubbleIndicator = lazy(() => import('./components/BubbleIndicator').then(m => ({ default: m.BubbleIndicator })));
 const SettingsPanel = lazy(() => import('./components/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
 const TournamentFinished = lazy(() => import('./components/TournamentFinished').then(m => ({ default: m.TournamentFinished })));
+const DisplayMode = lazy(() => import('./components/DisplayMode').then(m => ({ default: m.DisplayMode })));
 
 type Mode = 'setup' | 'game';
 
@@ -107,6 +108,7 @@ function App() {
   const [showItmFlash, setShowItmFlash] = useState(false);
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
+  const [displayMode, setDisplayMode] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -317,6 +319,9 @@ function App() {
           break;
         case 'KeyL':
           handleLastHand();
+          break;
+        case 'KeyT':
+          setDisplayMode((v) => !v);
           break;
       }
     };
@@ -846,6 +851,7 @@ function App() {
     setAddOnEndLevelIndex(null);
     setShowItmFlash(false);
     setLastHandActive(false);
+    setDisplayMode(false);
     prevBubbleRef.current = false;
     victoryPlayedRef.current = false;
     fiveMinWarningRef.current = false;
@@ -954,6 +960,15 @@ function App() {
           <ThemeSwitcher />
           <LanguageSwitcher />
           <VoiceSwitcher settings={settings} onChange={setSettings} />
+          {mode === 'game' && !tournamentFinished && (
+            <button
+              onClick={() => setDisplayMode(true)}
+              className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-600/30"
+              title={t('display.activate')}
+            >
+              📺
+            </button>
+          )}
           <button
             onClick={() => {
               if (mode === 'game') {
@@ -1401,6 +1416,24 @@ function App() {
           </Suspense>
         )}
       </main>
+
+      {/* TV Display Mode Overlay */}
+      {displayMode && mode === 'game' && !tournamentFinished && (
+        <Suspense fallback={null}>
+          <DisplayMode
+            timerState={timer.timerState}
+            levels={config.levels}
+            chipConfig={config.chips}
+            colorUpMap={colorUpMap}
+            tournamentName={config.name}
+            activePlayerCount={activePlayerCount}
+            totalPlayerCount={config.players.length}
+            isBubble={bubbleActive}
+            isLastHand={lastHandActive}
+            onExit={() => setDisplayMode(false)}
+          />
+        </Suspense>
+      )}
 
       {/* Templates Modal */}
       {showTemplates && (
