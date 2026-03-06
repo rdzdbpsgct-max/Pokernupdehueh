@@ -6,7 +6,7 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.9.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-2.9.1-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
 [![Tests](https://img.shields.io/badge/Tests-233%20passed-brightgreen?style=flat-square)](#)
@@ -72,7 +72,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | QR-Codes | App-URL + Turnierergebnis als QR-Code — scannen und Ergebnis in der App sehen |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
 | Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Dreistufiger Fallback: Web Audio API → HTMLAudioElement → Web Speech API. 446 Audio-Dateien (223 pro Sprache), offline via PWA. |
-| Vollbild | Großer Timer-Modus für Präsentation am TV oder Beamer |
+| TV-Modus | Split-Layout: Timer + Blinds permanent oben, Blind-Schedule / Chip-Werte rotierend unten — optimiert für TV/Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
 | Persistenz | Automatische Speicherung im Browser (localStorage) |

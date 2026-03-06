@@ -5,6 +5,17 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.9.1] – 2026-03-06
+
+### Bug-Fixes: QR-Code + TV-Modus
+
+- **QR-Code Timing-Fix**: Ergebnis-QR-Code auf dem Turnierende-Screen wurde nie angezeigt, weil `getLatestResult()` das Ergebnis aus localStorage las, bevor `saveTournamentResult` es geschrieben hatte (React-Effect-Timing). Fix: `TournamentResult` wird jetzt direkt als Prop von App.tsx übergeben — kein localStorage-Umweg mehr.
+- **TV-Modus Split-Layout**: Timer + Blinds sind jetzt **permanent** im oberen Bereich (~55%) sichtbar. Nur der untere Bereich (~45%) rotiert alle 15 Sekunden zwischen Blind-Schedule und Chip-Werten. Vorher wechselte der gesamte Bildschirm — Timer war 2/3 der Zeit nicht sichtbar. Schedule-Ansicht auf 8 kompakte Zeilen reduziert (war 14).
+- **TournamentFinished**: `loadTournamentHistory`-Import entfernt, neues Prop `tournamentResult: TournamentResult | null`. Text-Kopieren und CSV-Download nutzen direkt den Prop statt localStorage.
+- **App.tsx**: Neues `finishedResult`-Memo via `buildTournamentResult()`, wird an TournamentFinished übergeben.
+
+---
+
 ## [2.9.0] – 2026-03-06
 
 ### Hand-for-Hand Mode + Stack Tracking

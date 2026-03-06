@@ -669,6 +669,12 @@ function App() {
     return config.players.find((p) => p.status === 'active') ?? null;
   }, [tournamentFinished, config.players]);
 
+  // Build the tournament result for direct use (avoids localStorage timing issues)
+  const finishedResult = useMemo(() => {
+    if (!tournamentFinished) return null;
+    return buildTournamentResult(config, tournamentElapsed, currentPlayLevel);
+  }, [tournamentFinished, config, tournamentElapsed, currentPlayLevel]);
+
   const startErrors = useMemo(() => {
     const errors: string[] = [];
     if (config.players.length < 2) {
@@ -1189,6 +1195,7 @@ function App() {
               bounty={config.bounty}
               rebuy={config.rebuy}
               addOn={config.addOn}
+              tournamentResult={finishedResult}
               onBackToSetup={switchToSetup}
             />
           </Suspense>

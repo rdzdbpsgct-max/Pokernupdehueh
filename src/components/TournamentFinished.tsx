@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
-import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
-import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, formatResultAsText, formatResultAsCSV, loadTournamentHistory, encodeResultForQR } from '../domain/logic';
+import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, TournamentResult } from '../domain/types';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, formatResultAsText, formatResultAsCSV, encodeResultForQR } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
 import { ChevronIcon } from './ChevronIcon';
@@ -14,6 +14,7 @@ interface Props {
   bounty: BountyConfig;
   rebuy: RebuyConfig;
   addOn: AddOnConfig;
+  tournamentResult: TournamentResult | null;
   onBackToSetup: () => void;
 }
 
@@ -25,6 +26,7 @@ export function TournamentFinished({
   bounty,
   rebuy,
   addOn,
+  tournamentResult,
   onBackToSetup,
 }: Props) {
   const { t } = useTranslation();
@@ -34,33 +36,26 @@ export function TournamentFinished({
   const [copied, setCopied] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const getLatestResult = useCallback(() => {
-    const history = loadTournamentHistory();
-    return history.length > 0 ? history[0] : null;
-  }, []);
-
   const handleCopyText = useCallback(async () => {
-    const result = getLatestResult();
-    if (!result) return;
+    if (!tournamentResult) return;
     try {
-      await navigator.clipboard.writeText(formatResultAsText(result));
+      await navigator.clipboard.writeText(formatResultAsText(tournamentResult));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch { /* clipboard not available */ }
-  }, [getLatestResult]);
+  }, [tournamentResult]);
 
   const handleDownloadCSV = useCallback(() => {
-    const result = getLatestResult();
-    if (!result) return;
-    const csv = formatResultAsCSV(result);
+    if (!tournamentResult) return;
+    const csv = formatResultAsCSV(tournamentResult);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${result.name || 'tournament'}-${new Date(result.date).toISOString().slice(0, 10)}.csv`;
+    a.download = `${tournamentResult.name || 'tournament'}-${new Date(tournamentResult.date).toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [getLatestResult]);
+  }, [tournamentResult]);
 
   const captureScreenshot = useCallback(async () => {
     if (!resultsRef.current || capturing) return;
@@ -123,9 +118,8 @@ export function TournamentFinished({
     : [];
 
   const resultQrUrl = useMemo(() => {
-    const result = getLatestResult();
-    return result ? encodeResultForQR(result) : null;
-  }, [getLatestResult]);
+    return tournamentResult ? encodeResultForQR(tournamentResult) : null;
+  }, [tournamentResult]);
 
   const qrFg = theme === 'dark' ? '#e5e7eb' : '#111827';
   const qrBg = theme === 'dark' ? '#111827' : '#f9fafb';

@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.9.0
+**Version**: 2.9.1
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -162,7 +162,7 @@ public/
 - **Sound**: Web Audio API oscillators — no external audio files. Sound functions return Promises for precise voice coordination (victory: 1700ms, bubble: 1450ms, ITM: 700ms)
 - **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 223 MP3 files per language in `public/audio/de/` and `public/audio/en/` (446 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle), H (hand-for-hand toggle)
-- **TV Display Mode**: Dedicated fullscreen overlay (`DisplayMode.tsx`) optimized for projectors/TVs at 3+ meter distance. Dark background, very large timer (12rem), no sensitive data (no prizepool, no standings, no controls). Three rotating screens: Timer (blinds + countdown + progress), Blind Schedule (14 visible levels, current highlighted), Chip Values (grid with color-up info). Auto-rotation every 15 seconds, manual navigation via arrow keys. Screen indicator dots in top bar. Exit via T/Escape. Lazy-loaded (~8.5 KB chunk). 📺 button in header during game mode.
+- **TV Display Mode**: Dedicated fullscreen overlay (`DisplayMode.tsx`) optimized for projectors/TVs at 3+ meter distance. Split-layout: **Timer always visible** (top ~55% — level label, blinds, countdown, progress bar, next level preview, banners) + **rotating secondary area** (bottom ~45% — alternates between Blind Schedule and Chip Values every 15 seconds). Dark background, large timer (8rem), no sensitive data (no prizepool, no standings, no controls). Manual navigation via arrow keys. Indicator dots for secondary screen only if chips enabled. Exit via T/Escape. Lazy-loaded (~8.7 KB chunk). 📺 button in header during game mode.
 - **Ante calculation**: Two modes — Standard (~12.5% of big blind, rounded to "nice" values) or Big Blind Ante (BBA, ante = big blind). Toggle in setup when ante is enabled. `AnteMode` type in `types.ts`
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
 - **Chip management**: Editable color-up schedule with auto-suggestion; color-up events coupled with next break; duplicate color warnings; auto-sort by value
@@ -181,7 +181,7 @@ public/
 - **SVG Chevrons**: `ChevronIcon` component with CSS rotation animation replaces Unicode triangles for collapsible sections
 - **NumberStepper**: Custom `+`/`-` stepper component replaces native number input spinners; long-press support via pointer events (400ms delay, 100ms repeat); optional `snap` function; used across all numeric inputs in setup
 - **Screenshot/share**: `html-to-image` (dynamic import) capture → Web Share API (mobile) or PNG download (desktop); theme-aware background color
-- **QR codes**: Two QR codes on TournamentFinished screen — App-URL (static, Vercel link) and tournament result data (compact pipe-delimited format in URL hash `#r=`). `qrcode.react` (`QRCodeSVG`) renders inline SVG captured by html-to-image. `encodeResultForQR()` / `decodeResultFromQR()` in logic.ts. `SharedResultView.tsx` modal for viewing shared results. Theme-aware QR colors.
+- **QR codes**: Two QR codes on TournamentFinished screen — App-URL (static, Vercel link) and tournament result data (compact pipe-delimited format in URL hash `#r=`). `TournamentResult` passed directly as prop from App.tsx (not read from localStorage — avoids timing issues). `qrcode.react` (`QRCodeSVG`) renders inline SVG captured by html-to-image. `encodeResultForQR()` / `decodeResultFromQR()` in logic.ts. `SharedResultView.tsx` modal for viewing shared results. Theme-aware QR colors.
 - **PWA**: `vite-plugin-pwa` with auto-update service worker, installable on mobile/desktop
 - **Wake Lock**: Screen stays on during active tournament (Wake Lock API, re-acquired on tab focus)
 - **Cross-device compatibility**: Safe area insets (notch/gesture-bar), `100dvh` viewport height, `inputmode="numeric"` on all number inputs, webkit fullscreen prefix, localStorage try-catch for private browsing, tablet breakpoint (`md:` at 768px), touch targets ≥32px
@@ -233,6 +233,12 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.9.1 — Bug-Fixes: QR-Code + TV-Modus
+
+- **QR-Code Timing-Fix**: Ergebnis-QR-Code wurde nie angezeigt (localStorage-Timing-Bug). Fix: `TournamentResult` als Prop übergeben statt aus localStorage lesen. Text-Kopieren und CSV-Download nutzen ebenfalls Prop direkt.
+- **TV-Modus Split-Layout**: Timer + Blinds permanent im oberen Bereich (~55%), nur unterer Bereich rotiert zwischen Blind-Schedule (8 kompakte Zeilen) und Chip-Werten. Vorher: gesamter Screen rotierte, Timer 2/3 der Zeit nicht sichtbar.
+- **App.tsx**: Neues `finishedResult` Memo, als Prop an TournamentFinished übergeben.
 
 ### v2.9.0 — Hand-for-Hand Mode + Stack Tracking
 
