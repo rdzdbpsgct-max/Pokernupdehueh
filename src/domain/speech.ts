@@ -314,6 +314,11 @@ export function announceAddOn(t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/addon-available.mp3'], t('voice.addOnAvailable')));
 }
 
+/** Rebuy available — reminder after elimination during rebuy phase */
+export function announceRebuyAvailable(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/rebuy-available.mp3'], t('voice.rebuyAvailable')));
+}
+
 /** Rebuy phase ended */
 export function announceRebuyEnded(t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/rebuy-ended.mp3'], t('voice.rebuyEnded')));

@@ -12,6 +12,7 @@ import {
   announceColorUpWarning,
   announceBounty,
   announceElimination,
+  announceRebuyAvailable,
   announceFiveMinutes,
   announceThreeRemaining,
   announcePlayersRemaining,
@@ -148,11 +149,12 @@ export function useVoiceAnnouncements({
         if (prevPlayer && prevPlayer.status === 'active') {
           announceElimination(t);
           if (config.bounty.enabled) announceBounty(t);
+          if (rebuyActive) announceRebuyAvailable(t);
           break;
         }
       }
     }
-  }, [mode, config.players, settings.voiceEnabled, config.bounty.enabled, t]);
+  }, [mode, config.players, settings.voiceEnabled, config.bounty.enabled, rebuyActive, t]);
 
   // Voice: Player count milestones (dynamic based on paidPlaces) + Heads-Up
   const prevActiveCountRef = useRef(activePlayerCount);
