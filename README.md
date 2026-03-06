@@ -72,7 +72,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | QR-Codes | App-URL + Turnierergebnis als QR-Code — scannen und Ergebnis in der App sehen |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
 | Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Dreistufiger Fallback: Web Audio API → HTMLAudioElement → Web Speech API. 450 Audio-Dateien (225 pro Sprache), offline via PWA. |
-| TV-Modus | Split-Layout: Timer + Blinds permanent oben, Blind-Schedule / Chip-Werte rotierend unten — optimiert für TV/Beamer |
+| TV-Modus | Split-Layout: Timer permanent oben, 5 rotierende Screens unten (Spieler, Stats, Auszahlung, Blindstruktur, Chips) — optimiert für TV/Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
 | Persistenz | Automatische Speicherung im Browser (localStorage) |
@@ -158,7 +158,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Last Hand | Toggle button + keyboard shortcut (L) + amber banner + voice announcement (before break / end of level) |
 | Dealer rotation | One-click dealer button advance, skips eliminated players |
 | Error boundary | Catches React crashes with user-friendly reload page |
-| TV Display Mode | Dedicated fullscreen overlay for projectors/TVs — three rotating screens (timer, blind schedule, chip values), auto-rotation every 15 sec, arrow key navigation, no sensitive data shown (T) |
+| TV Display Mode | Dedicated fullscreen overlay for projectors/TVs — five rotating screens (players, stats, payout, blind schedule, chip values), auto-rotation every 15 sec, arrow key navigation (T) |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
@@ -266,7 +266,7 @@ src/
   components/
     TimerDisplay.tsx     # Timer-Anzeige / Timer display
     ConfigEditor.tsx     # Blindstruktur-Editor / Blind structure editor
-    DisplayMode.tsx      # TV-Display mit rotierenden Screens / TV display with rotating screens
+    DisplayMode.tsx      # TV-Display mit 5 rotierenden Screens / TV display with 5 rotating screens
     TournamentHistory.tsx # Turnier-Historie mit Statistiken & Export / Tournament history with stats & export
     ErrorBoundary.tsx    # React-Error-Boundary mit Reload / Error boundary with reload
     BlindGenerator.tsx   # Blindstruktur-Generator / Blind structure generator

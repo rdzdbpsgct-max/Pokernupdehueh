@@ -5,6 +5,22 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.9.4] – 2026-03-06
+
+### TV-Modus: 5 rotierende Screens
+
+- **3 neue TV-Screens**: Spieler, Turnier-Statistik und Auszahlung als rotierende Screens im TV/Projector-Display (`DisplayMode.tsx`). Reihenfolge: Spieler → Stats → Auszahlung → Blindstruktur → Chips.
+- **Spieler-Screen**: 2-3 Spalten Grid aktiver Spieler mit CL-Badge (Chip Leader), Rebuy-Count. Eliminierte kompakt am unteren Rand.
+- **Stats-Screen**: Stat-Cards mit Prizepool, aktive Spieler, Ø Stack (BB), Spielzeit, Restzeit, Rebuys, Add-Ons, Bounty Pool.
+- **Auszahlungs-Screen**: Platzierungen mit Beträgen, Medaillen-Emojis (Top 3), Bubble-Indikator (pulsierend) auf letztem bezahlten Platz.
+- **Screen-Reihenfolge**: `SecondaryScreen`-Typ erweitert auf `'players' | 'stats' | 'payout' | 'schedule' | 'chips'`. Default-Screen: `'players'`. Chips-Screen conditional (nur bei aktivierten Chips).
+- **8 neue Props**: `players`, `buyIn`, `payout`, `rebuy`, `addOn`, `bounty`, `averageStack`, `tournamentElapsed` von App.tsx an DisplayMode.
+- **~15 neue Translation-Keys** pro Sprache (DE + EN): `display.players`, `display.stats`, `display.payout`, `display.prizePool`, `display.activePlayers`, `display.avgStack`, `display.elapsed`, `display.remaining`, `display.totalRebuys`, `display.totalAddOns`, `display.bountyPool`, `display.payoutPlace`, `display.chipLeaderBadge`, `display.eliminated`.
+- **DisplayMode-Chunk**: Von ~8,5 KB auf ~13,5 KB gewachsen (+5 KB für 3 neue Sub-Components).
+- **232 Tests**, Lint + Build bestanden.
+
+---
+
 ## [2.9.3] – 2026-03-06
 
 ### Sprachausgabe: Elimination + Hand-for-Hand MP3

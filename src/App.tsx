@@ -1388,6 +1388,14 @@ function App() {
             isLastHand={lastHandActive}
             isHandForHand={handForHandActive}
             onExit={() => setDisplayMode(false)}
+            players={config.players}
+            buyIn={config.buyIn}
+            payout={config.payout}
+            rebuy={config.rebuy}
+            addOn={config.addOn}
+            bounty={config.bounty}
+            averageStack={averageStack}
+            tournamentElapsed={tournamentElapsed}
           />
         </Suspense>
       )}
