@@ -371,9 +371,7 @@ const de = {
   'finished.textCopied': 'Kopiert!',
   'finished.downloadCSV': 'CSV herunterladen',
   'finished.exportOptions': 'Teilen',
-  'finished.qrCodes': 'QR-Codes',
   'finished.qrApp': 'App installieren',
-  'finished.qrResult': 'Ergebnis teilen',
 
   // --- Shared Result ---
   'shared.title': 'Geteiltes Turnierergebnis',
@@ -812,9 +810,7 @@ const en: Record<TranslationKey, string> = {
   'finished.textCopied': 'Copied!',
   'finished.downloadCSV': 'Download CSV',
   'finished.exportOptions': 'Share',
-  'finished.qrCodes': 'QR Codes',
   'finished.qrApp': 'Install App',
-  'finished.qrResult': 'Share Results',
 
   // --- Shared Result ---
   'shared.title': 'Shared Tournament Result',

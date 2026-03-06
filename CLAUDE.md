@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.9.1
+**Version**: 2.9.2
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (233 tests, single run)
+npm run test         # Vitest run (232 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -233,6 +233,12 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.9.2 — QR-Code Vereinfachung
+
+- **Ergebnis-QR-Code entfernt**: Nur noch statischer App-QR-Code. `encodeResultForQR()` und `QR_BASE_URL` aus logic.ts entfernt. `decodeResultFromQR()` bleibt für bestehende `#r=`-Links.
+- **App-QR-Code auf Setupseite**: QR-Code zur App-URL wird jetzt auch auf der Setupseite unterhalb des Start-Buttons angezeigt.
+- **Translation-Keys**: 2 entfernt (`finished.qrCodes`, `finished.qrResult`). 1 Test entfernt, 1 umgeschrieben — **232 Tests gesamt**
 
 ### v2.9.1 — Bug-Fixes: QR-Code + TV-Modus
 

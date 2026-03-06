@@ -1408,29 +1408,6 @@ export function computePlayerStats(history: TournamentResult[]): import('./types
 // QR Code Encoding / Decoding (compact tournament result sharing)
 // ---------------------------------------------------------------------------
 
-const QR_BASE_URL = 'https://pokernupdehueh.vercel.app/';
-
-export function encodeResultForQR(result: TournamentResult): string {
-  const header = [
-    result.name,
-    result.date.slice(0, 10),
-    result.playerCount,
-    result.buyIn,
-    result.prizePool,
-    result.bountyEnabled ? result.bountyAmount : 0,
-    result.totalRebuys,
-    result.totalAddOns,
-    Math.floor(result.elapsedSeconds / 60),
-    result.levelsPlayed,
-  ].join('|');
-
-  const players = result.players
-    .map(p => [p.name, p.place, p.payout, p.rebuys, p.addOn ? 1 : 0, p.knockouts].join(':'))
-    .join(';');
-
-  return QR_BASE_URL + '#r=' + encodeURIComponent(header + '|' + players);
-}
-
 export function decodeResultFromQR(encoded: string): TournamentResult | null {
   try {
     const parts = encoded.split('|');

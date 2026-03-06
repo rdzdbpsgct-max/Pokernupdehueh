@@ -59,7 +59,6 @@ import {
   formatResultAsText,
   formatResultAsCSV,
   computePlayerStats,
-  encodeResultForQR,
   decodeResultFromQR,
   initializePlayerStacks,
   findChipLeader,
@@ -67,7 +66,7 @@ import {
   addRebuyToStack,
   addAddOnToStack,
 } from '../src/domain/logic';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, TournamentResult } from '../src/domain/types';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -2478,41 +2477,11 @@ describe('computePlayerStats', () => {
 });
 
 // ---------------------------------------------------------------------------
-// QR Code Encoding / Decoding
+// QR Code Decoding
 // ---------------------------------------------------------------------------
-describe('QR code encoding/decoding', () => {
-  const sampleResult: TournamentResult = {
-    id: 'test-id',
-    name: 'Freitagspoker',
-    date: '2026-03-06T20:00:00.000Z',
-    playerCount: 4,
-    buyIn: 10,
-    prizePool: 50,
-    players: [
-      { name: 'Alice', place: 1, payout: 30, rebuys: 0, addOn: false, knockouts: 2, bountyEarned: 10, netBalance: 30 },
-      { name: 'Bob', place: 2, payout: 15, rebuys: 1, addOn: true, knockouts: 1, bountyEarned: 5, netBalance: -10 },
-      { name: 'Charlie', place: 3, payout: 5, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -5 },
-      { name: 'Diana', place: 4, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
-    ],
-    bountyEnabled: true,
-    bountyAmount: 5,
-    rebuyEnabled: true,
-    totalRebuys: 1,
-    addOnEnabled: true,
-    totalAddOns: 1,
-    elapsedSeconds: 7200,
-    levelsPlayed: 12,
-  };
-
-  it('encodeResultForQR produces a URL string', () => {
-    const url = encodeResultForQR(sampleResult);
-    expect(url).toContain('https://pokernupdehueh.vercel.app/#r=');
-    expect(url).toContain('Freitagspoker');
-  });
-
-  it('round-trips encode then decode', () => {
-    const url = encodeResultForQR(sampleResult);
-    const encoded = decodeURIComponent(url.split('#r=')[1]);
+describe('QR code decoding', () => {
+  it('decodeResultFromQR decodes a valid encoded string', () => {
+    const encoded = 'Freitagspoker|2025-06-01|4|10|50|5|1|1|120|12|Alice:1:30:0:0:1;Bob:2:15:1:1:0;Charlie:3:5:0:0:0;Diana:4:0:0:0:0';
     const decoded = decodeResultFromQR(encoded);
     expect(decoded).not.toBeNull();
     expect(decoded!.name).toBe('Freitagspoker');

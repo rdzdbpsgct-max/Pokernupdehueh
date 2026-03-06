@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, TournamentResult } from '../domain/types';
-import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, formatResultAsText, formatResultAsCSV, encodeResultForQR } from '../domain/logic';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, formatResultAsText, formatResultAsCSV } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
 import { ChevronIcon } from './ChevronIcon';
@@ -116,10 +116,6 @@ export function TournamentFinished({
         .sort((a, b) => b.knockouts - a.knockouts)
         .map((p) => ({ ...p, bountyEarned: p.knockouts * bounty.amount }))
     : [];
-
-  const resultQrUrl = useMemo(() => {
-    return tournamentResult ? encodeResultForQR(tournamentResult) : null;
-  }, [tournamentResult]);
 
   const qrFg = theme === 'dark' ? '#e5e7eb' : '#111827';
   const qrBg = theme === 'dark' ? '#111827' : '#f9fafb';
@@ -362,39 +358,18 @@ export function TournamentFinished({
           </div>
         </div>
 
-        {/* QR Codes */}
-        <div>
-          <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-            {t('finished.qrCodes')}
-          </h3>
-          <div className="flex gap-3">
-            <div className="flex-1 bg-gray-50/90 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/40 rounded-xl p-3 flex flex-col items-center gap-2 shadow-lg shadow-gray-300/30 dark:shadow-black/20">
-              <QRCodeSVG
-                value="https://pokernupdehueh.vercel.app/"
-                size={120}
-                level="L"
-                bgColor={qrBg}
-                fgColor={qrFg}
-              />
-              <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                {t('finished.qrApp')}
-              </span>
-            </div>
-            {resultQrUrl && (
-              <div className="flex-1 bg-gray-50/90 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/40 rounded-xl p-3 flex flex-col items-center gap-2 shadow-lg shadow-gray-300/30 dark:shadow-black/20">
-                <QRCodeSVG
-                  value={resultQrUrl}
-                  size={120}
-                  level="L"
-                  bgColor={qrBg}
-                  fgColor={qrFg}
-                />
-                <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                  {t('finished.qrResult')}
-                </span>
-              </div>
-            )}
-          </div>
+        {/* QR Code — App link */}
+        <div className="bg-gray-50/90 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/40 rounded-xl p-4 flex flex-col items-center gap-2 shadow-lg shadow-gray-300/30 dark:shadow-black/20">
+          <QRCodeSVG
+            value="https://pokernupdehueh.vercel.app/"
+            size={120}
+            level="L"
+            bgColor={qrBg}
+            fgColor={qrFg}
+          />
+          <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            {t('finished.qrApp')}
+          </span>
         </div>
 
         {/* Share / Screenshot / Export */}

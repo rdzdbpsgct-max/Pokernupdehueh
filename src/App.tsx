@@ -61,6 +61,8 @@ import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { NumberStepper } from './components/NumberStepper';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { VoiceSwitcher } from './components/VoiceSwitcher';
+import { useTheme } from './theme';
+import { QRCodeSVG } from 'qrcode.react';
 
 // Game-mode components (lazy — only needed after tournament starts)
 const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
@@ -79,6 +81,7 @@ type Mode = 'setup' | 'game';
 
 function App() {
   const { t, language } = useTranslation();
+  const { resolved: theme } = useTheme();
 
   // Sync speech language with app language
   useEffect(() => {
@@ -1181,6 +1184,20 @@ function App() {
                 >
                   {t('app.startTournament')}
                 </button>
+              </div>
+
+              {/* QR Code — App link */}
+              <div className="flex flex-col items-center gap-2 pt-2 pb-4">
+                <QRCodeSVG
+                  value="https://pokernupdehueh.vercel.app/"
+                  size={100}
+                  level="L"
+                  bgColor={theme === 'dark' ? '#111827' : '#f9fafb'}
+                  fgColor={theme === 'dark' ? '#e5e7eb' : '#111827'}
+                />
+                <span className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                  {t('finished.qrApp')}
+                </span>
               </div>
             </div>
           </div>

@@ -5,6 +5,16 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.9.2] – 2026-03-06
+
+### QR-Code Vereinfachung
+
+- **Ergebnis-QR-Code entfernt**: Der dynamische QR-Code für Turnierergebnisse wurde entfernt — nur noch der statische App-QR-Code bleibt.
+- **App-QR-Code auf der Setupseite**: Der App-QR-Code (pokernupdehueh.vercel.app) wird jetzt auch auf der Setupseite unterhalb des Start-Buttons angezeigt, nicht nur auf dem Ergebnis-Screen.
+- **Code-Cleanup**: `encodeResultForQR()` und `QR_BASE_URL` aus `logic.ts` entfernt (nicht mehr benötigt). `decodeResultFromQR()` bleibt für bestehende `#r=`-Links erhalten. 2 Translation-Keys entfernt (`finished.qrCodes`, `finished.qrResult`). 1 Test entfernt, 1 Test von Round-Trip auf standalone Decode umgeschrieben — **232 Tests gesamt**
+
+---
+
 ## [2.9.1] – 2026-03-06
 
 ### Bug-Fixes: QR-Code + TV-Modus
