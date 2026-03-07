@@ -1,6 +1,6 @@
 import type { Player, Level, RebuyConfig, AddOnConfig, BountyConfig } from '../../domain/types';
 import {
-  computePrizePool, computeTotalRebuys, computeTotalAddOns,
+  computePrizePool, computeTotalRebuys, computeTotalAddOns, computeRebuyPot,
   computeAverageStackInBB, formatElapsedTime, computeEstimatedRemainingSeconds,
 } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
@@ -40,6 +40,7 @@ export function StatsScreen({
     players, buyIn,
     rebuy.enabled ? rebuy.rebuyCost : undefined,
     addOn.enabled ? addOn.cost : undefined,
+    rebuy.separatePot,
   );
 
   const currentLevel = levels[currentLevelIndex];
@@ -61,6 +62,9 @@ export function StatsScreen({
   stats.push({ label: t('display.remaining'), value: `~${formatElapsedTime(estRemaining)}` });
   if (rebuy.enabled && totalRebuys > 0) {
     stats.push({ label: t('display.totalRebuys'), value: String(totalRebuys) });
+  }
+  if (rebuy.enabled && rebuy.separatePot && totalRebuys > 0) {
+    stats.push({ label: t('rebuy.separatePotLabel'), value: `${computeRebuyPot(players, rebuy.rebuyCost).toLocaleString()} ${t('unit.eur')}` });
   }
   if (addOn.enabled && totalAddOns > 0) {
     stats.push({ label: t('display.totalAddOns'), value: String(totalAddOns) });

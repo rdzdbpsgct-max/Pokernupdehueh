@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, Table } from '../domain/types';
-import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, findChipLeader, canPlayerRebuy, findPlayerSeat } from '../domain/logic';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, computeRebuyPot, findChipLeader, canPlayerRebuy, findPlayerSeat } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
@@ -56,7 +56,7 @@ export function PlayerPanel({
 
   const totalRebuys = computeTotalRebuys(players);
   const totalAddOns = computeTotalAddOns(players);
-  const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost, addOnConfig.enabled ? addOnConfig.cost : 0);
+  const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost, addOnConfig.enabled ? addOnConfig.cost : 0, rebuyConfig.separatePot);
   const payoutAmounts = computePayouts(payout, prizePool);
 
   const nameSizeClass = useMemo(() => {
@@ -109,7 +109,7 @@ export function PlayerPanel({
           </p>
           <p className="text-emerald-600 dark:text-emerald-500/70 text-xs">
             {players.length} &times; {buyIn} {t('unit.eur')}
-            {totalRebuys > 0 && (
+            {totalRebuys > 0 && !rebuyConfig.separatePot && (
               <> + {totalRebuys} Rebuy{totalRebuys > 1 ? 's' : ''} &times; {rebuyConfig.rebuyCost} {t('unit.eur')}</>
             )}
             {totalAddOns > 0 && (
@@ -123,6 +123,16 @@ export function PlayerPanel({
             </p>
           )}
         </div>
+        {rebuyConfig.separatePot && totalRebuys > 0 && (
+          <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 rounded-xl shadow-md shadow-amber-200/30 dark:shadow-amber-900/10">
+            <p className="text-amber-700 dark:text-amber-300 text-lg font-bold">
+              {computeRebuyPot(players, rebuyConfig.rebuyCost).toFixed(2)} {t('unit.eur')}
+            </p>
+            <p className="text-amber-600 dark:text-amber-500/70 text-xs">
+              {t('rebuy.separatePotLabel')} — {totalRebuys} &times; {rebuyConfig.rebuyCost} {t('unit.eur')}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Payout breakdown */}

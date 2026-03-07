@@ -1,5 +1,5 @@
 import type { Player, PayoutConfig, RebuyConfig, AddOnConfig } from '../../domain/types';
-import { computePrizePool, computePayouts } from '../../domain/logic';
+import { computePrizePool, computePayouts, computeTotalRebuys, computeRebuyPot } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
 
 interface Props {
@@ -25,14 +25,22 @@ export function PayoutScreen({
     players, buyIn,
     rebuy.enabled ? rebuy.rebuyCost : undefined,
     addOn.enabled ? addOn.cost : undefined,
+    rebuy.separatePot,
   );
   const payoutAmounts = computePayouts(payout, prizePool);
   const paidPlaces = payout.entries.length;
+  const totalRebuys = rebuy.enabled ? computeTotalRebuys(players) : 0;
+  const rebuyPotAmount = rebuy.separatePot && totalRebuys > 0 ? computeRebuyPot(players, rebuy.rebuyCost) : 0;
 
   return (
     <div className="w-full max-w-2xl mx-auto h-full flex flex-col">
       <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2 text-center">
         {t('display.payout')} — {prizePool.toLocaleString()} {t('unit.eur')}
+        {rebuyPotAmount > 0 && (
+          <span className="text-amber-400 ml-2 text-xs font-normal">
+            + {rebuyPotAmount.toLocaleString()} {t('unit.eur')} {t('rebuy.separatePotLabel')}
+          </span>
+        )}
       </h2>
       <div className="space-y-1 flex-1 overflow-hidden">
         {payoutAmounts.map((p) => {

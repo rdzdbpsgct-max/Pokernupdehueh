@@ -21,12 +21,21 @@ export function computeTotalAddOns(players: Player[]): number {
   return players.filter((p) => p.addOn).length;
 }
 
-export function computePrizePool(players: Player[], buyIn: number, rebuyCost?: number, addOnCost?: number): number {
+export function computePrizePool(
+  players: Player[], buyIn: number,
+  rebuyCost?: number, addOnCost?: number,
+  separateRebuyPot?: boolean,
+): number {
   const totalRebuys = computeTotalRebuys(players);
   const totalAddOns = computeTotalAddOns(players);
   const costPerRebuy = rebuyCost ?? buyIn;
   const costPerAddOn = addOnCost ?? buyIn;
-  return (players.length * buyIn) + (totalRebuys * costPerRebuy) + (totalAddOns * costPerAddOn);
+  const rebuyTotal = separateRebuyPot ? 0 : (totalRebuys * costPerRebuy);
+  return (players.length * buyIn) + rebuyTotal + (totalAddOns * costPerAddOn);
+}
+
+export function computeRebuyPot(players: Player[], rebuyCost: number): number {
+  return computeTotalRebuys(players) * rebuyCost;
 }
 
 export function computePayouts(
@@ -111,6 +120,7 @@ export function buildTournamentResult(
     config.players, config.buyIn,
     config.rebuy.enabled ? config.rebuy.rebuyCost : undefined,
     config.addOn.enabled ? config.addOn.cost : undefined,
+    config.rebuy.separatePot,
   );
   const payouts = computePayouts(config.payout, prizePool);
   const payoutMap = new Map(payouts.map((p) => [p.place, p.amount]));
@@ -158,6 +168,9 @@ export function buildTournamentResult(
     elapsedSeconds,
     levelsPlayed,
     leagueId: config.leagueId,
+    rebuyPot: config.rebuy.separatePot
+      ? computeRebuyPot(config.players, config.rebuy.enabled ? config.rebuy.rebuyCost : config.buyIn)
+      : undefined,
   };
 }
 
@@ -181,6 +194,9 @@ export function formatResultAsText(result: TournamentResult, locale: string = 'd
   lines.push('');
   const playersLabel = isEn ? 'Players' : 'Spieler';
   lines.push(`Prizepool: ${result.prizePool.toFixed(2)} \u20AC | ${result.playerCount} ${playersLabel}`);
+  if (result.rebuyPot && result.rebuyPot > 0) {
+    lines.push(`Rebuy-Topf: ${result.rebuyPot.toFixed(2)} \u20AC`);
+  }
   if (result.totalRebuys > 0) lines.push(`Rebuys: ${result.totalRebuys}`);
   return lines.join('\n');
 }

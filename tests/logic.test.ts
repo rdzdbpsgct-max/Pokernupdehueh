@@ -25,6 +25,7 @@ import {
   computeTotalRebuys,
   computeTotalAddOns,
   computePrizePool,
+  computeRebuyPot,
   computePayouts,
   computeNextPlacement,
   computeAverageStack,
@@ -1117,6 +1118,52 @@ describe('computePrizePool with add-ons', () => {
     ];
     // 2 × 10 buy-in + 2 × 10 rebuy + 1 × 10 add-on = 20 + 20 + 10 = 50
     expect(computePrizePool(players, 10, 10, 10)).toBe(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computePrizePool with separateRebuyPot
+// ---------------------------------------------------------------------------
+describe('computePrizePool with separateRebuyPot', () => {
+  it('excludes rebuys from prize pool when separateRebuyPot is true', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', rebuys: 2 }),
+      makePlayer({ id: '2', name: 'B', rebuys: 1 }),
+    ];
+    // Without separate pot: 2 × 10 + 3 × 10 = 50
+    expect(computePrizePool(players, 10, 10, undefined, false)).toBe(50);
+    // With separate pot: 2 × 10 = 20 (rebuys excluded)
+    expect(computePrizePool(players, 10, 10, undefined, true)).toBe(20);
+  });
+
+  it('still includes add-ons when separateRebuyPot is true', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', rebuys: 1, addOn: true }),
+      makePlayer({ id: '2', name: 'B', rebuys: 0, addOn: true }),
+    ];
+    // With separate pot: 2 × 10 buy-in + 0 rebuys + 2 × 15 add-on = 50
+    expect(computePrizePool(players, 10, 10, 15, true)).toBe(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeRebuyPot
+// ---------------------------------------------------------------------------
+describe('computeRebuyPot', () => {
+  it('computes total rebuy pot', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', rebuys: 2 }),
+      makePlayer({ id: '2', name: 'B', rebuys: 1 }),
+      makePlayer({ id: '3', name: 'C', rebuys: 0 }),
+    ];
+    expect(computeRebuyPot(players, 10)).toBe(30);
+  });
+
+  it('returns 0 when no rebuys', () => {
+    const players = [
+      makePlayer({ id: '1', name: 'A', rebuys: 0 }),
+    ];
+    expect(computeRebuyPot(players, 10)).toBe(0);
   });
 });
 

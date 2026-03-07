@@ -162,6 +162,21 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               {rebuy.maxRebuysPerPlayer === undefined ? t('rebuyEditor.unlimited') : ''}
             </span>
           </div>
+
+          {/* Separate Pot */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onChange({ ...rebuy, separatePot: !rebuy.separatePot })}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                rebuy.separatePot
+                  ? 'bg-amber-700 hover:bg-amber-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {t('rebuyEditor.separatePot')}
+            </button>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{t('rebuyEditor.separatePotHint')}</span>
+          </div>
         </div>
       )}
     </div>

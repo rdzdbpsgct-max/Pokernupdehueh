@@ -47,6 +47,8 @@ export interface RebuyConfig {
   rebuyChips: number;
   /** Max rebuys per player (undefined = unlimited) */
   maxRebuysPerPlayer?: number;
+  /** When true, rebuy money is tracked as a separate pot instead of adding to prize pool */
+  separatePot?: boolean;
 }
 
 export interface AddOnConfig {
@@ -179,6 +181,8 @@ export interface TournamentResult {
   elapsedSeconds: number;
   levelsPlayed: number;
   leagueId?: string;
+  /** Separate rebuy pot amount (only set when RebuyConfig.separatePot is true) */
+  rebuyPot?: number;
 }
 
 export interface PlayerStat {

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, TournamentResult } from '../domain/types';
-import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, formatResultAsText, formatResultAsCSV } from '../domain/logic';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, computeRebuyPot, formatResultAsText, formatResultAsCSV } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
 import { ChevronIcon } from './ChevronIcon';
@@ -95,7 +95,7 @@ export function TournamentFinished({
   }, [capturing, t, theme]);
   const totalRebuys = computeTotalRebuys(players);
   const totalAddOns = computeTotalAddOns(players);
-  const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.enabled ? addOn.cost : 0);
+  const prizePool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.enabled ? addOn.cost : 0, rebuy.separatePot);
   const payoutAmounts = computePayouts(payout, prizePool);
   const payoutMap = new Map(payoutAmounts.map((p) => [p.place, p.amount]));
   const maxPaidPlace = payoutAmounts.length > 0 ? Math.max(...payoutAmounts.map((p) => p.place)) : 0;
@@ -319,6 +319,14 @@ export function TournamentFinished({
               <span className="text-gray-500 dark:text-gray-400">{t('finished.prizePool')}</span>
               <span className="text-gray-900 dark:text-white font-medium">{prizePool.toFixed(2)} {t('unit.eur')}</span>
             </div>
+            {rebuy.separatePot && totalRebuys > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">{t('rebuy.separatePotLabel')}</span>
+                <span className="text-amber-600 dark:text-amber-400 font-medium">
+                  {computeRebuyPot(players, rebuy.rebuyCost).toFixed(2)} {t('unit.eur')}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">{t('finished.players')}</span>
               <span className="text-gray-900 dark:text-white">{players.length}</span>

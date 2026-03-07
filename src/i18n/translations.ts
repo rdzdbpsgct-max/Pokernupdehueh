@@ -178,6 +178,9 @@ const de = {
   'rebuyEditor.minutes': 'Min',
   'rebuyEditor.maxPerPlayer': 'Max pro Spieler',
   'rebuyEditor.unlimited': '(unbegrenzt)',
+  'rebuyEditor.separatePot': 'Separater Topf',
+  'rebuyEditor.separatePotHint': 'Rebuy-Geld wird nicht ins Preisgeld eingerechnet',
+  'rebuy.separatePotLabel': 'Rebuy-Topf',
 
   // --- Rebuy Status ---
   'rebuyStatus.active': '♻ Rebuy aktiv',
@@ -747,6 +750,9 @@ const en: Record<TranslationKey, string> = {
   'rebuyEditor.minutes': 'Min',
   'rebuyEditor.maxPerPlayer': 'Max per Player',
   'rebuyEditor.unlimited': '(unlimited)',
+  'rebuyEditor.separatePot': 'Separate Pot',
+  'rebuyEditor.separatePotHint': 'Rebuy money is not added to the prize pool',
+  'rebuy.separatePotLabel': 'Rebuy Pot',
 
   // --- Rebuy Status ---
   'rebuyStatus.active': '♻ Rebuy active',
