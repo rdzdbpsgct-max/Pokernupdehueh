@@ -5,15 +5,19 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
-## [2.9.5] – 2026-03-07
+## [2.10.0] – 2026-03-07
 
-### Bug-Fixes: i18n, Locale, QR-URL
+### Phase 1: Foundation & Quick Wins
 
-- **„Sidebar" i18n**: Hardcodierter String „Sidebar" im Game-Mode durch `t('app.sidebar')` ersetzt. Neuer Translation-Key `app.sidebar` (DE + EN).
-- **`formatResultAsText` Locale**: Datum und Labels (Spieler/Players) jetzt sprachabhängig. Neuer `locale`-Parameter (Default: `'de-DE'`). Caller in TournamentFinished + TournamentHistory aktualisiert.
-- **Dynamische QR-Code URL**: Hardcodierte Vercel-URL im QR-Code durch `window.location.origin + import.meta.env.BASE_URL` ersetzt — funktioniert auf allen Deployments (GitHub Pages, Vercel, lokal).
-- **useCallback-Dependencies**: `language` in Dependency-Arrays von `handleCopyText` (TournamentFinished, TournamentHistory) ergänzt.
-- **1 neuer Test**: `formatResultAsText` mit englischer Locale — **233 Tests gesamt**.
+- **SetupPage Refactoring**: App.tsx von 1465 auf 1102 Zeilen reduziert. Neue `SetupPage.tsx` (406 Zeilen) enthält alle Setup-UI-Elemente, 5 Summary-Memos, 12 Setup-Imports.
+- **Per-Player Rebuy Cap**: Maximale Rebuys pro Spieler konfigurierbar. `maxRebuysPerPlayer` in RebuyConfig (undefined = unbegrenzt). NumberStepper im RebuyEditor, Rebuy-Button disabled bei Limit. `canPlayerRebuy()` Helper.
+- **Late Registration**: Spieler während der ersten Levels hinzufügen. `LateRegistrationConfig` (enabled, levelLimit). Config UI im Turnier-Format-Bereich. „Spieler hinzufügen"-Button im PlayerPanel-Header.
+- **Benannte Pausen**: `Level.label` im DisplayMode angezeigt statt generischem „Pause". Break-Label in Voice-Ansage per Web Speech API.
+- **Lautstärke-Regler**: Master Volume (0–100%) für alle Audio-Ausgaben. Range-Slider im SettingsPanel. `setMasterVolume()`, `setAudioVolume()`, `setSpeechVolume()`.
+- **Bug-Fixes**: „Sidebar" i18n, `formatResultAsText` Locale-Parameter, dynamische QR-Code URL.
+- **Neue Datei**: `src/components/SetupPage.tsx`
+- **24 neue Translation-Keys** (12 DE + 12 EN)
+- **7 neue Tests** — **239 Tests gesamt**
 
 ---
 

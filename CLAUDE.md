@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.9.5
+**Version**: 2.10.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (232 tests, single run)
+npm run test         # Vitest run (239 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -36,7 +36,7 @@ npm run preview      # Preview production build locally
 
 ```
 src/
-├── App.tsx                      # Root component: setup/game mode switching, central state
+├── App.tsx                      # Root component: game mode, central state, timer, keyboard shortcuts
 ├── main.tsx                     # React entry point, wraps app in ThemeProvider + LanguageProvider
 ├── index.css                    # Tailwind base imports, @keyframes animations, @utility classes, CSS custom properties, body gradient
 ├── components/                  # UI components (one export per file)
@@ -61,7 +61,8 @@ src/
 │   ├── RebuyEditor.tsx          # Rebuy limit config
 │   ├── RebuyStatus.tsx          # Rebuy active indicator
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
-│   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen
+│   ├── SetupPage.tsx             # Setup mode UI — collapsible sections, config editors, start button
+│   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume
 │   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
 │   ├── ThemeSwitcher.tsx        # System/Light/Dark 3-way toggle
 │   ├── VoiceSwitcher.tsx        # Sound/Voice segmented toggle in header
@@ -72,7 +73,7 @@ src/
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
-│   ├── logic.ts                 # Core logic (~900 lines): validation, payouts, blinds, chips, templates, persistence, checkpoint
+│   ├── logic.ts                 # Core logic (~1640 lines): validation, payouts, blinds, chips, templates, persistence, checkpoint
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
 │   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
@@ -234,13 +235,16 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ## Changelog
 
-### v2.9.5 — Bug-Fixes: i18n, Locale, QR-URL
+### v2.10.0 — Phase 1: Foundation & Quick Wins
 
-- **„Sidebar" i18n**: Hardcodierter String „Sidebar" im Game-Mode durch `t('app.sidebar')` ersetzt. Neuer Translation-Key `app.sidebar` (DE + EN).
-- **`formatResultAsText` Locale**: Datum und Labels (Spieler/Players) jetzt sprachabhängig. Neuer `locale`-Parameter (Default: `'de-DE'`). Caller in TournamentFinished + TournamentHistory aktualisiert.
-- **Dynamische QR-Code URL**: Hardcodierte Vercel-URL im QR-Code durch `window.location.origin + import.meta.env.BASE_URL` ersetzt.
-- **useCallback-Dependencies**: `language` in Dependency-Arrays ergänzt.
-- **1 neuer Test**: `formatResultAsText` mit englischer Locale — **233 Tests gesamt**.
+- **SetupPage Refactoring**: App.tsx von 1465 auf 1102 Zeilen reduziert. Neue `SetupPage.tsx` (406 Zeilen).
+- **Per-Player Rebuy Cap**: `maxRebuysPerPlayer` in RebuyConfig, `canPlayerRebuy()` Helper.
+- **Late Registration**: `LateRegistrationConfig`, `isLateRegistrationOpen()`, Spieler während Turnier hinzufügen.
+- **Benannte Pausen**: `Level.label` im DisplayMode + Voice-Ansage.
+- **Lautstärke-Regler**: Master Volume (0–100%), Range-Slider im SettingsPanel.
+- **Bug-Fixes**: Sidebar i18n, `formatResultAsText` Locale, dynamische QR-URL.
+- **Neue Datei**: `src/components/SetupPage.tsx`
+- **24 Translation-Keys**, **7 neue Tests** — **239 Tests gesamt**.
 
 ### v2.9.4 — TV-Modus: 5 rotierende Screens
 
