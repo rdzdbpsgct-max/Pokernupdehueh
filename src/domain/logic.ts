@@ -1333,10 +1333,11 @@ export function clearTournamentHistory(): void {
 
 const PLACE_EMOJI = ['🏆', '🥈', '🥉'];
 
-export function formatResultAsText(result: TournamentResult): string {
+export function formatResultAsText(result: TournamentResult, locale: string = 'de-DE'): string {
+  const isEn = locale.startsWith('en');
   const lines: string[] = [];
   lines.push(`♠♥ ${result.name || 'Poker Tournament'} ♦♣`);
-  lines.push(new Date(result.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }));
+  lines.push(new Date(result.date).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }));
   lines.push('');
   for (const p of result.players) {
     const emoji = PLACE_EMOJI[p.place - 1] ?? `${p.place}.`;
@@ -1344,7 +1345,8 @@ export function formatResultAsText(result: TournamentResult): string {
     lines.push(`${emoji} ${p.name}${payoutStr}`);
   }
   lines.push('');
-  lines.push(`Prizepool: ${result.prizePool.toFixed(2)} € | ${result.playerCount} Spieler`);
+  const playersLabel = isEn ? 'Players' : 'Spieler';
+  lines.push(`Prizepool: ${result.prizePool.toFixed(2)} € | ${result.playerCount} ${playersLabel}`);
   if (result.totalRebuys > 0) lines.push(`Rebuys: ${result.totalRebuys}`);
   return lines.join('\n');
 }

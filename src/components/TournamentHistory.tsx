@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function TournamentHistory({ onClose }: Props) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<TournamentResult[]>(() => loadTournamentHistory());
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -55,11 +55,11 @@ export function TournamentHistory({ onClose }: Props) {
 
   const handleCopyText = useCallback(async (result: TournamentResult) => {
     try {
-      await navigator.clipboard.writeText(formatResultAsText(result));
+      await navigator.clipboard.writeText(formatResultAsText(result, language === 'de' ? 'de-DE' : 'en-US'));
       setCopiedId(result.id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch { /* clipboard not available */ }
-  }, []);
+  }, [language]);
 
   const handleDownloadCSV = useCallback((result: TournamentResult) => {
     const csv = formatResultAsCSV(result);

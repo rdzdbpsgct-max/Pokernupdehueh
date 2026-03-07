@@ -1189,7 +1189,7 @@ function App() {
               {/* QR Code — App link */}
               <div className="flex flex-col items-center gap-2 pt-2 pb-4">
                 <QRCodeSVG
-                  value="https://pokernupdehueh.vercel.app/"
+                  value={`${window.location.origin}${import.meta.env.BASE_URL || '/'}`}
                   size={100}
                   level="L"
                   bgColor={theme === 'dark' ? '#111827' : '#f9fafb'}
@@ -1338,7 +1338,7 @@ function App() {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                   }`}
                 >
-                  {showSidebar ? '✓ Sidebar' : 'Sidebar'}
+                  {showSidebar ? `✓ ${t('app.sidebar')}` : t('app.sidebar')}
                 </button>
               </div>
             </div>

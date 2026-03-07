@@ -2365,6 +2365,28 @@ describe('formatResultAsText', () => {
     expect(text).toContain('🥉 Bob');
     expect(text).toContain('Prizepool: 30.00 €');
   });
+
+  it('uses English labels when locale is en-US', () => {
+    const result = {
+      id: 'test-id',
+      name: 'Friday Night',
+      date: '2026-01-15T20:00:00.000Z',
+      playerCount: 3,
+      buyIn: 10,
+      prizePool: 30,
+      players: [
+        { name: 'Alice', place: 1, payout: 21, rebuys: 0, addOn: false, knockouts: 2, bountyEarned: 0, netBalance: 11 },
+        { name: 'Bob', place: 2, payout: 9, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -1 },
+      ],
+      bountyEnabled: false, bountyAmount: 0,
+      rebuyEnabled: false, totalRebuys: 0,
+      addOnEnabled: false, totalAddOns: 0,
+      elapsedSeconds: 1500, levelsPlayed: 3,
+    };
+    const text = formatResultAsText(result, 'en-US');
+    expect(text).toContain('Players');
+    expect(text).not.toContain('Spieler');
+  });
 });
 
 describe('formatResultAsCSV', () => {

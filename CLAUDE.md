@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.9.3
+**Version**: 2.9.5
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -233,6 +233,20 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.9.5 — Bug-Fixes: i18n, Locale, QR-URL
+
+- **„Sidebar" i18n**: Hardcodierter String „Sidebar" im Game-Mode durch `t('app.sidebar')` ersetzt. Neuer Translation-Key `app.sidebar` (DE + EN).
+- **`formatResultAsText` Locale**: Datum und Labels (Spieler/Players) jetzt sprachabhängig. Neuer `locale`-Parameter (Default: `'de-DE'`). Caller in TournamentFinished + TournamentHistory aktualisiert.
+- **Dynamische QR-Code URL**: Hardcodierte Vercel-URL im QR-Code durch `window.location.origin + import.meta.env.BASE_URL` ersetzt.
+- **useCallback-Dependencies**: `language` in Dependency-Arrays ergänzt.
+- **1 neuer Test**: `formatResultAsText` mit englischer Locale — **233 Tests gesamt**.
+
+### v2.9.4 — TV-Modus: 5 rotierende Screens
+
+- **3 neue TV-Screens**: Spieler, Stats, Auszahlung im TV/Projector-Display. 5 rotierende Screens: Spieler → Stats → Auszahlung → Blindstruktur → Chips.
+- **8 neue Props** an DisplayMode, **~15 neue Translation-Keys** pro Sprache.
+- **232 Tests**, Lint + Build bestanden.
 
 ### v2.9.3 — Sprachausgabe: Elimination + Hand-for-Hand MP3
 

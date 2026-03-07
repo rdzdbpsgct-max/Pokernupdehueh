@@ -29,7 +29,7 @@ export function TournamentFinished({
   tournamentResult,
   onBackToSetup,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { resolved: theme } = useTheme();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -39,11 +39,11 @@ export function TournamentFinished({
   const handleCopyText = useCallback(async () => {
     if (!tournamentResult) return;
     try {
-      await navigator.clipboard.writeText(formatResultAsText(tournamentResult));
+      await navigator.clipboard.writeText(formatResultAsText(tournamentResult, language === 'de' ? 'de-DE' : 'en-US'));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch { /* clipboard not available */ }
-  }, [tournamentResult]);
+  }, [tournamentResult, language]);
 
   const handleDownloadCSV = useCallback(() => {
     if (!tournamentResult) return;
@@ -361,7 +361,7 @@ export function TournamentFinished({
         {/* QR Code — App link */}
         <div className="bg-gray-50/90 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/40 rounded-xl p-4 flex flex-col items-center gap-2 shadow-lg shadow-gray-300/30 dark:shadow-black/20">
           <QRCodeSVG
-            value="https://pokernupdehueh.vercel.app/"
+            value={`${window.location.origin}${import.meta.env.BASE_URL || '/'}`}
             size={120}
             level="L"
             bgColor={qrBg}

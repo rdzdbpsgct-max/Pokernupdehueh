@@ -5,6 +5,18 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.9.5] – 2026-03-07
+
+### Bug-Fixes: i18n, Locale, QR-URL
+
+- **„Sidebar" i18n**: Hardcodierter String „Sidebar" im Game-Mode durch `t('app.sidebar')` ersetzt. Neuer Translation-Key `app.sidebar` (DE + EN).
+- **`formatResultAsText` Locale**: Datum und Labels (Spieler/Players) jetzt sprachabhängig. Neuer `locale`-Parameter (Default: `'de-DE'`). Caller in TournamentFinished + TournamentHistory aktualisiert.
+- **Dynamische QR-Code URL**: Hardcodierte Vercel-URL im QR-Code durch `window.location.origin + import.meta.env.BASE_URL` ersetzt — funktioniert auf allen Deployments (GitHub Pages, Vercel, lokal).
+- **useCallback-Dependencies**: `language` in Dependency-Arrays von `handleCopyText` (TournamentFinished, TournamentHistory) ergänzt.
+- **1 neuer Test**: `formatResultAsText` mit englischer Locale — **233 Tests gesamt**.
+
+---
+
 ## [2.9.4] – 2026-03-06
 
 ### TV-Modus: 5 rotierende Screens
