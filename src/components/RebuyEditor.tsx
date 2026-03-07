@@ -146,6 +146,22 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               <span className="text-gray-400 dark:text-gray-500 text-xs">{t('rebuyEditor.minutes')}</span>
             </div>
           )}
+
+          {/* Max rebuys per player */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-700 dark:text-gray-300">{t('rebuyEditor.maxPerPlayer')}</label>
+            <NumberStepper
+              value={rebuy.maxRebuysPerPlayer ?? 0}
+              onChange={(v) => onChange({ ...rebuy, maxRebuysPerPlayer: v <= 0 ? undefined : v })}
+              min={0}
+              max={20}
+              step={1}
+              inputClassName="w-16"
+            />
+            <span className="text-gray-400 dark:text-gray-500 text-xs">
+              {rebuy.maxRebuysPerPlayer === undefined ? t('rebuyEditor.unlimited') : ''}
+            </span>
+          </div>
         </div>
       )}
     </div>

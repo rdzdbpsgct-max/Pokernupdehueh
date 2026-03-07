@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
-import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, findChipLeader } from '../domain/logic';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, findChipLeader, canPlayerRebuy } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
@@ -273,7 +273,8 @@ export function PlayerPanel({
                       onClick={() =>
                         onUpdateRebuys(player.id, player.rebuys + 1)
                       }
-                      className="w-7 h-7 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
+                      disabled={!canPlayerRebuy(player, rebuyConfig)}
+                      className="w-7 h-7 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       +
                     </button>

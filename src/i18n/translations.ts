@@ -165,6 +165,8 @@ const de = {
   'rebuyEditor.timePeriod': 'Rebuy-Zeitraum',
   'rebuyEditor.hours': 'Std',
   'rebuyEditor.minutes': 'Min',
+  'rebuyEditor.maxPerPlayer': 'Max pro Spieler',
+  'rebuyEditor.unlimited': '(unbegrenzt)',
 
   // --- Rebuy Status ---
   'rebuyStatus.active': '♻ Rebuy aktiv',
@@ -620,6 +622,8 @@ const en: Record<TranslationKey, string> = {
   'rebuyEditor.timePeriod': 'Rebuy Period',
   'rebuyEditor.hours': 'Hrs',
   'rebuyEditor.minutes': 'Min',
+  'rebuyEditor.maxPerPlayer': 'Max per Player',
+  'rebuyEditor.unlimited': '(unlimited)',
 
   // --- Rebuy Status ---
   'rebuyStatus.active': '♻ Rebuy active',

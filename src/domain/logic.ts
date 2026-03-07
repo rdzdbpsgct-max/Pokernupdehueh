@@ -592,6 +592,12 @@ export function isRebuyActive(
   return elapsedSeconds < rebuy.timeLimit;
 }
 
+/** Check if a specific player can still rebuy (considering per-player cap) */
+export function canPlayerRebuy(player: Player, rebuy: RebuyConfig): boolean {
+  if (rebuy.maxRebuysPerPlayer === undefined) return true;
+  return player.rebuys < rebuy.maxRebuysPerPlayer;
+}
+
 export function computeTournamentElapsedSeconds(
   levels: Level[],
   currentLevelIndex: number,

@@ -45,6 +45,8 @@ export interface RebuyConfig {
   rebuyCost: number;
   /** Chips received per rebuy (defaults to startingChips) */
   rebuyChips: number;
+  /** Max rebuys per player (undefined = unlimited) */
+  maxRebuysPerPlayer?: number;
 }
 
 export interface AddOnConfig {

@@ -65,6 +65,7 @@ import {
   computeAverageStackFromPlayers,
   addRebuyToStack,
   addAddOnToStack,
+  canPlayerRebuy,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -694,6 +695,28 @@ describe('isRebuyActive', () => {
     const rebuy: RebuyConfig = { enabled: true, limitType: 'time', levelLimit: 4, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 };
     expect(isRebuyActive(rebuy, 0, levels, 3600)).toBe(false);
     expect(isRebuyActive(rebuy, 0, levels, 4000)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// canPlayerRebuy
+// ---------------------------------------------------------------------------
+
+describe('canPlayerRebuy', () => {
+  const player: Player = { id: 'p1', name: 'Alice', rebuys: 2, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 };
+  const rebuy: RebuyConfig = { enabled: true, limitType: 'levels', levelLimit: 4, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 };
+
+  it('returns true when maxRebuysPerPlayer is undefined (unlimited)', () => {
+    expect(canPlayerRebuy(player, rebuy)).toBe(true);
+  });
+
+  it('returns true when player has fewer rebuys than the cap', () => {
+    expect(canPlayerRebuy(player, { ...rebuy, maxRebuysPerPlayer: 3 })).toBe(true);
+  });
+
+  it('returns false when player has reached the cap', () => {
+    expect(canPlayerRebuy(player, { ...rebuy, maxRebuysPerPlayer: 2 })).toBe(false);
+    expect(canPlayerRebuy(player, { ...rebuy, maxRebuysPerPlayer: 1 })).toBe(false);
   });
 });
 
