@@ -67,6 +67,12 @@ import {
   addAddOnToStack,
   canPlayerRebuy,
   isLateRegistrationOpen,
+  loadPlayerDatabase,
+  savePlayerDatabase,
+  addRegisteredPlayer,
+  deleteRegisteredPlayer,
+  importPlayersFromHistory,
+  syncPlayersToDatabase,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -2688,5 +2694,99 @@ describe('addAddOnToStack', () => {
     const player = makePlayer({ id: '1', name: 'A', chips: 25000 });
     const result = addAddOnToStack(player, 20000);
     expect(result.chips).toBe(45000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Persistent Player Database
+// ---------------------------------------------------------------------------
+
+describe('Player Database', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('loadPlayerDatabase returns empty array when no data', () => {
+    expect(loadPlayerDatabase()).toEqual([]);
+  });
+
+  it('addRegisteredPlayer adds a new player', () => {
+    const player = addRegisteredPlayer('Alice');
+    expect(player.name).toBe('Alice');
+    expect(player.id).toMatch(/^rp_/);
+    const db = loadPlayerDatabase();
+    expect(db).toHaveLength(1);
+    expect(db[0].name).toBe('Alice');
+  });
+
+  it('addRegisteredPlayer deduplicates case-insensitively', () => {
+    addRegisteredPlayer('Alice');
+    const updated = addRegisteredPlayer('alice');
+    expect(updated.name).toBe('Alice'); // keeps original casing
+    const db = loadPlayerDatabase();
+    expect(db).toHaveLength(1);
+  });
+
+  it('deleteRegisteredPlayer removes a player', () => {
+    const player = addRegisteredPlayer('Bob');
+    addRegisteredPlayer('Charlie');
+    deleteRegisteredPlayer(player.id);
+    const db = loadPlayerDatabase();
+    expect(db).toHaveLength(1);
+    expect(db[0].name).toBe('Charlie');
+  });
+
+  it('syncPlayersToDatabase adds new and updates existing', () => {
+    addRegisteredPlayer('Alice');
+    syncPlayersToDatabase(['Alice', 'Bob', 'Charlie']);
+    const db = loadPlayerDatabase();
+    expect(db).toHaveLength(3);
+    const names = db.map((p) => p.name);
+    expect(names).toContain('Alice');
+    expect(names).toContain('Bob');
+    expect(names).toContain('Charlie');
+  });
+
+  it('importPlayersFromHistory imports from tournament history', () => {
+    // Manually store history without going through saveTournamentResult
+    // (which auto-syncs players), to test importPlayersFromHistory in isolation
+    const result = {
+      id: 'test-1',
+      name: 'Test Tournament',
+      date: new Date().toISOString(),
+      playerCount: 3,
+      buyIn: 10,
+      prizePool: 30,
+      players: [
+        { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 2, bountyEarned: 0, netBalance: 10 },
+        { name: 'Bob', place: 2, payout: 10, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 0 },
+        { name: 'Charlie', place: 3, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+      ],
+      bountyEnabled: false,
+      bountyAmount: 0,
+      rebuyEnabled: false,
+      totalRebuys: 0,
+      addOnEnabled: false,
+      totalAddOns: 0,
+      elapsedSeconds: 3600,
+      levelsPlayed: 8,
+    };
+    localStorage.setItem('poker-timer-history', JSON.stringify([result]));
+
+    // Add Alice to DB first — should not be duplicated
+    addRegisteredPlayer('Alice');
+    const added = importPlayersFromHistory();
+    expect(added).toBe(2); // Bob + Charlie
+    const db = loadPlayerDatabase();
+    expect(db).toHaveLength(3);
+  });
+
+  it('savePlayerDatabase + loadPlayerDatabase round-trip', () => {
+    const players = [
+      { id: 'rp_1', name: 'Test', createdAt: '2024-01-01', lastPlayedAt: '2024-06-01' },
+    ];
+    savePlayerDatabase(players);
+    const loaded = loadPlayerDatabase();
+    expect(loaded).toEqual(players);
   });
 });

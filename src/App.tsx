@@ -62,8 +62,9 @@ const RebuyStatus = lazy(() => import('./components/RebuyStatus').then(m => ({ d
 const BubbleIndicator = lazy(() => import('./components/BubbleIndicator').then(m => ({ default: m.BubbleIndicator })));
 const SettingsPanel = lazy(() => import('./components/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
 const TournamentFinished = lazy(() => import('./components/TournamentFinished').then(m => ({ default: m.TournamentFinished })));
-const DisplayMode = lazy(() => import('./components/DisplayMode').then(m => ({ default: m.DisplayMode })));
+const DisplayMode = lazy(() => import('./components/display').then(m => ({ default: m.DisplayMode })));
 const SharedResultView = lazy(() => import('./components/SharedResultView').then(m => ({ default: m.SharedResultView })));
+const CallTheClock = lazy(() => import('./components/CallTheClock').then(m => ({ default: m.CallTheClock })));
 
 type Mode = 'setup' | 'game';
 
@@ -103,6 +104,7 @@ function App() {
   const [lastHandActive, setLastHandActive] = useState(false);
   const [handForHandActive, setHandForHandActive] = useState(false);
   const [displayMode, setDisplayMode] = useState(false);
+  const [showCallTheClock, setShowCallTheClock] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -371,6 +373,9 @@ function App() {
         case 'KeyH':
           handleHandForHand();
           break;
+        case 'KeyC':
+          setShowCallTheClock((v) => !v);
+          break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -483,21 +488,26 @@ function App() {
       if (!player || player.status !== 'eliminated') return prev;
 
       const killedBy = player.eliminatedBy;
+      const reinstatedPlacement = player.placement;
 
-      return {
-        ...prev,
-        players: prev.players.map((p) => {
-          // Reset the reinstated player
-          if (p.id === playerId) {
-            return { ...p, status: 'active' as const, placement: null, eliminatedBy: null };
-          }
-          // Decrement knockout count of the killer
-          if (killedBy && p.id === killedBy) {
-            return { ...p, knockouts: Math.max(0, p.knockouts - 1) };
-          }
-          return p;
-        }),
-      };
+      const updated = prev.players.map((p) => {
+        // Reset the reinstated player
+        if (p.id === playerId) {
+          return { ...p, status: 'active' as const, placement: null, eliminatedBy: null };
+        }
+        // Decrement knockout count of the killer
+        if (killedBy && p.id === killedBy) {
+          return { ...p, knockouts: Math.max(0, p.knockouts - 1) };
+        }
+        // Recalculate placements: players eliminated before the reinstated one
+        // had higher placement numbers; shift them down by 1
+        if (p.status === 'eliminated' && reinstatedPlacement != null && p.placement != null && p.placement > reinstatedPlacement) {
+          return { ...p, placement: p.placement - 1 };
+        }
+        return p;
+      });
+
+      return { ...prev, players: updated };
     });
   }, []);
 
@@ -1075,6 +1085,17 @@ function App() {
             bounty={config.bounty}
             averageStack={averageStack}
             tournamentElapsed={tournamentElapsed}
+          />
+        </Suspense>
+      )}
+
+      {/* Call the Clock Modal */}
+      {showCallTheClock && mode === 'game' && (
+        <Suspense fallback={null}>
+          <CallTheClock
+            durationSeconds={settings.callTheClockSeconds}
+            soundEnabled={settings.soundEnabled}
+            onClose={() => setShowCallTheClock(false)}
           />
         </Suspense>
       )}

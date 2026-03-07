@@ -1,0 +1,505 @@
+import type {
+  TournamentConfig,
+  TournamentCheckpoint,
+  TournamentResult,
+  RegisteredPlayer,
+  Settings,
+  Player,
+  Level,
+  RebuyConfig,
+  AddOnConfig,
+  BountyConfig,
+  ChipConfig,
+  PayoutConfig,
+  LateRegistrationConfig,
+} from './types';
+import { generateBlindStructure } from './blinds';
+import { defaultChipConfig } from './chips';
+import { defaultPayoutConfig } from './tournament';
+import { defaultLateRegistrationConfig } from './validation';
+
+// ---------------------------------------------------------------------------
+// Default Configs
+// ---------------------------------------------------------------------------
+
+export function defaultRebuyConfig(buyIn = 10, startingChips = 20000): RebuyConfig {
+  return {
+    enabled: false,
+    limitType: 'levels',
+    levelLimit: 4,
+    timeLimit: 3600,
+    rebuyCost: buyIn,
+    rebuyChips: startingChips,
+  };
+}
+
+export function defaultAddOnConfig(buyIn = 10, startingChips = 20000): AddOnConfig {
+  return {
+    enabled: false,
+    cost: buyIn,
+    chips: startingChips,
+  };
+}
+
+export function defaultBountyConfig(): BountyConfig {
+  return { enabled: false, amount: 5 };
+}
+
+export function defaultSettings(): Settings {
+  return {
+    soundEnabled: true,
+    countdownEnabled: true,
+    autoAdvance: true,
+    largeDisplay: true,
+    voiceEnabled: true,
+    volume: 100,
+    callTheClockSeconds: 60,
+  };
+}
+
+/**
+ * Create a default tournament config with a generated "normal" blind structure.
+ */
+export function defaultConfig(): TournamentConfig {
+  const buyIn = 10;
+  const startingChips = 20000;
+  return {
+    name: '',
+    anteEnabled: false,
+    anteMode: 'standard',
+    levels: generateBlindStructure({ startingChips, speed: 'normal', anteEnabled: false }),
+    players: [] as Player[],
+    dealerIndex: 0,
+    payout: defaultPayoutConfig(),
+    rebuy: defaultRebuyConfig(buyIn, startingChips),
+    addOn: defaultAddOnConfig(buyIn, startingChips),
+    bounty: defaultBountyConfig(),
+    chips: defaultChipConfig(),
+    buyIn,
+    startingChips,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Config Parsing
+// ---------------------------------------------------------------------------
+
+/** Shared parser: normalizes a raw parsed object into a TournamentConfig. */
+export function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | null {
+  if (!parsed || !Array.isArray(parsed.levels)) return null;
+  const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
+  const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 20000;
+  const rebuyRaw = parsed.rebuy as Record<string, unknown> | undefined;
+  const rebuy: RebuyConfig = rebuyRaw
+    ? {
+        ...defaultRebuyConfig(buyIn, startingChips),
+        ...(rebuyRaw as Partial<RebuyConfig>),
+        rebuyCost: typeof rebuyRaw.rebuyCost === 'number' ? rebuyRaw.rebuyCost : buyIn,
+        rebuyChips: typeof rebuyRaw.rebuyChips === 'number' ? rebuyRaw.rebuyChips : startingChips,
+      }
+    : defaultRebuyConfig(buyIn, startingChips);
+  const addOnRaw = parsed.addOn as Record<string, unknown> | undefined;
+  const addOn: AddOnConfig = addOnRaw
+    ? {
+        ...defaultAddOnConfig(buyIn, startingChips),
+        ...(addOnRaw as Partial<AddOnConfig>),
+        cost: typeof addOnRaw.cost === 'number' ? addOnRaw.cost : buyIn,
+        chips: typeof addOnRaw.chips === 'number' ? addOnRaw.chips : startingChips,
+      }
+    : defaultAddOnConfig(buyIn, startingChips);
+  return {
+    name: typeof parsed.name === 'string' ? parsed.name : 'Tournament',
+    levels: parsed.levels as Level[],
+    anteEnabled: (parsed.anteEnabled as boolean) ?? false,
+    anteMode: (parsed.anteMode === 'bigBlindAnte' ? 'bigBlindAnte' : 'standard'),
+    players: Array.isArray(parsed.players)
+      ? ((parsed.players as Record<string, unknown>[]).map((p) => ({
+          ...p,
+          rebuys: typeof p.rebuys === 'number' ? p.rebuys : 0,
+          addOn: typeof p.addOn === 'boolean' ? p.addOn : false,
+          status: p.status === 'eliminated' ? 'eliminated' : 'active',
+          placement: typeof p.placement === 'number' ? p.placement : null,
+          eliminatedBy: typeof p.eliminatedBy === 'string' ? p.eliminatedBy : null,
+          knockouts: typeof p.knockouts === 'number' ? p.knockouts : 0,
+          chips: typeof p.chips === 'number' ? p.chips : undefined,
+        })) as Player[])
+      : ([] as Player[]),
+    dealerIndex: typeof parsed.dealerIndex === 'number' ? parsed.dealerIndex : 0,
+    payout: (parsed.payout as PayoutConfig) ?? defaultPayoutConfig(),
+    rebuy,
+    addOn,
+    bounty: (parsed.bounty as BountyConfig) ?? defaultBountyConfig(),
+    chips: parsed.chips
+      ? {
+          ...defaultChipConfig(),
+          ...(parsed.chips as ChipConfig),
+          colorUpEnabled: typeof (parsed.chips as Record<string, unknown>).colorUpEnabled === 'boolean'
+            ? (parsed.chips as ChipConfig).colorUpEnabled
+            : true,
+          colorUpSchedule: Array.isArray((parsed.chips as Record<string, unknown>).colorUpSchedule)
+            ? (parsed.chips as ChipConfig).colorUpSchedule
+            : [],
+        }
+      : defaultChipConfig(),
+    buyIn,
+    startingChips,
+    lateRegistration: parsed.lateRegistration
+      ? { ...defaultLateRegistrationConfig(), ...(parsed.lateRegistration as Partial<LateRegistrationConfig>) }
+      : undefined,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Config Persistence
+// ---------------------------------------------------------------------------
+
+const CONFIG_KEY = 'poker-timer-config';
+const SETTINGS_KEY = 'poker-timer-settings';
+
+export function saveConfig(config: TournamentConfig): void {
+  try {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  } catch {
+    // localStorage unavailable (e.g. private browsing, quota exceeded)
+  }
+}
+
+export function loadConfig(): TournamentConfig | null {
+  const raw = localStorage.getItem(CONFIG_KEY);
+  if (!raw) return null;
+  try {
+    return parseConfigObject(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+export function saveSettings(settings: Settings): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // localStorage unavailable (e.g. private browsing, quota exceeded)
+  }
+}
+
+export function loadSettings(): Settings | null {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return { ...defaultSettings(), ...parsed } as Settings;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament Checkpoint (auto-save / restore)
+// ---------------------------------------------------------------------------
+
+const CHECKPOINT_KEY = 'poker-timer-checkpoint';
+
+export function saveCheckpoint(checkpoint: TournamentCheckpoint): void {
+  try {
+    localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(checkpoint));
+  } catch { /* private browsing or quota exceeded */ }
+}
+
+export function loadCheckpoint(): TournamentCheckpoint | null {
+  try {
+    const raw = localStorage.getItem(CHECKPOINT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.version !== 1) return null;
+    const levels = parsed.config?.levels;
+    if (!Array.isArray(levels) || levels.length === 0) return null;
+    // Clamp to valid ranges
+    parsed.timer.currentLevelIndex = Math.max(0, Math.min(
+      parsed.timer.currentLevelIndex, levels.length - 1,
+    ));
+    parsed.timer.remainingSeconds = Math.max(0, parsed.timer.remainingSeconds);
+    return parsed as TournamentCheckpoint;
+  } catch {
+    return null;
+  }
+}
+
+export function clearCheckpoint(): void {
+  try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament History (persistent results)
+// ---------------------------------------------------------------------------
+
+const HISTORY_KEY = 'poker-timer-history';
+const MAX_HISTORY = 50;
+
+export function saveTournamentResult(result: TournamentResult): void {
+  try {
+    const history = loadTournamentHistory();
+    history.unshift(result);
+    if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch { /* private browsing or quota exceeded */ }
+
+  // Auto-save player names to persistent database
+  syncPlayersToDatabase(result.players.map((p) => p.name));
+}
+
+export function loadTournamentHistory(): TournamentResult[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as TournamentResult[];
+  } catch {
+    return [];
+  }
+}
+
+export function deleteTournamentResult(id: string): void {
+  try {
+    const history = loadTournamentHistory();
+    const filtered = history.filter((r) => r.id !== id);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
+  } catch { /* ignore */ }
+}
+
+export function clearTournamentHistory(): void {
+  try { localStorage.removeItem(HISTORY_KEY); } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
+// Config JSON Import / Export
+// ---------------------------------------------------------------------------
+
+export function exportConfigJSON(config: TournamentConfig): string {
+  return JSON.stringify(config, null, 2);
+}
+
+export function importConfigJSON(json: string): TournamentConfig | null {
+  try {
+    const parsed = JSON.parse(json);
+    if (!parsed || typeof parsed.name !== 'string') return null;
+    return parseConfigObject(parsed);
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament Templates
+// ---------------------------------------------------------------------------
+
+export interface TournamentTemplate {
+  id: string;
+  name: string;
+  createdAt: string;
+  config: TournamentConfig;
+}
+
+const TEMPLATES_KEY = 'poker-timer-templates';
+
+export function loadTemplates(): TournamentTemplate[] {
+  const raw = localStorage.getItem(TEMPLATES_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (t: unknown) =>
+        t !== null &&
+        typeof t === 'object' &&
+        typeof (t as Record<string, unknown>).id === 'string' &&
+        typeof (t as Record<string, unknown>).name === 'string',
+    ) as TournamentTemplate[];
+  } catch {
+    return [];
+  }
+}
+
+export function saveTemplate(name: string, config: TournamentConfig): TournamentTemplate {
+  const templates = loadTemplates();
+  const template: TournamentTemplate = {
+    id: `tmpl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    createdAt: new Date().toISOString(),
+    config,
+  };
+  templates.push(template);
+  try {
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  } catch {
+    // localStorage unavailable
+  }
+  return template;
+}
+
+export function deleteTemplate(id: string): void {
+  const templates = loadTemplates().filter((t) => t.id !== id);
+  try {
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+/**
+ * Serialize a tournament config to JSON for file export.
+ */
+export function exportTemplateToJSON(name: string, config: TournamentConfig): string {
+  return JSON.stringify({ name, createdAt: new Date().toISOString(), config }, null, 2);
+}
+
+/**
+ * Parse a JSON string from a template file.
+ * Accepts two formats:
+ * 1. Template format: { name, config: { levels, ... } }
+ * 2. Direct config format: { name, levels: [...], ... }
+ * Returns the parsed name + config, or null if invalid.
+ */
+export function parseTemplateFile(json: string): { name: string; config: TournamentConfig } | null {
+  try {
+    const parsed = JSON.parse(json);
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    // Template format: { name, config: { ... } }
+    if (
+      parsed.config &&
+      typeof parsed.config === 'object' &&
+      Array.isArray((parsed.config as Record<string, unknown>).levels)
+    ) {
+      const config = parseConfigObject(parsed.config as Record<string, unknown>);
+      if (!config) return null;
+      const name = typeof parsed.name === 'string' ? parsed.name : config.name;
+      return { name, config };
+    }
+
+    // Direct config format: { name, levels: [...], ... }
+    if (Array.isArray(parsed.levels)) {
+      const config = parseConfigObject(parsed as Record<string, unknown>);
+      if (!config) return null;
+      return { name: config.name, config };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Persistent Player Database
+// ---------------------------------------------------------------------------
+
+const PLAYERS_KEY = 'poker-timer-players';
+
+export function loadPlayerDatabase(): RegisteredPlayer[] {
+  try {
+    const raw = localStorage.getItem(PLAYERS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as RegisteredPlayer[];
+  } catch {
+    return [];
+  }
+}
+
+export function savePlayerDatabase(players: RegisteredPlayer[]): void {
+  try {
+    localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+  } catch { /* private browsing or quota exceeded */ }
+}
+
+export function addRegisteredPlayer(name: string): RegisteredPlayer {
+  const db = loadPlayerDatabase();
+  const normalized = name.trim();
+  // Check for duplicate (case-insensitive)
+  const existing = db.find((p) => p.name.toLowerCase() === normalized.toLowerCase());
+  if (existing) {
+    existing.lastPlayedAt = new Date().toISOString();
+    savePlayerDatabase(db);
+    return existing;
+  }
+  const player: RegisteredPlayer = {
+    id: `rp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name: normalized,
+    createdAt: new Date().toISOString(),
+    lastPlayedAt: new Date().toISOString(),
+  };
+  db.push(player);
+  savePlayerDatabase(db);
+  return player;
+}
+
+export function deleteRegisteredPlayer(id: string): void {
+  const db = loadPlayerDatabase().filter((p) => p.id !== id);
+  savePlayerDatabase(db);
+}
+
+/**
+ * Import player names from tournament history into the player database.
+ * Deduplicates by normalized (lowercased) name.
+ */
+export function importPlayersFromHistory(): number {
+  const history = loadTournamentHistory();
+  const db = loadPlayerDatabase();
+  const existingNames = new Set(db.map((p) => p.name.toLowerCase()));
+  let added = 0;
+  const now = new Date().toISOString();
+
+  for (const result of history) {
+    for (const player of result.players) {
+      const normalized = player.name.trim();
+      if (!normalized) continue;
+      if (existingNames.has(normalized.toLowerCase())) continue;
+      existingNames.add(normalized.toLowerCase());
+      db.push({
+        id: `rp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${added}`,
+        name: normalized,
+        createdAt: now,
+        lastPlayedAt: result.date,
+      });
+      added++;
+    }
+  }
+
+  if (added > 0) savePlayerDatabase(db);
+  return added;
+}
+
+/**
+ * Sync player names from a finished tournament into the player database.
+ * Updates lastPlayedAt for existing players, adds new ones.
+ */
+export function syncPlayersToDatabase(playerNames: string[]): void {
+  const db = loadPlayerDatabase();
+  const nameMap = new Map(db.map((p) => [p.name.toLowerCase(), p]));
+  const now = new Date().toISOString();
+  let changed = false;
+
+  for (const name of playerNames) {
+    const normalized = name.trim();
+    if (!normalized) continue;
+    const existing = nameMap.get(normalized.toLowerCase());
+    if (existing) {
+      existing.lastPlayedAt = now;
+      changed = true;
+    } else {
+      const player: RegisteredPlayer = {
+        id: `rp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        name: normalized,
+        createdAt: now,
+        lastPlayedAt: now,
+      };
+      db.push(player);
+      nameMap.set(normalized.toLowerCase(), player);
+      changed = true;
+    }
+  }
+
+  if (changed) savePlayerDatabase(db);
+}

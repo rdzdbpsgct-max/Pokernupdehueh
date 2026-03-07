@@ -1,5 +1,6 @@
 import type { Settings } from '../domain/types';
 import { useTranslation } from '../i18n';
+import { NumberStepper } from './NumberStepper';
 
 interface Props {
   settings: Settings;
@@ -71,6 +72,21 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.largeDisplay')}</span>
           <CheckBox checked={settings.largeDisplay} onChange={() => toggle('largeDisplay')} />
         </div>
+        {/* Call the Clock duration */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.callTheClock')}</span>
+          <div className="flex items-center gap-1">
+            <NumberStepper
+              value={settings.callTheClockSeconds}
+              onChange={(v) => onChange({ ...settings, callTheClockSeconds: Math.max(10, Math.min(300, v)) })}
+              min={10}
+              max={300}
+              step={10}
+              inputClassName="w-14"
+            />
+            <span className="text-xs text-gray-400 dark:text-gray-500">s</span>
+          </div>
+        </div>
         <button
           onClick={onToggleFullscreen}
           className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors text-left"
@@ -87,6 +103,7 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
           <span><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800/80 rounded-md border border-gray-300 dark:border-gray-700/50 text-gray-500 dark:text-gray-400 shadow-sm shadow-gray-200/30 dark:shadow-black/10">N</kbd> {t('settings.shortcutNext')}</span>
           <span><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800/80 rounded-md border border-gray-300 dark:border-gray-700/50 text-gray-500 dark:text-gray-400 shadow-sm shadow-gray-200/30 dark:shadow-black/10">V</kbd> {t('settings.shortcutPrevious')}</span>
           <span><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800/80 rounded-md border border-gray-300 dark:border-gray-700/50 text-gray-500 dark:text-gray-400 shadow-sm shadow-gray-200/30 dark:shadow-black/10">R</kbd> {t('settings.shortcutReset')}</span>
+          <span><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800/80 rounded-md border border-gray-300 dark:border-gray-700/50 text-gray-500 dark:text-gray-400 shadow-sm shadow-gray-200/30 dark:shadow-black/10">C</kbd> {t('settings.shortcutClock')}</span>
         </div>
       </div>
     </div>

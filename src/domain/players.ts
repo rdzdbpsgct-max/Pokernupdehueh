@@ -1,0 +1,149 @@
+import type { Player } from './types';
+import { generatePlayerId } from './helpers';
+import { t as moduleT } from '../i18n/translations';
+
+// ---------------------------------------------------------------------------
+// Players
+// ---------------------------------------------------------------------------
+
+export function defaultPlayers(count: number, t = moduleT): Player[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: generatePlayerId(),
+    name: t('logic.defaultPlayerName', { n: i + 1 }),
+    rebuys: 0,
+    addOn: false,
+    status: 'active' as const,
+    placement: null,
+    eliminatedBy: null,
+    knockouts: 0,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Seating
+// ---------------------------------------------------------------------------
+
+/**
+ * Swaps a player with their neighbour (direction -1 = up, +1 = down).
+ * Returns the same array reference if the move is out of bounds.
+ */
+export function movePlayer(players: Player[], fromIndex: number, direction: -1 | 1): Player[] {
+  const toIndex = fromIndex + direction;
+  if (toIndex < 0 || toIndex >= players.length) return players;
+  const result = [...players];
+  [result[fromIndex], result[toIndex]] = [result[toIndex], result[fromIndex]];
+  return result;
+}
+
+/**
+ * Fisher-Yates shuffle -- returns a new shuffled array plus a random dealer index.
+ */
+export function shufflePlayers(players: Player[]): { players: Player[]; dealerIndex: number } {
+  const result = [...players];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  const dealerIndex = Math.floor(Math.random() * result.length);
+  return { players: result, dealerIndex };
+}
+
+/**
+ * Advances the dealer button to the next active player (skipping eliminated ones).
+ */
+export function advanceDealer(players: Player[], currentDealerIndex: number): number {
+  const n = players.length;
+  if (n === 0) return 0;
+  for (let i = 1; i <= n; i++) {
+    const candidate = (currentDealerIndex + i) % n;
+    if (players[candidate].status === 'active') return candidate;
+  }
+  return currentDealerIndex;
+}
+
+// ---------------------------------------------------------------------------
+// Placement & Bubble
+// ---------------------------------------------------------------------------
+
+export function computeNextPlacement(players: Player[]): number {
+  return players.filter((p) => p.status === 'active').length;
+}
+
+export function isBubble(activePlayers: number, paidPlaces: number): boolean {
+  if (paidPlaces <= 0 || activePlayers <= 1) return false;
+  return activePlayers === paidPlaces + 1;
+}
+
+export function isInTheMoney(activePlayers: number, paidPlaces: number): boolean {
+  if (paidPlaces <= 0 || activePlayers <= 1) return false;
+  return activePlayers <= paidPlaces;
+}
+
+// ---------------------------------------------------------------------------
+// Average stack
+// ---------------------------------------------------------------------------
+
+export function computeAverageStack(
+  players: Player[],
+  startingChips: number,
+  rebuyChips: number,
+  addOnChips: number,
+): number {
+  const activePlayers = players.filter((p) => p.status === 'active').length;
+  if (activePlayers === 0) return 0;
+  const totalRebuys = players.reduce((sum, p) => sum + p.rebuys, 0);
+  const totalAddOns = players.filter((p) => p.addOn).length;
+  const totalChips =
+    players.length * startingChips +
+    totalRebuys * rebuyChips +
+    totalAddOns * addOnChips;
+  return Math.round(totalChips / activePlayers);
+}
+
+export function computeAverageStackInBB(averageStack: number, currentBigBlind: number): number {
+  if (currentBigBlind <= 0) return 0;
+  return Math.round((averageStack / currentBigBlind) * 10) / 10;
+}
+
+// ---------------------------------------------------------------------------
+// Per-player stack tracking
+// ---------------------------------------------------------------------------
+
+export function initializePlayerStacks(
+  players: Player[],
+  startingChips: number,
+  rebuyChips: number,
+  addOnChips: number,
+): Player[] {
+  return players.map((p) => ({
+    ...p,
+    chips: p.status === 'active'
+      ? startingChips + p.rebuys * rebuyChips + (p.addOn ? addOnChips : 0)
+      : 0,
+  }));
+}
+
+export function findChipLeader(players: Player[]): string | null {
+  const withChips = players.filter((p) => p.status === 'active' && p.chips !== undefined && p.chips > 0);
+  if (withChips.length === 0) return null;
+  return withChips.reduce((leader, p) => (p.chips! > (leader.chips ?? 0) ? p : leader)).id;
+}
+
+export function computeAverageStackFromPlayers(players: Player[]): number | null {
+  const active = players.filter((p) => p.status === 'active');
+  if (active.length === 0) return null;
+  const tracked = active.filter((p) => p.chips !== undefined);
+  if (tracked.length === 0) return null;
+  const total = tracked.reduce((sum, p) => sum + (p.chips ?? 0), 0);
+  return Math.round(total / active.length);
+}
+
+export function addRebuyToStack(player: Player, rebuyChips: number): Player {
+  if (player.chips === undefined) return player;
+  return { ...player, chips: player.chips + rebuyChips };
+}
+
+export function addAddOnToStack(player: Player, addOnChips: number): Player {
+  if (player.chips === undefined) return player;
+  return { ...player, chips: player.chips + addOnChips };
+}

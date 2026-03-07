@@ -132,6 +132,15 @@ const de = {
   'settings.shortcutNext': 'Nächstes',
   'settings.shortcutPrevious': 'Vorheriges',
   'settings.shortcutReset': 'Reset',
+  'settings.shortcutClock': 'Clock',
+  'settings.callTheClock': 'Call the Clock',
+
+  // --- Call the Clock ---
+  'callTheClock.title': 'Call the Clock',
+  'callTheClock.subtitle': 'Spieler muss innerhalb der Zeit handeln',
+  'callTheClock.timeUp': '0',
+  'callTheClock.dismiss': 'Schließen',
+  'callTheClock.shortcutHint': 'zum Schließen',
 
   // --- Player Manager ---
   'playerManager.count': 'Anzahl Spieler',
@@ -598,6 +607,15 @@ const en: Record<TranslationKey, string> = {
   'settings.shortcutNext': 'Next',
   'settings.shortcutPrevious': 'Previous',
   'settings.shortcutReset': 'Reset',
+  'settings.shortcutClock': 'Clock',
+  'settings.callTheClock': 'Call the Clock',
+
+  // --- Call the Clock ---
+  'callTheClock.title': 'Call the Clock',
+  'callTheClock.subtitle': 'Player must act within the time limit',
+  'callTheClock.timeUp': '0',
+  'callTheClock.dismiss': 'Dismiss',
+  'callTheClock.shortcutHint': 'to dismiss',
 
   // --- Player Manager ---
   'playerManager.count': 'Number of Players',

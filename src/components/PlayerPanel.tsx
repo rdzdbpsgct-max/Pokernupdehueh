@@ -374,10 +374,7 @@ export function PlayerPanel({
             {t('playerPanel.eliminated')}
           </h3>
           <div className="mt-1 space-y-1">
-            {eliminatedPlayers.map((player, idx) => {
-              // Only the most recently eliminated player (highest placement = last in sorted list) can be reinstated
-              const isLastEliminated = idx === eliminatedPlayers.length - 1;
-              return (
+            {eliminatedPlayers.map((player) => (
                 <div
                   key={player.id}
                   className="flex items-center justify-between px-3 py-1.5 bg-gray-100/50 dark:bg-gray-800/20 rounded-lg opacity-40"
@@ -405,19 +402,16 @@ export function PlayerPanel({
                         )}
                       </div>
                     )}
-                    {isLastEliminated && (
-                      <button
-                        onClick={() => onReinstatePlayer(player.id)}
-                        className="px-3 py-1.5 rounded-lg bg-blue-900/40 hover:bg-blue-800 text-blue-300 text-xs font-medium transition-all duration-200 border border-blue-800/30"
-                        title={t('playerPanel.reinstateTooltip')}
-                      >
-                        {t('playerPanel.reinstate')}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => onReinstatePlayer(player.id)}
+                      className="px-3 py-1.5 rounded-lg bg-blue-900/40 hover:bg-blue-800 text-blue-300 text-xs font-medium transition-all duration-200 border border-blue-800/30"
+                      title={t('playerPanel.reinstateTooltip')}
+                    >
+                      {t('playerPanel.reinstate')}
+                    </button>
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
         </div>
       )}

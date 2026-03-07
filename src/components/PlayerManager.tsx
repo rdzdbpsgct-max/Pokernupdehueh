@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { Player } from '../domain/types';
-import { generatePlayerId, movePlayer, shufflePlayers } from '../domain/logic';
+import { generatePlayerId, movePlayer, shufflePlayers, loadPlayerDatabase } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { NumberStepper } from './NumberStepper';
 
@@ -19,6 +19,14 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [showShuffleConfirm, setShowShuffleConfirm] = useState(false);
+
+  // Load registered player names for autocomplete (sorted by most recently played)
+  const registeredNames = useMemo(() => {
+    const db = loadPlayerDatabase();
+    return db
+      .sort((a, b) => b.lastPlayedAt.localeCompare(a.lastPlayedAt))
+      .map((p) => p.name);
+  }, []);
 
   const setPlayerCount = (count: number) => {
     const clamped = Math.max(2, Math.min(20, count));
@@ -161,11 +169,12 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
                 </button>
               )}
 
-              {/* Name input */}
+              {/* Name input with autocomplete from player database */}
               <input
                 type="text"
                 value={player.name}
                 onChange={(e) => updateName(i, e.target.value)}
+                list="registered-players"
                 placeholder={t('playerManager.playerN', { n: i + 1 })}
                 className="flex-1 min-w-0 px-2 py-1 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
               />
@@ -195,6 +204,13 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
           ))}
         </div>
       )}
+
+      {/* Datalist for player name autocomplete */}
+      <datalist id="registered-players">
+        {registeredNames.map((name) => (
+          <option key={name} value={name} />
+        ))}
+      </datalist>
 
       {/* Shuffle button + confirmation */}
       {players.length >= 2 && !showShuffleConfirm && (

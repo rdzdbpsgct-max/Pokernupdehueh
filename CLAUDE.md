@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.10.0
+**Version**: 2.11.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (239 tests, single run)
+npm run test         # Vitest run (246 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -48,21 +48,29 @@ src/
 │   ├── ChipSidebar.tsx          # Game-mode chip info, next color-up display
 │   ├── CollapsibleSection.tsx   # Reusable collapsible card for setup sections
 │   ├── CollapsibleSubSection.tsx # Lighter collapsible for nesting inside cards
+│   ├── CallTheClock.tsx          # Call-the-Clock shot clock modal
 │   ├── ConfigEditor.tsx         # Blind level table editor
 │   ├── Controls.tsx             # Play/Pause/Next/Prev/Reset/Restart buttons
-│   ├── DisplayMode.tsx          # TV/Projector display with 5 rotating screens (players, stats, payout, schedule, chips)
+│   ├── display/                 # TV/Projector display subfolder
+│   │   ├── DisplayMode.tsx      # Main orchestrator — timer + rotating screens
+│   │   ├── PlayersScreen.tsx    # Active players grid
+│   │   ├── StatsScreen.tsx      # Tournament statistics
+│   │   ├── PayoutScreen.tsx     # Payout places display
+│   │   ├── ScheduleScreen.tsx   # Blind schedule table
+│   │   ├── ChipsScreen.tsx      # Chip denominations display
+│   │   └── index.ts             # Barrel export
 │   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
 │   ├── LevelPreview.tsx         # Next-level sidebar
 │   ├── NumberStepper.tsx        # Custom +/- stepper with long-press support
 │   ├── PayoutEditor.tsx         # Prize distribution config
-│   ├── PlayerManager.tsx        # Add/edit/delete/seat players with drag & drop
+│   ├── PlayerManager.tsx        # Add/edit/delete/seat players with drag & drop + autocomplete
 │   ├── PlayerPanel.tsx          # Active players, elimination, bounty tracking
 │   ├── RebuyEditor.tsx          # Rebuy limit config
 │   ├── RebuyStatus.tsx          # Rebuy active indicator
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
-│   ├── SetupPage.tsx             # Setup mode UI — collapsible sections, config editors, start button
-│   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume
+│   ├── SetupPage.tsx            # Setup mode UI — collapsible sections, config editors, start button
+│   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume, call-the-clock
 │   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
 │   ├── ThemeSwitcher.tsx        # System/Light/Dark 3-way toggle
 │   ├── VoiceSwitcher.tsx        # Sound/Voice segmented toggle in header
@@ -73,7 +81,16 @@ src/
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
-│   ├── logic.ts                 # Core logic (~1640 lines): validation, payouts, blinds, chips, templates, persistence, checkpoint
+│   ├── logic.ts                 # Barrel re-exports from all domain modules
+│   ├── helpers.ts               # ID generators, snapSpinnerValue
+│   ├── format.ts                # formatTime, formatElapsedTime, getLevelLabel, getBlindsText
+│   ├── timer.ts                 # computeRemaining, advanceLevel, previousLevel, resetCurrentLevel
+│   ├── blinds.ts                # Blind structure generation, ante calculation, duration estimates
+│   ├── players.ts               # Player management, stacks, bubble detection
+│   ├── chips.ts                 # Chip denominations, color-up, compatibility checks
+│   ├── validation.ts            # Config validation, rebuy/late-reg checks
+│   ├── tournament.ts            # Results, payouts, stats, CSV/text export
+│   ├── persistence.ts           # localStorage CRUD, config parsing, templates, player database
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
 │   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
@@ -109,7 +126,7 @@ public/
 - **useTimer** hook manages timer state with drift-free wall-clock computation
 - **Props drilling** for passing state and callbacks to child components
 - **React Context** for i18n (language selection) and theme (dark/light mode)
-- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`, `poker-timer-history`
+- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`, `poker-timer-history`, `poker-timer-players`
 
 ### Component Conventions
 - Functional components with hooks only (no class components)
@@ -121,8 +138,10 @@ public/
 ### Domain Logic Separation
 - `src/domain/` contains pure business logic with no React dependencies
 - `src/domain/types.ts` — all shared types (`Level`, `TournamentConfig`, `Player`, `Settings`, `TimerState`, etc.)
-- `src/domain/logic.ts` — grouped by responsibility: formatting, timing, navigation, validation, players, payouts, rebuys, bounties, antes, blind generation, chip management, persistence
-- Tests cover `logic.ts` exclusively — UI tests are not currently present
+- `src/domain/logic.ts` — barrel re-export file; actual logic split into 9 focused modules:
+  - `helpers.ts` (ID generators, spinner rounding), `format.ts` (time/level formatting), `timer.ts` (level navigation, elapsed time), `blinds.ts` (blind generation, ante calculation), `players.ts` (player management, stacks, bubble), `chips.ts` (chip denominations, color-up), `validation.ts` (config validation, rebuy/late-reg checks), `tournament.ts` (results, payouts, stats, export), `persistence.ts` (localStorage CRUD, config parsing, templates, player database)
+- All imports use `from '../domain/logic'` (barrel) — no direct module imports needed
+- Tests cover domain logic exclusively — UI tests are not currently present
 
 ### i18n
 - Two languages: German (DE, default) and English (EN)
@@ -162,7 +181,7 @@ public/
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files. Sound functions return Promises for precise voice coordination (victory: 1700ms, bubble: 1450ms, ITM: 700ms)
 - **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 225 MP3 files per language in `public/audio/de/` and `public/audio/en/` (450 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner, add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
-- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle), H (hand-for-hand toggle)
+- **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle), H (hand-for-hand toggle), C (call the clock)
 - **TV Display Mode**: Dedicated fullscreen overlay (`DisplayMode.tsx`) optimized for projectors/TVs at 3+ meter distance. Split-layout: **Timer always visible** (top ~55% — level label, blinds, countdown, progress bar, next level preview, banners) + **5 rotating secondary screens** (bottom ~45% — Players → Stats → Payout → Blind Schedule → Chips, every 15 seconds). Players screen: active grid with CL badge, rebuys, eliminated compact. Stats screen: prizepool, active players, avg BB, elapsed/remaining, rebuys, add-ons, bounty pool. Payout screen: places with amounts, medal emojis top 3, bubble indicator. Dark background, large timer (8rem). Manual navigation via arrow keys. Indicator dots for secondary screens. Exit via T/Escape. Lazy-loaded (~13.5 KB chunk). 📺 button in header during game mode.
 - **Ante calculation**: Two modes — Standard (~12.5% of big blind, rounded to "nice" values) or Big Blind Ante (BBA, ante = big blind). Toggle in setup when ante is enabled. `AnteMode` type in `types.ts`
 - **Blind structure generator**: 3 speeds (fast/normal/slow) with distinct BB progressions scaled from 20k reference; chip-aware rounding via `roundToChipMultiple()` when denominations are active
@@ -195,6 +214,8 @@ public/
 - **Dealer auto-rotation**: `advanceDealer()` in logic.ts skips eliminated players with wrap-around; button in PlayerPanel header
 - **ErrorBoundary**: React class component in `main.tsx` wrapping entire app; catches lazy-load failures and render errors; hardcoded English fallback UI with reload button
 - **Tournament history**: Persistent result storage in `poker-timer-history` (localStorage, max 50 entries). Auto-save on tournament finish. `TournamentHistory.tsx` modal with expandable standings, player statistics tab (`computePlayerStats` aggregation by normalized name), text export (WhatsApp-friendly), CSV download. Accessible from setup header "Historie" button.
+- **Player database**: Persistent player name storage in `poker-timer-players` (localStorage). Auto-save on tournament finish via `syncPlayersToDatabase()`. Autocomplete via native `<datalist>` in PlayerManager. `importPlayersFromHistory()` for one-time migration. Case-insensitive deduplication.
+- **Call the Clock**: Shot-clock countdown modal (`CallTheClock.tsx`, lazy-loaded ~2.3 KB). Configurable duration (10–300s, default 60s) via `callTheClockSeconds` in Settings. Wall-clock-based countdown, progress bar, tension beeps in last 10s, auto-close at 0. Keyboard shortcut `C` to toggle. `NumberStepper` config in SettingsPanel.
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -234,6 +255,17 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v2.11.0 — Phase 2: Player Ecosystem & Architektur
+
+- **Persistente Spielerdatenbank**: Spielernamen in `poker-timer-players` (localStorage) gespeichert. Autocomplete via `<datalist>` im PlayerManager. CRUD: `loadPlayerDatabase()`, `addRegisteredPlayer()`, `deleteRegisteredPlayer()`, `importPlayersFromHistory()`, `syncPlayersToDatabase()`. Auto-Sync bei Turnierend.
+- **Call-the-Clock Timer**: Shot-Clock-Countdown Modal (Default: 60s, 10–300s). Großer Countdown, Fortschrittsbalken, Tension-Beeps letzte 10s, Auto-Close bei 0. Tastenkürzel `C`. `callTheClockSeconds` in Settings. Lazy-loaded (~2.3 KB Chunk).
+- **Reinstate-Verbesserung**: Alle eliminierten Spieler reinstatable (nicht nur der letzte). Placements automatisch neu berechnet bei Reinstate aus der Mitte.
+- **logic.ts Module Split**: 1760 Zeilen → 9 Module + Barrel. `helpers.ts`, `format.ts`, `timer.ts`, `blinds.ts`, `players.ts`, `chips.ts`, `validation.ts`, `tournament.ts`, `persistence.ts`. Alle bestehenden Imports via Barrel unverändert.
+- **DisplayMode Subfolder**: 642 Zeilen → 7 Dateien in `components/display/`. Orchestrator + 5 Sub-Screens + Barrel.
+- **Neue Dateien**: `CallTheClock.tsx` + 9 Domain-Module + `display/` Subfolder (7 Dateien)
+- **14 neue Translation-Keys** (7 DE + 7 EN)
+- **7 neue Tests** — **246 Tests gesamt**
 
 ### v2.10.0 — Phase 1: Foundation & Quick Wins
 

@@ -5,6 +5,21 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [2.11.0] – 2026-03-07
+
+### Phase 2: Player Ecosystem & Architektur
+
+- **Persistente Spielerdatenbank**: Spielernamen turnierunabhängig in localStorage gespeichert (`poker-timer-players`). Autocomplete via `<datalist>` im PlayerManager. CRUD-Funktionen: `loadPlayerDatabase()`, `savePlayerDatabase()`, `addRegisteredPlayer()`, `deleteRegisteredPlayer()`, `importPlayersFromHistory()`. Auto-Sync: Spielernamen werden bei Turnierend automatisch in DB gespeichert. Case-insensitive Deduplizierung.
+- **Call-the-Clock Timer**: Konfigurierbarer Shot-Clock-Countdown gegen Slow-Play (Default: 60s, 10–300s). Modal mit großem Countdown, Fortschrittsbalken, Tension-Beeps letzte 10s. Auto-Close bei 0. Tastenkürzel `C`. `callTheClockSeconds` in Settings.
+- **Reinstate-Verbesserung**: Alle eliminierten Spieler können reinstated werden (nicht nur der letzte). Placements der verbleibenden Eliminierten werden automatisch neu berechnet.
+- **logic.ts Module Split**: 1760-Zeilen-Monolith in 9 fokussierte Module aufgeteilt: `helpers.ts`, `format.ts`, `timer.ts`, `blinds.ts`, `players.ts`, `chips.ts`, `validation.ts`, `tournament.ts`, `persistence.ts`. `logic.ts` ist jetzt Barrel mit `export * from './...'`. Alle bestehenden Imports funktionieren unverändert.
+- **DisplayMode Subfolder**: 642-Zeilen-Datei in 7 fokussierte Dateien aufgeteilt: `display/DisplayMode.tsx` (Orchestrator), `PlayersScreen.tsx`, `StatsScreen.tsx`, `PayoutScreen.tsx`, `ScheduleScreen.tsx`, `ChipsScreen.tsx`, `index.ts` (Barrel).
+- **Neue Dateien**: `src/components/CallTheClock.tsx`, `src/domain/helpers.ts`, `src/domain/format.ts`, `src/domain/timer.ts`, `src/domain/blinds.ts`, `src/domain/players.ts`, `src/domain/chips.ts`, `src/domain/validation.ts`, `src/domain/tournament.ts`, `src/domain/persistence.ts`, `src/components/display/` (7 Dateien)
+- **14 neue Translation-Keys** (7 DE + 7 EN)
+- **7 neue Tests** — **246 Tests gesamt**
+
+---
+
 ## [2.10.0] – 2026-03-07
 
 ### Phase 1: Foundation & Quick Wins

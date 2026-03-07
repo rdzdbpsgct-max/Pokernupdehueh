@@ -114,6 +114,8 @@ export interface Settings {
   voiceEnabled: boolean;
   /** Master volume 0–100 (percent). Default: 100. */
   volume: number;
+  /** Call-the-Clock countdown duration in seconds. Default: 60. */
+  callTheClockSeconds: number;
 }
 
 export interface TournamentCheckpoint {
@@ -125,6 +127,13 @@ export interface TournamentCheckpoint {
     remainingSeconds: number;
   };
   savedAt: string; // ISO timestamp
+}
+
+export interface RegisteredPlayer {
+  id: string;
+  name: string;
+  createdAt: string; // ISO timestamp
+  lastPlayedAt: string; // ISO timestamp
 }
 
 export interface PlayerResult {
