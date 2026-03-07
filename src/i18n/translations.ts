@@ -190,6 +190,14 @@ const de = {
   'bountyEditor.perKnockout': 'Bounty pro Knockout',
   'bountyEditor.description': 'Jeder Spieler hat ein Bounty auf seinem Kopf. Wer einen Spieler eliminiert, erhält dessen Bounty-Betrag.',
 
+  // --- Late Registration ---
+  'lateReg.title': 'Late Registration',
+  'lateReg.enabled': 'Late Reg deaktivieren',
+  'lateReg.disabled': 'Late Reg aktivieren',
+  'lateReg.untilLevel': 'Bis Level',
+  'lateReg.short': 'Late Reg',
+  'lateReg.addPlayer': 'Spieler',
+
   // --- Chip Editor ---
   'app.chips': 'Chip-Werte',
   'chipEditor.enabled': 'Chip-Werte deaktivieren',
@@ -647,6 +655,14 @@ const en: Record<TranslationKey, string> = {
   'bountyEditor.disabled': 'Enable Bounty',
   'bountyEditor.perKnockout': 'Bounty per Knockout',
   'bountyEditor.description': 'Every player has a bounty on their head. Eliminating a player earns you their bounty.',
+
+  // --- Late Registration ---
+  'lateReg.title': 'Late Registration',
+  'lateReg.enabled': 'Disable Late Reg',
+  'lateReg.disabled': 'Enable Late Reg',
+  'lateReg.untilLevel': 'Until Level',
+  'lateReg.short': 'Late Reg',
+  'lateReg.addPlayer': 'Player',
 
   // --- Chip Editor ---
   'app.chips': 'Chip Values',

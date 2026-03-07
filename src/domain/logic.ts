@@ -10,6 +10,7 @@ import type {
   Player,
   PayoutConfig,
   RebuyConfig,
+  LateRegistrationConfig,
   AddOnConfig,
   BountyConfig,
   ChipConfig,
@@ -557,6 +558,28 @@ export function validatePayoutConfig(payout: PayoutConfig, maxPlaces?: number, t
   }
 
   return errors;
+}
+
+// ---------------------------------------------------------------------------
+// Late Registration
+// ---------------------------------------------------------------------------
+
+export function defaultLateRegistrationConfig(): LateRegistrationConfig {
+  return { enabled: false, levelLimit: 4 };
+}
+
+/** Check if late registration is currently open */
+export function isLateRegistrationOpen(
+  config: TournamentConfig,
+  currentLevelIndex: number,
+  levels: Level[],
+): boolean {
+  const lr = config.lateRegistration;
+  if (!lr?.enabled) return false;
+  const playLevelNumber = levels
+    .slice(0, currentLevelIndex + 1)
+    .filter((l) => l.type === 'level').length;
+  return playLevelNumber <= lr.levelLimit;
 }
 
 // ---------------------------------------------------------------------------
@@ -1169,6 +1192,9 @@ function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | 
       : defaultChipConfig(),
     buyIn,
     startingChips,
+    lateRegistration: parsed.lateRegistration
+      ? { ...defaultLateRegistrationConfig(), ...(parsed.lateRegistration as Partial<LateRegistrationConfig>) }
+      : undefined,
   };
 }
 

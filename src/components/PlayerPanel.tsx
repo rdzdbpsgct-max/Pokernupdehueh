@@ -22,6 +22,8 @@ interface Props {
   onUpdateStack?: (playerId: string, chips: number) => void;
   onInitStacks?: () => void;
   onClearStacks?: () => void;
+  lateRegOpen?: boolean;
+  onAddLatePlayer?: () => void;
 }
 
 export function PlayerPanel({
@@ -43,6 +45,8 @@ export function PlayerPanel({
   onUpdateStack,
   onInitStacks,
   onClearStacks,
+  lateRegOpen,
+  onAddLatePlayer,
 }: Props) {
   const { t } = useTranslation();
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
@@ -186,18 +190,28 @@ export function PlayerPanel({
 
       {/* Active Players */}
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-1">
           <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
             {t('playerPanel.activePlayers')} ({activePlayers.length})
           </h3>
-          {activePlayers.length > 1 && (
-            <button
-              onClick={onAdvanceDealer}
-              className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
-            >
-              {t('playerPanel.advanceDealer')}
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            {lateRegOpen && onAddLatePlayer && (
+              <button
+                onClick={onAddLatePlayer}
+                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-800/40 text-emerald-700 dark:text-emerald-400 transition-colors border border-emerald-300 dark:border-emerald-700/40"
+              >
+                + {t('lateReg.addPlayer')}
+              </button>
+            )}
+            {activePlayers.length > 1 && (
+              <button
+                onClick={onAdvanceDealer}
+                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+              >
+                {t('playerPanel.advanceDealer')}
+              </button>
+            )}
+          </div>
         </div>
         <div className="mt-1 space-y-1">
           {activePlayers.map((player) => {

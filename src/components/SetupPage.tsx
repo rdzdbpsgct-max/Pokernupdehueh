@@ -63,8 +63,9 @@ export function SetupPage({
     if (config.rebuy.enabled) parts.push('Rebuy');
     if (config.addOn.enabled) parts.push('Add-On');
     if (config.bounty.enabled) parts.push(`Bounty: ${config.bounty.amount} €`);
+    if (config.lateRegistration?.enabled) parts.push(t('lateReg.short'));
     return parts.length > 0 ? parts.join(', ') : t('section.allDisabled');
-  }, [config.rebuy, config.addOn, config.bounty, t]);
+  }, [config.rebuy, config.addOn, config.bounty, config.lateRegistration, t]);
 
   const playersSummary = useMemo(
     () => t('section.playerCount', { n: config.players.length }),
@@ -336,6 +337,46 @@ export function SetupPage({
                 bounty={config.bounty}
                 onChange={(bounty) => setConfig((prev) => ({ ...prev, bounty }))}
               />
+            </div>
+            {/* Late Registration */}
+            <div className="border-t border-gray-300 dark:border-gray-700/50 pt-4">
+              <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                {t('lateReg.title')}
+              </h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => setConfig((prev) => ({
+                    ...prev,
+                    lateRegistration: {
+                      enabled: !prev.lateRegistration?.enabled,
+                      levelLimit: prev.lateRegistration?.levelLimit ?? 4,
+                    },
+                  }))}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    config.lateRegistration?.enabled
+                      ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  {config.lateRegistration?.enabled ? t('lateReg.enabled') : t('lateReg.disabled')}
+                </button>
+                {config.lateRegistration?.enabled && (
+                  <div className="flex items-center gap-2 pl-2 border-l-2 border-emerald-800">
+                    <label className="text-sm text-gray-700 dark:text-gray-300">{t('lateReg.untilLevel')}</label>
+                    <NumberStepper
+                      value={config.lateRegistration.levelLimit}
+                      onChange={(v) => setConfig((prev) => ({
+                        ...prev,
+                        lateRegistration: { ...prev.lateRegistration!, levelLimit: Math.max(1, v) },
+                      }))}
+                      min={1}
+                      max={20}
+                      step={1}
+                      inputClassName="w-16"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </CollapsibleSection>

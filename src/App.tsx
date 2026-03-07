@@ -12,6 +12,8 @@ import {
   loadCheckpoint,
   clearCheckpoint,
   isRebuyActive,
+  isLateRegistrationOpen,
+  generatePlayerId,
   computeTournamentElapsedSeconds,
   computeNextPlacement,
   validatePayoutConfig,
@@ -392,6 +394,28 @@ function App() {
     }
   }, []);
 
+  // --- Late registration: add player during tournament ---
+  const addLatePlayer = useCallback(() => {
+    const playerNumber = config.players.length + 1;
+    const name = t('playerManager.playerN', { n: playerNumber });
+    setConfig((prev) => ({
+      ...prev,
+      players: [
+        ...prev.players,
+        {
+          id: generatePlayerId(),
+          name,
+          rebuys: 0,
+          addOn: false,
+          status: 'active' as const,
+          placement: null,
+          eliminatedBy: null,
+          knockouts: 0,
+        },
+      ],
+    }));
+  }, [config.players.length, t]);
+
   // --- Rebuy update handler ---
   const updatePlayerRebuys = useCallback((playerId: string, newCount: number) => {
     setConfig((prev) => ({
@@ -497,6 +521,11 @@ function App() {
         tournamentElapsed,
       ),
     [config.rebuy, timer.timerState.currentLevelIndex, config.levels, tournamentElapsed],
+  );
+
+  const lateRegOpen = useMemo(
+    () => isLateRegistrationOpen(config, timer.timerState.currentLevelIndex, config.levels),
+    [config, timer.timerState.currentLevelIndex],
   );
 
   // Compute add-on window: show announcement at the END of the last rebuy level
@@ -890,6 +919,8 @@ function App() {
                   onUpdateStack={updatePlayerStack}
                   onInitStacks={initStacks}
                   onClearStacks={clearStacks}
+                  lateRegOpen={lateRegOpen}
+                  onAddLatePlayer={addLatePlayer}
                 />
               </aside>
             )}

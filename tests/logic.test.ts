@@ -66,6 +66,7 @@ import {
   addRebuyToStack,
   addAddOnToStack,
   canPlayerRebuy,
+  isLateRegistrationOpen,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
 
@@ -695,6 +696,43 @@ describe('isRebuyActive', () => {
     const rebuy: RebuyConfig = { enabled: true, limitType: 'time', levelLimit: 4, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 };
     expect(isRebuyActive(rebuy, 0, levels, 3600)).toBe(false);
     expect(isRebuyActive(rebuy, 0, levels, 4000)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isLateRegistrationOpen
+// ---------------------------------------------------------------------------
+
+describe('isLateRegistrationOpen', () => {
+  const levels: Level[] = [
+    { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 },
+    { id: '2', type: 'level', durationSeconds: 600, smallBlind: 50, bigBlind: 100 },
+    { id: '3', type: 'break', durationSeconds: 300, label: 'Break' },
+    { id: '4', type: 'level', durationSeconds: 600, smallBlind: 100, bigBlind: 200 },
+  ];
+  const baseConfig = {
+    name: '', levels, anteEnabled: false, anteMode: 'standard' as const,
+    players: [], dealerIndex: 0, payout: { mode: 'percent' as const, entries: [] },
+    rebuy: { enabled: false, limitType: 'levels' as const, levelLimit: 4, timeLimit: 3600, rebuyCost: 10, rebuyChips: 20000 },
+    addOn: { enabled: false, cost: 10, chips: 20000 },
+    bounty: { enabled: false, amount: 0 },
+    chips: { enabled: false, colorUpEnabled: false, denominations: [], colorUpSchedule: [] },
+    buyIn: 10, startingChips: 20000,
+  };
+
+  it('returns false when late registration is not configured', () => {
+    expect(isLateRegistrationOpen(baseConfig, 0, levels)).toBe(false);
+  });
+
+  it('returns true during the late registration period', () => {
+    const config = { ...baseConfig, lateRegistration: { enabled: true, levelLimit: 2 } };
+    expect(isLateRegistrationOpen(config, 0, levels)).toBe(true); // play level 1
+    expect(isLateRegistrationOpen(config, 1, levels)).toBe(true); // play level 2
+  });
+
+  it('returns false after the late registration period', () => {
+    const config = { ...baseConfig, lateRegistration: { enabled: true, levelLimit: 2 } };
+    expect(isLateRegistrationOpen(config, 3, levels)).toBe(false); // play level 3
   });
 });
 

@@ -83,6 +83,12 @@ export interface ChipConfig {
 
 export type AnteMode = 'standard' | 'bigBlindAnte';
 
+export interface LateRegistrationConfig {
+  enabled: boolean;
+  /** Late registration allowed until this play-level number */
+  levelLimit: number;
+}
+
 export interface TournamentConfig {
   name: string;
   levels: Level[];
@@ -97,6 +103,7 @@ export interface TournamentConfig {
   chips: ChipConfig;
   buyIn: number;
   startingChips: number;
+  lateRegistration?: LateRegistrationConfig;
 }
 
 export interface Settings {
