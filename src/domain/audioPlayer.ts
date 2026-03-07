@@ -8,6 +8,12 @@ let scheduledSources: AudioBufferSourceNode[] = [];
 let currentHtmlAudio: HTMLAudioElement | null = null;
 let cancelRequested = false;
 let audioLanguage: Language = 'de';
+let audioVolume = 1.0;
+
+/** Set the master volume for MP3 playback (0.0 – 1.0). */
+export function setAudioVolume(v: number): void {
+  audioVolume = Math.max(0, Math.min(1, v));
+}
 
 function getOrCreateContext(): AudioContext | null {
   try {
@@ -114,10 +120,15 @@ function playWithWebAudio(files: string[], basePath: string): Promise<void> {
       scheduledSources = [];
       let startTime = ctx.currentTime;
 
+      // Create a master gain node for volume control
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = audioVolume;
+      gainNode.connect(ctx.destination);
+
       for (let i = 0; i < buffers.length; i++) {
         const source = ctx.createBufferSource();
         source.buffer = buffers[i];
-        source.connect(ctx.destination);
+        source.connect(gainNode);
         scheduledSources.push(source);
 
         source.start(startTime);
@@ -157,6 +168,7 @@ function playWithHtmlAudio(files: string[], basePath: string): Promise<void> {
       }
 
       const audio = new Audio(basePath + files[index]);
+      audio.volume = audioVolume;
       currentHtmlAudio = audio;
       index++;
 

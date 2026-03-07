@@ -105,6 +105,8 @@ export interface Settings {
   autoAdvance: boolean;
   largeDisplay: boolean;
   voiceEnabled: boolean;
+  /** Master volume 0–100 (percent). Default: 100. */
+  volume: number;
 }
 
 export interface TournamentCheckpoint {

@@ -1,6 +1,12 @@
 // Sound effects using Web Audio API (no external files needed)
 
 let audioCtx: AudioContext | null = null;
+let masterVolume = 1.0;
+
+/** Set the master volume for all sound effects (0.0 – 1.0). */
+export function setMasterVolume(v: number): void {
+  masterVolume = Math.max(0, Math.min(1, v));
+}
 
 function getAudioContext(): AudioContext {
   if (!audioCtx) {
@@ -37,7 +43,7 @@ function playNote(
   const gain = ctx.createGain();
   osc.type = type;
   osc.frequency.value = frequency;
-  gain.gain.setValueAtTime(volume, startTime);
+  gain.gain.setValueAtTime(volume * masterVolume, startTime);
   gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
   osc.connect(gain);
   gain.connect(ctx.destination);
@@ -54,7 +60,7 @@ export function playBeep(frequency: number, durationMs: number): void {
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.frequency.value = frequency;
-    gain.gain.value = 0.3;
+    gain.gain.value = 0.3 * masterVolume;
     osc.start();
     osc.stop(ctx.currentTime + durationMs / 1000);
   } catch {

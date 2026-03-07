@@ -43,7 +43,10 @@ import {
   announceTournamentStart,
   announceLastHand,
   announceHandForHand,
+  setSpeechVolume,
 } from './domain/speech';
+import { setMasterVolume } from './domain/sounds';
+import { setAudioVolume } from './domain/audioPlayer';
 // Setup-mode components (static imports — used immediately on load)
 import { ConfigEditor } from './components/ConfigEditor';
 import { PlayerManager } from './components/PlayerManager';
@@ -206,6 +209,14 @@ function App() {
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
+
+  // Sync master volume to all audio modules
+  useEffect(() => {
+    const v = settings.volume / 100;
+    setMasterVolume(v);
+    setAudioVolume(v);
+    setSpeechVolume(v);
+  }, [settings.volume]);
 
   // Auto-save tournament checkpoint in game mode
   useEffect(() => {

@@ -8,6 +8,12 @@ type TranslateFn = (key: TranslationKey, params?: Record<string, string | number
 let preferredVoice: SpeechSynthesisVoice | null = null;
 let voiceLanguage: Language = 'de';
 let voicesLoaded = false;
+let speechVolume = 1.0;
+
+/** Set the master volume for speech announcements (0.0 – 1.0). */
+export function setSpeechVolume(v: number): void {
+  speechVolume = Math.max(0, Math.min(1, v));
+}
 
 // ---------------------------------------------------------------------------
 // Audio file manifest — known pre-recorded files (identical for DE + EN)
@@ -158,7 +164,7 @@ function speakUtterance(
     }
     utterance.rate = options?.rate ?? 1.0;
     utterance.pitch = options?.pitch ?? 1.0;
-    utterance.volume = options?.volume ?? 0.8;
+    utterance.volume = (options?.volume ?? 0.8) * speechVolume;
 
     utterance.onend = onDone;
     utterance.onerror = onDone;

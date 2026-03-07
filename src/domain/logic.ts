@@ -1091,6 +1091,7 @@ export function defaultSettings(): Settings {
     autoAdvance: true,
     largeDisplay: true,
     voiceEnabled: true,
+    volume: 100,
   };
 }
 

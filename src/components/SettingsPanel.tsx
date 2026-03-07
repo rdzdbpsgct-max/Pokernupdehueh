@@ -44,6 +44,21 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.sound')}</span>
           <CheckBox checked={settings.soundEnabled} onChange={() => toggle('soundEnabled')} />
         </div>
+        {settings.soundEnabled && (
+          <div className="flex items-center gap-3 pl-1">
+            <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">{t('settings.volume')}</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={settings.volume}
+              onChange={(e) => onChange({ ...settings, volume: Number(e.target.value) })}
+              className="flex-1 h-1.5 accent-emerald-500 cursor-pointer"
+            />
+            <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums w-8 text-right">{settings.volume}%</span>
+          </div>
+        )}
         <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('countdownEnabled')}>
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.countdown')}</span>
           <CheckBox checked={settings.countdownEnabled} onChange={() => toggle('countdownEnabled')} />

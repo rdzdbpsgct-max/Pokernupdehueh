@@ -121,6 +121,7 @@ const de = {
   // --- Settings ---
   'settings.title': 'Einstellungen',
   'settings.sound': 'Sound',
+  'settings.volume': 'Lautstärke',
   'settings.countdown': 'Countdown (letzte 10s)',
   'settings.voice': 'Sprachansagen',
   'settings.autoAdvance': 'Automatisch weiter',
@@ -578,6 +579,7 @@ const en: Record<TranslationKey, string> = {
   // --- Settings ---
   'settings.title': 'Settings',
   'settings.sound': 'Sound',
+  'settings.volume': 'Volume',
   'settings.countdown': 'Countdown (last 10s)',
   'settings.voice': 'Voice Announcements',
   'settings.autoAdvance': 'Auto-advance',
