@@ -540,6 +540,10 @@ const de = {
   'voice.tableMove': '{player} wechselt zu {table}',
   'multiTable.finalTable': 'Final Table!',
   'voice.finalTable': 'Final Table! Alle Spieler an einem Tisch.',
+  'voice.mysteryBounty': 'Misteri Baunti: {amount} Euro!',
+  'voice.callTheClock': 'Call the Clock! {seconds} Sekunden.',
+  'voice.callTheClockExpired': 'Zeit abgelaufen!',
+  'voice.lateRegistrationClosed': 'Die Late Registration ist geschlossen.',
   'multiTable.tableCount': '{n} Tische',
   'multiTable.removeTable': 'Tisch entfernen',
 } as const;
@@ -1083,6 +1087,10 @@ const en: Record<TranslationKey, string> = {
   'voice.tableMove': '{player} moves to {table}',
   'multiTable.finalTable': 'Final Table!',
   'voice.finalTable': 'Final Table! All players at one table.',
+  'voice.mysteryBounty': 'Mystery Bounty: {amount}!',
+  'voice.callTheClock': 'Call the Clock! {seconds} seconds.',
+  'voice.callTheClockExpired': 'Time is up!',
+  'voice.lateRegistrationClosed': 'Late registration is now closed.',
   'multiTable.tableCount': '{n} Tables',
   'multiTable.removeTable': 'Remove Table',
 };

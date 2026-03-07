@@ -46,6 +46,8 @@ import {
   announceHandForHand,
   announceTableMove,
   announceFinalTable,
+  announceMysteryBounty,
+  announceLateRegistrationClosed,
   setSpeechVolume,
 } from './domain/speech';
 import { setMasterVolume } from './domain/sounds';
@@ -476,6 +478,7 @@ function App() {
   }, []);
 
   // --- Eliminate player handler ---
+  const lastMysteryDrawRef = useRef<number | null>(null);
   const eliminatePlayer = useCallback((playerId: string, eliminatedBy: string | null) => {
     setConfig((prev) => {
       const placement = computeNextPlacement(prev.players);
@@ -484,6 +487,7 @@ function App() {
       let updatedBounty = prev.bounty;
       if (prev.bounty.enabled && prev.bounty.type === 'mystery' && prev.bounty.mysteryPool && prev.bounty.mysteryPool.length > 0 && eliminatedBy) {
         const draw = drawMysteryBounty(prev.bounty.mysteryPool);
+        lastMysteryDrawRef.current = draw.amount;
         updatedBounty = { ...prev.bounty, amount: draw.amount, mysteryPool: draw.remainingPool };
       }
 
@@ -516,6 +520,15 @@ function App() {
       };
     });
   }, []);
+
+  // Voice: Mystery bounty draw
+  useEffect(() => {
+    if (mode !== 'game' || !settings.voiceEnabled) return;
+    if (lastMysteryDrawRef.current !== null) {
+      announceMysteryBounty(lastMysteryDrawRef.current, t);
+      lastMysteryDrawRef.current = null;
+    }
+  }, [mode, settings.voiceEnabled, config.bounty, t]);
 
   // --- Reinstate (undo elimination) handler ---
   const reinstatePlayer = useCallback((playerId: string) => {
@@ -573,6 +586,15 @@ function App() {
     () => isLateRegistrationOpen(config, timer.timerState.currentLevelIndex, config.levels),
     [config, timer.timerState.currentLevelIndex],
   );
+
+  // Voice: Late registration closed
+  const prevLateRegRef = useRef(lateRegOpen);
+  useEffect(() => {
+    if (mode === 'game' && settings.voiceEnabled && prevLateRegRef.current && !lateRegOpen && config.lateRegistration?.enabled) {
+      announceLateRegistrationClosed(t);
+    }
+    prevLateRegRef.current = lateRegOpen;
+  }, [mode, settings.voiceEnabled, lateRegOpen, config.lateRegistration?.enabled, t]);
 
   // Compute add-on window: show announcement at the END of the last rebuy level
   // (when timer reaches 0) and during the break/next level after it.
@@ -713,6 +735,7 @@ function App() {
     tournamentFinished,
     bubbleActive,
     inTheMoney,
+    winnerName: winner?.name,
     pause: timer.pause,
     t,
   });
@@ -1169,6 +1192,7 @@ function App() {
           <CallTheClock
             durationSeconds={settings.callTheClockSeconds}
             soundEnabled={settings.soundEnabled}
+            voiceEnabled={settings.voiceEnabled}
             onClose={() => setShowCallTheClock(false)}
           />
         </Suspense>

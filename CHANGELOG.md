@@ -5,6 +5,19 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [4.0.1] – 2026-03-07
+
+### Sprachansagen-Vervollständigung
+
+- **Mystery Bounty Ansage**: `announceMysteryBounty(amount, t)` — MP3-Intro „Mystery Bounty!" + Speech mit gezogenem Betrag. Wird bei Elimination mit Mystery Bounty automatisch getriggert. Neue MP3: `mystery-bounty.mp3` (DE + EN).
+- **Call the Clock Ansage**: `announceCallTheClock(seconds, t)` bei Start + `announceCallTheClockExpired(t)` bei Ablauf. MP3-Intro + Speech mit Sekundenzahl. `voiceEnabled`-Prop an CallTheClock.tsx. Neue MP3s: `call-the-clock.mp3`, `time-expired.mp3` (DE + EN).
+- **Late Registration geschlossen**: `announceLateRegistrationClosed(t)` — automatische Ansage wenn Late-Reg-Fenster schließt. Effect in App.tsx tracked `lateRegOpen` Transition. Neue MP3: `late-registration-closed.mp3` (DE + EN).
+- **Personalisierter Turniersieger**: `announceTournamentWinner(playerName, t)` ersetzt generische Ansage. Spielt `tournament-winner.mp3` + personalisierten Speech-Fallback mit Gewinnername. `useGameEvents` erhält `winnerName`-Parameter.
+- **5 neue Announce-Funktionen** in speech.ts, **8 neue Translation-Keys** (4 DE + 4 EN)
+- **8 neue MP3-Dateien** (4 DE + 4 EN): `mystery-bounty.mp3`, `call-the-clock.mp3`, `time-expired.mp3`, `late-registration-closed.mp3`. **460 Audio-Dateien** gesamt (230 pro Sprache).
+
+---
+
 ## [4.0.0] – 2026-03-07
 
 ### Phase 5: Multi-Table Support

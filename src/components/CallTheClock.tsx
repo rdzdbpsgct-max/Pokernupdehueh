@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { playBeep } from '../domain/sounds';
+import { announceCallTheClock, announceCallTheClockExpired } from '../domain/speech';
 import { useTranslation } from '../i18n';
 
 interface Props {
   durationSeconds: number;
   soundEnabled: boolean;
+  voiceEnabled: boolean;
   onClose: () => void;
 }
 
-export function CallTheClock({ durationSeconds, soundEnabled, onClose }: Props) {
+export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onClose }: Props) {
   const { t } = useTranslation();
   const [remaining, setRemaining] = useState(durationSeconds);
   const startRef = useRef(0);
@@ -17,6 +19,7 @@ export function CallTheClock({ durationSeconds, soundEnabled, onClose }: Props) 
   // Drift-free countdown using wall-clock
   useEffect(() => {
     startRef.current = Date.now();
+    if (voiceEnabled) announceCallTheClock(durationSeconds, t);
     const tick = () => {
       const elapsed = (Date.now() - startRef.current) / 1000;
       const r = Math.max(0, durationSeconds - elapsed);
@@ -26,7 +29,7 @@ export function CallTheClock({ durationSeconds, soundEnabled, onClose }: Props) 
     };
     let rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [durationSeconds]);
+  }, [durationSeconds, voiceEnabled, t]);
 
   // Tension beeps in last 10 seconds
   useEffect(() => {
@@ -43,10 +46,11 @@ export function CallTheClock({ durationSeconds, soundEnabled, onClose }: Props) 
       if (soundEnabled) {
         playBeep(440, 500);
       }
+      if (voiceEnabled) announceCallTheClockExpired(t);
       const timeout = setTimeout(onClose, 1500);
       return () => clearTimeout(timeout);
     }
-  }, [remaining, soundEnabled, onClose]);
+  }, [remaining, soundEnabled, voiceEnabled, t, onClose]);
 
   // Close on Escape
   const handleKeyDown = useCallback((e: KeyboardEvent) => {

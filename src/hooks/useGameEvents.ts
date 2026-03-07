@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Settings } from '../domain/types';
 import type { TranslationKey } from '../i18n/translations';
 import { playVictorySound, playBubbleSound, playInTheMoneySound } from '../domain/sounds';
-import { announceWinner, announceBubble, announceInTheMoney } from '../domain/speech';
+import { announceWinner, announceTournamentWinner, announceBubble, announceInTheMoney } from '../domain/speech';
 
 interface Params {
   mode: 'setup' | 'game';
@@ -10,6 +10,7 @@ interface Params {
   tournamentFinished: boolean;
   bubbleActive: boolean;
   inTheMoney: boolean;
+  winnerName?: string;
   pause: () => void;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
 }
@@ -25,6 +26,7 @@ export function useGameEvents({
   tournamentFinished,
   bubbleActive,
   inTheMoney,
+  winnerName,
   pause,
   t,
 }: Params): GameEventsReturn {
@@ -39,7 +41,13 @@ export function useGameEvents({
         victoryPlayedRef.current = true;
         const play = async () => {
           if (settings.soundEnabled) await playVictorySound();
-          if (settings.voiceEnabled) announceWinner(t);
+          if (settings.voiceEnabled) {
+            if (winnerName) {
+              announceTournamentWinner(winnerName, t);
+            } else {
+              announceWinner(t);
+            }
+          }
         };
         play();
       }
@@ -47,7 +55,7 @@ export function useGameEvents({
     if (!tournamentFinished) {
       victoryPlayedRef.current = false;
     }
-  }, [mode, tournamentFinished, pause, settings.soundEnabled, settings.voiceEnabled, t]);
+  }, [mode, tournamentFinished, winnerName, pause, settings.soundEnabled, settings.voiceEnabled, t]);
 
   // Bubble & ITM sound/voice/visual effects
   const prevBubbleRef = useRef(false);

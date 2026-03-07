@@ -418,3 +418,30 @@ export function announceTableMove(playerName: string, tableName: string, t: Tran
 export function announceFinalTable(t: TranslateFn): void {
   enqueue({ mode: 'speech', text: t('voice.finalTable') });
 }
+
+/** Mystery Bounty revealed — MP3 intro + speech with dynamic amount */
+export function announceMysteryBounty(amount: number, t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/mystery-bounty.mp3'], t('voice.mysteryBounty', { amount })));
+  enqueue({ mode: 'speech', text: `${amount}` });
+}
+
+/** Call the Clock — MP3 intro + speech with dynamic seconds */
+export function announceCallTheClock(seconds: number, t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/call-the-clock.mp3'], t('voice.callTheClock', { seconds })));
+  enqueue({ mode: 'speech', text: `${seconds}` });
+}
+
+/** Call the Clock expired — time's up */
+export function announceCallTheClockExpired(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/time-expired.mp3'], t('voice.callTheClockExpired')));
+}
+
+/** Late registration closed — window ended */
+export function announceLateRegistrationClosed(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/late-registration-closed.mp3'], t('voice.lateRegistrationClosed')));
+}
+
+/** Tournament winner — personalized with player name */
+export function announceTournamentWinner(playerName: string, t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/tournament-winner.mp3'], t('voice.tournamentWinner', { name: playerName })));
+}
