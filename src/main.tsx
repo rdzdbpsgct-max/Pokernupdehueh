@@ -6,14 +6,23 @@ import { LanguageProvider } from './i18n'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Analytics } from '@vercel/analytics/react'
 import App from './App.tsx'
+import { TVDisplayWindow } from './components/display'
+
+const isDisplayWindow = window.location.hash === '#display';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <ThemeProvider>
         <LanguageProvider>
-          <App />
-          <Analytics />
+          {isDisplayWindow ? (
+            <TVDisplayWindow />
+          ) : (
+            <>
+              <App />
+              <Analytics />
+            </>
+          )}
         </LanguageProvider>
       </ThemeProvider>
     </ErrorBoundary>

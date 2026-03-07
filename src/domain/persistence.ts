@@ -59,7 +59,7 @@ export function defaultSettings(): Settings {
     largeDisplay: true,
     voiceEnabled: true,
     volume: 100,
-    callTheClockSeconds: 60,
+    callTheClockSeconds: 30,
   };
 }
 

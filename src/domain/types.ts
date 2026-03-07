@@ -129,7 +129,7 @@ export interface Settings {
   voiceEnabled: boolean;
   /** Master volume 0–100 (percent). Default: 100. */
   volume: number;
-  /** Call-the-Clock countdown duration in seconds. Default: 60. */
+  /** Call-the-Clock countdown duration in seconds. Default: 30. */
   callTheClockSeconds: number;
 }
 

@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import type { TournamentConfig, Settings, TournamentCheckpoint, Table, TableMove } from './domain/types';
+import { createDisplayChannel, sendDisplayMessage, serializeColorUpMap } from './domain/displayChannel';
+import type { DisplayStatePayload } from './domain/displayChannel';
 import {
   defaultConfig,
   defaultSettings,
   saveConfig,
-  loadConfig,
   saveSettings,
-  loadSettings,
   saveCheckpoint,
   loadCheckpoint,
   clearCheckpoint,
@@ -28,7 +28,6 @@ import {
   saveTournamentResult,
   decodeResultFromQR,
   drawMysteryBounty,
-  isWizardCompleted,
   removePlayerFromTable,
   shouldMergeToFinalTable,
   mergeToFinalTable,
@@ -80,7 +79,7 @@ const RebuyStatus = lazy(() => import('./components/RebuyStatus').then(m => ({ d
 const BubbleIndicator = lazy(() => import('./components/BubbleIndicator').then(m => ({ default: m.BubbleIndicator })));
 const SettingsPanel = lazy(() => import('./components/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
 const TournamentFinished = lazy(() => import('./components/TournamentFinished').then(m => ({ default: m.TournamentFinished })));
-const DisplayMode = lazy(() => import('./components/display').then(m => ({ default: m.DisplayMode })));
+// DisplayMode is now rendered in a separate TV window via TVDisplayWindow
 const SharedResultView = lazy(() => import('./components/SharedResultView').then(m => ({ default: m.SharedResultView })));
 const CallTheClock = lazy(() => import('./components/CallTheClock').then(m => ({ default: m.CallTheClock })));
 const MultiTablePanel = lazy(() => import('./components/MultiTablePanel').then(m => ({ default: m.MultiTablePanel })));
@@ -98,17 +97,17 @@ function App() {
 
   const [mode, setMode] = useState<Mode>('setup');
   const [config, setConfig] = useState<TournamentConfig>(
-    () => loadConfig() ?? defaultConfig(),
+    () => defaultConfig(),
   );
   const [settings, setSettings] = useState<Settings>(
-    () => loadSettings() ?? defaultSettings(),
+    () => defaultSettings(),
   );
   const [showPlayerPanel, setShowPlayerPanel] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showLeagues, setShowLeagues] = useState(false);
-  const [showWizard, setShowWizard] = useState(() => !isWizardCompleted());
+  const [showWizard, setShowWizard] = useState(true);
   const [sharedResult, setSharedResult] = useState(() => {
     const hash = window.location.hash;
     if (hash.startsWith('#r=')) {
@@ -124,7 +123,9 @@ function App() {
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
   const [handForHandActive, setHandForHandActive] = useState(false);
-  const [displayMode, setDisplayMode] = useState(false);
+  const [tvWindowActive, setTvWindowActive] = useState(false);
+  const tvWindowRef = useRef<Window | null>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
   const [showCallTheClock, setShowCallTheClock] = useState(false);
   const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
   const [confirmAction, setConfirmAction] = useState<{
@@ -241,6 +242,85 @@ function App() {
       savedAt: new Date().toISOString(),
     });
   }, [mode, config, settings, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds]);
+
+  // ---------------------------------------------------------------------------
+  // BroadcastChannel: sync state to TV display window
+  // ---------------------------------------------------------------------------
+
+  // Create/destroy channel based on game mode + tvWindowActive
+  useEffect(() => {
+    if (mode !== 'game' || !tvWindowActive) {
+      if (channelRef.current) {
+        channelRef.current.close();
+        channelRef.current = null;
+      }
+      return;
+    }
+    channelRef.current = createDisplayChannel();
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.close();
+        channelRef.current = null;
+      }
+    };
+  }, [mode, tvWindowActive]);
+
+  // Poll for TV window closed
+  useEffect(() => {
+    if (!tvWindowActive) return;
+    const id = setInterval(() => {
+      if (tvWindowRef.current?.closed) {
+        tvWindowRef.current = null;
+        setTvWindowActive(false);
+      }
+    }, 2000);
+    return () => clearInterval(id);
+  }, [tvWindowActive]);
+
+  // Open TV window function
+  const openTVWindow = useCallback(() => {
+    if (tvWindowActive && tvWindowRef.current && !tvWindowRef.current.closed) {
+      // Already open — focus it
+      tvWindowRef.current.focus();
+      return;
+    }
+    const basePath = import.meta.env.BASE_URL || '/';
+    const url = basePath + '#display';
+    const win = window.open(url, 'poker-tv', 'width=1280,height=720');
+    if (win) {
+      tvWindowRef.current = win;
+      setTvWindowActive(true);
+    }
+  }, [tvWindowActive]);
+
+  // Close TV window function
+  const closeTVWindow = useCallback(() => {
+    if (channelRef.current) {
+      sendDisplayMessage(channelRef.current, { type: 'close' });
+    }
+    if (tvWindowRef.current && !tvWindowRef.current.closed) {
+      tvWindowRef.current.close();
+    }
+    tvWindowRef.current = null;
+    setTvWindowActive(false);
+  }, []);
+
+  // Sync Call the Clock state to TV window
+  useEffect(() => {
+    if (!channelRef.current || !tvWindowActive) return;
+    if (showCallTheClock) {
+      sendDisplayMessage(channelRef.current, {
+        type: 'call-the-clock',
+        payload: {
+          durationSeconds: settings.callTheClockSeconds,
+          soundEnabled: settings.soundEnabled,
+          voiceEnabled: settings.voiceEnabled,
+        },
+      });
+    } else {
+      sendDisplayMessage(channelRef.current, { type: 'call-the-clock-dismiss' });
+    }
+  }, [showCallTheClock, tvWindowActive, settings.callTheClockSeconds, settings.soundEnabled, settings.voiceEnabled]);
 
   // Wake Lock: prevent screen from sleeping during active tournament
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -390,7 +470,11 @@ function App() {
           handleLastHand();
           break;
         case 'KeyT':
-          setDisplayMode((v) => !v);
+          if (tvWindowActive) {
+            closeTVWindow();
+          } else {
+            openTVWindow();
+          }
           break;
         case 'KeyH':
           handleHandForHand();
@@ -402,7 +486,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, timer, t, toggleCleanView, handleLastHand, handleHandForHand]);
+  }, [mode, timer, t, toggleCleanView, handleLastHand, handleHandForHand, tvWindowActive, openTVWindow, closeTVWindow]);
 
   const toggleFullscreen = useCallback(() => {
     try {
@@ -768,6 +852,57 @@ function App() {
     prevBubbleForHfH.current = bubbleActive;
   }, [bubbleActive]);
 
+  // ---------------------------------------------------------------------------
+  // BroadcastChannel: send state to TV display window (placed after computed values)
+  // ---------------------------------------------------------------------------
+
+  // Build full-state payload
+  const buildFullStatePayload = useCallback((): DisplayStatePayload => ({
+    timerState: timer.timerState,
+    levels: config.levels,
+    chipConfig: config.chips,
+    colorUpSchedule: serializeColorUpMap(colorUpMap),
+    tournamentName: config.name,
+    activePlayerCount,
+    totalPlayerCount: config.players.length,
+    isBubble: bubbleActive,
+    isLastHand: lastHandActive,
+    isHandForHand: handForHandActive,
+    players: config.players,
+    dealerIndex: config.dealerIndex,
+    buyIn: config.buyIn,
+    payout: config.payout,
+    rebuy: config.rebuy,
+    addOn: config.addOn,
+    bounty: config.bounty,
+    averageStack,
+    tournamentElapsed,
+    tables: config.tables,
+  }), [timer.timerState, config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed]);
+
+  // Send full-state on significant changes
+  useEffect(() => {
+    if (!channelRef.current || !tvWindowActive) return;
+    sendDisplayMessage(channelRef.current, { type: 'full-state', payload: buildFullStatePayload() });
+  }, [tvWindowActive, buildFullStatePayload]);
+
+  // Send timer tick every 500ms for smooth timer display
+  useEffect(() => {
+    if (!tvWindowActive || mode !== 'game') return;
+    const id = setInterval(() => {
+      if (!channelRef.current) return;
+      sendDisplayMessage(channelRef.current, {
+        type: 'timer-tick',
+        payload: {
+          remainingSeconds: timer.timerState.remainingSeconds,
+          status: timer.timerState.status,
+          currentLevelIndex: timer.timerState.currentLevelIndex,
+        },
+      });
+    }, 500);
+    return () => clearInterval(id);
+  }, [tvWindowActive, mode, timer.timerState.remainingSeconds, timer.timerState.status, timer.timerState.currentLevelIndex]);
+
   const tournamentFinished = useMemo(() => {
     if (config.players.length < 2) return false;
     return config.players.filter((p) => p.status === 'active').length === 1;
@@ -912,7 +1047,7 @@ function App() {
     setAddOnEndLevelIndex(null);
     setLastHandActive(false);
     setHandForHandActive(false);
-    setDisplayMode(false);
+    closeTVWindow();
     resetGameEvents();
     resetVoice();
     clearCheckpoint();
@@ -1015,9 +1150,13 @@ function App() {
           <VoiceSwitcher settings={settings} onChange={setSettings} />
           {mode === 'game' && !tournamentFinished && (
             <button
-              onClick={() => setDisplayMode(true)}
-              className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-600/30"
-              title={t('display.activate')}
+              onClick={tvWindowActive ? closeTVWindow : openTVWindow}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
+                tvWindowActive
+                  ? 'bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white border-emerald-500 dark:border-emerald-600 shadow-sm shadow-emerald-300/30 dark:shadow-emerald-900/30'
+                  : 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600/30'
+              }`}
+              title={tvWindowActive ? t('display.tvWindowActive') : t('display.activate')}
             >
               📺
             </button>
@@ -1192,6 +1331,8 @@ function App() {
                   onHandForHand={handleHandForHand}
                   onNextHand={handleNextHand}
                   showHandForHand={bubbleActive}
+                  callTheClockSeconds={settings.callTheClockSeconds}
+                  onCallTheClock={() => setShowCallTheClock(true)}
                 />
               </div>
 
@@ -1260,35 +1401,6 @@ function App() {
         )}
       </main>
 
-      {/* TV Display Mode Overlay */}
-      {displayMode && mode === 'game' && !tournamentFinished && (
-        <Suspense fallback={null}>
-          <DisplayMode
-            timerState={timer.timerState}
-            levels={config.levels}
-            chipConfig={config.chips}
-            colorUpMap={colorUpMap}
-            tournamentName={config.name}
-            activePlayerCount={activePlayerCount}
-            totalPlayerCount={config.players.length}
-            isBubble={bubbleActive}
-            isLastHand={lastHandActive}
-            isHandForHand={handForHandActive}
-            onExit={() => setDisplayMode(false)}
-            players={config.players}
-            dealerIndex={config.dealerIndex}
-            buyIn={config.buyIn}
-            payout={config.payout}
-            rebuy={config.rebuy}
-            addOn={config.addOn}
-            bounty={config.bounty}
-            averageStack={averageStack}
-            tournamentElapsed={tournamentElapsed}
-            tables={config.tables}
-          />
-        </Suspense>
-      )}
-
       {/* Call the Clock Modal */}
       {showCallTheClock && mode === 'game' && (
         <Suspense fallback={null}>
@@ -1319,7 +1431,7 @@ function App() {
       )}
 
       {/* Setup Wizard (first-time users) */}
-      {showWizard && mode === 'setup' && (
+      {showWizard && mode === 'setup' && !pendingCheckpoint && (
         <SetupWizard
           onComplete={(wizardConfig) => {
             setConfig(wizardConfig);

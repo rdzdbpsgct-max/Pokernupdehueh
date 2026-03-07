@@ -81,7 +81,7 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
               onChange={(v) => onChange({ ...settings, callTheClockSeconds: Math.max(10, Math.min(300, v)) })}
               min={10}
               max={300}
-              step={10}
+              step={5}
               inputClassName="w-14"
             />
             <span className="text-xs text-gray-400 dark:text-gray-500">s</span>
