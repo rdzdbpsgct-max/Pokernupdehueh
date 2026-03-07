@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 2.11.0
+**Version**: 3.0.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (246 tests, single run)
+npm run test         # Vitest run (260 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -42,7 +42,7 @@ src/
 ├── components/                  # UI components (one export per file)
 │   ├── AddOnEditor.tsx          # Add-On config (requires Rebuy, auto-disable)
 │   ├── BlindGenerator.tsx       # Blind structure generator (3 speeds, chip-aware)
-│   ├── BountyEditor.tsx         # Bounty amount configuration
+│   ├── BountyEditor.tsx         # Bounty config: fixed amount or mystery bounty pool
 │   ├── ChevronIcon.tsx          # Reusable SVG chevron with rotation animation
 │   ├── ChipEditor.tsx           # Chip denomination management, editable color-up schedule
 │   ├── ChipSidebar.tsx          # Game-mode chip info, next color-up display
@@ -61,6 +61,7 @@ src/
 │   │   └── index.ts             # Barrel export
 │   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
+│   ├── LeagueManager.tsx        # League CRUD, leaderboard, export
 │   ├── LevelPreview.tsx         # Next-level sidebar
 │   ├── NumberStepper.tsx        # Custom +/- stepper with long-press support
 │   ├── PayoutEditor.tsx         # Prize distribution config
@@ -89,8 +90,8 @@ src/
 │   ├── players.ts               # Player management, stacks, bubble detection
 │   ├── chips.ts                 # Chip denominations, color-up, compatibility checks
 │   ├── validation.ts            # Config validation, rebuy/late-reg checks
-│   ├── tournament.ts            # Results, payouts, stats, CSV/text export
-│   ├── persistence.ts           # localStorage CRUD, config parsing, templates, player database
+│   ├── tournament.ts            # Results, payouts, stats, CSV/text export, league standings, mystery bounty
+│   ├── persistence.ts           # localStorage CRUD, config parsing, templates, player database, league management
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
 │   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
@@ -111,7 +112,7 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 222 unit tests for domain/logic.ts
+└── logic.test.ts                # 260 unit tests for domain/logic.ts
 
 public/
 ├── favicon.svg                  # Spade symbol favicon
@@ -126,7 +127,7 @@ public/
 - **useTimer** hook manages timer state with drift-free wall-clock computation
 - **Props drilling** for passing state and callbacks to child components
 - **React Context** for i18n (language selection) and theme (dark/light mode)
-- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`, `poker-timer-history`, `poker-timer-players`
+- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`, `poker-timer-history`, `poker-timer-players`, `poker-timer-leagues`
 
 ### Component Conventions
 - Functional components with hooks only (no class components)
@@ -137,9 +138,9 @@ public/
 
 ### Domain Logic Separation
 - `src/domain/` contains pure business logic with no React dependencies
-- `src/domain/types.ts` — all shared types (`Level`, `TournamentConfig`, `Player`, `Settings`, `TimerState`, etc.)
+- `src/domain/types.ts` — all shared types (`Level`, `TournamentConfig`, `Player`, `Settings`, `TimerState`, `League`, `PointSystem`, `LeagueStanding`, etc.)
 - `src/domain/logic.ts` — barrel re-export file; actual logic split into 9 focused modules:
-  - `helpers.ts` (ID generators, spinner rounding), `format.ts` (time/level formatting), `timer.ts` (level navigation, elapsed time), `blinds.ts` (blind generation, ante calculation), `players.ts` (player management, stacks, bubble), `chips.ts` (chip denominations, color-up), `validation.ts` (config validation, rebuy/late-reg checks), `tournament.ts` (results, payouts, stats, export), `persistence.ts` (localStorage CRUD, config parsing, templates, player database)
+  - `helpers.ts` (ID generators, spinner rounding), `format.ts` (time/level formatting), `timer.ts` (level navigation, elapsed time), `blinds.ts` (blind generation, ante calculation), `players.ts` (player management, stacks, bubble), `chips.ts` (chip denominations, color-up), `validation.ts` (config validation, rebuy/late-reg checks), `tournament.ts` (results, payouts, stats, export, league standings, mystery bounty), `persistence.ts` (localStorage CRUD, config parsing, templates, player database, league management)
 - All imports use `from '../domain/logic'` (barrel) — no direct module imports needed
 - Tests cover domain logic exclusively — UI tests are not currently present
 
@@ -216,6 +217,8 @@ public/
 - **Tournament history**: Persistent result storage in `poker-timer-history` (localStorage, max 50 entries). Auto-save on tournament finish. `TournamentHistory.tsx` modal with expandable standings, player statistics tab (`computePlayerStats` aggregation by normalized name), text export (WhatsApp-friendly), CSV download. Accessible from setup header "Historie" button.
 - **Player database**: Persistent player name storage in `poker-timer-players` (localStorage). Auto-save on tournament finish via `syncPlayersToDatabase()`. Autocomplete via native `<datalist>` in PlayerManager. `importPlayersFromHistory()` for one-time migration. Case-insensitive deduplication.
 - **Call the Clock**: Shot-clock countdown modal (`CallTheClock.tsx`, lazy-loaded ~2.3 KB). Configurable duration (10–300s, default 60s) via `callTheClockSeconds` in Settings. Wall-clock-based countdown, progress bar, tension beeps in last 10s, auto-close at 0. Keyboard shortcut `C` to toggle. `NumberStepper` config in SettingsPanel.
+- **League Management**: Multi-league support with point system. `League` type with customizable `PointSystem` (default: 1st→10, 2nd→7, 3rd→5, ..., 7th→1). CRUD in `poker-timer-leagues` (localStorage). `LeagueManager.tsx` modal with create/edit/delete, inline point editing, embedded sortable leaderboard. `computeLeagueStandings()` aggregates by normalized player name across league-tagged tournaments. Text export (WhatsApp-friendly) + CSV download. Tournament-to-league assignment via `leagueId` dropdown in Setup.
+- **Mystery Bounty**: Alternative to fixed bounty — `BountyConfig.type: 'fixed' | 'mystery'`. Configurable pool of random bounty amounts (`mysteryPool: number[]`). `drawMysteryBounty()` randomly draws from pool on elimination. Segmented toggle in BountyEditor with pool editor + presets. Backward-compatible via `parseConfigObject`.
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -255,6 +258,13 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v3.0.0 — Phase 3: Liga-Management & Mystery Bounty
+
+- **Liga-Management**: `League`, `PointSystem`, `LeagueStanding` Types. CRUD in `poker-timer-leagues`. `LeagueManager.tsx` Modal mit Leaderboard, Text/CSV-Export. `computeLeagueStandings()`. Liga-Dropdown im Setup.
+- **Mystery Bounty**: `BountyConfig.type: 'fixed' | 'mystery'`, `mysteryPool`. `drawMysteryBounty()`. Segmentierter Toggle + Pool-Editor im BountyEditor.
+- **Neue Datei**: `LeagueManager.tsx`
+- **60 Translation-Keys**, **14 neue Tests** — **260 Tests gesamt**
 
 ### v2.11.0 — Phase 2: Player Ecosystem & Architektur
 

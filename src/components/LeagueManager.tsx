@@ -1,0 +1,402 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { League, LeagueStanding } from '../domain/types';
+import {
+  loadLeagues,
+  saveLeague,
+  deleteLeague,
+  defaultPointSystem,
+  loadTournamentHistory,
+  computeLeagueStandings,
+  formatLeagueAsText,
+  formatLeagueAsCSV,
+} from '../domain/logic';
+import { useTranslation } from '../i18n';
+import { ChevronIcon } from './ChevronIcon';
+import { NumberStepper } from './NumberStepper';
+
+interface Props {
+  onClose: () => void;
+}
+
+export function LeagueManager({ onClose }: Props) {
+  const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [leagues, setLeagues] = useState<League[]>(() => loadLeagues());
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Auto-focus & Escape to close
+  useEffect(() => {
+    const el = dialogRef.current;
+    if (!el) return;
+    const focusable = el.querySelector<HTMLElement>('button, [tabindex]');
+    focusable?.focus();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  const createLeague = useCallback(() => {
+    const league: League = {
+      id: `league_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      name: '',
+      pointSystem: defaultPointSystem(),
+      createdAt: new Date().toISOString(),
+    };
+    saveLeague(league);
+    setLeagues(loadLeagues());
+    setExpandedId(league.id);
+    setEditingId(league.id);
+  }, []);
+
+  const handleUpdateLeague = useCallback((league: League) => {
+    saveLeague(league);
+    setLeagues(loadLeagues());
+  }, []);
+
+  const handleDeleteLeague = useCallback((id: string) => {
+    deleteLeague(id);
+    setLeagues(loadLeagues());
+    if (expandedId === id) setExpandedId(null);
+    setConfirmDeleteId(null);
+  }, [expandedId]);
+
+  const handleCopyText = useCallback(async (league: League) => {
+    const history = loadTournamentHistory();
+    const standings = computeLeagueStandings(league.id, history, league.pointSystem);
+    try {
+      await navigator.clipboard.writeText(formatLeagueAsText(league, standings));
+      setCopiedId(league.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch { /* clipboard not available */ }
+  }, []);
+
+  const handleDownloadCSV = useCallback((league: League) => {
+    const history = loadTournamentHistory();
+    const standings = computeLeagueStandings(league.id, history, league.pointSystem);
+    const csv = formatLeagueAsCSV(standings);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${league.name || 'league'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="league-title"
+        className="bg-white/95 dark:bg-gray-900/95 border border-gray-300 dark:border-gray-700/50 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl shadow-gray-300/40 dark:shadow-black/40 animate-scale-in"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700/40">
+          <h2 id="league-title" className="text-lg font-bold text-gray-900 dark:text-white">{t('league.title')}</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={createLeague}
+              className="px-3 py-1.5 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-emerald-900/20 active:scale-[0.97]"
+            >
+              + {t('league.newLeague')}
+            </button>
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+            >
+              {t('history.close')}
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-3">
+          {leagues.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('league.noLeagues')}</p>
+          ) : (
+            leagues.map((league) => (
+              <LeagueEntry
+                key={league.id}
+                league={league}
+                expanded={expandedId === league.id}
+                editing={editingId === league.id}
+                confirmDelete={confirmDeleteId === league.id}
+                copied={copiedId === league.id}
+                onToggle={() => setExpandedId(expandedId === league.id ? null : league.id)}
+                onEdit={() => setEditingId(editingId === league.id ? null : league.id)}
+                onUpdate={handleUpdateLeague}
+                onDelete={() => handleDeleteLeague(league.id)}
+                onConfirmDelete={() => setConfirmDeleteId(league.id)}
+                onCancelDelete={() => setConfirmDeleteId(null)}
+                onCopyText={() => handleCopyText(league)}
+                onDownloadCSV={() => handleDownloadCSV(league)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- League Entry ---
+function LeagueEntry({
+  league,
+  expanded,
+  editing,
+  confirmDelete,
+  copied,
+  onToggle,
+  onEdit,
+  onUpdate,
+  onDelete,
+  onConfirmDelete,
+  onCancelDelete,
+  onCopyText,
+  onDownloadCSV,
+}: {
+  league: League;
+  expanded: boolean;
+  editing: boolean;
+  confirmDelete: boolean;
+  copied: boolean;
+  onToggle: () => void;
+  onEdit: () => void;
+  onUpdate: (league: League) => void;
+  onDelete: () => void;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
+  onCopyText: () => void;
+  onDownloadCSV: () => void;
+}) {
+  const { t } = useTranslation();
+
+  const standings = expanded
+    ? computeLeagueStandings(league.id, loadTournamentHistory(), league.pointSystem)
+    : [];
+
+  const dateStr = new Date(league.createdAt).toLocaleDateString('de-DE', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+
+  return (
+    <div className="bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/40 rounded-xl overflow-hidden transition-all">
+      {/* Summary row */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700/30 transition-colors group"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-900 dark:text-white truncate">
+              {league.name || t('league.namePlaceholder')}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">{dateStr}</span>
+          </div>
+          <div className="flex items-center gap-3 mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+            <span>{league.pointSystem.entries.length} {t('league.points')}</span>
+          </div>
+        </div>
+        <ChevronIcon open={expanded} />
+      </button>
+
+      {/* Expanded details */}
+      {expanded && (
+        <div className="px-4 pb-4 space-y-4 animate-fade-in">
+          {/* Edit mode */}
+          {editing && (
+            <div className="space-y-3 p-3 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg">
+              {/* League name */}
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">{t('league.name')}</label>
+                <input
+                  type="text"
+                  value={league.name}
+                  onChange={(e) => onUpdate({ ...league, name: e.target.value })}
+                  placeholder={t('league.namePlaceholder')}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                />
+              </div>
+
+              {/* Point system */}
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-2 block">{t('league.pointSystem')}</label>
+                <div className="space-y-1.5">
+                  {league.pointSystem.entries.map((entry, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 w-16">{t('league.place', { n: entry.place })}</span>
+                      <NumberStepper
+                        value={entry.points}
+                        onChange={(v) => {
+                          const entries = [...league.pointSystem.entries];
+                          entries[i] = { ...entries[i], points: Math.max(0, v) };
+                          onUpdate({ ...league, pointSystem: { entries } });
+                        }}
+                        min={0}
+                        step={1}
+                      />
+                      <span className="text-gray-400 dark:text-gray-500 text-xs">{t('league.points')}</span>
+                      <button
+                        onClick={() => {
+                          const entries = league.pointSystem.entries.filter((_, idx) => idx !== i);
+                          onUpdate({ ...league, pointSystem: { entries } });
+                        }}
+                        className="ml-1 px-2 py-1 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs font-medium transition-colors"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const entries = [...league.pointSystem.entries];
+                      const nextPlace = entries.length > 0 ? Math.max(...entries.map((e) => e.place)) + 1 : 1;
+                      entries.push({ place: nextPlace, points: 1 });
+                      onUpdate({ ...league, pointSystem: { entries } });
+                    }}
+                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+                  >
+                    + {t('league.place', { n: league.pointSystem.entries.length + 1 })}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Standings table */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('league.standings')}</h4>
+            <LeagueLeaderboard standings={standings} />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 pt-1 flex-wrap">
+            <button
+              onClick={onEdit}
+              className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+            >
+              {editing ? t('history.close') : t('league.pointSystem')}
+            </button>
+            <button
+              onClick={onCopyText}
+              className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+            >
+              {copied ? t('league.textCopied') : t('league.copyText')}
+            </button>
+            <button
+              onClick={onDownloadCSV}
+              className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+            >
+              {t('league.downloadCSV')}
+            </button>
+            <div className="flex-1" />
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-500 dark:text-red-400">
+                  {t('league.deleteConfirm', { name: league.name || '?' })}
+                </span>
+                <button
+                  onClick={onDelete}
+                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition-colors"
+                >
+                  {t('league.delete')}
+                </button>
+                <button
+                  onClick={onCancelDelete}
+                  className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+                >
+                  {t('app.cancel')}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onConfirmDelete}
+                className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-xs font-medium transition-colors border border-red-200 dark:border-red-800/40"
+              >
+                {t('league.delete')}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- League Leaderboard (embedded in each expanded league) ---
+type SortColumn = 'points' | 'tournaments' | 'wins' | 'cashes' | 'avgPlace' | 'bestPlace';
+
+function LeagueLeaderboard({ standings }: { standings: LeagueStanding[] }) {
+  const { t } = useTranslation();
+  const [sortCol, setSortCol] = useState<SortColumn>('points');
+  const [sortAsc, setSortAsc] = useState(false);
+
+  if (standings.length === 0) {
+    return <p className="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">{t('league.noResults')}</p>;
+  }
+
+  const handleSort = (col: SortColumn) => {
+    if (sortCol === col) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortCol(col);
+      setSortAsc(col === 'avgPlace'); // ascending for avgPlace, descending for others
+    }
+  };
+
+  const sorted = [...standings].sort((a, b) => {
+    const aVal = a[sortCol];
+    const bVal = b[sortCol];
+    return sortAsc ? aVal - bVal : bVal - aVal;
+  });
+
+  const MEDAL = ['\u{1F3C6}', '\u{1F948}', '\u{1F949}'];
+
+  const thClass = 'py-1.5 pr-2 text-center cursor-pointer hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors select-none';
+  const arrow = (col: SortColumn) => sortCol === col ? (sortAsc ? ' \u25B2' : ' \u25BC') : '';
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-gray-500 dark:text-gray-400 text-left text-xs uppercase tracking-wider">
+            <th className="py-1.5 pr-2">{t('league.rank')}</th>
+            <th className="py-1.5 pr-2">{t('league.player')}</th>
+            <th className={thClass} onClick={() => handleSort('points')}>{t('league.points')}{arrow('points')}</th>
+            <th className={thClass} onClick={() => handleSort('tournaments')}>{t('league.tournaments')}{arrow('tournaments')}</th>
+            <th className={thClass} onClick={() => handleSort('wins')}>{t('league.wins')}{arrow('wins')}</th>
+            <th className={thClass} onClick={() => handleSort('cashes')}>{t('league.cashes')}{arrow('cashes')}</th>
+            <th className={thClass} onClick={() => handleSort('avgPlace')}>{t('league.avgPlace')}{arrow('avgPlace')}</th>
+            <th className={thClass} onClick={() => handleSort('bestPlace')}>{t('league.bestPlace')}{arrow('bestPlace')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((s, i) => (
+            <tr
+              key={s.name}
+              className={`border-t border-gray-200/60 dark:border-gray-700/30 ${
+                i < 3 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              <td className="py-1.5 pr-2 tabular-nums">{MEDAL[i] ?? i + 1}</td>
+              <td className="py-1.5 pr-2 font-medium">{s.name}</td>
+              <td className="py-1.5 pr-2 text-center tabular-nums font-bold">{s.points}</td>
+              <td className="py-1.5 pr-2 text-center tabular-nums">{s.tournaments}</td>
+              <td className="py-1.5 pr-2 text-center tabular-nums">{s.wins}</td>
+              <td className="py-1.5 pr-2 text-center tabular-nums">{s.cashes}</td>
+              <td className="py-1.5 pr-2 text-center tabular-nums">{s.avgPlace}</td>
+              <td className="py-1.5 pr-2 text-center tabular-nums">{s.bestPlace || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

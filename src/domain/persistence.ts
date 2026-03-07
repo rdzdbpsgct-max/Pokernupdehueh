@@ -12,6 +12,8 @@ import type {
   ChipConfig,
   PayoutConfig,
   LateRegistrationConfig,
+  League,
+  PointSystem,
 } from './types';
 import { generateBlindStructure } from './blinds';
 import { defaultChipConfig } from './chips';
@@ -42,7 +44,7 @@ export function defaultAddOnConfig(buyIn = 10, startingChips = 20000): AddOnConf
 }
 
 export function defaultBountyConfig(): BountyConfig {
-  return { enabled: false, amount: 5 };
+  return { enabled: false, amount: 5, type: 'fixed' };
 }
 
 export function defaultSettings(): Settings {
@@ -128,7 +130,16 @@ export function parseConfigObject(parsed: Record<string, unknown>): TournamentCo
     payout: (parsed.payout as PayoutConfig) ?? defaultPayoutConfig(),
     rebuy,
     addOn,
-    bounty: (parsed.bounty as BountyConfig) ?? defaultBountyConfig(),
+    bounty: parsed.bounty
+      ? {
+          ...defaultBountyConfig(),
+          ...(parsed.bounty as Partial<BountyConfig>),
+          type: (parsed.bounty as Record<string, unknown>).type === 'mystery' ? 'mystery' : 'fixed',
+          mysteryPool: Array.isArray((parsed.bounty as Record<string, unknown>).mysteryPool)
+            ? (parsed.bounty as BountyConfig).mysteryPool
+            : undefined,
+        }
+      : defaultBountyConfig(),
     chips: parsed.chips
       ? {
           ...defaultChipConfig(),
@@ -146,6 +157,7 @@ export function parseConfigObject(parsed: Record<string, unknown>): TournamentCo
     lateRegistration: parsed.lateRegistration
       ? { ...defaultLateRegistrationConfig(), ...(parsed.lateRegistration as Partial<LateRegistrationConfig>) }
       : undefined,
+    leagueId: typeof parsed.leagueId === 'string' ? parsed.leagueId : undefined,
   };
 }
 
@@ -388,6 +400,60 @@ export function parseTemplateFile(json: string): { name: string; config: Tournam
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Leagues
+// ---------------------------------------------------------------------------
+
+const LEAGUES_KEY = 'poker-timer-leagues';
+
+export function defaultPointSystem(): PointSystem {
+  return {
+    entries: [
+      { place: 1, points: 10 },
+      { place: 2, points: 7 },
+      { place: 3, points: 5 },
+      { place: 4, points: 4 },
+      { place: 5, points: 3 },
+      { place: 6, points: 2 },
+      { place: 7, points: 1 },
+    ],
+  };
+}
+
+export function loadLeagues(): League[] {
+  try {
+    const raw = localStorage.getItem(LEAGUES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as League[];
+  } catch {
+    return [];
+  }
+}
+
+/** Upsert a league: update existing by id, or append if new. */
+export function saveLeague(league: League): League {
+  const leagues = loadLeagues();
+  const idx = leagues.findIndex((l) => l.id === league.id);
+  if (idx >= 0) {
+    leagues[idx] = league;
+  } else {
+    leagues.push(league);
+  }
+  try {
+    localStorage.setItem(LEAGUES_KEY, JSON.stringify(leagues));
+  } catch { /* private browsing or quota exceeded */ }
+  return league;
+}
+
+export function deleteLeague(id: string): void {
+  const leagues = loadLeagues().filter((l) => l.id !== id);
+  try {
+    localStorage.setItem(LEAGUES_KEY, JSON.stringify(leagues));
+  } catch { /* ignore */ }
 }
 
 // ---------------------------------------------------------------------------

@@ -5,6 +5,22 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [3.0.0] – 2026-03-07
+
+### Phase 3: Liga-Management & Mystery Bounty
+
+- **Liga-Datenmodell**: Neue Interfaces `League`, `PointSystem`, `PointEntry`, `LeagueStanding` in types.ts. Optionales `leagueId` in TournamentConfig + TournamentResult. Standard-Punktesystem (1.→10, 2.→7, 3.→5, 4.→4, 5.→3, 6.→2, 7.→1). CRUD-Funktionen: `loadLeagues()`, `saveLeague()`, `deleteLeague()`, `defaultPointSystem()`.
+- **Liga CRUD UI**: Neues `LeagueManager.tsx` Modal (~300 Zeilen) — Ligen erstellen, bearbeiten, löschen. Inline-Editing für Name und Punktesystem. Expand/Collapse mit ChevronIcon. Confirmation-Dialog bei Löschung. „Ligen"-Button im Setup-Header.
+- **Liga-Leaderboard**: Sortierbare Standings-Tabelle eingebettet in LeagueManager — Rang, Spieler, Punkte, Turniere, Siege, Cashes, Ø Platz, Bester Platz. `computeLeagueStandings()` aggregiert nach normalisiertem Spielernamen.
+- **Liga-Export**: Text-Export (WhatsApp-freundlich) via `formatLeagueAsText()` und CSV-Download via `formatLeagueAsCSV()`. Export-Buttons in LeagueManager.
+- **Liga-Zuordnung im Setup**: Dropdown in Turnier-Grundlagen-Karte zur Liga-Auswahl. Liga-ID wird in TournamentResult gespeichert.
+- **Mystery Bounty**: `BountyConfig` erweitert um `type: 'fixed' | 'mystery'` und `mysteryPool?: number[]`. Segmentierter Toggle (Fixed/Mystery) im BountyEditor. Pool-Editor mit individuellen Beträgen + Vorlagen. `drawMysteryBounty()` zieht zufällig aus Pool bei Elimination. Backward-kompatibel via `parseConfigObject`.
+- **Neue Datei**: `src/components/LeagueManager.tsx`
+- **60 neue Translation-Keys** (30 DE + 30 EN)
+- **14 neue Tests** — **260 Tests gesamt**
+
+---
+
 ## [2.11.0] – 2026-03-07
 
 ### Phase 2: Player Ecosystem & Architektur

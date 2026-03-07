@@ -27,6 +27,7 @@ import {
   buildTournamentResult,
   saveTournamentResult,
   decodeResultFromQR,
+  drawMysteryBounty,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
@@ -47,6 +48,7 @@ import { setAudioVolume } from './domain/audioPlayer';
 import { SetupPage } from './components/SetupPage';
 import { TemplateManager } from './components/TemplateManager';
 import { TournamentHistory } from './components/TournamentHistory';
+import { LeagueManager } from './components/LeagueManager';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { VoiceSwitcher } from './components/VoiceSwitcher';
@@ -88,6 +90,7 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showLeagues, setShowLeagues] = useState(false);
   const [sharedResult, setSharedResult] = useState(() => {
     const hash = window.location.hash;
     if (hash.startsWith('#r=')) {
@@ -466,8 +469,17 @@ function App() {
   const eliminatePlayer = useCallback((playerId: string, eliminatedBy: string | null) => {
     setConfig((prev) => {
       const placement = computeNextPlacement(prev.players);
+
+      // Mystery bounty: draw from pool if applicable
+      let updatedBounty = prev.bounty;
+      if (prev.bounty.enabled && prev.bounty.type === 'mystery' && prev.bounty.mysteryPool && prev.bounty.mysteryPool.length > 0 && eliminatedBy) {
+        const draw = drawMysteryBounty(prev.bounty.mysteryPool);
+        updatedBounty = { ...prev.bounty, amount: draw.amount, mysteryPool: draw.remainingPool };
+      }
+
       return {
         ...prev,
+        bounty: updatedBounty,
         players: prev.players.map((p) => {
           if (p.id === playerId) {
             return { ...p, status: 'eliminated' as const, placement, eliminatedBy, chips: p.chips !== undefined ? 0 : undefined };
@@ -864,6 +876,12 @@ function App() {
                 {t('app.templates')}
               </button>
               <button
+                onClick={() => setShowLeagues(true)}
+                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+              >
+                {t('app.leagues')}
+              </button>
+              <button
                 onClick={() => setShowHistory(true)}
                 className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
               >
@@ -1111,6 +1129,10 @@ function App() {
 
       {showHistory && (
         <TournamentHistory onClose={() => setShowHistory(false)} />
+      )}
+
+      {showLeagues && (
+        <LeagueManager onClose={() => setShowLeagues(false)} />
       )}
 
       {/* Shared Result Modal (from QR code) */}

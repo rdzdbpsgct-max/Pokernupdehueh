@@ -60,6 +60,8 @@ export interface AddOnConfig {
 export interface BountyConfig {
   enabled: boolean;
   amount: number;
+  type: 'fixed' | 'mystery';
+  mysteryPool?: number[];
 }
 
 export interface ChipDenomination {
@@ -104,6 +106,7 @@ export interface TournamentConfig {
   buyIn: number;
   startingChips: number;
   lateRegistration?: LateRegistrationConfig;
+  leagueId?: string;
 }
 
 export interface Settings {
@@ -163,6 +166,7 @@ export interface TournamentResult {
   totalAddOns: number;
   elapsedSeconds: number;
   levelsPlayed: number;
+  leagueId?: string;
 }
 
 export interface PlayerStat {
@@ -176,6 +180,32 @@ export interface PlayerStat {
   avgPlace: number;
   bestPlace: number;
   knockouts: number;
+}
+
+export interface PointEntry {
+  place: number;
+  points: number;
+}
+
+export interface PointSystem {
+  entries: PointEntry[];
+}
+
+export interface League {
+  id: string;
+  name: string;
+  pointSystem: PointSystem;
+  createdAt: string; // ISO timestamp
+}
+
+export interface LeagueStanding {
+  name: string;
+  points: number;
+  tournaments: number;
+  wins: number;
+  cashes: number;
+  avgPlace: number;
+  bestPlace: number;
 }
 
 export type TimerStatus = 'stopped' | 'running' | 'paused';

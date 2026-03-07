@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from 'react';
-import type { TournamentConfig, TournamentCheckpoint } from '../domain/types';
+import { useCallback, useMemo, useState } from 'react';
+import type { TournamentConfig, TournamentCheckpoint, League } from '../domain/types';
 import {
   stripAnteFromLevels,
   applyDefaultAntes,
@@ -7,6 +7,7 @@ import {
   snapSpinnerValue,
   checkBlindChipCompatibility,
   computeBlindStructureSummary,
+  loadLeagues,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { ConfigEditor } from './ConfigEditor';
@@ -44,6 +45,9 @@ export function SetupPage({
   theme,
 }: Props) {
   const { t } = useTranslation();
+
+  // Load leagues for the dropdown (refresh when SetupPage mounts)
+  const [leagues] = useState<League[]>(() => loadLeagues());
 
   // --- Section summaries for collapsed CollapsibleSection cards ---
   const chipsSummary = useMemo(() => {
@@ -194,6 +198,22 @@ export function SetupPage({
                 <span className="text-gray-500 dark:text-gray-400 text-sm">{t('unit.chips')}</span>
               </div>
             </div>
+            {/* League dropdown */}
+            {leagues.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-400 dark:text-gray-500">{t('league.assignLeague')}</label>
+                <select
+                  value={config.leagueId ?? ''}
+                  onChange={(e) => setConfig((prev) => ({ ...prev, leagueId: e.target.value || undefined }))}
+                  className="px-3 py-1.5 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                >
+                  <option value="">{t('league.noLeague')}</option>
+                  {leagues.map((l) => (
+                    <option key={l.id} value={l.id}>{l.name || l.id}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </CollapsibleSection>
 

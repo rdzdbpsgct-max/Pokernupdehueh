@@ -4,6 +4,9 @@ import type {
   PlayerResult,
   PayoutConfig,
   Player,
+  PointSystem,
+  LeagueStanding,
+  League,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -154,6 +157,7 @@ export function buildTournamentResult(
     totalAddOns: computeTotalAddOns(config.players),
     elapsedSeconds,
     levelsPlayed,
+    leagueId: config.leagueId,
   };
 }
 
@@ -234,6 +238,85 @@ export function computePlayerStats(history: TournamentResult[]): import('./types
   }
   stats.sort((a, b) => b.netBalance - a.netBalance);
   return stats;
+}
+
+// ---------------------------------------------------------------------------
+// League Standings
+// ---------------------------------------------------------------------------
+
+export function computeLeagueStandings(
+  leagueId: string,
+  history: TournamentResult[],
+  pointSystem: PointSystem,
+): LeagueStanding[] {
+  const pointMap = new Map(pointSystem.entries.map((e) => [e.place, e.points]));
+  const map = new Map<string, LeagueStanding>();
+
+  for (const tournament of history) {
+    if (tournament.leagueId !== leagueId) continue;
+    for (const p of tournament.players) {
+      const key = p.name.toLowerCase().trim();
+      let standing = map.get(key);
+      if (!standing) {
+        standing = {
+          name: p.name,
+          points: 0,
+          tournaments: 0,
+          wins: 0,
+          cashes: 0,
+          avgPlace: 0,
+          bestPlace: Infinity,
+        };
+        map.set(key, standing);
+      }
+      standing.tournaments++;
+      standing.points += pointMap.get(p.place) ?? 0;
+      if (p.place === 1) standing.wins++;
+      if (p.payout > 0) standing.cashes++;
+      standing.avgPlace += p.place;
+      if (p.place < standing.bestPlace) standing.bestPlace = p.place;
+    }
+  }
+
+  const standings = [...map.values()];
+  for (const s of standings) {
+    s.avgPlace = Math.round((s.avgPlace / s.tournaments) * 10) / 10;
+    if (s.bestPlace === Infinity) s.bestPlace = 0;
+  }
+  standings.sort((a, b) => b.points - a.points || a.avgPlace - b.avgPlace);
+  return standings;
+}
+
+export function formatLeagueAsText(league: League, standings: LeagueStanding[]): string {
+  const lines: string[] = [];
+  lines.push(`\u2660 ${league.name}`);
+  lines.push('');
+  for (let i = 0; i < standings.length; i++) {
+    const s = standings[i];
+    const medal = i === 0 ? '\u{1F3C6}' : i === 1 ? '\u{1F948}' : i === 2 ? '\u{1F949}' : `${i + 1}.`;
+    lines.push(`${medal} ${s.name} — ${s.points} Pts (${s.tournaments} T, ${s.wins} W)`);
+  }
+  return lines.join('\n');
+}
+
+export function formatLeagueAsCSV(standings: LeagueStanding[]): string {
+  const header = 'Rank,Name,Points,Tournaments,Wins,Cashes,AvgPlace,BestPlace';
+  const rows = standings.map((s, i) =>
+    [i + 1, `"${s.name}"`, s.points, s.tournaments, s.wins, s.cashes, s.avgPlace, s.bestPlace].join(','),
+  );
+  return [header, ...rows].join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Mystery Bounty
+// ---------------------------------------------------------------------------
+
+export function drawMysteryBounty(pool: number[]): { amount: number; remainingPool: number[] } {
+  if (pool.length === 0) return { amount: 0, remainingPool: [] };
+  const idx = Math.floor(Math.random() * pool.length);
+  const amount = pool[idx];
+  const remainingPool = [...pool.slice(0, idx), ...pool.slice(idx + 1)];
+  return { amount, remainingPool };
 }
 
 // ---------------------------------------------------------------------------

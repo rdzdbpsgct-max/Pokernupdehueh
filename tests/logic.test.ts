@@ -73,8 +73,16 @@ import {
   deleteRegisteredPlayer,
   importPlayersFromHistory,
   syncPlayersToDatabase,
+  defaultPointSystem,
+  computeLeagueStandings,
+  loadLeagues,
+  saveLeague,
+  deleteLeague,
+  formatLeagueAsText,
+  drawMysteryBounty,
+  parseConfigObject,
 } from '../src/domain/logic';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player } from '../src/domain/types';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult } from '../src/domain/types';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -2788,5 +2796,240 @@ describe('Player Database', () => {
     savePlayerDatabase(players);
     const loaded = loadPlayerDatabase();
     expect(loaded).toEqual(players);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// League — Point System & CRUD
+// ---------------------------------------------------------------------------
+describe('defaultPointSystem', () => {
+  it('returns correct entries', () => {
+    const ps = defaultPointSystem();
+    expect(ps.entries).toHaveLength(7);
+    expect(ps.entries[0]).toEqual({ place: 1, points: 10 });
+    expect(ps.entries[6]).toEqual({ place: 7, points: 1 });
+  });
+});
+
+describe('League CRUD', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('save + load round-trip', () => {
+    const league: League = {
+      id: 'league_test_1',
+      name: 'Friday Night',
+      pointSystem: defaultPointSystem(),
+      createdAt: new Date().toISOString(),
+    };
+    saveLeague(league);
+    const loaded = loadLeagues();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].name).toBe('Friday Night');
+  });
+
+  it('delete removes league', () => {
+    const league: League = {
+      id: 'league_test_2',
+      name: 'Test League',
+      pointSystem: defaultPointSystem(),
+      createdAt: new Date().toISOString(),
+    };
+    saveLeague(league);
+    expect(loadLeagues()).toHaveLength(1);
+    deleteLeague('league_test_2');
+    expect(loadLeagues()).toHaveLength(0);
+  });
+
+  it('upsert updates existing league', () => {
+    const league: League = {
+      id: 'league_test_3',
+      name: 'Original',
+      pointSystem: defaultPointSystem(),
+      createdAt: new Date().toISOString(),
+    };
+    saveLeague(league);
+    saveLeague({ ...league, name: 'Updated' });
+    const loaded = loadLeagues();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].name).toBe('Updated');
+  });
+});
+
+describe('computeLeagueStandings', () => {
+  it('aggregates correctly', () => {
+    const pointSystem = defaultPointSystem();
+    const history: TournamentResult[] = [
+      {
+        id: 'r1', name: 'T1', date: '2024-01-01', playerCount: 3, buyIn: 10,
+        prizePool: 30, bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false,
+        totalRebuys: 0, addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 3600, levelsPlayed: 8,
+        leagueId: 'league_1',
+        players: [
+          { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 2, bountyEarned: 0, netBalance: 10 },
+          { name: 'Bob', place: 2, payout: 10, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 0 },
+          { name: 'Carol', place: 3, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+      },
+      {
+        id: 'r2', name: 'T2', date: '2024-02-01', playerCount: 3, buyIn: 10,
+        prizePool: 30, bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false,
+        totalRebuys: 0, addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 3600, levelsPlayed: 8,
+        leagueId: 'league_1',
+        players: [
+          { name: 'Bob', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 1, bountyEarned: 0, netBalance: 10 },
+          { name: 'Alice', place: 2, payout: 10, rebuys: 0, addOn: false, knockouts: 1, bountyEarned: 0, netBalance: 0 },
+          { name: 'Carol', place: 3, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+      },
+    ];
+
+    const standings = computeLeagueStandings('league_1', history, pointSystem);
+    expect(standings).toHaveLength(3);
+
+    // Alice: 1st (10pts) + 2nd (7pts) = 17pts
+    const alice = standings.find(s => s.name === 'Alice');
+    expect(alice).toBeDefined();
+    expect(alice!.points).toBe(17);
+    expect(alice!.tournaments).toBe(2);
+    expect(alice!.wins).toBe(1);
+
+    // Bob: 2nd (7pts) + 1st (10pts) = 17pts
+    const bob = standings.find(s => s.name === 'Bob');
+    expect(bob).toBeDefined();
+    expect(bob!.points).toBe(17);
+
+    // Carol: 3rd (5pts) + 3rd (5pts) = 10pts
+    const carol = standings.find(s => s.name === 'Carol');
+    expect(carol).toBeDefined();
+    expect(carol!.points).toBe(10);
+  });
+
+  it('filters by leagueId', () => {
+    const pointSystem = defaultPointSystem();
+    const history: TournamentResult[] = [
+      {
+        id: 'r1', name: 'T1', date: '2024-01-01', playerCount: 2, buyIn: 10,
+        prizePool: 20, bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false,
+        totalRebuys: 0, addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 3600, levelsPlayed: 8,
+        leagueId: 'league_A',
+        players: [
+          { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 1, bountyEarned: 0, netBalance: 10 },
+          { name: 'Bob', place: 2, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+      },
+      {
+        id: 'r2', name: 'T2', date: '2024-01-02', playerCount: 2, buyIn: 10,
+        prizePool: 20, bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false,
+        totalRebuys: 0, addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 3600, levelsPlayed: 8,
+        leagueId: 'league_B',
+        players: [
+          { name: 'Carol', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 1, bountyEarned: 0, netBalance: 10 },
+          { name: 'Dave', place: 2, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+      },
+    ];
+
+    const standingsA = computeLeagueStandings('league_A', history, pointSystem);
+    expect(standingsA).toHaveLength(2);
+    expect(standingsA.map(s => s.name).sort()).toEqual(['Alice', 'Bob']);
+
+    const standingsB = computeLeagueStandings('league_B', history, pointSystem);
+    expect(standingsB).toHaveLength(2);
+    expect(standingsB.map(s => s.name).sort()).toEqual(['Carol', 'Dave']);
+  });
+});
+
+describe('formatLeagueAsText', () => {
+  it('produces expected output', () => {
+    const league: League = {
+      id: 'league_1',
+      name: 'Friday League',
+      pointSystem: defaultPointSystem(),
+      createdAt: '2024-01-01',
+    };
+    const standings = [
+      { name: 'Alice', points: 17, tournaments: 2, wins: 1, cashes: 2, avgPlace: 1.5, bestPlace: 1 },
+      { name: 'Bob', points: 10, tournaments: 2, wins: 0, cashes: 1, avgPlace: 2.5, bestPlace: 2 },
+    ];
+    const text = formatLeagueAsText(league, standings);
+    expect(text).toContain('Friday League');
+    expect(text).toContain('Alice');
+    expect(text).toContain('17 Pts');
+    expect(text).toContain('Bob');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Mystery Bounty
+// ---------------------------------------------------------------------------
+describe('drawMysteryBounty', () => {
+  it('returns correct amount and remaining pool', () => {
+    // Use a fixed seed by mocking Math.random
+    vi.spyOn(Math, 'random').mockReturnValue(0.0); // will pick index 0
+    const result = drawMysteryBounty([5, 10, 20]);
+    expect(result.amount).toBe(5);
+    expect(result.remainingPool).toEqual([10, 20]);
+    vi.restoreAllMocks();
+  });
+
+  it('handles empty pool', () => {
+    const result = drawMysteryBounty([]);
+    expect(result.amount).toBe(0);
+    expect(result.remainingPool).toEqual([]);
+  });
+
+  it('removes exactly one element from pool', () => {
+    const pool = [1, 2, 3, 4, 5];
+    const result = drawMysteryBounty(pool);
+    expect(result.remainingPool).toHaveLength(4);
+    expect(pool).toHaveLength(5); // original unchanged
+  });
+});
+
+describe('defaultBountyConfig', () => {
+  it('includes type field defaulting to fixed', () => {
+    const config = defaultBountyConfig();
+    expect(config.type).toBe('fixed');
+    expect(config.enabled).toBe(false);
+    expect(config.amount).toBe(5);
+  });
+});
+
+describe('parseConfigObject — bounty backward compatibility', () => {
+  it('defaults bounty type to fixed for old configs', () => {
+    const raw = {
+      name: 'Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
+      bounty: { enabled: true, amount: 10 },
+    };
+    const config = parseConfigObject(raw as Record<string, unknown>);
+    expect(config).not.toBeNull();
+    expect(config!.bounty.type).toBe('fixed');
+    expect(config!.bounty.mysteryPool).toBeUndefined();
+  });
+
+  it('preserves mystery bounty type and pool', () => {
+    const raw = {
+      name: 'Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
+      bounty: { enabled: true, amount: 5, type: 'mystery', mysteryPool: [1, 2, 5, 10] },
+    };
+    const config = parseConfigObject(raw as Record<string, unknown>);
+    expect(config).not.toBeNull();
+    expect(config!.bounty.type).toBe('mystery');
+    expect(config!.bounty.mysteryPool).toEqual([1, 2, 5, 10]);
+  });
+
+  it('parses leagueId from config', () => {
+    const raw = {
+      name: 'Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
+      leagueId: 'league_123',
+    };
+    const config = parseConfigObject(raw as Record<string, unknown>);
+    expect(config).not.toBeNull();
+    expect(config!.leagueId).toBe('league_123');
   });
 });
