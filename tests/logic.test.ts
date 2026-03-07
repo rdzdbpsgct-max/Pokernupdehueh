@@ -81,6 +81,9 @@ import {
   formatLeagueAsText,
   drawMysteryBounty,
   parseConfigObject,
+  isWizardCompleted,
+  markWizardCompleted,
+  WIZARD_KEY,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult } from '../src/domain/types';
 
@@ -3031,5 +3034,24 @@ describe('parseConfigObject — bounty backward compatibility', () => {
     const config = parseConfigObject(raw as Record<string, unknown>);
     expect(config).not.toBeNull();
     expect(config!.leagueId).toBe('league_123');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Setup Wizard persistence
+// ---------------------------------------------------------------------------
+describe('Setup Wizard', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('isWizardCompleted returns false when not set', () => {
+    expect(isWizardCompleted()).toBe(false);
+  });
+
+  it('markWizardCompleted sets flag and isWizardCompleted returns true', () => {
+    markWizardCompleted();
+    expect(isWizardCompleted()).toBe(true);
+    expect(localStorage.getItem(WIZARD_KEY)).toBe('true');
   });
 });

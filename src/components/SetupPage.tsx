@@ -437,14 +437,20 @@ export function SetupPage({
           )}
         </div>
 
-        {/* Start button — sticky on mobile */}
-        <div className="sticky bottom-0 pt-3 pb-3 bg-gray-50 dark:bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0">
+        {/* Start button + Print — sticky on mobile */}
+        <div className="sticky bottom-0 pt-3 pb-3 bg-gray-50 dark:bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 space-y-2">
           <button
             onClick={onSwitchToGame}
             disabled={startErrors.length > 0}
             className="w-full px-6 py-3 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl text-lg font-bold transition-all duration-200 shadow-lg shadow-emerald-900/30 active:scale-[0.98] active:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:from-emerald-600 disabled:hover:to-emerald-700 disabled:active:scale-100"
           >
             {t('app.startTournament')}
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="w-full px-4 py-2 bg-white dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700/40 no-print"
+          >
+            {t('print.button')}
           </button>
         </div>
 

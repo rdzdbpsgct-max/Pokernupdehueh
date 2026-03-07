@@ -507,6 +507,25 @@ const de = {
   'bountyEditor.addAmount': 'Betrag hinzufügen',
   'bountyEditor.poolTotal': 'Gesamt: {total} €',
   'bountyEditor.poolPreset': 'Schnellauswahl',
+
+  // --- Print ---
+  'print.button': 'Blindstruktur drucken',
+  'print.title': 'Blindstruktur',
+
+  // --- Wizard ---
+  'wizard.welcome': 'Willkommen!',
+  'wizard.welcomeDesc': 'Lass uns dein erstes Turnier einrichten.',
+  'wizard.players': 'Wie viele Spieler?',
+  'wizard.buyInStep': 'Buy-In & Startchips',
+  'wizard.blindSpeed': 'Turnier-Geschwindigkeit',
+  'wizard.review': 'Zusammenfassung',
+  'wizard.next': 'Weiter',
+  'wizard.back': 'Zurück',
+  'wizard.skip': 'Überspringen',
+  'wizard.start': 'Turnier starten!',
+
+  // --- Display: Seating ---
+  'display.seating': 'Sitzplan',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -1015,6 +1034,25 @@ const en: Record<TranslationKey, string> = {
   'bountyEditor.addAmount': 'Add Amount',
   'bountyEditor.poolTotal': 'Total: {total} €',
   'bountyEditor.poolPreset': 'Quick Select',
+
+  // --- Print ---
+  'print.button': 'Print Blind Structure',
+  'print.title': 'Blind Structure',
+
+  // --- Wizard ---
+  'wizard.welcome': 'Welcome!',
+  'wizard.welcomeDesc': 'Let\'s set up your first tournament.',
+  'wizard.players': 'How many players?',
+  'wizard.buyInStep': 'Buy-In & Starting Chips',
+  'wizard.blindSpeed': 'Tournament Speed',
+  'wizard.review': 'Summary',
+  'wizard.next': 'Next',
+  'wizard.back': 'Back',
+  'wizard.skip': 'Skip',
+  'wizard.start': 'Start Tournament!',
+
+  // --- Display: Seating ---
+  'display.seating': 'Seating',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

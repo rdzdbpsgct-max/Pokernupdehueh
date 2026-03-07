@@ -457,6 +457,26 @@ export function deleteLeague(id: string): void {
 }
 
 // ---------------------------------------------------------------------------
+// Setup Wizard
+// ---------------------------------------------------------------------------
+
+export const WIZARD_KEY = 'poker-timer-wizard-completed';
+
+export function isWizardCompleted(): boolean {
+  try {
+    return localStorage.getItem(WIZARD_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function markWizardCompleted(): void {
+  try {
+    localStorage.setItem(WIZARD_KEY, 'true');
+  } catch { /* private browsing */ }
+}
+
+// ---------------------------------------------------------------------------
 // Persistent Player Database
 // ---------------------------------------------------------------------------
 

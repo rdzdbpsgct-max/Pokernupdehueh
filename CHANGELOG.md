@@ -5,6 +5,19 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [3.1.0] – 2026-03-07
+
+### Phase 4: UX & Druckansicht
+
+- **Druckbare Blindstruktur**: Neues `PrintView.tsx` — druckoptimierte Darstellung der Blind-Tabelle, Chip-Werte, Auszahlung und Turnier-Info. „Blindstruktur drucken"-Button auf der Setup-Seite. `@media print` Styles in `index.css` blenden alles außer Druckansicht aus.
+- **Setup-Wizard**: Geführte Ersteinrichtung für neue Benutzer (`SetupWizard.tsx`, ~230 Zeilen). 5 Schritte: Willkommen → Spieleranzahl → Buy-In → Blind-Geschwindigkeit → Zusammenfassung. Wird nur beim ersten Besuch angezeigt (`poker-timer-wizard-completed` in localStorage). Überspringbar. Generiert vollständige Turnier-Konfiguration.
+- **Visuelles Sitzplatz-Diagramm**: SVG-basierte ovale Pokerttisch-Visualisierung (`SeatingScreen.tsx`, ~155 Zeilen). Zeigt Spielerpositionen mit Status-Indikatoren (aktiv/eliminiert), Dealer-Button und Chip-Leader-Badge. Als 6. rotierender Screen im TV-Display-Modus integriert.
+- **Neue Dateien**: `PrintView.tsx`, `SetupWizard.tsx`, `display/SeatingScreen.tsx`
+- **26 neue Translation-Keys** (13 DE + 13 EN)
+- **2 neue Tests** — **262 Tests gesamt**
+
+---
+
 ## [3.0.0] – 2026-03-07
 
 ### Phase 3: Liga-Management & Mystery Bounty

@@ -7,8 +7,9 @@ import { StatsScreen } from './StatsScreen';
 import { PayoutScreen } from './PayoutScreen';
 import { ScheduleScreen } from './ScheduleScreen';
 import { ChipsScreen } from './ChipsScreen';
+import { SeatingScreen } from './SeatingScreen';
 
-type SecondaryScreen = 'players' | 'stats' | 'payout' | 'schedule' | 'chips';
+type SecondaryScreen = 'players' | 'stats' | 'payout' | 'schedule' | 'chips' | 'seating';
 
 interface Props {
   timerState: TimerState;
@@ -23,6 +24,7 @@ interface Props {
   isHandForHand?: boolean;
   onExit: () => void;
   players: Player[];
+  dealerIndex: number;
   buyIn: number;
   payout: PayoutConfig;
   rebuy: RebuyConfig;
@@ -47,6 +49,7 @@ export function DisplayMode({
   isHandForHand,
   onExit,
   players,
+  dealerIndex,
   buyIn,
   payout,
   rebuy,
@@ -61,6 +64,7 @@ export function DisplayMode({
   const secondaryScreens: SecondaryScreen[] = (() => {
     const screens: SecondaryScreen[] = ['players', 'stats', 'payout', 'schedule'];
     if (chipConfig?.enabled) screens.push('chips');
+    if (players.length > 0) screens.push('seating');
     return screens;
   })();
 
@@ -281,6 +285,9 @@ export function DisplayMode({
         )}
         {activeSecondary === 'chips' && chipConfig && colorUpMap && (
           <ChipsScreen chipConfig={chipConfig} colorUpMap={colorUpMap} currentLevelIndex={timerState.currentLevelIndex} levels={levels} />
+        )}
+        {activeSecondary === 'seating' && (
+          <SeatingScreen players={players} dealerIndex={dealerIndex} />
         )}
       </div>
 

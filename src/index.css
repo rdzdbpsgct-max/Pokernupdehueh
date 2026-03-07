@@ -153,3 +153,22 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* === Print Styles === */
+
+@media print {
+  body {
+    background: white !important;
+    background-image: none !important;
+    color: black !important;
+  }
+  #root > * {
+    display: none !important;
+  }
+  #root > .print-view {
+    display: block !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

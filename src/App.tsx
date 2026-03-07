@@ -28,6 +28,7 @@ import {
   saveTournamentResult,
   decodeResultFromQR,
   drawMysteryBounty,
+  isWizardCompleted,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
@@ -46,6 +47,8 @@ import { setMasterVolume } from './domain/sounds';
 import { setAudioVolume } from './domain/audioPlayer';
 // Setup-mode components (static imports — used immediately on load)
 import { SetupPage } from './components/SetupPage';
+import { SetupWizard } from './components/SetupWizard';
+import { PrintView } from './components/PrintView';
 import { TemplateManager } from './components/TemplateManager';
 import { TournamentHistory } from './components/TournamentHistory';
 import { LeagueManager } from './components/LeagueManager';
@@ -91,6 +94,7 @@ function App() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showLeagues, setShowLeagues] = useState(false);
+  const [showWizard, setShowWizard] = useState(() => !isWizardCompleted());
   const [sharedResult, setSharedResult] = useState(() => {
     const hash = window.location.hash;
     if (hash.startsWith('#r=')) {
@@ -827,6 +831,8 @@ function App() {
   };
 
   return (
+    <>
+    <PrintView config={config} />
     <div className="min-h-full flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700/30 bg-gray-50/90 dark:bg-gray-900/50 backdrop-blur-sm">
@@ -1096,6 +1102,7 @@ function App() {
             isHandForHand={handForHandActive}
             onExit={() => setDisplayMode(false)}
             players={config.players}
+            dealerIndex={config.dealerIndex}
             buyIn={config.buyIn}
             payout={config.payout}
             rebuy={config.rebuy}
@@ -1135,6 +1142,17 @@ function App() {
         <LeagueManager onClose={() => setShowLeagues(false)} />
       )}
 
+      {/* Setup Wizard (first-time users) */}
+      {showWizard && mode === 'setup' && (
+        <SetupWizard
+          onComplete={(wizardConfig) => {
+            setConfig(wizardConfig);
+            setShowWizard(false);
+          }}
+          onSkip={() => setShowWizard(false)}
+        />
+      )}
+
       {/* Shared Result Modal (from QR code) */}
       {sharedResult && (
         <Suspense fallback={null}>
@@ -1170,6 +1188,7 @@ function App() {
       )}
       <Analytics />
     </div>
+    </>
   );
 }
 
