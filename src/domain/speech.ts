@@ -409,9 +409,14 @@ export function announceHandForHand(t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/hand-for-hand.mp3'], t('voice.handForHand')));
 }
 
-/** Table move — player moves to a different table */
-export function announceTableMove(playerName: string, tableName: string, t: TranslateFn): void {
-  enqueue({ mode: 'speech', text: t('voice.tableMove', { player: playerName, table: tableName }) });
+/** Table move — player moves to a different table (with seat info) */
+export function announceTableMove(playerName: string, tableName: string, toSeat: number, t: TranslateFn): void {
+  enqueue({ mode: 'speech', text: t('voice.tableMove', { player: playerName, table: tableName, seat: toSeat }) });
+}
+
+/** Table dissolution — a table is being broken */
+export function announceTableDissolution(tableName: string, t: TranslateFn): void {
+  enqueue({ mode: 'speech', text: t('voice.tableDissolution', { table: tableName }) });
 }
 
 /** Final Table — all players at one table */

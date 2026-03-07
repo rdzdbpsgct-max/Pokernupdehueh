@@ -91,6 +91,16 @@ export interface LateRegistrationConfig {
   levelLimit: number;
 }
 
+export interface MultiTableConfig {
+  enabled: boolean;
+  /** Default seats per table when creating new tables */
+  seatsPerTable: number;
+  /** Dissolve a table when its active player count drops to this threshold or below */
+  dissolveThreshold: number;
+  /** Automatically balance tables after each elimination */
+  autoBalanceOnElimination: boolean;
+}
+
 export interface TournamentConfig {
   name: string;
   levels: Level[];
@@ -107,6 +117,7 @@ export interface TournamentConfig {
   startingChips: number;
   lateRegistration?: LateRegistrationConfig;
   leagueId?: string;
+  multiTable?: MultiTableConfig;
   tables?: Table[];
 }
 
@@ -209,22 +220,42 @@ export interface LeagueStanding {
   bestPlace: number;
 }
 
+export type TableStatus = 'active' | 'dissolved';
+
+export interface Seat {
+  /** 1-based seat number */
+  seatNumber: number;
+  /** Player ID occupying this seat, or null if empty */
+  playerId: string | null;
+}
+
 export interface Table {
   id: string;
   name: string;
-  /** Maximum seats at this table */
-  seats: number;
-  /** Player IDs assigned to this table */
-  playerIds: string[];
+  /** Maximum number of seats at this table */
+  maxSeats: number;
+  /** Seat assignments (length === maxSeats) */
+  seats: Seat[];
+  /** Whether this table is active or has been dissolved */
+  status: TableStatus;
+  /** Seat number of the dealer at this table (null if no dealer) */
+  dealerSeat: number | null;
 }
+
+export type TableMoveReason = 'balance' | 'dissolution' | 'final-table' | 'late-registration' | 'manual';
 
 export interface TableMove {
   playerId: string;
   playerName: string;
   fromTableId: string;
   fromTableName: string;
+  fromSeat: number;
   toTableId: string;
   toTableName: string;
+  toSeat: number;
+  reason: TableMoveReason;
+  /** Epoch ms when the move occurred */
+  timestamp: number;
 }
 
 export type TimerStatus = 'stopped' | 'running' | 'paused';

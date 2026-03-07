@@ -1,26 +1,127 @@
-import type { Table, TableMove, Player } from './types';
+import type { Table, TableMove, Player, Seat, MultiTableConfig } from './types';
 import { generateId } from './helpers';
+
+// ---------------------------------------------------------------------------
+// Default config
+// ---------------------------------------------------------------------------
+
+/** Create default MultiTableConfig */
+export function defaultMultiTableConfig(): MultiTableConfig {
+  return {
+    enabled: false,
+    seatsPerTable: 10,
+    dissolveThreshold: 3,
+    autoBalanceOnElimination: true,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Table CRUD
 // ---------------------------------------------------------------------------
 
-/** Create a default table with auto-generated name */
-export function createTable(name: string, seats: number = 10): Table {
-  return { id: generateId(), name, seats, playerIds: [] };
+/** Create a table with empty seats */
+export function createTable(name: string, maxSeats: number = 10): Table {
+  const seats: Seat[] = Array.from({ length: maxSeats }, (_, i) => ({
+    seatNumber: i + 1,
+    playerId: null,
+  }));
+  return {
+    id: generateId(),
+    name,
+    maxSeats,
+    seats,
+    status: 'active',
+    dealerSeat: null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Seat helpers
+// ---------------------------------------------------------------------------
+
+/** Get all player IDs from a table's seats (non-null only) */
+export function getTablePlayerIds(table: Table): string[] {
+  return table.seats.filter(s => s.playerId !== null).map(s => s.playerId!);
+}
+
+/** Get active player IDs at a table */
+export function getActivePlayerIdsAtTable(table: Table, players: Player[]): string[] {
+  const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
+  return table.seats.filter(s => s.playerId !== null && activeIds.has(s.playerId)).map(s => s.playerId!);
+}
+
+/** Count active players at a table */
+export function countActivePlayersAtTable(table: Table, players: Player[]): number {
+  return getActivePlayerIdsAtTable(table, players).length;
+}
+
+/** Find the lowest-numbered empty seat at a table. Returns null if table is full. */
+export function findLowestAvailableSeat(table: Table): number | null {
+  for (const seat of table.seats) {
+    if (seat.playerId === null) return seat.seatNumber;
+  }
+  return null;
+}
+
+/** Find the highest-numbered seat occupied by an active player. Returns null if none. */
+export function findHighestOccupiedSeat(table: Table, players: Player[]): Seat | null {
+  const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
+  for (let i = table.seats.length - 1; i >= 0; i--) {
+    const seat = table.seats[i];
+    if (seat.playerId !== null && activeIds.has(seat.playerId)) {
+      return seat;
+    }
+  }
+  return null;
+}
+
+/** Find which table + seat a player is at */
+export function findPlayerSeat(tables: Table[], playerId: string): { table: Table; seat: Seat } | null {
+  for (const table of tables) {
+    for (const seat of table.seats) {
+      if (seat.playerId === playerId) {
+        return { table, seat };
+      }
+    }
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
 // Player distribution
 // ---------------------------------------------------------------------------
 
-/** Distribute players evenly across tables */
+/**
+ * Round-robin distribute players across tables with seat assignment.
+ * P1→T1S1, P2→T2S1, P3→T3S1, P4→T1S2, ...
+ * Only distributes to 'active' tables. Clears all seats first.
+ */
 export function distributePlayersToTables(playerIds: string[], tables: Table[]): Table[] {
-  if (tables.length === 0) return [];
-  const updated = tables.map(t => ({ ...t, playerIds: [] as string[] }));
-  playerIds.forEach((pid, i) => {
-    updated[i % updated.length].playerIds.push(pid);
+  const activeTables = tables.filter(t => t.status === 'active');
+  if (activeTables.length === 0) return tables;
+
+  // Clear all seats on active tables
+  const updated = tables.map(t => {
+    if (t.status !== 'active') return t;
+    return {
+      ...t,
+      seats: t.seats.map(s => ({ ...s, playerId: null })),
+    };
   });
+
+  // Build index map for active tables in the updated array
+  const activeUpdated = updated.filter(t => t.status === 'active');
+
+  // Round-robin: player i goes to table (i % tableCount), seat (floor(i / tableCount) + 1)
+  for (let i = 0; i < playerIds.length; i++) {
+    const tableIdx = i % activeUpdated.length;
+    const table = activeUpdated[tableIdx];
+    const seatIdx = Math.floor(i / activeUpdated.length);
+    if (seatIdx < table.seats.length) {
+      table.seats[seatIdx] = { ...table.seats[seatIdx], playerId: playerIds[i] };
+    }
+  }
+
   return updated;
 }
 
@@ -28,12 +129,14 @@ export function distributePlayersToTables(playerIds: string[], tables: Table[]):
 // Active player counts
 // ---------------------------------------------------------------------------
 
-/** Get active player count per table */
+/** Get active player count per table (only 'active' tables) */
 export function getActivePlayersPerTable(tables: Table[], players: Player[]): Map<string, number> {
   const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
   const result = new Map<string, number>();
   for (const table of tables) {
-    result.set(table.id, table.playerIds.filter(id => activeIds.has(id)).length);
+    if (table.status !== 'active') continue;
+    const count = table.seats.filter(s => s.playerId !== null && activeIds.has(s.playerId)).length;
+    result.set(table.id, count);
   }
   return result;
 }
@@ -42,21 +145,72 @@ export function getActivePlayersPerTable(tables: Table[], players: Player[]): Ma
 // Player removal (on elimination)
 // ---------------------------------------------------------------------------
 
-/** Remove a player from their table (on elimination) */
+/** Remove a player from their seat. The seat becomes empty (not removed). */
 export function removePlayerFromTable(tables: Table[], playerId: string): Table[] {
   return tables.map(t => ({
     ...t,
-    playerIds: t.playerIds.filter(id => id !== playerId),
+    seats: t.seats.map(s =>
+      s.playerId === playerId ? { ...s, playerId: null } : s,
+    ),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Seat a single player (late registration, reinstate)
+// ---------------------------------------------------------------------------
+
+/**
+ * Seat a player at the active table with fewest active players, at the lowest available seat.
+ * Returns null if no seat available.
+ */
+export function seatPlayerAtSmallestTable(
+  tables: Table[],
+  players: Player[],
+  playerId: string,
+): { tables: Table[]; tableId: string; seatNumber: number } | null {
+  const activeTables = tables.filter(t => t.status === 'active');
+  if (activeTables.length === 0) return null;
+
+  const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
+
+  // Find table with fewest active players that has an empty seat
+  let bestTable: Table | null = null;
+  let bestCount = Infinity;
+  for (const table of activeTables) {
+    const count = table.seats.filter(s => s.playerId !== null && activeIds.has(s.playerId)).length;
+    const hasEmpty = table.seats.some(s => s.playerId === null);
+    if (hasEmpty && count < bestCount) {
+      bestCount = count;
+      bestTable = table;
+    }
+  }
+
+  if (!bestTable) return null;
+
+  const seatNumber = findLowestAvailableSeat(bestTable);
+  if (seatNumber === null) return null;
+
+  const targetTableId = bestTable.id;
+  const updated = tables.map(t => {
+    if (t.id !== targetTableId) return t;
+    return {
+      ...t,
+      seats: t.seats.map(s =>
+        s.seatNumber === seatNumber ? { ...s, playerId } : s,
+      ),
+    };
+  });
+
+  return { tables: updated, tableId: targetTableId, seatNumber };
 }
 
 // ---------------------------------------------------------------------------
 // Table lookup
 // ---------------------------------------------------------------------------
 
-/** Find which table a player is at */
+/** Find which table a player is at (returns the table, or undefined) */
 export function findPlayerTable(tables: Table[], playerId: string): Table | undefined {
-  return tables.find(t => t.playerIds.includes(playerId));
+  return tables.find(t => t.seats.some(s => s.playerId === playerId));
 }
 
 // ---------------------------------------------------------------------------
@@ -64,51 +218,172 @@ export function findPlayerTable(tables: Table[], playerId: string): Table | unde
 // ---------------------------------------------------------------------------
 
 /**
- * Balance tables so max player difference is <= 1.
- * Returns list of moves needed. Uses "move from largest to smallest" strategy.
+ * Balance tables so max active player difference is <= 1.
+ * Move highest-seat from largest table → lowest-seat at smallest table.
+ * Only considers 'active' tables.
  */
 export function balanceTables(tables: Table[], players: Player[]): { tables: Table[]; moves: TableMove[] } {
   const moves: TableMove[] = [];
-  const updated = tables.map(t => ({ ...t, playerIds: [...t.playerIds] }));
+  const updated = tables.map(t => ({
+    ...t,
+    seats: t.seats.map(s => ({ ...s })),
+  }));
   const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
   const playerMap = new Map(players.map(p => [p.id, p]));
 
-  // Keep balancing until max diff <= 1
-  let maxIterations = 50; // safety
+  let maxIterations = 50;
   while (maxIterations-- > 0) {
-    // Count active players per table
-    const counts = updated.map(t => ({
-      table: t,
-      active: t.playerIds.filter(id => activeIds.has(id)).length,
-    }));
+    // Count active players per active table
+    const counts = updated
+      .filter(t => t.status === 'active')
+      .map(t => ({
+        table: t,
+        active: t.seats.filter(s => s.playerId !== null && activeIds.has(s.playerId)).length,
+      }));
+
+    if (counts.length < 2) break;
 
     counts.sort((a, b) => b.active - a.active); // desc
-    const max = counts[0]?.active ?? 0;
-    const min = counts[counts.length - 1]?.active ?? 0;
+    const max = counts[0].active;
+    const min = counts[counts.length - 1].active;
 
     if (max - min <= 1) break; // balanced
 
-    // Move one player from largest to smallest
-    const from = counts[0].table;
-    const to = counts[counts.length - 1].table;
+    const fromTable = counts[0].table;
+    const toTable = counts[counts.length - 1].table;
 
-    // Pick the last active player from the largest table
-    const movedId = [...from.playerIds].reverse().find(id => activeIds.has(id));
-    if (!movedId) break;
+    // Find highest occupied seat by active player at source
+    const sourceSeat = findHighestOccupiedSeatInTable(fromTable, activeIds);
+    if (!sourceSeat || !sourceSeat.playerId) break;
 
-    from.playerIds = from.playerIds.filter(id => id !== movedId);
-    to.playerIds.push(movedId);
+    // Find lowest available seat at target
+    const targetSeatNum = findLowestAvailableSeat(toTable);
+    if (targetSeatNum === null) break;
 
+    const movedId = sourceSeat.playerId;
     const movedPlayer = playerMap.get(movedId);
+
+    // Remove from source seat
+    const fromSeatIdx = fromTable.seats.findIndex(s => s.seatNumber === sourceSeat.seatNumber);
+    if (fromSeatIdx >= 0) fromTable.seats[fromSeatIdx] = { ...fromTable.seats[fromSeatIdx], playerId: null };
+
+    // Place at target seat
+    const toSeatIdx = toTable.seats.findIndex(s => s.seatNumber === targetSeatNum);
+    if (toSeatIdx >= 0) toTable.seats[toSeatIdx] = { ...toTable.seats[toSeatIdx], playerId: movedId };
+
     moves.push({
       playerId: movedId,
       playerName: movedPlayer?.name ?? 'Unknown',
-      fromTableId: from.id,
-      fromTableName: from.name,
-      toTableId: to.id,
-      toTableName: to.name,
+      fromTableId: fromTable.id,
+      fromTableName: fromTable.name,
+      fromSeat: sourceSeat.seatNumber,
+      toTableId: toTable.id,
+      toTableName: toTable.name,
+      toSeat: targetSeatNum,
+      reason: 'balance',
+      timestamp: Date.now(),
     });
   }
+
+  return { tables: updated, moves };
+}
+
+/** Internal helper — find highest occupied seat by an active player ID in a set */
+function findHighestOccupiedSeatInTable(table: Table, activeIds: Set<string>): Seat | null {
+  for (let i = table.seats.length - 1; i >= 0; i--) {
+    const seat = table.seats[i];
+    if (seat.playerId !== null && activeIds.has(seat.playerId)) {
+      return seat;
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Table dissolution
+// ---------------------------------------------------------------------------
+
+/** Check if any active table should be dissolved (active count <= threshold).
+ *  Requires at least 2 active tables (don't dissolve the last one). */
+export function findTableToDissolve(
+  tables: Table[],
+  players: Player[],
+  threshold: number,
+): Table | null {
+  const activeTables = tables.filter(t => t.status === 'active');
+  if (activeTables.length < 2) return null;
+
+  const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
+
+  for (const table of activeTables) {
+    const count = table.seats.filter(s => s.playerId !== null && activeIds.has(s.playerId)).length;
+    if (count <= threshold && count > 0) {
+      return table;
+    }
+  }
+  return null;
+}
+
+/**
+ * Dissolve a table: distribute its active players round-robin to remaining active tables.
+ * Mark dissolved table status = 'dissolved'. Clear seats on dissolved table.
+ */
+export function dissolveTable(
+  tables: Table[],
+  players: Player[],
+  tableId: string,
+): { tables: Table[]; moves: TableMove[] } {
+  const moves: TableMove[] = [];
+  const updated = tables.map(t => ({
+    ...t,
+    seats: t.seats.map(s => ({ ...s })),
+  }));
+
+  const dissolvedTable = updated.find(t => t.id === tableId);
+  if (!dissolvedTable) return { tables: updated, moves };
+
+  const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
+  const playerMap = new Map(players.map(p => [p.id, p]));
+
+  // Get active players at the dissolving table (ordered by seat number)
+  const playersToMove = dissolvedTable.seats
+    .filter(s => s.playerId !== null && activeIds.has(s.playerId!))
+    .map(s => ({ playerId: s.playerId!, seatNumber: s.seatNumber }));
+
+  // Get remaining active tables (excluding the one being dissolved)
+  const remainingTables = updated.filter(t => t.status === 'active' && t.id !== tableId);
+  if (remainingTables.length === 0) return { tables: updated, moves };
+
+  // Round-robin distribute players to remaining tables
+  for (let i = 0; i < playersToMove.length; i++) {
+    const { playerId, seatNumber: fromSeat } = playersToMove[i];
+    const targetTable = remainingTables[i % remainingTables.length];
+    const targetSeatNum = findLowestAvailableSeat(targetTable);
+    if (targetSeatNum === null) continue; // table full, skip
+
+    // Seat at target
+    const seatIdx = targetTable.seats.findIndex(s => s.seatNumber === targetSeatNum);
+    if (seatIdx >= 0) targetTable.seats[seatIdx] = { ...targetTable.seats[seatIdx], playerId };
+
+    const movedPlayer = playerMap.get(playerId);
+    moves.push({
+      playerId,
+      playerName: movedPlayer?.name ?? 'Unknown',
+      fromTableId: dissolvedTable.id,
+      fromTableName: dissolvedTable.name,
+      fromSeat,
+      toTableId: targetTable.id,
+      toTableName: targetTable.name,
+      toSeat: targetSeatNum,
+      reason: 'dissolution',
+      timestamp: Date.now(),
+    });
+  }
+
+  // Mark table as dissolved and clear seats
+  dissolvedTable.status = 'dissolved';
+  dissolvedTable.seats = dissolvedTable.seats.map(s => ({ ...s, playerId: null }));
+  dissolvedTable.dealerSeat = null;
 
   return { tables: updated, moves };
 }
@@ -119,27 +394,109 @@ export function balanceTables(tables: Table[], players: Player[]): { tables: Tab
 
 /**
  * Check if remaining active players can fit at a single table.
- * Returns true if all active players can fit at the largest table.
+ * Only considers 'active' tables.
  */
 export function shouldMergeToFinalTable(tables: Table[], players: Player[]): boolean {
-  if (tables.length <= 1) return false;
+  const activeTables = tables.filter(t => t.status === 'active');
+  if (activeTables.length <= 1) return false;
   const activePlayers = players.filter(p => p.status === 'active').length;
-  const maxSeats = Math.max(...tables.map(t => t.seats));
+  const maxSeats = Math.max(...activeTables.map(t => t.maxSeats));
   return activePlayers <= maxSeats;
 }
 
 /**
- * Merge all active players to the first table (Final Table).
- * Returns the updated tables array (single table with all active players).
+ * Merge all active players to the first active table (Final Table).
+ * All other tables become 'dissolved'. Returns moves for all re-seated players.
  */
-export function mergeToFinalTable(tables: Table[], players: Player[]): Table[] {
-  if (tables.length === 0) return [];
-  const activeIds = players.filter(p => p.status === 'active').map(p => p.id);
-  // Use the first table as the final table
-  const finalTable: Table = {
-    ...tables[0],
-    name: 'Final Table',
-    playerIds: activeIds,
-  };
-  return [finalTable];
+export function mergeToFinalTable(
+  tables: Table[],
+  players: Player[],
+): { tables: Table[]; moves: TableMove[] } {
+  const moves: TableMove[] = [];
+  const updated = tables.map(t => ({
+    ...t,
+    seats: t.seats.map(s => ({ ...s })),
+  }));
+
+  const activeTables = updated.filter(t => t.status === 'active');
+  if (activeTables.length <= 1) return { tables: updated, moves };
+
+  const finalTable = activeTables[0];
+  const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
+  const playerMap = new Map(players.map(p => [p.id, p]));
+
+  // Collect all active players from all active tables (with source info)
+  const allPlayers: { playerId: string; fromTable: Table; fromSeat: number }[] = [];
+  for (const table of activeTables) {
+    for (const seat of table.seats) {
+      if (seat.playerId !== null && activeIds.has(seat.playerId)) {
+        allPlayers.push({
+          playerId: seat.playerId,
+          fromTable: table,
+          fromSeat: seat.seatNumber,
+        });
+      }
+    }
+  }
+
+  // Clear final table seats first
+  finalTable.seats = finalTable.seats.map(s => ({ ...s, playerId: null }));
+  finalTable.name = 'Final Table';
+
+  // Seat at final table sequentially
+  let seatIdx = 0;
+  for (const { playerId, fromTable, fromSeat } of allPlayers) {
+    if (seatIdx >= finalTable.seats.length) break;
+    finalTable.seats[seatIdx] = { ...finalTable.seats[seatIdx], playerId };
+
+    // Only create move if player was NOT already at the final table
+    if (fromTable.id !== finalTable.id) {
+      moves.push({
+        playerId,
+        playerName: playerMap.get(playerId)?.name ?? 'Unknown',
+        fromTableId: fromTable.id,
+        fromTableName: fromTable.name,
+        fromSeat,
+        toTableId: finalTable.id,
+        toTableName: 'Final Table',
+        toSeat: finalTable.seats[seatIdx].seatNumber,
+        reason: 'final-table',
+        timestamp: Date.now(),
+      });
+    }
+    seatIdx++;
+  }
+
+  // Dissolve all other active tables
+  for (const table of activeTables) {
+    if (table.id === finalTable.id) continue;
+    table.status = 'dissolved';
+    table.seats = table.seats.map(s => ({ ...s, playerId: null }));
+    table.dealerSeat = null;
+  }
+
+  return { tables: updated, moves };
+}
+
+// ---------------------------------------------------------------------------
+// Per-table dealer
+// ---------------------------------------------------------------------------
+
+/** Advance dealer at a specific table — skip empty seats and eliminated players */
+export function advanceTableDealer(table: Table, players: Player[]): Table {
+  const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
+  const occupiedSeats = table.seats.filter(s => s.playerId !== null && activeIds.has(s.playerId));
+
+  if (occupiedSeats.length === 0) {
+    return { ...table, dealerSeat: null };
+  }
+
+  if (table.dealerSeat === null) {
+    return { ...table, dealerSeat: occupiedSeats[0].seatNumber };
+  }
+
+  // Find next occupied seat after current dealer
+  const currentIdx = occupiedSeats.findIndex(s => s.seatNumber === table.dealerSeat);
+  const nextIdx = (currentIdx + 1) % occupiedSeats.length;
+  return { ...table, dealerSeat: occupiedSeats[nextIdx].seatNumber };
 }

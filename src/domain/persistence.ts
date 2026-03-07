@@ -15,11 +15,14 @@ import type {
   League,
   PointSystem,
   Table,
+  Seat,
+  MultiTableConfig,
 } from './types';
 import { generateBlindStructure } from './blinds';
 import { defaultChipConfig } from './chips';
 import { defaultPayoutConfig } from './tournament';
 import { defaultLateRegistrationConfig } from './validation';
+import { defaultMultiTableConfig } from './tables';
 
 // ---------------------------------------------------------------------------
 // Default Configs
@@ -159,11 +162,53 @@ export function parseConfigObject(parsed: Record<string, unknown>): TournamentCo
       ? { ...defaultLateRegistrationConfig(), ...(parsed.lateRegistration as Partial<LateRegistrationConfig>) }
       : undefined,
     leagueId: typeof parsed.leagueId === 'string' ? parsed.leagueId : undefined,
-    tables: Array.isArray(parsed.tables)
-      ? (parsed.tables as Table[]).filter(
-          (t) => t && typeof t.id === 'string' && typeof t.name === 'string',
-        )
+    multiTable: parsed.multiTable
+      ? { ...defaultMultiTableConfig(), ...(parsed.multiTable as Partial<MultiTableConfig>) }
       : undefined,
+    tables: Array.isArray(parsed.tables)
+      ? (parsed.tables as Record<string, unknown>[])
+          .filter((t) => t && typeof t.id === 'string' && typeof t.name === 'string')
+          .map((t) => migrateTable(t))
+      : undefined,
+  };
+}
+
+/**
+ * Migrate a table from old format (playerIds: string[], seats: number)
+ * to new format (seats: Seat[], maxSeats: number, status, dealerSeat).
+ */
+function migrateTable(raw: Record<string, unknown>): Table {
+  // New format: seats is an array of Seat objects
+  if (
+    Array.isArray(raw.seats) &&
+    raw.seats.length > 0 &&
+    typeof (raw.seats[0] as Record<string, unknown>)?.seatNumber === 'number'
+  ) {
+    return {
+      id: raw.id as string,
+      name: raw.name as string,
+      maxSeats: typeof raw.maxSeats === 'number' ? raw.maxSeats : (raw.seats as Seat[]).length,
+      seats: raw.seats as Seat[],
+      status: raw.status === 'dissolved' ? 'dissolved' : 'active',
+      dealerSeat: typeof raw.dealerSeat === 'number' ? raw.dealerSeat : null,
+    };
+  }
+
+  // Old format: seats is a number, playerIds is a string array
+  const maxSeats = typeof raw.seats === 'number' ? raw.seats : 10;
+  const playerIds = Array.isArray(raw.playerIds) ? raw.playerIds as string[] : [];
+  const seats: Seat[] = Array.from({ length: maxSeats }, (_, i) => ({
+    seatNumber: i + 1,
+    playerId: playerIds[i] ?? null,
+  }));
+
+  return {
+    id: raw.id as string,
+    name: raw.name as string,
+    maxSeats,
+    seats,
+    status: 'active',
+    dealerSeat: null,
   };
 }
 

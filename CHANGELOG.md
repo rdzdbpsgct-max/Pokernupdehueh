@@ -5,6 +5,28 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [4.1.0] – 2026-03-07
+
+### Multi-Table Overhaul: Seat-Level Tournament Management
+
+- **Seat-Level Datenmodell**: `Table` Interface komplett überarbeitet — `playerIds[]` durch `seats: Seat[]` ersetzt (`seatNumber: number`, `playerId: string | null`), `seats: number` → `maxSeats: number`, `status: TableStatus` (`'active' | 'dissolved'`), `dealerSeat: number | null` pro Tisch. `TableMove` erweitert um `fromSeat`, `toSeat`, `reason: TableMoveReason` (`'balance' | 'dissolution' | 'final-table' | 'late-registration' | 'manual'`), `timestamp: number`. Neues `MultiTableConfig` Interface (`enabled`, `seatsPerTable`, `dissolveThreshold`, `autoBalanceOnElimination`).
+- **Domain Logic Rewrite** (`tables.ts`): 15+ Funktionen komplett neu geschrieben — `createTable()` erstellt `Seat[]`, `distributePlayersToTables()` round-robin mit Sitzplatzzuordnung (P1→T1S1, P2→T2S1, ...), `balanceTables()` bewegt höchsten Sitz vom größten Tisch zum niedrigsten freien Sitz am kleinsten Tisch. Neue Funktionen: `findPlayerSeat()`, `seatPlayerAtSmallestTable()`, `findTableToDissolve()`, `dissolveTable()`, `advanceTableDealer()`, `defaultMultiTableConfig()`.
+- **Tischauflösung**: Automatische Auflösung bei Unterschreitung der Schwelle (konfigurierbar, Standard: 3 Spieler). Aufgelöster Tisch erhält Status `'dissolved'`, Spieler werden round-robin auf verbleibende aktive Tische verteilt. Dissolution-Loop in `eliminatePlayer()` erkennt mehrere aufzulösende Tische.
+- **Elimination Chain**: Bei Spieler-Elimination: `removePlayerFromTable` → `findTableToDissolve` Loop → `shouldMergeToFinalTable` → `balanceTables`. Alle Moves über `pendingTableMovesRef` kommuniziert, per useEffect verarbeitet + Voice-Ansage.
+- **Reinstate + Late Registration**: Reinstated Spieler werden via `seatPlayerAtSmallestTable()` automatisch am Tisch mit wenigsten Spielern platziert. Ebenso Late-Registration-Spieler.
+- **Move Protocol**: Alle Tischwechsel (`TableMove[]`) mit vollem Detail — `fromSeat`, `toSeat`, `reason`, `timestamp`. 30-Sekunden Auto-Dismiss. Move-Log in MultiTablePanel mit Reason-Badge und vollständiger Wechselinfo.
+- **MultiTablePanel Rewrite** (~200 Zeilen): Seat-Grid pro Tisch (nummerierte Plätze mit Spielernamem oder „Frei"), Dealer-Badge am Sitz, aufgelöste Tische grau mit Status, Balance-Button (amber bei Ungleichgewicht), Move-Log mit Reason-Icons.
+- **Setup-Integration**: `MultiTableConfig` UI — Dissolve-Threshold NumberStepper (2–5), Auto-Balance Checkbox, empfohlene Tischanzahl (Spieler/8), Sitzplatz-Preview mit Platznummern (S1=Alice, S2=Bob, ...).
+- **PlayerPanel**: Tisch/Sitz-Badge (z.B. "S3") neben jedem aktiven Spieler wenn Multi-Table aktiv.
+- **SeatingScreen Multi-Table**: Mehrere Mini-Tische im SVG Grid (2 Spalten für 2–4 Tische, 3 Spalten für 5+). Jeder Tisch mit eigenem Oval, Tischname, nummerierten Sitzen, Dealer-Badge. Aufgelöste Tische mit gestricheltem Rahmen.
+- **DisplayMode**: `tables` Prop an SeatingScreen durchgereicht für Multi-Table-Darstellung im TV-Modus.
+- **Voice**: `announceTableMove()` erweitert um `toSeat` Parameter, `announceTableDissolution()` neu für Tischauflösung.
+- **Backward-Kompatibilität**: `migrateTable()` in `parseConfigObject()` erkennt altes Format (`playerIds[]`, `seats: number`) und konvertiert automatisch zu neuem Format (`seats: Seat[]`, `maxSeats: number`). `multiTable` Config mit Defaults geparst.
+- **~30 neue Translation-Keys** (15 DE + 15 EN): `multiTable.dissolveThreshold`, `multiTable.autoBalance`, `multiTable.dissolved`, `multiTable.seat`, `multiTable.seatShort`, `multiTable.emptySeat`, `multiTable.dealerAt`, `multiTable.moveLog`, `multiTable.moveDetail`, `multiTable.reasonBalance/Dissolution/FinalTable/LateReg`, `multiTable.suggested`, `voice.tableDissolution`
+- **14 neue Tests**: Seat-Helpers, Distribution, Balancing mit Sitz-Tracking, Dissolution, Final-Table-Merge, Dealer-Advance, Backward-Compat-Migration — **291 Tests gesamt**
+
+---
+
 ## [4.0.1] – 2026-03-07
 
 ### Sprachansagen-Vervollständigung
@@ -20,12 +42,12 @@ All notable changes to the Pokern up de Hüh app.
 
 ## [4.0.0] – 2026-03-07
 
-### Phase 5: Multi-Table Support
+### Phase 5: Multi-Table Support (Basic)
 
-- **Multi-Table Datenmodell**: Neue Interfaces `Table` (`id`, `name`, `seats`, `playerIds[]`) und `TableMove` in types.ts. Optionales `tables?: Table[]` in TournamentConfig. Neues Domain-Modul `tables.ts` mit CRUD-Funktionen: `createTable()`, `distributePlayersToTables()`, `getActivePlayersPerTable()`, `removePlayerFromTable()`, `findPlayerTable()`. Backward-kompatibel via `parseConfigObject`.
-- **Table Balancing**: `balanceTables()` in `tables.ts` — iteratives Balancing (max ±1 Spieler Differenz) mit "move from largest to smallest"-Strategie. Returns `{ tables, moves }` mit detaillierten `TableMove`-Objekten. Voice-Ansage bei Tischwechsel via `announceTableMove()` in speech.ts (Web Speech API).
-- **Final Table Merge**: `shouldMergeToFinalTable()` erkennt automatisch, wenn alle aktiven Spieler an einen Tisch passen. `mergeToFinalTable()` konsolidiert alle Spieler zum Final Table. Auto-Detect im Spielmodus bei Elimination + Voice-Ansage via `announceFinalTable()`.
-- **Multi-Table UI**: Neues `MultiTablePanel.tsx` (~130 Zeilen, lazy-loaded) im Spielmodus — Tischliste mit Spieleranzahl, Balance-Button (amber bei Ungleichgewicht), Move-Karten, "Final Table!"-Badge. Setup-Integration: CollapsibleSection "Multi-Table" (eingeklappt, sichtbar ab 6+ Spielern) mit Tischanzahl/Sitzplatz-NumberSteppern und Verteilungsbutton.
+- **Multi-Table Datenmodell**: Erste Version mit `Table` Interface und `playerIds[]`. Neues Domain-Modul `tables.ts` mit CRUD-Funktionen.
+- **Table Balancing**: `balanceTables()` mit "move from largest to smallest"-Strategie.
+- **Final Table Merge**: `shouldMergeToFinalTable()` + `mergeToFinalTable()`.
+- **Multi-Table UI**: `MultiTablePanel.tsx` (lazy-loaded) + Setup-Integration.
 - **Neue Dateien**: `src/domain/tables.ts`, `src/components/MultiTablePanel.tsx`
 - **28 neue Translation-Keys** (14 DE + 14 EN)
 - **15 neue Tests** — **277 Tests gesamt**

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { TournamentConfig, TournamentCheckpoint, League, Table } from '../domain/types';
+import type { TournamentConfig, TournamentCheckpoint, League, Table, MultiTableConfig } from '../domain/types';
 import {
   stripAnteFromLevels,
   applyDefaultAntes,
@@ -10,6 +10,7 @@ import {
   loadLeagues,
   createTable,
   distributePlayersToTables,
+  defaultMultiTableConfig,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { ConfigEditor } from './ConfigEditor';
@@ -92,14 +93,16 @@ export function SetupPage({
   const handleToggleMultiTable = useCallback(() => {
     setConfig((prev) => {
       if (prev.tables && prev.tables.length > 0) {
-        return { ...prev, tables: undefined };
+        return { ...prev, tables: undefined, multiTable: undefined };
       }
-      // Enable: create 2 tables by default
+      // Enable: create 2 tables by default with MultiTableConfig
+      const seatsPerTable = 10;
       const tables: Table[] = [
-        createTable(t('multiTable.tableName', { n: 1 }), 10),
-        createTable(t('multiTable.tableName', { n: 2 }), 10),
+        createTable(t('multiTable.tableName', { n: 1 }), seatsPerTable),
+        createTable(t('multiTable.tableName', { n: 2 }), seatsPerTable),
       ];
-      return { ...prev, tables };
+      const multiTable: MultiTableConfig = { ...defaultMultiTableConfig(), enabled: true, seatsPerTable };
+      return { ...prev, tables, multiTable };
     });
   }, [setConfig, t]);
 
@@ -119,12 +122,18 @@ export function SetupPage({
     });
   }, [setConfig, t]);
 
-  const handleSetTableSeats = useCallback((tableId: string, seats: number) => {
+  const handleSetTableSeats = useCallback((tableId: string, maxSeats: number) => {
     setConfig((prev) => ({
       ...prev,
-      tables: prev.tables?.map(tbl =>
-        tbl.id === tableId ? { ...tbl, seats } : tbl,
-      ),
+      tables: prev.tables?.map(tbl => {
+        if (tbl.id !== tableId) return tbl;
+        // Resize seats array: keep existing, add or remove as needed
+        const newSeats = Array.from({ length: maxSeats }, (_, i) => {
+          const existing = tbl.seats[i];
+          return existing ? { ...existing, seatNumber: i + 1 } : { seatNumber: i + 1, playerId: null };
+        });
+        return { ...tbl, maxSeats, seats: newSeats };
+      }),
     }));
   }, [setConfig]);
 
@@ -473,6 +482,12 @@ export function SetupPage({
               </button>
               {config.tables && config.tables.length > 0 && (
                 <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+                  {/* Suggested table count */}
+                  {config.players.length >= 6 && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      {t('multiTable.suggested', { n: Math.max(2, Math.ceil(config.players.length / 8)) })}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2">
                     <label className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.tables')}</label>
                     <NumberStepper
@@ -489,7 +504,7 @@ export function SetupPage({
                       <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[80px]">{tbl.name}</span>
                       <label className="text-xs text-gray-400 dark:text-gray-500">{t('multiTable.seats')}</label>
                       <NumberStepper
-                        value={tbl.seats}
+                        value={tbl.maxSeats}
                         onChange={(v) => handleSetTableSeats(tbl.id, v)}
                         min={2}
                         max={12}
@@ -498,20 +513,63 @@ export function SetupPage({
                       />
                     </div>
                   ))}
+                  {/* Dissolve threshold */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.dissolveThreshold')}</label>
+                    <NumberStepper
+                      value={config.multiTable?.dissolveThreshold ?? 3}
+                      onChange={(v) => setConfig((prev) => ({
+                        ...prev,
+                        multiTable: { ...defaultMultiTableConfig(), ...prev.multiTable, dissolveThreshold: Math.max(2, Math.min(5, v)) },
+                      }))}
+                      min={2}
+                      max={5}
+                      step={1}
+                      inputClassName="w-16"
+                    />
+                  </div>
+                  {/* Auto-balance toggle */}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.multiTable?.autoBalanceOnElimination !== false}
+                      onChange={(e) => setConfig((prev) => ({
+                        ...prev,
+                        multiTable: { ...defaultMultiTableConfig(), ...prev.multiTable, autoBalanceOnElimination: e.target.checked },
+                      }))}
+                      className="w-4 h-4 accent-emerald-600 rounded"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.autoBalance')}</span>
+                  </label>
                   <button
                     onClick={handleDistributePlayers}
                     className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-colors"
                   >
                     {t('multiTable.distribute')}
                   </button>
-                  {/* Preview */}
-                  {config.tables.some(tbl => tbl.playerIds.length > 0) && (
-                    <div className="space-y-1">
-                      {config.tables.map((tbl) => (
-                        <div key={tbl.id} className="text-xs text-gray-500 dark:text-gray-400">
-                          {tbl.name}: {t('multiTable.playerCount', { n: tbl.playerIds.length })}
-                        </div>
-                      ))}
+                  {/* Preview with seat assignments */}
+                  {config.tables.some(tbl => tbl.seats.some(s => s.playerId !== null)) && (
+                    <div className="space-y-1.5">
+                      {config.tables.map((tbl) => {
+                        const seatedPlayers = tbl.seats
+                          .filter(s => s.playerId !== null)
+                          .map(s => {
+                            const player = config.players.find(p => p.id === s.playerId);
+                            return { seat: s.seatNumber, name: player?.name ?? '?' };
+                          });
+                        if (seatedPlayers.length === 0) return null;
+                        return (
+                          <div key={tbl.id} className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="font-medium text-gray-600 dark:text-gray-300">{tbl.name}:</span>{' '}
+                            {seatedPlayers.map((sp, i) => (
+                              <span key={sp.seat}>
+                                {i > 0 && ', '}
+                                <span className="text-gray-400 dark:text-gray-500">{t('multiTable.seatShort', { n: sp.seat })}</span>={sp.name}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

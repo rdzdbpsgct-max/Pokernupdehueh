@@ -32,6 +32,11 @@ import {
   removePlayerFromTable,
   shouldMergeToFinalTable,
   mergeToFinalTable,
+  distributePlayersToTables,
+  balanceTables,
+  findTableToDissolve,
+  dissolveTable,
+  seatPlayerAtSmallestTable,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
@@ -46,6 +51,7 @@ import {
   announceHandForHand,
   announceTableMove,
   announceFinalTable,
+  announceTableDissolution,
   announceMysteryBounty,
   announceLateRegistrationClosed,
   setSpeechVolume,
@@ -120,6 +126,7 @@ function App() {
   const [handForHandActive, setHandForHandActive] = useState(false);
   const [displayMode, setDisplayMode] = useState(false);
   const [showCallTheClock, setShowCallTheClock] = useState(false);
+  const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -418,22 +425,31 @@ function App() {
   const addLatePlayer = useCallback(() => {
     const playerNumber = config.players.length + 1;
     const name = t('playerManager.playerN', { n: playerNumber });
-    setConfig((prev) => ({
-      ...prev,
-      players: [
-        ...prev.players,
-        {
-          id: generatePlayerId(),
-          name,
-          rebuys: 0,
-          addOn: false,
-          status: 'active' as const,
-          placement: null,
-          eliminatedBy: null,
-          knockouts: 0,
-        },
-      ],
-    }));
+    const newId = generatePlayerId();
+    setConfig((prev) => {
+      const newPlayer = {
+        id: newId,
+        name,
+        rebuys: 0,
+        addOn: false,
+        status: 'active' as const,
+        placement: null,
+        eliminatedBy: null,
+        knockouts: 0,
+      };
+      const updatedPlayers = [...prev.players, newPlayer];
+
+      // Seat at table with fewest active players (multi-table mode)
+      let updatedTables = prev.tables;
+      if (updatedTables && updatedTables.length > 0) {
+        const result = seatPlayerAtSmallestTable(updatedTables, updatedPlayers, newId);
+        if (result) {
+          updatedTables = result.tables;
+        }
+      }
+
+      return { ...prev, players: updatedPlayers, tables: updatedTables };
+    });
   }, [config.players.length, t]);
 
   // --- Rebuy update handler ---
@@ -479,7 +495,11 @@ function App() {
 
   // --- Eliminate player handler ---
   const lastMysteryDrawRef = useRef<number | null>(null);
+  const pendingTableMovesRef = useRef<TableMove[]>([]);
+  const pendingDissolutionRef = useRef<string | null>(null);
   const eliminatePlayer = useCallback((playerId: string, eliminatedBy: string | null) => {
+    pendingTableMovesRef.current = [];
+    pendingDissolutionRef.current = null;
     setConfig((prev) => {
       const placement = computeNextPlacement(prev.players);
 
@@ -501,14 +521,42 @@ function App() {
         return p;
       });
 
-      // Multi-table: remove eliminated player from their table
+      // Multi-table: remove eliminated player from their table + dissolution + balance
       let updatedTables = prev.tables;
+      const allMoves: TableMove[] = [];
+
       if (updatedTables && updatedTables.length > 0) {
         updatedTables = removePlayerFromTable(updatedTables, playerId);
 
+        const threshold = prev.multiTable?.dissolveThreshold ?? 3;
+
+        // Check dissolution: dissolve tables below threshold
+        let tableToDissolve = findTableToDissolve(updatedTables, updatedPlayers, threshold);
+        while (tableToDissolve) {
+          pendingDissolutionRef.current = tableToDissolve.name;
+          const dissResult = dissolveTable(updatedTables, updatedPlayers, tableToDissolve.id);
+          updatedTables = dissResult.tables;
+          allMoves.push(...dissResult.moves);
+          tableToDissolve = findTableToDissolve(updatedTables, updatedPlayers, threshold);
+        }
+
         // Check for final table merge
-        if (updatedTables.length > 1 && shouldMergeToFinalTable(updatedTables, updatedPlayers)) {
-          updatedTables = mergeToFinalTable(updatedTables, updatedPlayers);
+        const activeTables = updatedTables.filter(t => t.status === 'active');
+        if (activeTables.length > 1 && shouldMergeToFinalTable(updatedTables, updatedPlayers)) {
+          const mergeResult = mergeToFinalTable(updatedTables, updatedPlayers);
+          updatedTables = mergeResult.tables;
+          allMoves.push(...mergeResult.moves);
+        }
+
+        // Auto-balance if enabled
+        if (prev.multiTable?.autoBalanceOnElimination !== false) {
+          const balResult = balanceTables(updatedTables, updatedPlayers);
+          updatedTables = balResult.tables;
+          allMoves.push(...balResult.moves);
+        }
+
+        if (allMoves.length > 0) {
+          pendingTableMovesRef.current = allMoves;
         }
       }
 
@@ -529,6 +577,33 @@ function App() {
       lastMysteryDrawRef.current = null;
     }
   }, [mode, settings.voiceEnabled, config.bounty, t]);
+
+  // Process pending table moves from elimination handler (dissolution, balance, merge)
+  useEffect(() => {
+    if (pendingTableMovesRef.current.length === 0) return;
+    const moves = pendingTableMovesRef.current;
+    pendingTableMovesRef.current = [];
+    setRecentTableMoves(prev => [...prev, ...moves]);
+    if (settings.voiceEnabled) {
+      if (pendingDissolutionRef.current) {
+        announceTableDissolution(pendingDissolutionRef.current, t);
+        pendingDissolutionRef.current = null;
+      }
+      for (const move of moves) {
+        announceTableMove(move.playerName, move.toTableName, move.toSeat, t);
+      }
+    }
+  }, [config.tables, settings.voiceEnabled, t]);
+
+  // Auto-dismiss recent table moves after 30 seconds
+  useEffect(() => {
+    if (recentTableMoves.length === 0) return;
+    const timer = setTimeout(() => {
+      const cutoff = Date.now() - 30_000;
+      setRecentTableMoves(prev => prev.filter(m => m.timestamp > cutoff));
+    }, 30_000);
+    return () => clearTimeout(timer);
+  }, [recentTableMoves]);
 
   // --- Reinstate (undo elimination) handler ---
   const reinstatePlayer = useCallback((playerId: string) => {
@@ -556,7 +631,16 @@ function App() {
         return p;
       });
 
-      return { ...prev, players: updated };
+      // Re-seat reinstated player at the table with fewest active players
+      let updatedTables = prev.tables;
+      if (updatedTables && updatedTables.length > 0) {
+        const result = seatPlayerAtSmallestTable(updatedTables, updated, playerId);
+        if (result) {
+          updatedTables = result.tables;
+        }
+      }
+
+      return { ...prev, players: updated, tables: updatedTables };
     });
   }, []);
 
@@ -775,17 +859,17 @@ function App() {
   }, []);
 
   const handleTableMoves = useCallback((moves: TableMove[]) => {
+    setRecentTableMoves(prev => [...prev, ...moves]);
     if (!settings.voiceEnabled) return;
     for (const move of moves) {
-      announceTableMove(move.playerName, move.toTableName, t);
+      announceTableMove(move.playerName, move.toTableName, move.toSeat, t);
     }
   }, [settings.voiceEnabled, t]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
-    setConfig((prev) => ({
-      ...prev,
-      players: prev.players.map((p) => ({
+    setConfig((prev) => {
+      const resetPlayers = prev.players.map((p) => ({
         ...p,
         rebuys: 0,
         addOn: false,
@@ -793,9 +877,25 @@ function App() {
         placement: null,
         eliminatedBy: null,
         knockouts: 0,
-      })),
-    }));
+      }));
+
+      // Auto-distribute players to tables if multi-table is enabled
+      let updatedTables = prev.tables;
+      if (updatedTables && updatedTables.length > 0) {
+        const playerIds = resetPlayers.map(p => p.id);
+        updatedTables = distributePlayersToTables(playerIds, updatedTables);
+        // Set per-table dealers to first occupied seat
+        updatedTables = updatedTables.map(t => {
+          if (t.status !== 'active') return t;
+          const firstOccupied = t.seats.find(s => s.playerId !== null);
+          return { ...t, dealerSeat: firstOccupied?.seatNumber ?? null };
+        });
+      }
+
+      return { ...prev, players: resetPlayers, tables: updatedTables };
+    });
     setAddOnEndLevelIndex(null);
+    setRecentTableMoves([]);
     // Ensure all panels are visible when starting a game
     setCleanView(false);
     setShowPlayerPanel(true);
@@ -1020,6 +1120,7 @@ function App() {
                   onClearStacks={clearStacks}
                   lateRegOpen={lateRegOpen}
                   onAddLatePlayer={addLatePlayer}
+                  tables={config.tables}
                 />
               </aside>
             )}
@@ -1136,6 +1237,7 @@ function App() {
                 {config.tables && config.tables.length > 0 && (
                   <MultiTablePanel
                     config={config}
+                    recentMoves={recentTableMoves}
                     onUpdateTables={handleUpdateTables}
                     onTableMoves={handleTableMoves}
                   />
@@ -1182,6 +1284,7 @@ function App() {
             bounty={config.bounty}
             averageStack={averageStack}
             tournamentElapsed={tournamentElapsed}
+            tables={config.tables}
           />
         </Suspense>
       )}

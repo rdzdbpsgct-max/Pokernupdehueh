@@ -92,6 +92,14 @@ import {
   balanceTables,
   shouldMergeToFinalTable,
   mergeToFinalTable,
+  getTablePlayerIds,
+  findLowestAvailableSeat,
+  findHighestOccupiedSeat,
+  findPlayerSeat,
+  seatPlayerAtSmallestTable,
+  findTableToDissolve,
+  dissolveTable,
+  advanceTableDealer,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table } from '../src/domain/types';
 
@@ -3073,53 +3081,135 @@ describe('Multi-Table', () => {
       makePlayer({ id: `p${i + 1}`, name: `Player ${i + 1}` }),
     );
 
-  it('createTable returns a valid table with defaults', () => {
+  /** Helper to create a table with players seated */
+  const mkTable = (id: string, name: string, maxSeats: number, playerIds: string[]): Table => {
+    const seats = Array.from({ length: maxSeats }, (_, i) => ({
+      seatNumber: i + 1,
+      playerId: playerIds[i] ?? null,
+    }));
+    return { id, name, maxSeats, seats, status: 'active' as const, dealerSeat: null };
+  };
+
+  // --- Table creation & helpers ---
+
+  it('createTable creates Seat[] array with correct seatNumbers', () => {
     const table = createTable('Table 1');
     expect(table.name).toBe('Table 1');
-    expect(table.seats).toBe(10);
-    expect(table.playerIds).toEqual([]);
+    expect(table.maxSeats).toBe(10);
+    expect(table.seats).toHaveLength(10);
+    expect(table.seats[0].seatNumber).toBe(1);
+    expect(table.seats[9].seatNumber).toBe(10);
+    expect(table.seats.every(s => s.playerId === null)).toBe(true);
+    expect(table.status).toBe('active');
+    expect(table.dealerSeat).toBeNull();
     expect(table.id).toBeTruthy();
   });
 
-  it('distributePlayersToTables distributes evenly', () => {
-    const tables = [createTable('T1'), createTable('T2')];
+  it('getTablePlayerIds extracts player IDs from seats', () => {
+    const table = mkTable('t1', 'T1', 5, ['a', 'b']);
+    expect(getTablePlayerIds(table)).toEqual(['a', 'b']);
+  });
+
+  it('findLowestAvailableSeat returns correct seat', () => {
+    const table = mkTable('t1', 'T1', 5, ['a', 'b']);
+    // Seats 1=a, 2=b, 3=null, 4=null, 5=null
+    expect(findLowestAvailableSeat(table)).toBe(3);
+  });
+
+  it('findLowestAvailableSeat returns null when full', () => {
+    const table = mkTable('t1', 'T1', 2, ['a', 'b']);
+    expect(findLowestAvailableSeat(table)).toBeNull();
+  });
+
+  it('findHighestOccupiedSeat returns correct seat (active only)', () => {
+    const table = mkTable('t1', 'T1', 5, ['p1', 'p2', 'p3']);
+    const players: Player[] = [
+      makePlayer({ id: 'p1', name: 'A' }),
+      makePlayer({ id: 'p2', name: 'B', status: 'eliminated' }),
+      makePlayer({ id: 'p3', name: 'C' }),
+    ];
+    const seat = findHighestOccupiedSeat(table, players);
+    expect(seat?.seatNumber).toBe(3);
+    expect(seat?.playerId).toBe('p3');
+  });
+
+  it('findPlayerSeat finds table + seat', () => {
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 5, ['a', 'b']),
+      mkTable('t2', 'T2', 5, ['c', 'd']),
+    ];
+    const result = findPlayerSeat(tables, 'c');
+    expect(result).not.toBeNull();
+    expect(result!.table.id).toBe('t2');
+    expect(result!.seat.seatNumber).toBe(1);
+    expect(findPlayerSeat(tables, 'z')).toBeNull();
+  });
+
+  // --- Distribution ---
+
+  it('distributePlayersToTables round-robin assigns seats', () => {
+    const tables = [createTable('T1', 10), createTable('T2', 10)];
     const ids = ['a', 'b', 'c', 'd'];
     const result = distributePlayersToTables(ids, tables);
-    expect(result[0].playerIds).toEqual(['a', 'c']);
-    expect(result[1].playerIds).toEqual(['b', 'd']);
+    // P1→T1S1, P2→T2S1, P3→T1S2, P4→T2S2
+    expect(result[0].seats[0].playerId).toBe('a');
+    expect(result[1].seats[0].playerId).toBe('b');
+    expect(result[0].seats[1].playerId).toBe('c');
+    expect(result[1].seats[1].playerId).toBe('d');
   });
 
   it('distributePlayersToTables handles 7 players and 2 tables', () => {
-    const tables = [createTable('T1'), createTable('T2')];
+    const tables = [createTable('T1', 10), createTable('T2', 10)];
     const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
     const result = distributePlayersToTables(ids, tables);
-    expect(result[0].playerIds.length).toBe(4); // a, c, e, g
-    expect(result[1].playerIds.length).toBe(3); // b, d, f
+    const t1Players = getTablePlayerIds(result[0]);
+    const t2Players = getTablePlayerIds(result[1]);
+    expect(t1Players.length).toBe(4); // a, c, e, g
+    expect(t2Players.length).toBe(3); // b, d, f
   });
 
-  it('removePlayerFromTable removes correctly', () => {
+  it('distributePlayersToTables does not exceed maxSeats', () => {
+    const tables = [createTable('T1', 2), createTable('T2', 2)];
+    const ids = ['a', 'b', 'c', 'd', 'e']; // 5 players, only 4 seats total
+    const result = distributePlayersToTables(ids, tables);
+    const t1Count = getTablePlayerIds(result[0]).length;
+    const t2Count = getTablePlayerIds(result[1]).length;
+    expect(t1Count).toBeLessThanOrEqual(2);
+    expect(t2Count).toBeLessThanOrEqual(2);
+  });
+
+  // --- Removal ---
+
+  it('removePlayerFromTable empties seat (does not remove it)', () => {
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 10, playerIds: ['a', 'b', 'c'] },
-      { id: 't2', name: 'T2', seats: 10, playerIds: ['d', 'e'] },
+      mkTable('t1', 'T1', 10, ['a', 'b', 'c']),
+      mkTable('t2', 'T2', 10, ['d', 'e']),
     ];
     const result = removePlayerFromTable(tables, 'b');
-    expect(result[0].playerIds).toEqual(['a', 'c']);
-    expect(result[1].playerIds).toEqual(['d', 'e']);
+    // Seat 2 should be empty now, not removed
+    expect(result[0].seats[1].playerId).toBeNull();
+    expect(result[0].seats[0].playerId).toBe('a');
+    expect(result[0].seats[2].playerId).toBe('c');
+    expect(result[0].seats).toHaveLength(10);
   });
+
+  // --- Lookup ---
 
   it('findPlayerTable finds the correct table', () => {
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 10, playerIds: ['a', 'b'] },
-      { id: 't2', name: 'T2', seats: 10, playerIds: ['c', 'd'] },
+      mkTable('t1', 'T1', 10, ['a', 'b']),
+      mkTable('t2', 'T2', 10, ['c', 'd']),
     ];
     expect(findPlayerTable(tables, 'c')?.id).toBe('t2');
     expect(findPlayerTable(tables, 'z')).toBeUndefined();
   });
 
+  // --- Active counts ---
+
   it('getActivePlayersPerTable counts active correctly', () => {
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2', 'p3'] },
-      { id: 't2', name: 'T2', seats: 10, playerIds: ['p4', 'p5'] },
+      mkTable('t1', 'T1', 10, ['p1', 'p2', 'p3']),
+      mkTable('t2', 'T2', 10, ['p4', 'p5']),
     ];
     const players: Player[] = [
       makePlayer({ id: 'p1', name: 'A' }),
@@ -3133,89 +3223,197 @@ describe('Multi-Table', () => {
     expect(counts.get('t2')).toBe(1);
   });
 
+  // --- Balancing ---
+
   it('balanceTables with even tables returns no moves', () => {
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2'] },
-      { id: 't2', name: 'T2', seats: 10, playerIds: ['p3', 'p4'] },
+      mkTable('t1', 'T1', 10, ['p1', 'p2']),
+      mkTable('t2', 'T2', 10, ['p3', 'p4']),
     ];
     const players = mkPlayers(4);
     const result = balanceTables(tables, players);
     expect(result.moves).toEqual([]);
   });
 
-  it('balanceTables with uneven tables returns correct moves', () => {
+  it('balanceTables moves highest seat from largest to lowest seat at smallest', () => {
+    // T1: p1(S1) p2(S2) p3(S3) p4(S4) — T2: p5(S1) — diff = 3
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2', 'p3', 'p4'] },
-      { id: 't2', name: 'T2', seats: 10, playerIds: ['p5'] },
+      mkTable('t1', 'T1', 10, ['p1', 'p2', 'p3', 'p4']),
+      mkTable('t2', 'T2', 10, ['p5']),
     ];
     const players = mkPlayers(5);
     const result = balanceTables(tables, players);
     expect(result.moves.length).toBeGreaterThan(0);
-    // After balancing, max diff should be <= 1
-    const c1 = result.tables[0].playerIds.length;
-    const c2 = result.tables[1].playerIds.length;
-    expect(Math.abs(c1 - c2)).toBeLessThanOrEqual(1);
+    // First move should be from highest seat (S4 = p4) at T1 to lowest available (S2) at T2
+    expect(result.moves[0].fromSeat).toBe(4);
+    expect(result.moves[0].toSeat).toBe(2);
+    expect(result.moves[0].reason).toBe('balance');
+    expect(result.moves[0].timestamp).toBeGreaterThan(0);
   });
 
   it('balanceTables ensures max diff <= 1 after balancing', () => {
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] },
-      { id: 't2', name: 'T2', seats: 10, playerIds: ['p7'] },
-      { id: 't3', name: 'T3', seats: 10, playerIds: ['p8'] },
+      mkTable('t1', 'T1', 10, ['p1', 'p2', 'p3', 'p4', 'p5', 'p6']),
+      mkTable('t2', 'T2', 10, ['p7']),
+      mkTable('t3', 'T3', 10, ['p8']),
     ];
     const players = mkPlayers(8);
     const result = balanceTables(tables, players);
-    const counts = result.tables.map(t => t.playerIds.length);
+    const counts = result.tables.filter(t => t.status === 'active').map(t =>
+      t.seats.filter(s => s.playerId !== null).length,
+    );
     const max = Math.max(...counts);
     const min = Math.min(...counts);
     expect(max - min).toBeLessThanOrEqual(1);
   });
 
+  // --- Seating a single player ---
+
+  it('seatPlayerAtSmallestTable picks table with fewest active, lowest seat', () => {
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 5, ['p1', 'p2', 'p3']),
+      mkTable('t2', 'T2', 5, ['p4']),
+    ];
+    const players = mkPlayers(4);
+    const result = seatPlayerAtSmallestTable(tables, players, 'p5');
+    expect(result).not.toBeNull();
+    expect(result!.tableId).toBe('t2');
+    expect(result!.seatNumber).toBe(2); // lowest available at T2
+  });
+
+  // --- Dissolution ---
+
+  it('findTableToDissolve finds table at/below threshold', () => {
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 10, ['p1', 'p2', 'p3', 'p4', 'p5']),
+      mkTable('t2', 'T2', 10, ['p6', 'p7']), // 2 players <= threshold 3
+    ];
+    const players = mkPlayers(7);
+    const result = findTableToDissolve(tables, players, 3);
+    expect(result?.id).toBe('t2');
+  });
+
+  it('dissolveTable distributes players to remaining tables', () => {
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 10, ['p1', 'p2', 'p3', 'p4', 'p5']),
+      mkTable('t2', 'T2', 10, ['p6', 'p7']),
+    ];
+    const players = mkPlayers(7);
+    const result = dissolveTable(tables, players, 't2');
+    // T2 should be dissolved
+    const t2 = result.tables.find(t => t.id === 't2');
+    expect(t2?.status).toBe('dissolved');
+    // Players should be moved to T1
+    expect(result.moves.length).toBe(2);
+    expect(result.moves[0].reason).toBe('dissolution');
+    // T1 should now have 7 players
+    const t1 = result.tables.find(t => t.id === 't1');
+    expect(t1?.seats.filter(s => s.playerId !== null).length).toBe(7);
+  });
+
+  // --- Final Table ---
+
   it('shouldMergeToFinalTable returns true when players fit', () => {
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 9, playerIds: ['p1', 'p2', 'p3'] },
-      { id: 't2', name: 'T2', seats: 9, playerIds: ['p4', 'p5'] },
+      mkTable('t1', 'T1', 9, ['p1', 'p2', 'p3']),
+      mkTable('t2', 'T2', 9, ['p4', 'p5']),
     ];
     const players = mkPlayers(5);
-    // 5 active players, max seats = 9 => should merge
     expect(shouldMergeToFinalTable(tables, players)).toBe(true);
   });
 
   it('shouldMergeToFinalTable returns false when too many players', () => {
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 4, playerIds: ['p1', 'p2', 'p3'] },
-      { id: 't2', name: 'T2', seats: 4, playerIds: ['p4', 'p5'] },
+      mkTable('t1', 'T1', 4, ['p1', 'p2', 'p3']),
+      mkTable('t2', 'T2', 4, ['p4', 'p5']),
     ];
     const players = mkPlayers(5);
-    // 5 active players, max seats = 4 => should NOT merge
     expect(shouldMergeToFinalTable(tables, players)).toBe(false);
   });
 
   it('shouldMergeToFinalTable returns false with single table', () => {
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2'] },
+      mkTable('t1', 'T1', 10, ['p1', 'p2']),
     ];
     const players = mkPlayers(2);
     expect(shouldMergeToFinalTable(tables, players)).toBe(false);
   });
 
-  it('mergeToFinalTable creates single table with all active players', () => {
+  it('shouldMergeToFinalTable ignores dissolved tables', () => {
+    const dissolved = mkTable('t1', 'T1', 10, []);
+    dissolved.status = 'dissolved';
     const tables: Table[] = [
-      { id: 't1', name: 'T1', seats: 9, playerIds: ['p1', 'p2', 'p3'] },
-      { id: 't2', name: 'T2', seats: 9, playerIds: ['p4', 'p5'] },
+      dissolved,
+      mkTable('t2', 'T2', 5, ['p1', 'p2', 'p3']),
+    ];
+    const players = mkPlayers(3);
+    // Only 1 active table => false (can't merge to fewer)
+    expect(shouldMergeToFinalTable(tables, players)).toBe(false);
+  });
+
+  it('mergeToFinalTable seats all active players, others dissolved', () => {
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 9, ['p1', 'p2', 'p3']),
+      mkTable('t2', 'T2', 9, ['p4', 'p5']),
     ];
     const players: Player[] = [
       ...mkPlayers(4),
       makePlayer({ id: 'p5', name: 'Player 5', status: 'eliminated' }),
     ];
     const result = mergeToFinalTable(tables, players);
-    expect(result.length).toBe(1);
-    expect(result[0].name).toBe('Final Table');
-    // Only active players (4 active, 1 eliminated)
-    expect(result[0].playerIds).toEqual(['p1', 'p2', 'p3', 'p4']);
+    const finalTable = result.tables.find(t => t.status === 'active');
+    expect(finalTable).toBeTruthy();
+    expect(finalTable!.name).toBe('Final Table');
+    const seatedIds = finalTable!.seats.filter(s => s.playerId !== null).map(s => s.playerId);
+    expect(seatedIds).toContain('p1');
+    expect(seatedIds).toContain('p2');
+    expect(seatedIds).toContain('p3');
+    expect(seatedIds).toContain('p4');
+    expect(seatedIds).not.toContain('p5'); // eliminated
+    // T2 should be dissolved
+    const t2 = result.tables.find(t => t.id === 't2');
+    expect(t2?.status).toBe('dissolved');
   });
 
-  it('parseConfigObject handles tables field for backward compat', () => {
+  it('mergeToFinalTable moves have reason final-table', () => {
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 9, ['p1', 'p2']),
+      mkTable('t2', 'T2', 9, ['p3', 'p4']),
+    ];
+    const players = mkPlayers(4);
+    const result = mergeToFinalTable(tables, players);
+    expect(result.moves.length).toBeGreaterThan(0);
+    expect(result.moves.every(m => m.reason === 'final-table')).toBe(true);
+  });
+
+  // --- Dealer ---
+
+  it('advanceTableDealer skips empty seats', () => {
+    const table = mkTable('t1', 'T1', 5, ['p1']);
+    // Only p1 at seat 1, rest empty. Dealer at seat 1.
+    table.dealerSeat = 1;
+    const players = mkPlayers(1);
+    const result = advanceTableDealer(table, players);
+    // Should wrap back to seat 1 (only occupied seat)
+    expect(result.dealerSeat).toBe(1);
+  });
+
+  it('advanceTableDealer skips eliminated players', () => {
+    const table = mkTable('t1', 'T1', 5, ['p1', 'p2', 'p3']);
+    table.dealerSeat = 1;
+    const players: Player[] = [
+      makePlayer({ id: 'p1', name: 'A' }),
+      makePlayer({ id: 'p2', name: 'B', status: 'eliminated' }),
+      makePlayer({ id: 'p3', name: 'C' }),
+    ];
+    const result = advanceTableDealer(table, players);
+    // Should skip p2 (eliminated) and go to p3 at seat 3
+    expect(result.dealerSeat).toBe(3);
+  });
+
+  // --- Backward compatibility ---
+
+  it('parseConfigObject migrates old Table format (playerIds[]) to new (seats[])', () => {
     const raw = {
       name: 'Test',
       levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
@@ -3227,6 +3425,26 @@ describe('Multi-Table', () => {
     expect(config).not.toBeNull();
     expect(config!.tables).toHaveLength(1);
     expect(config!.tables![0].name).toBe('Table 1');
+    expect(config!.tables![0].maxSeats).toBe(10);
+    expect(config!.tables![0].seats).toHaveLength(10);
+    expect(config!.tables![0].seats[0].playerId).toBe('a');
+    expect(config!.tables![0].seats[1].playerId).toBe('b');
+    expect(config!.tables![0].seats[2].playerId).toBeNull();
+    expect(config!.tables![0].status).toBe('active');
+  });
+
+  it('parseConfigObject parses multiTable config with defaults', () => {
+    const raw = {
+      name: 'Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
+      multiTable: { enabled: true, seatsPerTable: 8 },
+    };
+    const config = parseConfigObject(raw as Record<string, unknown>);
+    expect(config!.multiTable).toBeDefined();
+    expect(config!.multiTable!.enabled).toBe(true);
+    expect(config!.multiTable!.seatsPerTable).toBe(8);
+    expect(config!.multiTable!.dissolveThreshold).toBe(3); // default
+    expect(config!.multiTable!.autoBalanceOnElimination).toBe(true); // default
   });
 
   it('parseConfigObject returns undefined tables when field is missing', () => {
@@ -3237,5 +3455,6 @@ describe('Multi-Table', () => {
     const config = parseConfigObject(raw as Record<string, unknown>);
     expect(config).not.toBeNull();
     expect(config!.tables).toBeUndefined();
+    expect(config!.multiTable).toBeUndefined();
   });
 });

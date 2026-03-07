@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 4.0.1
+**Version**: 4.1.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (277 tests, single run)
+npm run test         # Vitest run (291 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -96,7 +96,7 @@ src/
 │   ├── validation.ts            # Config validation, rebuy/late-reg checks
 │   ├── tournament.ts            # Results, payouts, stats, CSV/text export, league standings, mystery bounty
 │   ├── persistence.ts           # localStorage CRUD, config parsing, templates, player database, league management, wizard
-│   ├── tables.ts                # Multi-table management, balancing, final table merge
+│   ├── tables.ts                # Multi-table management: seat-level CRUD, distribution, balancing, dissolution, final table merge, per-table dealer
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
 │   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
@@ -268,19 +268,30 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ## Changelog
 
+### v4.1.0 — Multi-Table Overhaul: Seat-Level Tournament Management
+
+- **Seat-Level Datenmodell**: `Table` mit `seats: Seat[]` (statt `playerIds[]`), `maxSeats`, `status: TableStatus`, `dealerSeat`. `TableMove` mit `fromSeat/toSeat`, `reason: TableMoveReason`, `timestamp`. `MultiTableConfig` (`dissolveThreshold`, `autoBalanceOnElimination`).
+- **Domain Logic Rewrite**: 15+ Funktionen in `tables.ts` — seat-basierte Distribution (round-robin P1→T1S1, P2→T2S1), Balancing (höchster Sitz → niedrigster Sitz), Dissolution, `seatPlayerAtSmallestTable()`, `advanceTableDealer()`, `findPlayerSeat()`.
+- **Tischauflösung**: Auto-Dissolution bei ≤ Schwelle Spieler, Status `'dissolved'`, Round-Robin-Verteilung auf aktive Tische.
+- **Elimination Chain**: removeFromTable → Dissolution Loop → Final Table Check → Auto-Balance. Move-Protocol über Refs + useEffect + Voice.
+- **Reinstate/Late Reg**: Automatische Platzierung am kleinsten Tisch.
+- **MultiTablePanel Rewrite**: Seat-Grid, Dealer-Badge, Move-Log mit Reason-Icons, aufgelöste Tische.
+- **Setup**: `MultiTableConfig` UI (Dissolve-Threshold, Auto-Balance, empfohlene Tischanzahl, Sitzplatz-Preview).
+- **PlayerPanel**: Tisch/Sitz-Badge. **SeatingScreen**: Multi-Table SVG Grid. **DisplayMode**: Tables-Prop.
+- **Voice**: `announceTableMove()` mit Sitz, `announceTableDissolution()` neu.
+- **Backward-Compat**: `migrateTable()` konvertiert altes → neues Format.
+- **~30 Translation-Keys**, **14 neue Tests** — **291 Tests gesamt**
+
 ### v4.0.1 — Sprachansagen-Vervollständigung
 
 - **5 neue Ansagen**: Mystery Bounty Draw, Call the Clock (Start + Ablauf), Late Registration geschlossen, personalisierter Turniersieger.
-- **8 neue MP3s** (4 DE + 4 EN): `mystery-bounty.mp3`, `call-the-clock.mp3`, `time-expired.mp3`, `late-registration-closed.mp3`. **460 Audio-Dateien** (230 pro Sprache).
+- **8 neue MP3s** (4 DE + 4 EN). **460 Audio-Dateien** (230 pro Sprache).
 - **8 Translation-Keys**, `voiceEnabled`-Prop an CallTheClock, `winnerName` an useGameEvents.
 
-### v4.0.0 — Phase 5: Multi-Table Support
+### v4.0.0 — Phase 5: Multi-Table Support (Basic)
 
-- **Multi-Table Datenmodell**: `Table`, `TableMove` Interfaces. `tables?: Table[]` in TournamentConfig. `tables.ts` Modul: `createTable()`, `distributePlayersToTables()`, `balanceTables()`, `shouldMergeToFinalTable()`, `mergeToFinalTable()`.
-- **Table Balancing**: Iteratives Balancing (max ±1 Differenz). Voice-Ansage bei Tischwechsel. `MultiTablePanel.tsx` im Spielmodus.
-- **Final Table Merge**: Auto-Detect + Voice-Ansage. Konsolidierung aller aktiven Spieler an einem Tisch.
-- **Setup-Integration**: CollapsibleSection "Multi-Table" mit Tischanzahl/Sitzplatz-Config + Verteilung.
-- **Neue Dateien**: `tables.ts`, `MultiTablePanel.tsx`
+- **Multi-Table Datenmodell**: Erste Version mit `Table`, `TableMove`, `tables.ts`, `MultiTablePanel.tsx`.
+- **Table Balancing**, **Final Table Merge**, **Setup-Integration**.
 - **28 Translation-Keys**, **15 neue Tests** — **277 Tests gesamt**
 
 ### v3.1.0 — Phase 4: UX & Druckansicht

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig } from '../domain/types';
-import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, findChipLeader, canPlayerRebuy } from '../domain/logic';
+import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, Table } from '../domain/types';
+import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, findChipLeader, canPlayerRebuy, findPlayerSeat } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
@@ -24,6 +24,7 @@ interface Props {
   onClearStacks?: () => void;
   lateRegOpen?: boolean;
   onAddLatePlayer?: () => void;
+  tables?: Table[];
 }
 
 export function PlayerPanel({
@@ -47,6 +48,7 @@ export function PlayerPanel({
   onClearStacks,
   lateRegOpen,
   onAddLatePlayer,
+  tables,
 }: Props) {
   const { t } = useTranslation();
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
@@ -67,6 +69,7 @@ export function PlayerPanel({
 
   const chipLeaderId = useMemo(() => findChipLeader(players), [players]);
   const hasAnyStacks = useMemo(() => players.some((p) => p.chips !== undefined), [players]);
+  const multiTableActive = tables && tables.filter(tbl => tbl.status === 'active').length > 0;
 
   const activePlayers = players.filter((p) => p.status === 'active');
   const eliminatedPlayers = [...players]
@@ -231,6 +234,15 @@ export function PlayerPanel({
                 <span className={`${nameSizeClass} text-gray-800 dark:text-gray-200 truncate`}>
                   {player.name}
                 </span>
+                {multiTableActive && (() => {
+                  const info = findPlayerSeat(tables!, player.id);
+                  if (!info) return null;
+                  return (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono shrink-0">
+                      {t('multiTable.seatShort', { n: info.seat.seatNumber })}
+                    </span>
+                  );
+                })()}
                 {chipLeaderId === player.id && (
                   <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-bold shrink-0 ring-2 ring-amber-400/30" title={t('playerPanel.chipLeader')}>C</span>
                 )}

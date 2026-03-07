@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig } from '../../domain/types';
+import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table } from '../../domain/types';
 import { formatTime, getLevelLabel, getBlindsText } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
 import { PlayersScreen } from './PlayersScreen';
@@ -32,6 +32,7 @@ interface Props {
   bounty: BountyConfig;
   averageStack: number;
   tournamentElapsed: number;
+  tables?: Table[];
 }
 
 const ROTATION_INTERVAL = 15_000;
@@ -57,6 +58,7 @@ export function DisplayMode({
   bounty,
   averageStack,
   tournamentElapsed,
+  tables,
 }: Props) {
   const { t } = useTranslation();
 
@@ -287,7 +289,7 @@ export function DisplayMode({
           <ChipsScreen chipConfig={chipConfig} colorUpMap={colorUpMap} currentLevelIndex={timerState.currentLevelIndex} levels={levels} />
         )}
         {activeSecondary === 'seating' && (
-          <SeatingScreen players={players} dealerIndex={dealerIndex} />
+          <SeatingScreen players={players} dealerIndex={dealerIndex} tables={tables} />
         )}
       </div>
 
