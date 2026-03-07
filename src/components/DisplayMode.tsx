@@ -198,7 +198,7 @@ export function DisplayMode({
           </div>
         )}
         {isBreak && (
-          <p className="text-amber-300 font-semibold text-3xl sm:text-5xl">{t('display.break')}</p>
+          <p className="text-amber-300 font-semibold text-3xl sm:text-5xl">{currentLevel.label || t('display.break')}</p>
         )}
 
         {/* Timer */}

@@ -67,7 +67,7 @@ export function useVoiceAnnouncements({
 
     if (level.type === 'break') {
       const minutes = Math.round(level.durationSeconds / 60);
-      announceBreakStart(minutes, t);
+      announceBreakStart(minutes, t, level.label);
     } else {
       const prevLevel = config.levels[prevIdx];
       if (prevLevel?.type === 'break') {

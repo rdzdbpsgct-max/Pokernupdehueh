@@ -252,16 +252,21 @@ export function announceLevelChange(
   }
 }
 
-/** Break start — "Break — 10 minutes" / "Pause — 10 Minuten" */
+/** Break start — "Break — 10 minutes" / "Pause — 10 Minuten" + optional label */
 export function announceBreakStart(
   durationMinutes: number,
   t: TranslateFn,
+  label?: string,
 ): void {
   if (durationMinutes >= 1 && durationMinutes <= MAX_BREAK_MINUTES) {
     const file = `breaks/break-${String(durationMinutes).padStart(2, '0')}min.mp3`;
     enqueue(audioOrSpeech([file], t('voice.breakStart', { minutes: durationMinutes })));
   } else {
     enqueue({ mode: 'speech', text: t('voice.breakStart', { minutes: durationMinutes }) });
+  }
+  // Announce custom label via speech if present
+  if (label) {
+    enqueue({ mode: 'speech', text: label });
   }
 }
 
