@@ -84,8 +84,16 @@ import {
   isWizardCompleted,
   markWizardCompleted,
   WIZARD_KEY,
+  createTable,
+  distributePlayersToTables,
+  removePlayerFromTable,
+  findPlayerTable,
+  getActivePlayersPerTable,
+  balanceTables,
+  shouldMergeToFinalTable,
+  mergeToFinalTable,
 } from '../src/domain/logic';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult } from '../src/domain/types';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table } from '../src/domain/types';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -3053,5 +3061,181 @@ describe('Setup Wizard', () => {
     markWizardCompleted();
     expect(isWizardCompleted()).toBe(true);
     expect(localStorage.getItem(WIZARD_KEY)).toBe('true');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Multi-Table Support
+// ---------------------------------------------------------------------------
+describe('Multi-Table', () => {
+  const mkPlayers = (count: number): Player[] =>
+    Array.from({ length: count }, (_, i) =>
+      makePlayer({ id: `p${i + 1}`, name: `Player ${i + 1}` }),
+    );
+
+  it('createTable returns a valid table with defaults', () => {
+    const table = createTable('Table 1');
+    expect(table.name).toBe('Table 1');
+    expect(table.seats).toBe(10);
+    expect(table.playerIds).toEqual([]);
+    expect(table.id).toBeTruthy();
+  });
+
+  it('distributePlayersToTables distributes evenly', () => {
+    const tables = [createTable('T1'), createTable('T2')];
+    const ids = ['a', 'b', 'c', 'd'];
+    const result = distributePlayersToTables(ids, tables);
+    expect(result[0].playerIds).toEqual(['a', 'c']);
+    expect(result[1].playerIds).toEqual(['b', 'd']);
+  });
+
+  it('distributePlayersToTables handles 7 players and 2 tables', () => {
+    const tables = [createTable('T1'), createTable('T2')];
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+    const result = distributePlayersToTables(ids, tables);
+    expect(result[0].playerIds.length).toBe(4); // a, c, e, g
+    expect(result[1].playerIds.length).toBe(3); // b, d, f
+  });
+
+  it('removePlayerFromTable removes correctly', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 10, playerIds: ['a', 'b', 'c'] },
+      { id: 't2', name: 'T2', seats: 10, playerIds: ['d', 'e'] },
+    ];
+    const result = removePlayerFromTable(tables, 'b');
+    expect(result[0].playerIds).toEqual(['a', 'c']);
+    expect(result[1].playerIds).toEqual(['d', 'e']);
+  });
+
+  it('findPlayerTable finds the correct table', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 10, playerIds: ['a', 'b'] },
+      { id: 't2', name: 'T2', seats: 10, playerIds: ['c', 'd'] },
+    ];
+    expect(findPlayerTable(tables, 'c')?.id).toBe('t2');
+    expect(findPlayerTable(tables, 'z')).toBeUndefined();
+  });
+
+  it('getActivePlayersPerTable counts active correctly', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2', 'p3'] },
+      { id: 't2', name: 'T2', seats: 10, playerIds: ['p4', 'p5'] },
+    ];
+    const players: Player[] = [
+      makePlayer({ id: 'p1', name: 'A' }),
+      makePlayer({ id: 'p2', name: 'B', status: 'eliminated' }),
+      makePlayer({ id: 'p3', name: 'C' }),
+      makePlayer({ id: 'p4', name: 'D' }),
+      makePlayer({ id: 'p5', name: 'E', status: 'eliminated' }),
+    ];
+    const counts = getActivePlayersPerTable(tables, players);
+    expect(counts.get('t1')).toBe(2);
+    expect(counts.get('t2')).toBe(1);
+  });
+
+  it('balanceTables with even tables returns no moves', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2'] },
+      { id: 't2', name: 'T2', seats: 10, playerIds: ['p3', 'p4'] },
+    ];
+    const players = mkPlayers(4);
+    const result = balanceTables(tables, players);
+    expect(result.moves).toEqual([]);
+  });
+
+  it('balanceTables with uneven tables returns correct moves', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2', 'p3', 'p4'] },
+      { id: 't2', name: 'T2', seats: 10, playerIds: ['p5'] },
+    ];
+    const players = mkPlayers(5);
+    const result = balanceTables(tables, players);
+    expect(result.moves.length).toBeGreaterThan(0);
+    // After balancing, max diff should be <= 1
+    const c1 = result.tables[0].playerIds.length;
+    const c2 = result.tables[1].playerIds.length;
+    expect(Math.abs(c1 - c2)).toBeLessThanOrEqual(1);
+  });
+
+  it('balanceTables ensures max diff <= 1 after balancing', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] },
+      { id: 't2', name: 'T2', seats: 10, playerIds: ['p7'] },
+      { id: 't3', name: 'T3', seats: 10, playerIds: ['p8'] },
+    ];
+    const players = mkPlayers(8);
+    const result = balanceTables(tables, players);
+    const counts = result.tables.map(t => t.playerIds.length);
+    const max = Math.max(...counts);
+    const min = Math.min(...counts);
+    expect(max - min).toBeLessThanOrEqual(1);
+  });
+
+  it('shouldMergeToFinalTable returns true when players fit', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 9, playerIds: ['p1', 'p2', 'p3'] },
+      { id: 't2', name: 'T2', seats: 9, playerIds: ['p4', 'p5'] },
+    ];
+    const players = mkPlayers(5);
+    // 5 active players, max seats = 9 => should merge
+    expect(shouldMergeToFinalTable(tables, players)).toBe(true);
+  });
+
+  it('shouldMergeToFinalTable returns false when too many players', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 4, playerIds: ['p1', 'p2', 'p3'] },
+      { id: 't2', name: 'T2', seats: 4, playerIds: ['p4', 'p5'] },
+    ];
+    const players = mkPlayers(5);
+    // 5 active players, max seats = 4 => should NOT merge
+    expect(shouldMergeToFinalTable(tables, players)).toBe(false);
+  });
+
+  it('shouldMergeToFinalTable returns false with single table', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 10, playerIds: ['p1', 'p2'] },
+    ];
+    const players = mkPlayers(2);
+    expect(shouldMergeToFinalTable(tables, players)).toBe(false);
+  });
+
+  it('mergeToFinalTable creates single table with all active players', () => {
+    const tables: Table[] = [
+      { id: 't1', name: 'T1', seats: 9, playerIds: ['p1', 'p2', 'p3'] },
+      { id: 't2', name: 'T2', seats: 9, playerIds: ['p4', 'p5'] },
+    ];
+    const players: Player[] = [
+      ...mkPlayers(4),
+      makePlayer({ id: 'p5', name: 'Player 5', status: 'eliminated' }),
+    ];
+    const result = mergeToFinalTable(tables, players);
+    expect(result.length).toBe(1);
+    expect(result[0].name).toBe('Final Table');
+    // Only active players (4 active, 1 eliminated)
+    expect(result[0].playerIds).toEqual(['p1', 'p2', 'p3', 'p4']);
+  });
+
+  it('parseConfigObject handles tables field for backward compat', () => {
+    const raw = {
+      name: 'Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
+      tables: [
+        { id: 't1', name: 'Table 1', seats: 10, playerIds: ['a', 'b'] },
+      ],
+    };
+    const config = parseConfigObject(raw as Record<string, unknown>);
+    expect(config).not.toBeNull();
+    expect(config!.tables).toHaveLength(1);
+    expect(config!.tables![0].name).toBe('Table 1');
+  });
+
+  it('parseConfigObject returns undefined tables when field is missing', () => {
+    const raw = {
+      name: 'Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
+    };
+    const config = parseConfigObject(raw as Record<string, unknown>);
+    expect(config).not.toBeNull();
+    expect(config!.tables).toBeUndefined();
   });
 });

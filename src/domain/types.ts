@@ -107,6 +107,7 @@ export interface TournamentConfig {
   startingChips: number;
   lateRegistration?: LateRegistrationConfig;
   leagueId?: string;
+  tables?: Table[];
 }
 
 export interface Settings {
@@ -206,6 +207,24 @@ export interface LeagueStanding {
   cashes: number;
   avgPlace: number;
   bestPlace: number;
+}
+
+export interface Table {
+  id: string;
+  name: string;
+  /** Maximum seats at this table */
+  seats: number;
+  /** Player IDs assigned to this table */
+  playerIds: string[];
+}
+
+export interface TableMove {
+  playerId: string;
+  playerName: string;
+  fromTableId: string;
+  fromTableName: string;
+  toTableId: string;
+  toTableName: string;
 }
 
 export type TimerStatus = 'stopped' | 'running' | 'paused';

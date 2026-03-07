@@ -526,6 +526,22 @@ const de = {
 
   // --- Display: Seating ---
   'display.seating': 'Sitzplan',
+
+  // --- Multi-Table ---
+  'multiTable.title': 'Multi-Table',
+  'multiTable.tables': 'Tische',
+  'multiTable.addTable': 'Tisch hinzufügen',
+  'multiTable.seats': 'Plätze',
+  'multiTable.distribute': 'Spieler verteilen',
+  'multiTable.balance': 'Tische ausgleichen',
+  'multiTable.tableName': 'Tisch {n}',
+  'multiTable.playerCount': '{n} Spieler',
+  'multiTable.moveAnnouncement': '{player} wechselt zu {table}',
+  'voice.tableMove': '{player} wechselt zu {table}',
+  'multiTable.finalTable': 'Final Table!',
+  'voice.finalTable': 'Final Table! Alle Spieler an einem Tisch.',
+  'multiTable.tableCount': '{n} Tische',
+  'multiTable.removeTable': 'Tisch entfernen',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -1053,6 +1069,22 @@ const en: Record<TranslationKey, string> = {
 
   // --- Display: Seating ---
   'display.seating': 'Seating',
+
+  // --- Multi-Table ---
+  'multiTable.title': 'Multi-Table',
+  'multiTable.tables': 'Tables',
+  'multiTable.addTable': 'Add Table',
+  'multiTable.seats': 'Seats',
+  'multiTable.distribute': 'Distribute Players',
+  'multiTable.balance': 'Balance Tables',
+  'multiTable.tableName': 'Table {n}',
+  'multiTable.playerCount': '{n} players',
+  'multiTable.moveAnnouncement': '{player} moves to {table}',
+  'voice.tableMove': '{player} moves to {table}',
+  'multiTable.finalTable': 'Final Table!',
+  'voice.finalTable': 'Final Table! All players at one table.',
+  'multiTable.tableCount': '{n} Tables',
+  'multiTable.removeTable': 'Remove Table',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

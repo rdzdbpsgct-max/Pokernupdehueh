@@ -14,6 +14,7 @@ import type {
   LateRegistrationConfig,
   League,
   PointSystem,
+  Table,
 } from './types';
 import { generateBlindStructure } from './blinds';
 import { defaultChipConfig } from './chips';
@@ -158,6 +159,11 @@ export function parseConfigObject(parsed: Record<string, unknown>): TournamentCo
       ? { ...defaultLateRegistrationConfig(), ...(parsed.lateRegistration as Partial<LateRegistrationConfig>) }
       : undefined,
     leagueId: typeof parsed.leagueId === 'string' ? parsed.leagueId : undefined,
+    tables: Array.isArray(parsed.tables)
+      ? (parsed.tables as Table[]).filter(
+          (t) => t && typeof t.id === 'string' && typeof t.name === 'string',
+        )
+      : undefined,
   };
 }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { Analytics } from '@vercel/analytics/react';
-import type { TournamentConfig, Settings, TournamentCheckpoint } from './domain/types';
+import type { TournamentConfig, Settings, TournamentCheckpoint, Table, TableMove } from './domain/types';
 import {
   defaultConfig,
   defaultSettings,
@@ -29,6 +29,9 @@ import {
   decodeResultFromQR,
   drawMysteryBounty,
   isWizardCompleted,
+  removePlayerFromTable,
+  shouldMergeToFinalTable,
+  mergeToFinalTable,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
@@ -41,6 +44,8 @@ import {
   announceTournamentStart,
   announceLastHand,
   announceHandForHand,
+  announceTableMove,
+  announceFinalTable,
   setSpeechVolume,
 } from './domain/speech';
 import { setMasterVolume } from './domain/sounds';
@@ -70,6 +75,7 @@ const TournamentFinished = lazy(() => import('./components/TournamentFinished').
 const DisplayMode = lazy(() => import('./components/display').then(m => ({ default: m.DisplayMode })));
 const SharedResultView = lazy(() => import('./components/SharedResultView').then(m => ({ default: m.SharedResultView })));
 const CallTheClock = lazy(() => import('./components/CallTheClock').then(m => ({ default: m.CallTheClock })));
+const MultiTablePanel = lazy(() => import('./components/MultiTablePanel').then(m => ({ default: m.MultiTablePanel })));
 
 type Mode = 'setup' | 'game';
 
@@ -481,18 +487,32 @@ function App() {
         updatedBounty = { ...prev.bounty, amount: draw.amount, mysteryPool: draw.remainingPool };
       }
 
+      const updatedPlayers = prev.players.map((p) => {
+        if (p.id === playerId) {
+          return { ...p, status: 'eliminated' as const, placement, eliminatedBy, chips: p.chips !== undefined ? 0 : undefined };
+        }
+        if (eliminatedBy && p.id === eliminatedBy) {
+          return { ...p, knockouts: p.knockouts + 1 };
+        }
+        return p;
+      });
+
+      // Multi-table: remove eliminated player from their table
+      let updatedTables = prev.tables;
+      if (updatedTables && updatedTables.length > 0) {
+        updatedTables = removePlayerFromTable(updatedTables, playerId);
+
+        // Check for final table merge
+        if (updatedTables.length > 1 && shouldMergeToFinalTable(updatedTables, updatedPlayers)) {
+          updatedTables = mergeToFinalTable(updatedTables, updatedPlayers);
+        }
+      }
+
       return {
         ...prev,
         bounty: updatedBounty,
-        players: prev.players.map((p) => {
-          if (p.id === playerId) {
-            return { ...p, status: 'eliminated' as const, placement, eliminatedBy, chips: p.chips !== undefined ? 0 : undefined };
-          }
-          if (eliminatedBy && p.id === eliminatedBy) {
-            return { ...p, knockouts: p.knockouts + 1 };
-          }
-          return p;
-        }),
+        players: updatedPlayers,
+        tables: updatedTables,
       };
     });
   }, []);
@@ -715,6 +735,28 @@ function App() {
     onLevelChange: handleLevelChange,
     t,
   });
+
+  // --- Multi-table handlers ---
+  const prevTableCountRef = useRef<number>(config.tables?.length ?? 0);
+  useEffect(() => {
+    const tableCount = config.tables?.length ?? 0;
+    // Detect final table merge: went from >1 to exactly 1 table
+    if (mode === 'game' && prevTableCountRef.current > 1 && tableCount === 1 && settings.voiceEnabled) {
+      announceFinalTable(t);
+    }
+    prevTableCountRef.current = tableCount;
+  }, [config.tables?.length, mode, settings.voiceEnabled, t]);
+
+  const handleUpdateTables = useCallback((tables: Table[]) => {
+    setConfig((prev) => ({ ...prev, tables }));
+  }, []);
+
+  const handleTableMoves = useCallback((moves: TableMove[]) => {
+    if (!settings.voiceEnabled) return;
+    for (const move of moves) {
+      announceTableMove(move.playerName, move.toTableName, t);
+    }
+  }, [settings.voiceEnabled, t]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
@@ -1066,6 +1108,13 @@ function App() {
                     colorUpMap={colorUpMap}
                     currentLevelIndex={timer.timerState.currentLevelIndex}
                     levels={config.levels}
+                  />
+                )}
+                {config.tables && config.tables.length > 0 && (
+                  <MultiTablePanel
+                    config={config}
+                    onUpdateTables={handleUpdateTables}
+                    onTableMoves={handleTableMoves}
                   />
                 )}
                 <SettingsPanel

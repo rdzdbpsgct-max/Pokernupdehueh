@@ -408,3 +408,13 @@ export function announceTimerResumed(t: TranslateFn): void {
 export function announceHandForHand(t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/hand-for-hand.mp3'], t('voice.handForHand')));
 }
+
+/** Table move — player moves to a different table */
+export function announceTableMove(playerName: string, tableName: string, t: TranslateFn): void {
+  enqueue({ mode: 'speech', text: t('voice.tableMove', { player: playerName, table: tableName }) });
+}
+
+/** Final Table — all players at one table */
+export function announceFinalTable(t: TranslateFn): void {
+  enqueue({ mode: 'speech', text: t('voice.finalTable') });
+}

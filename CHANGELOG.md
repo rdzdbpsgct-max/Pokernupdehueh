@@ -5,6 +5,20 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [4.0.0] – 2026-03-07
+
+### Phase 5: Multi-Table Support
+
+- **Multi-Table Datenmodell**: Neue Interfaces `Table` (`id`, `name`, `seats`, `playerIds[]`) und `TableMove` in types.ts. Optionales `tables?: Table[]` in TournamentConfig. Neues Domain-Modul `tables.ts` mit CRUD-Funktionen: `createTable()`, `distributePlayersToTables()`, `getActivePlayersPerTable()`, `removePlayerFromTable()`, `findPlayerTable()`. Backward-kompatibel via `parseConfigObject`.
+- **Table Balancing**: `balanceTables()` in `tables.ts` — iteratives Balancing (max ±1 Spieler Differenz) mit "move from largest to smallest"-Strategie. Returns `{ tables, moves }` mit detaillierten `TableMove`-Objekten. Voice-Ansage bei Tischwechsel via `announceTableMove()` in speech.ts (Web Speech API).
+- **Final Table Merge**: `shouldMergeToFinalTable()` erkennt automatisch, wenn alle aktiven Spieler an einen Tisch passen. `mergeToFinalTable()` konsolidiert alle Spieler zum Final Table. Auto-Detect im Spielmodus bei Elimination + Voice-Ansage via `announceFinalTable()`.
+- **Multi-Table UI**: Neues `MultiTablePanel.tsx` (~130 Zeilen, lazy-loaded) im Spielmodus — Tischliste mit Spieleranzahl, Balance-Button (amber bei Ungleichgewicht), Move-Karten, "Final Table!"-Badge. Setup-Integration: CollapsibleSection "Multi-Table" (eingeklappt, sichtbar ab 6+ Spielern) mit Tischanzahl/Sitzplatz-NumberSteppern und Verteilungsbutton.
+- **Neue Dateien**: `src/domain/tables.ts`, `src/components/MultiTablePanel.tsx`
+- **28 neue Translation-Keys** (14 DE + 14 EN)
+- **15 neue Tests** — **277 Tests gesamt**
+
+---
+
 ## [3.1.0] – 2026-03-07
 
 ### Phase 4: UX & Druckansicht

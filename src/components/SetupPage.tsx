@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { TournamentConfig, TournamentCheckpoint, League } from '../domain/types';
+import type { TournamentConfig, TournamentCheckpoint, League, Table } from '../domain/types';
 import {
   stripAnteFromLevels,
   applyDefaultAntes,
@@ -8,6 +8,8 @@ import {
   checkBlindChipCompatibility,
   computeBlindStructureSummary,
   loadLeagues,
+  createTable,
+  distributePlayersToTables,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { ConfigEditor } from './ConfigEditor';
@@ -80,6 +82,60 @@ export function SetupPage({
     const s = computeBlindStructureSummary(config.levels);
     return t('config.summary', { levels: s.levelCount, breaks: s.breakCount, min: s.avgMinutes });
   }, [config.levels, t]);
+
+  const multiTableSummary = useMemo(() => {
+    if (!config.tables || config.tables.length === 0) return t('section.allDisabled');
+    return t('multiTable.tableCount', { n: config.tables.length });
+  }, [config.tables, t]);
+
+  // Multi-table toggle and config handlers
+  const handleToggleMultiTable = useCallback(() => {
+    setConfig((prev) => {
+      if (prev.tables && prev.tables.length > 0) {
+        return { ...prev, tables: undefined };
+      }
+      // Enable: create 2 tables by default
+      const tables: Table[] = [
+        createTable(t('multiTable.tableName', { n: 1 }), 10),
+        createTable(t('multiTable.tableName', { n: 2 }), 10),
+      ];
+      return { ...prev, tables };
+    });
+  }, [setConfig, t]);
+
+  const handleSetTableCount = useCallback((count: number) => {
+    setConfig((prev) => {
+      const existing = prev.tables ?? [];
+      if (count <= 0) return { ...prev, tables: undefined };
+      const tables: Table[] = [];
+      for (let i = 0; i < count; i++) {
+        if (i < existing.length) {
+          tables.push(existing[i]);
+        } else {
+          tables.push(createTable(t('multiTable.tableName', { n: i + 1 }), 10));
+        }
+      }
+      return { ...prev, tables };
+    });
+  }, [setConfig, t]);
+
+  const handleSetTableSeats = useCallback((tableId: string, seats: number) => {
+    setConfig((prev) => ({
+      ...prev,
+      tables: prev.tables?.map(tbl =>
+        tbl.id === tableId ? { ...tbl, seats } : tbl,
+      ),
+    }));
+  }, [setConfig]);
+
+  const handleDistributePlayers = useCallback(() => {
+    setConfig((prev) => {
+      if (!prev.tables || prev.tables.length === 0) return prev;
+      const playerIds = prev.players.map(p => p.id);
+      const tables = distributePlayersToTables(playerIds, prev.tables);
+      return { ...prev, tables };
+    });
+  }, [setConfig]);
 
   // --- Ante toggle ---
   const toggleAnte = useCallback(() => {
@@ -400,6 +456,69 @@ export function SetupPage({
             </div>
           </div>
         </CollapsibleSection>
+
+        {/* Multi-Table (collapsed, only visible when >= 6 players) */}
+        {config.players.length >= 6 && (
+          <CollapsibleSection title={t('multiTable.title')} summary={multiTableSummary} defaultOpen={false}>
+            <div className="space-y-3">
+              <button
+                onClick={handleToggleMultiTable}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  config.tables && config.tables.length > 0
+                    ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
+                }`}
+              >
+                {config.tables && config.tables.length > 0 ? t('multiTable.title') + ' ✓' : t('multiTable.title')}
+              </button>
+              {config.tables && config.tables.length > 0 && (
+                <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.tables')}</label>
+                    <NumberStepper
+                      value={config.tables.length}
+                      onChange={handleSetTableCount}
+                      min={2}
+                      max={10}
+                      step={1}
+                      inputClassName="w-16"
+                    />
+                  </div>
+                  {config.tables.map((tbl) => (
+                    <div key={tbl.id} className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[80px]">{tbl.name}</span>
+                      <label className="text-xs text-gray-400 dark:text-gray-500">{t('multiTable.seats')}</label>
+                      <NumberStepper
+                        value={tbl.seats}
+                        onChange={(v) => handleSetTableSeats(tbl.id, v)}
+                        min={2}
+                        max={12}
+                        step={1}
+                        inputClassName="w-16"
+                      />
+                    </div>
+                  ))}
+                  <button
+                    onClick={handleDistributePlayers}
+                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {t('multiTable.distribute')}
+                  </button>
+                  {/* Preview */}
+                  {config.tables.some(tbl => tbl.playerIds.length > 0) && (
+                    <div className="space-y-1">
+                      {config.tables.map((tbl) => (
+                        <div key={tbl.id} className="text-xs text-gray-500 dark:text-gray-400">
+                          {tbl.name}: {t('multiTable.playerCount', { n: tbl.playerIds.length })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
 
         {/* Chip-Werte (collapsed by default) */}
         <CollapsibleSection title={t('app.chips')} summary={chipsSummary} defaultOpen={false}>

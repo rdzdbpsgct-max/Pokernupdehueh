@@ -10,3 +10,4 @@ export * from './chips';
 export * from './validation';
 export * from './tournament';
 export * from './persistence';
+export * from './tables';

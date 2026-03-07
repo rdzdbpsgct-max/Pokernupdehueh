@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 3.1.0
+**Version**: 4.0.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (262 tests, single run)
+npm run test         # Vitest run (277 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -62,6 +62,7 @@ src/
 │   │   └── index.ts             # Barrel export
 │   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
+│   ├── MultiTablePanel.tsx      # Game-mode multi-table panel with balancing and moves
 │   ├── PrintView.tsx            # Print-optimized blind structure for window.print()
 │   ├── LeagueManager.tsx        # League CRUD, leaderboard, export
 │   ├── LevelPreview.tsx         # Next-level sidebar
@@ -95,6 +96,7 @@ src/
 │   ├── validation.ts            # Config validation, rebuy/late-reg checks
 │   ├── tournament.ts            # Results, payouts, stats, CSV/text export, league standings, mystery bounty
 │   ├── persistence.ts           # localStorage CRUD, config parsing, templates, player database, league management, wizard
+│   ├── tables.ts                # Multi-table management, balancing, final table merge
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
 │   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
@@ -111,11 +113,11 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~560+ keys)
+    ├── translations.ts          # DE/EN translation strings (~590+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 262 unit tests for domain/logic.ts
+└── logic.test.ts                # 277 unit tests for domain/logic.ts
 
 public/
 ├── favicon.svg                  # Spade symbol favicon
@@ -142,8 +144,8 @@ public/
 ### Domain Logic Separation
 - `src/domain/` contains pure business logic with no React dependencies
 - `src/domain/types.ts` — all shared types (`Level`, `TournamentConfig`, `Player`, `Settings`, `TimerState`, `League`, `PointSystem`, `LeagueStanding`, etc.)
-- `src/domain/logic.ts` — barrel re-export file; actual logic split into 9 focused modules:
-  - `helpers.ts` (ID generators, spinner rounding), `format.ts` (time/level formatting), `timer.ts` (level navigation, elapsed time), `blinds.ts` (blind generation, ante calculation), `players.ts` (player management, stacks, bubble), `chips.ts` (chip denominations, color-up), `validation.ts` (config validation, rebuy/late-reg checks), `tournament.ts` (results, payouts, stats, export, league standings, mystery bounty), `persistence.ts` (localStorage CRUD, config parsing, templates, player database, league management, wizard)
+- `src/domain/logic.ts` — barrel re-export file; actual logic split into 10 focused modules:
+  - `helpers.ts` (ID generators, spinner rounding), `format.ts` (time/level formatting), `timer.ts` (level navigation, elapsed time), `blinds.ts` (blind generation, ante calculation), `players.ts` (player management, stacks, bubble), `chips.ts` (chip denominations, color-up), `validation.ts` (config validation, rebuy/late-reg checks), `tournament.ts` (results, payouts, stats, export, league standings, mystery bounty), `persistence.ts` (localStorage CRUD, config parsing, templates, player database, league management, wizard), `tables.ts` (multi-table management, balancing, final table merge)
 - All imports use `from '../domain/logic'` (barrel) — no direct module imports needed
 - Tests cover domain logic exclusively — UI tests are not currently present
 
@@ -225,6 +227,7 @@ public/
 - **Printable blind structure**: `PrintView.tsx` renders print-optimized blind table, chip values, payout, and tournament info. "Print" button in SetupPage triggers `window.print()`. `@media print` CSS hides all UI except print content. Clean black-on-white design.
 - **Setup Wizard**: Guided 5-step first-time setup (`SetupWizard.tsx`, ~230 lines). Steps: Welcome → Players → Buy-In → Blind Speed → Review. Shows only on first visit (`poker-timer-wizard-completed` in localStorage). Generates full config with `defaultConfig`, `generateBlindStructure`, `defaultPlayers`. Skippable. `isWizardCompleted()` / `markWizardCompleted()` in persistence.ts.
 - **Seating Diagram**: SVG oval poker table in TV Display Mode (`SeatingScreen.tsx`, ~155 lines). Players arranged elliptically around green felt table. Shows active/eliminated status, dealer button (D), chip leader badge (CL). 6th rotating screen in DisplayMode. `viewBox="0 0 1000 600"`, responsive.
+- **Multi-Table Support**: `Table` and `TableMove` types in types.ts. `tables.ts` module with pure functions: `createTable()`, `distributePlayersToTables()`, `getActivePlayersPerTable()`, `removePlayerFromTable()`, `findPlayerTable()`, `balanceTables()` (iterative, max ±1 diff), `shouldMergeToFinalTable()`, `mergeToFinalTable()`. `MultiTablePanel.tsx` (lazy-loaded) shows table list, balance button, move announcements. Setup: CollapsibleSection with table count/seats config, distribute button. Auto-detect final table on elimination. Voice: `announceTableMove()` and `announceFinalTable()` via Web Speech API. `parseConfigObject()` handles backward-compat (undefined if missing).
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
@@ -264,6 +267,15 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v4.0.0 — Phase 5: Multi-Table Support
+
+- **Multi-Table Datenmodell**: `Table`, `TableMove` Interfaces. `tables?: Table[]` in TournamentConfig. `tables.ts` Modul: `createTable()`, `distributePlayersToTables()`, `balanceTables()`, `shouldMergeToFinalTable()`, `mergeToFinalTable()`.
+- **Table Balancing**: Iteratives Balancing (max ±1 Differenz). Voice-Ansage bei Tischwechsel. `MultiTablePanel.tsx` im Spielmodus.
+- **Final Table Merge**: Auto-Detect + Voice-Ansage. Konsolidierung aller aktiven Spieler an einem Tisch.
+- **Setup-Integration**: CollapsibleSection "Multi-Table" mit Tischanzahl/Sitzplatz-Config + Verteilung.
+- **Neue Dateien**: `tables.ts`, `MultiTablePanel.tsx`
+- **28 Translation-Keys**, **15 neue Tests** — **277 Tests gesamt**
 
 ### v3.1.0 — Phase 4: UX & Druckansicht
 
