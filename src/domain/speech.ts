@@ -421,7 +421,7 @@ export function announceTableDissolution(tableName: string, t: TranslateFn): voi
 
 /** Final Table — all players at one table */
 export function announceFinalTable(t: TranslateFn): void {
-  enqueue({ mode: 'speech', text: t('voice.finalTable') });
+  enqueue(audioOrSpeech(['fixed/final-table.mp3'], t('voice.finalTable')));
 }
 
 /** Mystery Bounty revealed — MP3 intro + speech with dynamic amount */
