@@ -135,6 +135,7 @@ export function TVDisplayWindow() {
         showDealerBadges={state.showDealerBadges}
         leagueName={state.leagueName}
         leagueStandings={state.leagueStandings}
+        sidePotData={state.sidePotData}
       />
       {ctcPayload && (
         <CallTheClock

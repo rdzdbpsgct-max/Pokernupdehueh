@@ -1,5 +1,5 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
-import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, Table } from '../domain/types';
+import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, Table, PotResult, PlayerPayout } from '../domain/types';
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, computeRebuyPot, findChipLeader, canPlayerRebuy, canReEntry, findPlayerSeat } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
@@ -30,6 +30,7 @@ interface Props {
   onAddLatePlayer?: () => void;
   onReEntryPlayer?: (playerId: string) => void;
   tables?: Table[];
+  onSidePotResultChange?: (data: { pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null) => void;
 }
 
 export function PlayerPanel({
@@ -57,6 +58,7 @@ export function PlayerPanel({
   onAddLatePlayer,
   onReEntryPlayer,
   tables,
+  onSidePotResultChange,
 }: Props) {
   const { t } = useTranslation();
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
@@ -485,7 +487,7 @@ export function PlayerPanel({
     </div>
     {showSidePot && (
       <Suspense fallback={null}>
-        <SidePotCalculator onClose={() => setShowSidePot(false)} />
+        <SidePotCalculator onClose={() => setShowSidePot(false)} onResultChange={onSidePotResultChange} />
       </Suspense>
     )}
     </>

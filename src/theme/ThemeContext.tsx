@@ -1,10 +1,83 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { ThemeMode } from './themeContextValue';
 import { ThemeContext } from './themeContextValue';
-import type { BackgroundImage } from '../domain/types';
+import type { AccentColor, BackgroundImage } from '../domain/types';
 
 const THEME_KEY = 'poker-timer-theme';
+const ACCENT_KEY = 'poker-timer-accent';
 const BG_KEY = 'poker-timer-bg';
+
+/** CSS custom property values for each accent color */
+const ACCENT_COLORS: Record<AccentColor, Record<string, string>> = {
+  emerald: {
+    '--accent-400': '#34d399',
+    '--accent-500': '#10b981',
+    '--accent-600': '#059669',
+    '--accent-700': '#047857',
+    '--accent-900': 'rgba(6,78,59,0.3)',
+    '--accent-ring': 'rgba(16,185,129,0.25)',
+    '--accent-glow': 'rgba(16,185,129,0.4)',
+    '--accent-glow-strong': 'rgba(16,185,129,0.5)',
+  },
+  blue: {
+    '--accent-400': '#60a5fa',
+    '--accent-500': '#3b82f6',
+    '--accent-600': '#2563eb',
+    '--accent-700': '#1d4ed8',
+    '--accent-900': 'rgba(30,58,138,0.3)',
+    '--accent-ring': 'rgba(59,130,246,0.25)',
+    '--accent-glow': 'rgba(59,130,246,0.4)',
+    '--accent-glow-strong': 'rgba(59,130,246,0.5)',
+  },
+  purple: {
+    '--accent-400': '#a78bfa',
+    '--accent-500': '#8b5cf6',
+    '--accent-600': '#7c3aed',
+    '--accent-700': '#6d28d9',
+    '--accent-900': 'rgba(76,29,149,0.3)',
+    '--accent-ring': 'rgba(139,92,246,0.25)',
+    '--accent-glow': 'rgba(139,92,246,0.4)',
+    '--accent-glow-strong': 'rgba(139,92,246,0.5)',
+  },
+  red: {
+    '--accent-400': '#f87171',
+    '--accent-500': '#ef4444',
+    '--accent-600': '#dc2626',
+    '--accent-700': '#b91c1c',
+    '--accent-900': 'rgba(127,29,29,0.3)',
+    '--accent-ring': 'rgba(239,68,68,0.25)',
+    '--accent-glow': 'rgba(239,68,68,0.4)',
+    '--accent-glow-strong': 'rgba(239,68,68,0.5)',
+  },
+  amber: {
+    '--accent-400': '#fbbf24',
+    '--accent-500': '#f59e0b',
+    '--accent-600': '#d97706',
+    '--accent-700': '#b45309',
+    '--accent-900': 'rgba(120,53,15,0.3)',
+    '--accent-ring': 'rgba(245,158,11,0.25)',
+    '--accent-glow': 'rgba(245,158,11,0.4)',
+    '--accent-glow-strong': 'rgba(245,158,11,0.5)',
+  },
+  cyan: {
+    '--accent-400': '#22d3ee',
+    '--accent-500': '#06b6d4',
+    '--accent-600': '#0891b2',
+    '--accent-700': '#0e7490',
+    '--accent-900': 'rgba(22,78,99,0.3)',
+    '--accent-ring': 'rgba(6,182,212,0.25)',
+    '--accent-glow': 'rgba(6,182,212,0.4)',
+    '--accent-glow-strong': 'rgba(6,182,212,0.5)',
+  },
+};
+
+function applyAccentColor(color: AccentColor) {
+  const root = document.documentElement;
+  const values = ACCENT_COLORS[color] ?? ACCENT_COLORS.emerald;
+  for (const [prop, val] of Object.entries(values)) {
+    root.style.setProperty(prop, val);
+  }
+}
 
 /** CSS background patterns for each background image option — 2-3x stronger than v5.0 */
 const BG_PATTERNS: Record<BackgroundImage, { light: string; dark: string }> = {
@@ -68,6 +141,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const [systemPref, setSystemPref] = useState<'light' | 'dark'>(getSystemPreference);
 
+  const [accentColor, setAccentColorState] = useState<AccentColor>(() => {
+    try {
+      const stored = localStorage.getItem(ACCENT_KEY) as AccentColor | null;
+      if (stored && stored in ACCENT_COLORS) return stored;
+    } catch { /* ignore */ }
+    return 'emerald';
+  });
+
   const [backgroundImage, setBackgroundImageState] = useState<BackgroundImage>(() => {
     try {
       const stored = localStorage.getItem(BG_KEY) as BackgroundImage | null;
@@ -104,6 +185,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [resolved]);
 
+  // Apply accent color CSS custom properties
+  useEffect(() => {
+    applyAccentColor(accentColor);
+  }, [accentColor]);
+
   // Apply background image pattern
   useEffect(() => {
     applyBackgroundImage(backgroundImage, resolved);
@@ -113,6 +199,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setModeState(m);
     try {
       localStorage.setItem(THEME_KEY, m);
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
+
+  const setAccentColor = useCallback((color: AccentColor) => {
+    setAccentColorState(color);
+    try {
+      localStorage.setItem(ACCENT_KEY, color);
     } catch {
       // localStorage unavailable
     }
@@ -128,7 +223,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ mode, setMode, resolved, backgroundImage, setBackgroundImage }}>
+    <ThemeContext.Provider value={{ mode, setMode, resolved, accentColor, setAccentColor, backgroundImage, setBackgroundImage }}>
       {children}
     </ThemeContext.Provider>
   );

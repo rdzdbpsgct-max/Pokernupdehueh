@@ -1,4 +1,4 @@
-import type { Settings, BackgroundImage } from '../domain/types';
+import type { Settings, AccentColor, BackgroundImage } from '../domain/types';
 import { useTranslation } from '../i18n';
 import { NumberStepper } from './NumberStepper';
 import { useTheme } from '../theme';
@@ -32,6 +32,15 @@ function CheckBox({ checked, onChange }: { checked: boolean; onChange: () => voi
   );
 }
 
+const ACCENT_OPTIONS: { value: AccentColor; color: string; label: string }[] = [
+  { value: 'emerald', color: '#10b981', label: 'Emerald' },
+  { value: 'blue',    color: '#3b82f6', label: 'Blue' },
+  { value: 'purple',  color: '#8b5cf6', label: 'Purple' },
+  { value: 'red',     color: '#ef4444', label: 'Red' },
+  { value: 'amber',   color: '#f59e0b', label: 'Amber' },
+  { value: 'cyan',    color: '#06b6d4', label: 'Cyan' },
+];
+
 const BG_OPTIONS: { value: BackgroundImage; gradient: string; labelKey: string }[] = [
   { value: 'none',       gradient: 'linear-gradient(135deg, #e5e7eb, #d1d5db)', labelKey: 'settings.bgNone' },
   { value: 'felt-green', gradient: 'radial-gradient(circle, rgba(22,163,74,0.5) 0%, rgba(22,163,74,0.2) 100%)', labelKey: 'settings.bgFeltGreen' },
@@ -46,7 +55,7 @@ const BG_OPTIONS: { value: BackgroundImage; gradient: string; labelKey: string }
 
 export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props) {
   const { t } = useTranslation();
-  const { backgroundImage, setBackgroundImage } = useTheme();
+  const { accentColor, setAccentColor, backgroundImage, setBackgroundImage } = useTheme();
 
   const toggle = (key: keyof Settings) => {
     onChange({ ...settings, [key]: !settings[key] });
@@ -108,6 +117,32 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
         >
           {t('settings.fullscreen')}
         </button>
+      </div>
+
+      {/* Accent Color */}
+      <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
+        <span className="text-sm text-gray-700 dark:text-gray-300 block mb-1.5">{t('settings.accentColor')}</span>
+        <div className="flex items-center gap-2">
+          {ACCENT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setAccentColor(opt.value)}
+              className={`w-7 h-7 rounded-full transition-all duration-200 ${
+                accentColor === opt.value
+                  ? 'ring-2 scale-110'
+                  : 'opacity-60 hover:opacity-100 hover:scale-105'
+              }`}
+              style={{
+                backgroundColor: opt.color,
+                ...(accentColor === opt.value
+                  ? { ringColor: opt.color, boxShadow: `0 0 0 2px var(--accent-ring), 0 0 8px ${opt.color}40` }
+                  : {}),
+              }}
+              title={opt.label}
+              aria-label={opt.label}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Background Image */}

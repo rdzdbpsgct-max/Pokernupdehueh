@@ -8,6 +8,12 @@ import type {
   LeagueStanding,
   League,
   SidePot,
+  PlayerPotInput,
+  PotResult,
+  SidePotCalculationResult,
+  PotWinnerAssignment,
+  PlayerPayout,
+  SidePotPayoutResult,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -73,6 +79,200 @@ export function computeSidePots(stacks: number[]): SidePot[] {
   }
 
   return pots;
+}
+
+/**
+ * Advanced side-pot calculator with player names, fold status, and warnings.
+ *
+ * Algorithm:
+ * 1. Filter out players with invested <= 0
+ * 2. Sort by invested amount ascending
+ * 3. For each unique invested level, compute the contribution delta × number
+ *    of players who invested at least that amount
+ * 4. Eligible players for each pot level: active or all-in players whose
+ *    invested amount >= that level (folded players contribute but cannot win)
+ *
+ * @param players Array of PlayerPotInput
+ * @returns SidePotCalculationResult with pots, total, and warnings
+ */
+export function calculateSidePots(players: PlayerPotInput[]): SidePotCalculationResult {
+  const warnings: string[] = [];
+
+  // Validate inputs
+  const contributing = players.filter((p) => p.invested > 0);
+  const zeroPlayers = players.filter((p) => p.invested <= 0);
+  if (zeroPlayers.length > 0) {
+    warnings.push(`${zeroPlayers.length} Spieler mit 0 Einsatz werden ignoriert.`);
+  }
+
+  if (contributing.length < 2) {
+    if (contributing.length === 1) {
+      warnings.push('Nur 1 Spieler mit Einsatz — keine Pot-Berechnung möglich.');
+    }
+    return { pots: [], total: 0, warnings };
+  }
+
+  // Sort by invested ascending (stable sort preserves insertion order for equals)
+  const sorted = [...contributing].sort((a, b) => a.invested - b.invested);
+
+  // Collect unique invested levels
+  const uniqueLevels: number[] = [];
+  for (const p of sorted) {
+    if (uniqueLevels.length === 0 || uniqueLevels[uniqueLevels.length - 1] !== p.invested) {
+      uniqueLevels.push(p.invested);
+    }
+  }
+
+  const pots: PotResult[] = [];
+  let previousLevel = 0;
+
+  for (let levelIdx = 0; levelIdx < uniqueLevels.length; levelIdx++) {
+    const currentLevel = uniqueLevels[levelIdx];
+    const contribution = currentLevel - previousLevel;
+    if (contribution <= 0) continue;
+
+    // Every player with invested > previousLevel contributes to this pot layer
+    const contributingToLayer = sorted.filter((p) => p.invested > previousLevel);
+    const amount = contributingToLayer.reduce((sum, p) => {
+      const playerContribution = Math.min(p.invested, currentLevel) - previousLevel;
+      return sum + Math.max(0, playerContribution);
+    }, 0);
+
+    // Eligible: active or all-in players whose invested >= currentLevel
+    const eligible = sorted.filter(
+      (p) => p.status !== 'folded' && p.invested >= currentLevel,
+    );
+
+    pots.push({
+      type: levelIdx === 0 ? 'main' : 'side',
+      index: levelIdx,
+      amount,
+      eligiblePlayerIds: eligible.map((p) => p.id),
+      eligiblePlayerNames: eligible.map((p) => p.name || p.id),
+    });
+
+    previousLevel = currentLevel;
+  }
+
+  // Handle remaining chips from players who invested more than the highest all-in
+  // This is already covered by the unique levels
+
+  const total = pots.reduce((sum, p) => sum + p.amount, 0);
+
+  // Add helpful warnings
+  const allEqual = uniqueLevels.length === 1;
+  if (allEqual && pots.length === 1) {
+    warnings.push('Alle Beträge gleich — kein Side Pot nötig.');
+  }
+
+  const allFolded = contributing.every((p) => p.status === 'folded');
+  if (allFolded) {
+    warnings.push('Alle Spieler haben gefoldet — kein Spieler ist gewinnberechtigt.');
+  }
+
+  // Check for pots with zero eligible players
+  for (const pot of pots) {
+    if (pot.eligiblePlayerIds.length === 0) {
+      warnings.push(`${pot.type === 'main' ? 'Main Pot' : `Side Pot ${pot.index}`}: Kein Spieler gewinnberechtigt (alle gefoldet).`);
+    }
+  }
+
+  return { pots, total, warnings };
+}
+
+/**
+ * Resolve pot winners and compute payouts for each player.
+ *
+ * Rules:
+ * - Each pot is awarded to its winner(s)
+ * - Split pots divide the amount evenly; odd chips go to the first winner
+ *   (standard poker convention: leftmost of dealer, approximated by array order)
+ * - A player's net result = total payout − total invested
+ *
+ * @param players Original player inputs (for invested amounts and names)
+ * @param pots Calculated pots from calculateSidePots()
+ * @param winners Winner assignments per pot
+ * @returns SidePotPayoutResult with per-player payouts and odd chip info
+ */
+export function resolvePotWinners(
+  players: PlayerPotInput[],
+  pots: PotResult[],
+  winners: PotWinnerAssignment[],
+): SidePotPayoutResult {
+  // Build a quick lookup: potIndex → winnerIds
+  const winnerMap = new Map<number, string[]>();
+  for (const w of winners) {
+    winnerMap.set(w.potIndex, w.winnerIds);
+  }
+
+  // Initialize per-player payout tracking
+  const payoutMap = new Map<string, { payout: number; perPot: { potIndex: number; amount: number }[] }>();
+  for (const p of players) {
+    if (p.invested > 0) {
+      payoutMap.set(p.id, { payout: 0, perPot: [] });
+    }
+  }
+
+  const oddChips: SidePotPayoutResult['oddChips'] = [];
+
+  for (const pot of pots) {
+    const potWinners = winnerMap.get(pot.index);
+    if (!potWinners || potWinners.length === 0) continue;
+
+    // Filter to only winners who are actually eligible for this pot
+    const validWinners = potWinners.filter((id) => pot.eligiblePlayerIds.includes(id));
+    if (validWinners.length === 0) continue;
+
+    if (validWinners.length === 1) {
+      // Single winner takes full pot
+      const entry = payoutMap.get(validWinners[0]);
+      if (entry) {
+        entry.payout += pot.amount;
+        entry.perPot.push({ potIndex: pot.index, amount: pot.amount });
+      }
+    } else {
+      // Split pot: divide evenly, odd chip to first winner
+      const share = Math.floor(pot.amount / validWinners.length);
+      const remainder = pot.amount - share * validWinners.length;
+
+      for (let i = 0; i < validWinners.length; i++) {
+        const amount = i === 0 ? share + remainder : share;
+        const entry = payoutMap.get(validWinners[i]);
+        if (entry) {
+          entry.payout += amount;
+          entry.perPot.push({ potIndex: pot.index, amount });
+        }
+      }
+
+      if (remainder > 0) {
+        oddChips.push({
+          potIndex: pot.index,
+          remainder,
+          awardedTo: validWinners[0],
+        });
+      }
+    }
+  }
+
+  // Build final payouts array
+  const payouts: PlayerPayout[] = [];
+  for (const p of players) {
+    if (p.invested <= 0) continue;
+    const entry = payoutMap.get(p.id);
+    const payout = entry?.payout ?? 0;
+    payouts.push({
+      playerId: p.id,
+      playerName: p.name || p.id,
+      invested: p.invested,
+      payout,
+      net: payout - p.invested,
+      perPot: entry?.perPot ?? [],
+    });
+  }
+
+  const total = payouts.reduce((sum, p) => sum + p.payout, 0);
+
+  return { payouts, oddChips, total };
 }
 
 export function computePayouts(

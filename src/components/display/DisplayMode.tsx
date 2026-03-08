@@ -9,8 +9,10 @@ import { ScheduleScreen } from './ScheduleScreen';
 import { ChipsScreen } from './ChipsScreen';
 import { SeatingScreen } from './SeatingScreen';
 import { LeagueScreen } from './LeagueScreen';
+import { SidePotScreen } from './SidePotScreen';
+import type { SidePotDisplayData } from './SidePotScreen';
 
-type SecondaryScreen = 'players' | 'stats' | 'payout' | 'schedule' | 'chips' | 'seating' | 'league';
+type SecondaryScreen = 'players' | 'stats' | 'payout' | 'schedule' | 'chips' | 'seating' | 'league' | 'sidepot';
 
 interface Props {
   timerState: TimerState;
@@ -37,6 +39,7 @@ interface Props {
   showDealerBadges?: boolean;
   leagueName?: string;
   leagueStandings?: ExtendedLeagueStanding[];
+  sidePotData?: SidePotDisplayData;
 }
 
 const ROTATION_INTERVAL = 15_000;
@@ -93,6 +96,7 @@ export function DisplayMode({
   showDealerBadges,
   leagueName,
   leagueStandings,
+  sidePotData,
 }: Props) {
   const { t } = useTranslation();
 
@@ -102,6 +106,7 @@ export function DisplayMode({
     if (chipConfig?.enabled) screens.push('chips');
     if (players.length > 0) screens.push('seating');
     if (leagueStandings && leagueStandings.length > 0) screens.push('league');
+    if (sidePotData && sidePotData.pots.length > 0) screens.push('sidepot');
     return screens;
   })();
 
@@ -367,6 +372,9 @@ export function DisplayMode({
         )}
         {activeSecondary === 'league' && leagueName && leagueStandings && (
           <LeagueScreen leagueName={leagueName} standings={leagueStandings} />
+        )}
+        {activeSecondary === 'sidepot' && sidePotData && (
+          <SidePotScreen data={sidePotData} />
         )}
       </div>
 

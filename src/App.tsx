@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { Analytics } from '@vercel/analytics/react';
-import type { TournamentConfig, Settings, TournamentCheckpoint, Table, TableMove } from './domain/types';
+import type { TournamentConfig, Settings, TournamentCheckpoint, Table, TableMove, PotResult, PlayerPayout } from './domain/types';
 import { createDisplayChannel, sendDisplayMessage, serializeColorUpMap } from './domain/displayChannel';
 import type { DisplayStatePayload } from './domain/displayChannel';
 import {
@@ -150,6 +150,7 @@ function App() {
   const channelRef = useRef<BroadcastChannel | null>(null);
   const [showCallTheClock, setShowCallTheClock] = useState(false);
   const [showDealerBadges, setShowDealerBadges] = useState(true);
+  const [sidePotData, setSidePotData] = useState<{ pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null>(null);
   const [showSeatingOverlay, setShowSeatingOverlay] = useState(false);
   const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
   const [showRemoteControl, setShowRemoteControl] = useState(false);
@@ -679,7 +680,8 @@ function App() {
     showDealerBadges,
     leagueName: leagueDisplayData?.name,
     leagueStandings: leagueDisplayData?.standings,
-  }), [timer.timerState, config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed, showDealerBadges, leagueDisplayData]);
+    sidePotData: sidePotData ?? undefined,
+  }), [timer.timerState, config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed, showDealerBadges, leagueDisplayData, sidePotData]);
 
   // Send full-state on significant changes
   useEffect(() => {
@@ -1182,6 +1184,7 @@ function App() {
                   onAddLatePlayer={addLatePlayer}
                   onReEntryPlayer={handleReEntry}
                   tables={config.tables}
+                  onSidePotResultChange={setSidePotData}
                 />
               </aside>
             )}

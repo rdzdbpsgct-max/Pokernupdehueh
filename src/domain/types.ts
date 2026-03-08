@@ -131,6 +131,8 @@ export interface TournamentConfig {
   tables?: Table[];
 }
 
+export type AccentColor = 'emerald' | 'blue' | 'purple' | 'red' | 'amber' | 'cyan';
+
 export type BackgroundImage = 'none' | 'felt-green' | 'felt-blue' | 'felt-red' | 'casino' | 'dark-wood' | 'abstract' | 'midnight' | 'sunset';
 
 export interface Settings {
@@ -362,6 +364,65 @@ export interface SidePot {
   eligiblePlayers: number;
   /** Display label: "Main Pot" or "Side Pot 1", etc. */
   label: string;
+}
+
+// ---------------------------------------------------------------------------
+// Side-Pot Calculator (advanced)
+// ---------------------------------------------------------------------------
+
+export type PlayerPotStatus = 'active' | 'all-in' | 'folded';
+
+export interface PlayerPotInput {
+  id: string;
+  name: string;
+  invested: number;
+  status: PlayerPotStatus;
+}
+
+export interface PotResult {
+  type: 'main' | 'side';
+  /** 0-based index: 0 = main pot, 1 = side pot 1, etc. */
+  index: number;
+  amount: number;
+  /** IDs of players eligible to win this pot */
+  eligiblePlayerIds: string[];
+  /** Names of players eligible to win this pot */
+  eligiblePlayerNames: string[];
+}
+
+export interface SidePotCalculationResult {
+  pots: PotResult[];
+  total: number;
+  warnings: string[];
+}
+
+/** Winner assignment for a single pot */
+export interface PotWinnerAssignment {
+  potIndex: number;
+  /** IDs of the winner(s) — multiple = split pot */
+  winnerIds: string[];
+}
+
+/** Payout for a single player after resolving all pots */
+export interface PlayerPayout {
+  playerId: string;
+  playerName: string;
+  /** Total amount invested in the hand */
+  invested: number;
+  /** Total payout received from all pots */
+  payout: number;
+  /** Net result: payout - invested */
+  net: number;
+  /** Breakdown per pot: pot index → amount won from that pot */
+  perPot: { potIndex: number; amount: number }[];
+}
+
+/** Result of resolving winners for all pots */
+export interface SidePotPayoutResult {
+  payouts: PlayerPayout[];
+  /** Odd chips that couldn't be evenly split (remainder per pot) */
+  oddChips: { potIndex: number; remainder: number; awardedTo: string }[];
+  total: number;
 }
 
 export type TimerStatus = 'stopped' | 'running' | 'paused';

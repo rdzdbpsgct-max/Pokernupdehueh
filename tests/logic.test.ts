@@ -106,6 +106,8 @@ import {
   extractLeagueConfig,
   getBuiltInPresets,
   computeSidePots,
+  calculateSidePots,
+  resolvePotWinners,
   generateBlindsByEndTime,
   reEnterPlayer,
   canReEntry,
@@ -130,7 +132,7 @@ import {
   decodeLeagueStandingsFromQR,
   formatLeagueFinancesAsCSV,
 } from '../src/domain/logic';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding } from '../src/domain/types';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment } from '../src/domain/types';
 import { compressSDP, decompressSDP } from '../src/domain/remote';
 
 // Helper to create a full TournamentConfig for tests
@@ -3767,6 +3769,373 @@ describe('computeSidePots', () => {
     expect(pots).toHaveLength(2);
     expect(pots[0]).toEqual({ amount: 600, eligiblePlayers: 3, label: 'Main Pot' });
     expect(pots[1]).toEqual({ amount: 300, eligiblePlayers: 1, label: 'Side Pot 1' });
+  });
+});
+
+// ============================================================================
+// calculateSidePots (advanced, with names/fold/warnings)
+// ============================================================================
+
+describe('calculateSidePots', () => {
+  function mkPlayer(id: string, name: string, invested: number, status: PlayerPotInput['status'] = 'active'): PlayerPotInput {
+    return { id, name, invested, status };
+  }
+
+  it('returns empty result for fewer than 2 contributing players', () => {
+    const result = calculateSidePots([]);
+    expect(result.pots).toEqual([]);
+    expect(result.total).toBe(0);
+  });
+
+  it('returns empty and warning for single player', () => {
+    const result = calculateSidePots([mkPlayer('a', 'Alice', 500)]);
+    expect(result.pots).toEqual([]);
+    expect(result.total).toBe(0);
+    expect(result.warnings.some(w => w.includes('1 Spieler'))).toBe(true);
+  });
+
+  it('computes simple main pot without side pot (equal amounts)', () => {
+    const result = calculateSidePots([
+      mkPlayer('a', 'Alice', 500),
+      mkPlayer('b', 'Bob', 500),
+      mkPlayer('c', 'Charlie', 500),
+    ]);
+    expect(result.pots).toHaveLength(1);
+    expect(result.pots[0].type).toBe('main');
+    expect(result.pots[0].amount).toBe(1500);
+    expect(result.pots[0].eligiblePlayerIds).toHaveLength(3);
+    expect(result.total).toBe(1500);
+    expect(result.warnings.some(w => w.includes('kein Side Pot'))).toBe(true);
+  });
+
+  it('computes one side pot with 2 players', () => {
+    const result = calculateSidePots([
+      mkPlayer('a', 'Alice', 500, 'all-in'),
+      mkPlayer('b', 'Bob', 1000),
+    ]);
+    expect(result.pots).toHaveLength(2);
+    // Main pot: 500 × 2 = 1000
+    expect(result.pots[0].type).toBe('main');
+    expect(result.pots[0].amount).toBe(1000);
+    expect(result.pots[0].eligiblePlayerIds).toEqual(['a', 'b']);
+    // Side pot: 500 × 1 = 500
+    expect(result.pots[1].type).toBe('side');
+    expect(result.pots[1].amount).toBe(500);
+    expect(result.pots[1].eligiblePlayerIds).toEqual(['b']);
+    expect(result.total).toBe(1500);
+  });
+
+  it('computes multiple side pots with 3 different amounts', () => {
+    const result = calculateSidePots([
+      mkPlayer('a', 'Alice', 1000),
+      mkPlayer('b', 'Bob', 500, 'all-in'),
+      mkPlayer('c', 'Charlie', 11000),
+    ]);
+    // Sorted: Bob(500), Alice(1000), Charlie(11000)
+    // Level 500: 500 × 3 = 1500 (main pot, all eligible)
+    // Level 1000: 500 × 2 = 1000 (side pot 1, Alice + Charlie)
+    // Level 11000: 10000 × 1 = 10000 (side pot 2, Charlie only)
+    expect(result.pots).toHaveLength(3);
+    expect(result.pots[0].amount).toBe(1500);
+    expect(result.pots[0].eligiblePlayerNames).toEqual(expect.arrayContaining(['Alice', 'Bob', 'Charlie']));
+    expect(result.pots[1].amount).toBe(1000);
+    expect(result.pots[2].amount).toBe(10000);
+    expect(result.total).toBe(12500);
+  });
+
+  it('folded player contributes to pot but is not eligible', () => {
+    const result = calculateSidePots([
+      mkPlayer('a', 'Alice', 500, 'active'),
+      mkPlayer('b', 'Bob', 1000, 'all-in'),
+      mkPlayer('c', 'Charlie', 1000, 'active'),
+      mkPlayer('d', 'Diana', 3000, 'folded'),
+      mkPlayer('e', 'Eve', 3000, 'active'),
+    ]);
+    // Sorted: Alice(500), Bob(1000), Charlie(1000), Diana(3000), Eve(3000)
+    // Level 500: 500 × 5 = 2500 (eligible: Alice, Bob, Charlie, Eve — NOT Diana)
+    expect(result.pots[0].amount).toBe(2500);
+    expect(result.pots[0].eligiblePlayerIds).not.toContain('d');
+    expect(result.pots[0].eligiblePlayerIds).toHaveLength(4);
+
+    // Level 1000: 500 × 4 = 2000 (eligible: Bob, Charlie, Eve — NOT Alice, NOT Diana)
+    expect(result.pots[1].amount).toBe(2000);
+    expect(result.pots[1].eligiblePlayerIds).not.toContain('a');
+    expect(result.pots[1].eligiblePlayerIds).not.toContain('d');
+
+    // Level 3000: 2000 × 2 = 4000 (eligible: Eve — NOT Diana who folded)
+    expect(result.pots[2].amount).toBe(4000);
+    expect(result.pots[2].eligiblePlayerIds).toEqual(['e']);
+
+    // Total should equal sum of all investments
+    expect(result.total).toBe(500 + 1000 + 1000 + 3000 + 3000);
+  });
+
+  it('ignores players with 0 invested and warns', () => {
+    const result = calculateSidePots([
+      mkPlayer('a', 'Alice', 500),
+      mkPlayer('b', 'Bob', 0),
+      mkPlayer('c', 'Charlie', 500),
+    ]);
+    expect(result.pots).toHaveLength(1);
+    expect(result.pots[0].amount).toBe(1000);
+    expect(result.pots[0].eligiblePlayerIds).toHaveLength(2);
+    expect(result.warnings.some(w => w.includes('0 Einsatz'))).toBe(true);
+  });
+
+  it('handles unsorted inputs correctly', () => {
+    const result = calculateSidePots([
+      mkPlayer('c', 'Charlie', 11000),
+      mkPlayer('a', 'Alice', 1000),
+      mkPlayer('b', 'Bob', 500, 'all-in'),
+    ]);
+    // Same as the 3-player test but in different order
+    expect(result.pots).toHaveLength(3);
+    expect(result.total).toBe(12500);
+  });
+
+  it('handles players with equal investments (some folded)', () => {
+    const result = calculateSidePots([
+      mkPlayer('a', 'Alice', 1000, 'active'),
+      mkPlayer('b', 'Bob', 1000, 'folded'),
+      mkPlayer('c', 'Charlie', 1000, 'active'),
+    ]);
+    expect(result.pots).toHaveLength(1);
+    expect(result.pots[0].amount).toBe(3000);
+    // Bob folded but invested same — only Alice and Charlie eligible
+    expect(result.pots[0].eligiblePlayerIds).toEqual(['a', 'c']);
+    expect(result.total).toBe(3000);
+  });
+
+  it('warns when all players have folded', () => {
+    const result = calculateSidePots([
+      mkPlayer('a', 'Alice', 500, 'folded'),
+      mkPlayer('b', 'Bob', 500, 'folded'),
+    ]);
+    expect(result.pots).toHaveLength(1);
+    expect(result.pots[0].eligiblePlayerIds).toHaveLength(0);
+    expect(result.warnings.some(w => w.includes('alle gefoldet') || w.includes('Alle Spieler'))).toBe(true);
+  });
+
+  it('total always equals sum of all investments', () => {
+    const investments = [100, 250, 250, 800, 1500, 1500, 3000];
+    const players = investments.map((inv, i) => mkPlayer(`p${i}`, `P${i}`, inv));
+    const result = calculateSidePots(players);
+    const totalInvested = investments.reduce((s, v) => s + v, 0);
+    expect(result.total).toBe(totalInvested);
+  });
+
+  it('correctly handles 10 players with varying amounts', () => {
+    const players: PlayerPotInput[] = [];
+    for (let i = 0; i < 10; i++) {
+      players.push(mkPlayer(`p${i}`, `Player ${i + 1}`, (i + 1) * 100, i % 3 === 0 ? 'all-in' : 'active'));
+    }
+    const result = calculateSidePots(players);
+    const totalInvested = players.reduce((s, p) => s + p.invested, 0);
+    expect(result.total).toBe(totalInvested);
+    expect(result.pots.length).toBeGreaterThan(1);
+    // First pot should be main
+    expect(result.pots[0].type).toBe('main');
+    // All subsequent should be side
+    for (let i = 1; i < result.pots.length; i++) {
+      expect(result.pots[i].type).toBe('side');
+    }
+  });
+});
+
+// ============================================================================
+// Resolve Pot Winners (Side Pot Payout)
+// ============================================================================
+
+describe('resolvePotWinners', () => {
+  const mkPlayer = (id: string, name: string, invested: number, status: 'active' | 'all-in' | 'folded' = 'active'): PlayerPotInput => ({
+    id, name, invested, status,
+  });
+
+  it('single winner takes full pot', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 1000),
+      mkPlayer('b', 'Bob', 1000),
+    ];
+    const { pots } = calculateSidePots(players);
+    const winners: PotWinnerAssignment[] = [{ potIndex: 0, winnerIds: ['a'] }];
+    const result = resolvePotWinners(players, pots, winners);
+    expect(result.payouts).toHaveLength(2);
+    const alice = result.payouts.find(p => p.playerId === 'a')!;
+    expect(alice.payout).toBe(2000);
+    expect(alice.net).toBe(1000); // won 2000, invested 1000
+    const bob = result.payouts.find(p => p.playerId === 'b')!;
+    expect(bob.payout).toBe(0);
+    expect(bob.net).toBe(-1000);
+    expect(result.total).toBe(2000);
+    expect(result.oddChips).toHaveLength(0);
+  });
+
+  it('split pot divides evenly between two winners', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 500),
+      mkPlayer('b', 'Bob', 500),
+    ];
+    const { pots } = calculateSidePots(players);
+    const winners: PotWinnerAssignment[] = [{ potIndex: 0, winnerIds: ['a', 'b'] }];
+    const result = resolvePotWinners(players, pots, winners);
+    const alice = result.payouts.find(p => p.playerId === 'a')!;
+    const bob = result.payouts.find(p => p.playerId === 'b')!;
+    expect(alice.payout).toBe(500);
+    expect(bob.payout).toBe(500);
+    expect(alice.net).toBe(0);
+    expect(bob.net).toBe(0);
+    expect(result.oddChips).toHaveLength(0);
+  });
+
+  it('odd chip goes to first winner in split', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 500),
+      mkPlayer('b', 'Bob', 500),
+      mkPlayer('c', 'Charlie', 500),
+    ];
+    const { pots } = calculateSidePots(players);
+    // 1500 total, split between 2 winners → 750 each, but 1500/2 = 750 exact
+    // Use 3 winners → 1500/3 = 500 exact, no odd chip
+    const winners: PotWinnerAssignment[] = [{ potIndex: 0, winnerIds: ['a', 'b'] }];
+    const result = resolvePotWinners(players, pots, winners);
+    const alice = result.payouts.find(p => p.playerId === 'a')!;
+    const bob = result.payouts.find(p => p.playerId === 'b')!;
+    expect(alice.payout).toBe(750);
+    expect(bob.payout).toBe(750);
+    expect(result.oddChips).toHaveLength(0);
+  });
+
+  it('odd chip generated for indivisible split', () => {
+    // 3 players invest 100 each → pot = 300, split 2 ways → 150 each, exact
+    // Instead: 3 players invest different amounts → create scenario with odd chip
+    const players = [
+      mkPlayer('a', 'Alice', 501),
+      mkPlayer('b', 'Bob', 501),
+      mkPlayer('c', 'Charlie', 501),
+    ];
+    const { pots } = calculateSidePots(players);
+    // Total = 1503, split 2 ways → 751 + 752, remainder = 1
+    const winners: PotWinnerAssignment[] = [{ potIndex: 0, winnerIds: ['a', 'b'] }];
+    const result = resolvePotWinners(players, pots, winners);
+    const alice = result.payouts.find(p => p.playerId === 'a')!;
+    const bob = result.payouts.find(p => p.playerId === 'b')!;
+    // 1503 / 2 = 751 remainder 1 → first winner gets 752
+    expect(alice.payout).toBe(752);
+    expect(bob.payout).toBe(751);
+    expect(result.oddChips).toHaveLength(1);
+    expect(result.oddChips[0].remainder).toBe(1);
+    expect(result.oddChips[0].awardedTo).toBe('a');
+  });
+
+  it('handles multiple pots with different winners', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 500, 'all-in'),
+      mkPlayer('b', 'Bob', 1000),
+      mkPlayer('c', 'Charlie', 1000),
+    ];
+    const { pots } = calculateSidePots(players);
+    // Main pot: 500*3 = 1500 (all 3 eligible)
+    // Side pot: 500*2 = 1000 (Bob + Charlie eligible)
+    expect(pots).toHaveLength(2);
+    const winners: PotWinnerAssignment[] = [
+      { potIndex: 0, winnerIds: ['a'] },  // Alice wins main
+      { potIndex: 1, winnerIds: ['b'] },  // Bob wins side
+    ];
+    const result = resolvePotWinners(players, pots, winners);
+    const alice = result.payouts.find(p => p.playerId === 'a')!;
+    const bob = result.payouts.find(p => p.playerId === 'b')!;
+    const charlie = result.payouts.find(p => p.playerId === 'c')!;
+    expect(alice.payout).toBe(1500);
+    expect(alice.net).toBe(1000); // invested 500, won 1500
+    expect(bob.payout).toBe(1000);
+    expect(bob.net).toBe(0); // invested 1000, won 1000
+    expect(charlie.payout).toBe(0);
+    expect(charlie.net).toBe(-1000);
+    expect(result.total).toBe(2500);
+  });
+
+  it('ignores ineligible winners', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 500, 'all-in'),
+      mkPlayer('b', 'Bob', 1000),
+      mkPlayer('c', 'Charlie', 1000),
+    ];
+    const { pots } = calculateSidePots(players);
+    // Try to assign Alice as winner of side pot — she's not eligible
+    const winners: PotWinnerAssignment[] = [
+      { potIndex: 0, winnerIds: ['b'] },
+      { potIndex: 1, winnerIds: ['a'] }, // Invalid: Alice not eligible for side pot
+    ];
+    const result = resolvePotWinners(players, pots, winners);
+    const alice = result.payouts.find(p => p.playerId === 'a')!;
+    const bob = result.payouts.find(p => p.playerId === 'b')!;
+    // Alice can't win side pot, so it stays unawarded
+    expect(alice.payout).toBe(0);
+    expect(bob.payout).toBe(1500); // Only main pot
+    expect(result.total).toBe(1500); // Side pot unawarded
+  });
+
+  it('handles no winners assigned (empty)', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 1000),
+      mkPlayer('b', 'Bob', 1000),
+    ];
+    const { pots } = calculateSidePots(players);
+    const result = resolvePotWinners(players, pots, []);
+    expect(result.payouts.every(p => p.payout === 0)).toBe(true);
+    expect(result.total).toBe(0);
+  });
+
+  it('per-pot breakdown is populated correctly', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 500, 'all-in'),
+      mkPlayer('b', 'Bob', 1000),
+      mkPlayer('c', 'Charlie', 1000),
+    ];
+    const { pots } = calculateSidePots(players);
+    const winners: PotWinnerAssignment[] = [
+      { potIndex: 0, winnerIds: ['b'] },
+      { potIndex: 1, winnerIds: ['b'] },
+    ];
+    const result = resolvePotWinners(players, pots, winners);
+    const bob = result.payouts.find(p => p.playerId === 'b')!;
+    expect(bob.perPot).toHaveLength(2);
+    expect(bob.perPot[0].potIndex).toBe(0);
+    expect(bob.perPot[0].amount).toBe(1500); // Main pot
+    expect(bob.perPot[1].potIndex).toBe(1);
+    expect(bob.perPot[1].amount).toBe(1000); // Side pot
+    expect(bob.payout).toBe(2500);
+  });
+
+  it('skips players with zero investment', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 1000),
+      mkPlayer('b', 'Bob', 0),
+    ];
+    const { pots } = calculateSidePots(players);
+    const winners: PotWinnerAssignment[] = [{ potIndex: 0, winnerIds: ['a'] }];
+    const result = resolvePotWinners(players, pots, winners);
+    // Bob with 0 investment should not appear in payouts
+    expect(result.payouts).toHaveLength(1);
+    expect(result.payouts[0].playerId).toBe('a');
+  });
+
+  it('total payout equals sum of awarded pots', () => {
+    const players = [
+      mkPlayer('a', 'Alice', 200, 'all-in'),
+      mkPlayer('b', 'Bob', 600, 'all-in'),
+      mkPlayer('c', 'Charlie', 1000),
+      mkPlayer('d', 'Dave', 1000),
+    ];
+    const { pots } = calculateSidePots(players);
+    const winners: PotWinnerAssignment[] = [
+      { potIndex: 0, winnerIds: ['a'] },
+      { potIndex: 1, winnerIds: ['c'] },
+      { potIndex: 2, winnerIds: ['c', 'd'] },
+    ];
+    const result = resolvePotWinners(players, pots, winners);
+    const sumPayouts = result.payouts.reduce((s, p) => s + p.payout, 0);
+    expect(result.total).toBe(sumPayouts);
   });
 });
 

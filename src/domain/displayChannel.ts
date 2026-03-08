@@ -10,6 +10,8 @@ import type {
   BountyConfig,
   Table,
   ExtendedLeagueStanding,
+  PotResult,
+  PlayerPayout,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -41,6 +43,8 @@ export interface DisplayStatePayload {
   showDealerBadges?: boolean;
   leagueName?: string;
   leagueStandings?: ExtendedLeagueStanding[];
+  /** Side pot calculator data for TV display (only present when calculator is active) */
+  sidePotData?: { pots: PotResult[]; total: number; payouts?: PlayerPayout[] };
 }
 
 // ---------------------------------------------------------------------------
