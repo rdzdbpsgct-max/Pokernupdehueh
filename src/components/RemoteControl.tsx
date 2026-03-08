@@ -1,47 +1,27 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { RemoteHost, RemoteController, buildRemoteUrl } from '../domain/remote';
+import { RemoteController, buildRemoteUrl } from '../domain/remote';
 import type { RemoteCommand, RemoteState, HostStatus, ControllerStatus } from '../domain/remote';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
 import { formatTime } from '../domain/logic';
 
 // ---------------------------------------------------------------------------
-// Host Modal — shown on the main display to allow a controller to connect
+// Host Modal — pure display component (host lifecycle managed by useRemoteControl hook)
 // ---------------------------------------------------------------------------
 
 interface HostProps {
-  onCommand: (cmd: RemoteCommand) => void;
+  /** Peer ID of the running host */
+  peerId: string;
+  /** Current host connection status */
+  status: HostStatus | null;
   onClose: () => void;
-  /** Called with the RemoteHost instance when ready, so App can send state */
-  onHostReady: (host: RemoteHost) => void;
 }
 
-export function RemoteHostModal({ onCommand, onClose, onHostReady }: HostProps) {
+export function RemoteHostModal({ peerId, status, onClose }: HostProps) {
   const { t } = useTranslation();
   const { resolved } = useTheme();
-  const [status, setStatus] = useState<HostStatus>('initializing');
-  const hostRef = useRef<RemoteHost | null>(null);
 
-  useEffect(() => {
-    const host = new RemoteHost({
-      onCommand,
-      onStatusChange: (s) => {
-        setStatus(s);
-        if (s === 'ready' || s === 'connected') {
-          onHostReady(host);
-        }
-      },
-    });
-    hostRef.current = host;
-
-    return () => {
-      host.destroy();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const peerId = hostRef.current?.peerId ?? '';
   const qrUrl = peerId ? buildRemoteUrl(peerId) : '';
 
   const qrFg = resolved === 'dark' ? '#e5e7eb' : '#111827';
@@ -55,7 +35,7 @@ export function RemoteHostModal({ onCommand, onClose, onHostReady }: HostProps) 
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl">&times;</button>
         </div>
 
-        {status === 'initializing' && (
+        {(status === 'initializing' || status === null) && (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400 animate-pulse">
             {t('remote.waitingForConnection')}
           </div>
@@ -90,11 +70,16 @@ export function RemoteHostModal({ onCommand, onClose, onHostReady }: HostProps) 
 
             {/* Connection status */}
             {status === 'connected' && (
-              <div className="flex items-center justify-center gap-2 py-2">
-                <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--accent-500)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--accent-500)' }}>
-                  {t('remote.connected')}
-                </span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 py-2">
+                  <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--accent-500)' }} />
+                  <span className="text-sm font-medium" style={{ color: 'var(--accent-500)' }}>
+                    {t('remote.connected')}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                  {t('remote.canClose')}
+                </p>
               </div>
             )}
 

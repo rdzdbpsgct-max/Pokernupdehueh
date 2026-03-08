@@ -1,13 +1,17 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { RemoteHost, parseRemoteHash } from '../domain/remote';
+import type { RemoteCommand, HostStatus } from '../domain/remote';
 
 interface UseRemoteControlOptions {
+  onCommand: (cmd: RemoteCommand) => void;
   enabled: boolean; // typically: mode === 'game'
 }
 
 interface UseRemoteControlReturn {
   /** Ref to the RemoteHost instance (for sending state updates) */
   hostRef: React.RefObject<RemoteHost | null>;
+  /** Current host status */
+  hostStatus: HostStatus | null;
   /** Whether the host modal should be shown */
   showRemoteModal: boolean;
   setShowRemoteModal: (v: boolean) => void;
@@ -15,23 +19,33 @@ interface UseRemoteControlReturn {
   isControllerMode: boolean;
   /** The host peer ID to connect to (only set in controller mode) */
   controllerPeerId: string | null;
-  /** Handler to set the host ref when RemoteHostModal reports ready */
-  handleHostReady: (host: RemoteHost) => void;
+  /** Start hosting (create RemoteHost if not already running) */
+  startHost: () => void;
 }
 
 /**
  * Hook to manage remote control state.
  *
+ * - Creates and manages RemoteHost lifecycle (survives modal close)
  * - Detects #remote= hash on mount → enters controller mode
- * - Manages RemoteHost ref for state updates from App
  * - Cleans up on mode switch / unmount
  */
-export function useRemoteControl({ enabled }: UseRemoteControlOptions): UseRemoteControlReturn {
+export function useRemoteControl({ onCommand, enabled }: UseRemoteControlOptions): UseRemoteControlReturn {
   const hostRef = useRef<RemoteHost | null>(null);
   const [showRemoteModalRaw, setShowRemoteModal] = useState(false);
+  const [hostStatusRaw, setHostStatusRaw] = useState<HostStatus | null>(null);
+
+  // Keep onCommand ref fresh so the host always calls the latest handler
+  const onCommandRef = useRef(onCommand);
+  useEffect(() => {
+    onCommandRef.current = onCommand;
+  }, [onCommand]);
 
   // Derive effective modal visibility — only show when enabled (game mode)
   const showRemoteModal = useMemo(() => showRemoteModalRaw && enabled, [showRemoteModalRaw, enabled]);
+
+  // Derive effective host status — null when disabled
+  const hostStatus = useMemo(() => enabled ? hostStatusRaw : null, [enabled, hostStatusRaw]);
 
   // Detect controller mode from URL hash (only once on mount)
   const [controllerPeerId] = useState<string | null>(() => {
@@ -47,8 +61,20 @@ export function useRemoteControl({ enabled }: UseRemoteControlOptions): UseRemot
 
   const isControllerMode = controllerPeerId !== null;
 
-  const handleHostReady = useCallback((host: RemoteHost) => {
+  // Start hosting — creates RemoteHost if not already active
+  const startHost = useCallback(() => {
+    if (hostRef.current) {
+      // Host already running — just show modal
+      setShowRemoteModal(true);
+      return;
+    }
+
+    const host = new RemoteHost({
+      onCommand: (cmd) => onCommandRef.current(cmd),
+      onStatusChange: (s) => setHostStatusRaw(s),
+    });
     hostRef.current = host;
+    setShowRemoteModal(true);
   }, []);
 
   // Cleanup host when switching away from game mode
@@ -56,15 +82,17 @@ export function useRemoteControl({ enabled }: UseRemoteControlOptions): UseRemot
     if (!enabled && hostRef.current) {
       hostRef.current.destroy();
       hostRef.current = null;
+      // hostStatusRaw will be stale but hostStatus derives null when !enabled
     }
   }, [enabled]);
 
   return {
     hostRef,
+    hostStatus,
     showRemoteModal,
     setShowRemoteModal,
     isControllerMode,
     controllerPeerId,
-    handleHostReady,
+    startHost,
   };
 }

@@ -824,12 +824,14 @@ function App() {
 
   const {
     hostRef: remoteHostRef,
+    hostStatus: remoteHostStatus,
     showRemoteModal: showRemoteControl,
     setShowRemoteModal: setShowRemoteControl,
     isControllerMode,
     controllerPeerId,
-    handleHostReady: handleRemoteHostReady,
+    startHost: startRemoteHost,
   } = useRemoteControl({
+    onCommand: handleRemoteCommand,
     enabled: mode === 'game',
   });
 
@@ -1028,11 +1030,17 @@ function App() {
           {mode === 'game' && !tournamentFinished && (
             <>
               <button
-                onClick={() => setShowRemoteControl(true)}
-                className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30 rounded-lg text-sm font-medium transition-all duration-200"
+                onClick={startRemoteHost}
+                className="relative px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30 rounded-lg text-sm font-medium transition-all duration-200"
                 title={t('remote.openRemote')}
               >
-                📱
+                {String.fromCodePoint(0x1F4F1)}
+                {remoteHostStatus === 'connected' && (
+                  <span
+                    className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-800"
+                    style={{ backgroundColor: 'var(--accent-500)' }}
+                  />
+                )}
               </button>
               <button
                 onClick={tvWindowActive ? closeTVWindow : openTVWindow}
@@ -1339,9 +1347,9 @@ function App() {
       {showRemoteControl && mode === 'game' && (
         <Suspense fallback={null}>
           <RemoteHostModal
-            onCommand={handleRemoteCommand}
+            peerId={remoteHostRef.current?.peerId ?? ''}
+            status={remoteHostStatus}
             onClose={() => setShowRemoteControl(false)}
-            onHostReady={handleRemoteHostReady}
           />
         </Suspense>
       )}
