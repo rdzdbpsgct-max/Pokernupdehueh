@@ -187,20 +187,17 @@ export function MultiTablePanel({ config, recentMoves, onUpdateTables, onTableMo
           {recentMoves.map((move, i) => (
             <div
               key={`${move.playerId}-${move.timestamp}-${i}`}
-              className="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1.5"
+              className="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg text-xs text-amber-700 dark:text-amber-300 space-y-0.5"
             >
-              <span className="shrink-0 px-1 py-0.5 bg-amber-200/50 dark:bg-amber-800/30 rounded text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                {t(reasonKey[move.reason] as Parameters<typeof t>[0])}
-              </span>
-              <span className="truncate">
-                {t('multiTable.moveDetail', {
-                  player: move.playerName,
-                  from: move.fromTableName,
-                  fromSeat: move.fromSeat,
-                  to: move.toTableName,
-                  toSeat: move.toSeat,
-                })}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 px-1 py-0.5 bg-amber-200/50 dark:bg-amber-800/30 rounded text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                  {t(reasonKey[move.reason] as Parameters<typeof t>[0])}
+                </span>
+                <span className="font-medium">{move.playerName}</span>
+              </div>
+              <div className="text-amber-600 dark:text-amber-400/70 pl-0.5">
+                {move.fromTableName} {t('multiTable.seat', { n: move.fromSeat })} → {move.toTableName} {t('multiTable.seat', { n: move.toSeat })}
+              </div>
             </div>
           ))}
         </div>

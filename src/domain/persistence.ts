@@ -508,6 +508,57 @@ export function deleteLeague(id: string): void {
 }
 
 // ---------------------------------------------------------------------------
+// League Export / Import
+// ---------------------------------------------------------------------------
+
+export interface LeagueExport {
+  version: 1;
+  league: League;
+  results: TournamentResult[];
+  exportedAt: string;
+}
+
+export function exportLeagueToJSON(league: League): string {
+  const history = loadTournamentHistory();
+  const results = history.filter((r) => r.leagueId === league.id);
+  const payload: LeagueExport = {
+    version: 1,
+    league,
+    results,
+    exportedAt: new Date().toISOString(),
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+export function parseLeagueFile(json: string): LeagueExport | null {
+  try {
+    const parsed = JSON.parse(json);
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (!parsed.league || typeof parsed.league.id !== 'string' || typeof parsed.league.name !== 'string') return null;
+    if (!Array.isArray(parsed.results)) return null;
+    return parsed as LeagueExport;
+  } catch {
+    return null;
+  }
+}
+
+export function importLeague(data: LeagueExport): League {
+  // Generate new ID to avoid collisions
+  const league: League = {
+    ...data.league,
+    id: `league_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+  };
+  saveLeague(league);
+
+  // Import linked tournament results with updated leagueId
+  for (const result of data.results) {
+    saveTournamentResult({ ...result, leagueId: league.id });
+  }
+
+  return league;
+}
+
+// ---------------------------------------------------------------------------
 // Setup Wizard
 // ---------------------------------------------------------------------------
 

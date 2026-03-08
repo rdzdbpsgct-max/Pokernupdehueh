@@ -74,10 +74,13 @@ export function SetupPage({
     return parts.length > 0 ? parts.join(', ') : t('section.allDisabled');
   }, [config.rebuy, config.addOn, config.bounty, config.lateRegistration, t]);
 
-  const playersSummary = useMemo(
-    () => t('section.playerCount', { n: config.players.length }),
-    [config.players.length, t],
-  );
+  const playersSummary = useMemo(() => {
+    const base = t('section.playerCount', { n: config.players.length });
+    if (config.tables && config.tables.length > 0) {
+      return `${base}, ${t('multiTable.tableCount', { n: config.tables.length })}`;
+    }
+    return base;
+  }, [config.players.length, config.tables, t]);
 
   const blindSummary = useMemo(() => {
     const s = computeBlindStructureSummary(config.levels);
@@ -296,6 +299,123 @@ export function SetupPage({
               }))
             }
           />
+
+          {/* Multi-Table hint for >10 players */}
+          {config.players.length > 10 && (!config.tables || config.tables.length === 0) && (
+            <div className="mt-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700/40 rounded-lg">
+              <p className="text-blue-700 dark:text-blue-300 text-xs">
+                {t('multiTable.hint')}
+              </p>
+            </div>
+          )}
+
+          {/* Multi-Table sub-section */}
+          {config.players.length >= 6 && (
+            <CollapsibleSubSection title={t('multiTable.title')} summary={multiTableSummary} defaultOpen={config.tables != null && config.tables.length > 0}>
+              <div className="space-y-3">
+                <button
+                  onClick={handleToggleMultiTable}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    config.tables && config.tables.length > 0
+                      ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  {config.tables && config.tables.length > 0 ? t('multiTable.title') + ' ✓' : t('multiTable.title')}
+                </button>
+                {config.tables && config.tables.length > 0 && (
+                  <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+                    {config.players.length >= 6 && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {t('multiTable.suggested', { n: Math.max(2, Math.ceil(config.players.length / 8)) })}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.tables')}</label>
+                      <NumberStepper
+                        value={config.tables.length}
+                        onChange={handleSetTableCount}
+                        min={2}
+                        max={10}
+                        step={1}
+                        inputClassName="w-16"
+                      />
+                    </div>
+                    {config.tables.map((tbl) => (
+                      <div key={tbl.id} className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[80px]">{tbl.name}</span>
+                        <label className="text-xs text-gray-400 dark:text-gray-500">{t('multiTable.seats')}</label>
+                        <NumberStepper
+                          value={tbl.maxSeats}
+                          onChange={(v) => handleSetTableSeats(tbl.id, v)}
+                          min={2}
+                          max={12}
+                          step={1}
+                          inputClassName="w-16"
+                        />
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.dissolveThreshold')}</label>
+                      <NumberStepper
+                        value={config.multiTable?.dissolveThreshold ?? 3}
+                        onChange={(v) => setConfig((prev) => ({
+                          ...prev,
+                          multiTable: { ...defaultMultiTableConfig(), ...prev.multiTable, dissolveThreshold: Math.max(2, Math.min(5, v)) },
+                        }))}
+                        min={2}
+                        max={5}
+                        step={1}
+                        inputClassName="w-16"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.multiTable?.autoBalanceOnElimination !== false}
+                        onChange={(e) => setConfig((prev) => ({
+                          ...prev,
+                          multiTable: { ...defaultMultiTableConfig(), ...prev.multiTable, autoBalanceOnElimination: e.target.checked },
+                        }))}
+                        className="w-4 h-4 accent-emerald-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.autoBalance')}</span>
+                    </label>
+                    <button
+                      onClick={handleDistributePlayers}
+                      className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      {t('multiTable.distribute')}
+                    </button>
+                    {config.tables.some(tbl => tbl.seats.some(s => s.playerId !== null)) && (
+                      <div className="space-y-1.5">
+                        {config.tables.map((tbl) => {
+                          const seatedPlayers = tbl.seats
+                            .filter(s => s.playerId !== null)
+                            .map(s => {
+                              const player = config.players.find(p => p.id === s.playerId);
+                              return { seat: s.seatNumber, name: player?.name ?? '?' };
+                            });
+                          if (seatedPlayers.length === 0) return null;
+                          return (
+                            <div key={tbl.id} className="text-xs text-gray-500 dark:text-gray-400">
+                              <span className="font-medium text-gray-600 dark:text-gray-300">{tbl.name}:</span>{' '}
+                              {seatedPlayers.map((sp, i) => (
+                                <span key={sp.seat}>
+                                  {i > 0 && ', '}
+                                  <span className="text-gray-400 dark:text-gray-500">{t('multiTable.seatShort', { n: sp.seat })}</span>={sp.name}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CollapsibleSubSection>
+          )}
         </CollapsibleSection>
 
         {/* Auszahlung */}
@@ -466,117 +586,6 @@ export function SetupPage({
           </div>
         </CollapsibleSection>
 
-        {/* Multi-Table (collapsed, only visible when >= 6 players) */}
-        {config.players.length >= 6 && (
-          <CollapsibleSection title={t('multiTable.title')} summary={multiTableSummary} defaultOpen={false}>
-            <div className="space-y-3">
-              <button
-                onClick={handleToggleMultiTable}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  config.tables && config.tables.length > 0
-                    ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                {config.tables && config.tables.length > 0 ? t('multiTable.title') + ' ✓' : t('multiTable.title')}
-              </button>
-              {config.tables && config.tables.length > 0 && (
-                <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
-                  {/* Suggested table count */}
-                  {config.players.length >= 6 && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {t('multiTable.suggested', { n: Math.max(2, Math.ceil(config.players.length / 8)) })}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.tables')}</label>
-                    <NumberStepper
-                      value={config.tables.length}
-                      onChange={handleSetTableCount}
-                      min={2}
-                      max={10}
-                      step={1}
-                      inputClassName="w-16"
-                    />
-                  </div>
-                  {config.tables.map((tbl) => (
-                    <div key={tbl.id} className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[80px]">{tbl.name}</span>
-                      <label className="text-xs text-gray-400 dark:text-gray-500">{t('multiTable.seats')}</label>
-                      <NumberStepper
-                        value={tbl.maxSeats}
-                        onChange={(v) => handleSetTableSeats(tbl.id, v)}
-                        min={2}
-                        max={12}
-                        step={1}
-                        inputClassName="w-16"
-                      />
-                    </div>
-                  ))}
-                  {/* Dissolve threshold */}
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.dissolveThreshold')}</label>
-                    <NumberStepper
-                      value={config.multiTable?.dissolveThreshold ?? 3}
-                      onChange={(v) => setConfig((prev) => ({
-                        ...prev,
-                        multiTable: { ...defaultMultiTableConfig(), ...prev.multiTable, dissolveThreshold: Math.max(2, Math.min(5, v)) },
-                      }))}
-                      min={2}
-                      max={5}
-                      step={1}
-                      inputClassName="w-16"
-                    />
-                  </div>
-                  {/* Auto-balance toggle */}
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.multiTable?.autoBalanceOnElimination !== false}
-                      onChange={(e) => setConfig((prev) => ({
-                        ...prev,
-                        multiTable: { ...defaultMultiTableConfig(), ...prev.multiTable, autoBalanceOnElimination: e.target.checked },
-                      }))}
-                      className="w-4 h-4 accent-emerald-600 rounded"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.autoBalance')}</span>
-                  </label>
-                  <button
-                    onClick={handleDistributePlayers}
-                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    {t('multiTable.distribute')}
-                  </button>
-                  {/* Preview with seat assignments */}
-                  {config.tables.some(tbl => tbl.seats.some(s => s.playerId !== null)) && (
-                    <div className="space-y-1.5">
-                      {config.tables.map((tbl) => {
-                        const seatedPlayers = tbl.seats
-                          .filter(s => s.playerId !== null)
-                          .map(s => {
-                            const player = config.players.find(p => p.id === s.playerId);
-                            return { seat: s.seatNumber, name: player?.name ?? '?' };
-                          });
-                        if (seatedPlayers.length === 0) return null;
-                        return (
-                          <div key={tbl.id} className="text-xs text-gray-500 dark:text-gray-400">
-                            <span className="font-medium text-gray-600 dark:text-gray-300">{tbl.name}:</span>{' '}
-                            {seatedPlayers.map((sp, i) => (
-                              <span key={sp.seat}>
-                                {i > 0 && ', '}
-                                <span className="text-gray-400 dark:text-gray-500">{t('multiTable.seatShort', { n: sp.seat })}</span>={sp.name}
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </CollapsibleSection>
-        )}
 
         {/* Chip-Werte (collapsed by default) */}
         <CollapsibleSection title={t('app.chips')} summary={chipsSummary} defaultOpen={false}>

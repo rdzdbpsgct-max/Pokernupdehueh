@@ -101,6 +101,8 @@ import {
   findTableToDissolve,
   dissolveTable,
   advanceTableDealer,
+  exportLeagueToJSON,
+  parseLeagueFile,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table } from '../src/domain/types';
 
@@ -3503,5 +3505,60 @@ describe('Multi-Table', () => {
     expect(config).not.toBeNull();
     expect(config!.tables).toBeUndefined();
     expect(config!.multiTable).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// League Export / Import
+// ---------------------------------------------------------------------------
+describe('League Export / Import', () => {
+  it('exportLeagueToJSON returns valid JSON with league and results', () => {
+    const league: League = {
+      id: 'test-league',
+      name: 'Friday Night',
+      pointSystem: { entries: [{ place: 1, points: 10 }] },
+      createdAt: '2024-01-01T00:00:00.000Z',
+    };
+    const json = exportLeagueToJSON(league);
+    const parsed = JSON.parse(json);
+    expect(parsed.version).toBe(1);
+    expect(parsed.league.id).toBe('test-league');
+    expect(parsed.league.name).toBe('Friday Night');
+    expect(Array.isArray(parsed.results)).toBe(true);
+    expect(typeof parsed.exportedAt).toBe('string');
+  });
+
+  it('parseLeagueFile round-trip returns same league data', () => {
+    const league: League = {
+      id: 'rt-league',
+      name: 'Round Trip',
+      pointSystem: { entries: [{ place: 1, points: 10 }, { place: 2, points: 7 }] },
+      createdAt: '2024-06-01T00:00:00.000Z',
+    };
+    const json = exportLeagueToJSON(league);
+    const parsed = parseLeagueFile(json);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.league.name).toBe('Round Trip');
+    expect(parsed!.league.pointSystem.entries).toHaveLength(2);
+  });
+
+  it('parseLeagueFile returns null for invalid input', () => {
+    expect(parseLeagueFile('')).toBeNull();
+    expect(parseLeagueFile('{}')).toBeNull();
+    expect(parseLeagueFile('{"league": {}}')).toBeNull();
+    expect(parseLeagueFile('not json')).toBeNull();
+    expect(parseLeagueFile('{"league": {"id": "x", "name": "y"}}')).toBeNull(); // missing results
+  });
+
+  it('parseLeagueFile accepts valid export with results', () => {
+    const payload = {
+      version: 1,
+      league: { id: 'l1', name: 'Test', pointSystem: { entries: [] }, createdAt: '2024-01-01T00:00:00.000Z' },
+      results: [{ id: 'r1', leagueId: 'l1', name: 'T1', date: '2024-01-01', playerCount: 6, buyIn: 10, prizePool: 60, players: [], bountyEnabled: false, bountyAmount: 0, rebuyEnabled: false, totalRebuys: 0, addOnEnabled: false, totalAddOns: 0, elapsedSeconds: 3600, levelsPlayed: 5 }],
+      exportedAt: '2024-01-01T00:00:00.000Z',
+    };
+    const result = parseLeagueFile(JSON.stringify(payload));
+    expect(result).not.toBeNull();
+    expect(result!.results).toHaveLength(1);
   });
 });

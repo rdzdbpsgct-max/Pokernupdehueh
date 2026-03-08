@@ -19,6 +19,8 @@ interface Props {
   onEliminatePlayer: (playerId: string, eliminatedBy: string | null) => void;
   onReinstatePlayer: (playerId: string) => void;
   onAdvanceDealer: () => void;
+  showDealerBadges?: boolean;
+  onToggleDealerBadges?: () => void;
   onUpdateStack?: (playerId: string, chips: number) => void;
   onInitStacks?: () => void;
   onClearStacks?: () => void;
@@ -43,6 +45,8 @@ export function PlayerPanel({
   onEliminatePlayer,
   onReinstatePlayer,
   onAdvanceDealer,
+  showDealerBadges,
+  onToggleDealerBadges,
   onUpdateStack,
   onInitStacks,
   onClearStacks,
@@ -216,7 +220,19 @@ export function PlayerPanel({
                 + {t('lateReg.addPlayer')}
               </button>
             )}
-            {activePlayers.length > 1 && (
+            {onToggleDealerBadges && (
+              <button
+                onClick={onToggleDealerBadges}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors border ${
+                  showDealerBadges
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700/40'
+                    : 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700/40'
+                }`}
+              >
+                {t('playerPanel.dealer')}
+              </button>
+            )}
+            {showDealerBadges && activePlayers.length > 1 && (
               <button
                 onClick={onAdvanceDealer}
                 className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
@@ -238,7 +254,7 @@ export function PlayerPanel({
               {/* Name row — full width */}
               <div className="flex items-center gap-1">
                 <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">#{seatIndex + 1}</span>
-                {isDealer && (
+                {showDealerBadges !== false && isDealer && (
                   <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-600 text-white text-[10px] font-bold shrink-0 ring-2 ring-red-500/30">D</span>
                 )}
                 <span className={`${nameSizeClass} text-gray-800 dark:text-gray-200 truncate`}>

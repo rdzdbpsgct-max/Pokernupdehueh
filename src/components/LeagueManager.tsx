@@ -9,10 +9,22 @@ import {
   computeLeagueStandings,
   formatLeagueAsText,
   formatLeagueAsCSV,
+  exportLeagueToJSON,
+  parseLeagueFile,
+  importLeague,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { ChevronIcon } from './ChevronIcon';
 import { NumberStepper } from './NumberStepper';
+
+interface WindowWithFilePicker extends Window {
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string;
+    types?: { description: string; accept: Record<string, string[]> }[];
+  }) => Promise<{
+    createWritable: () => Promise<{ write: (data: string) => Promise<void>; close: () => Promise<void> }>;
+  }>;
+}
 
 interface Props {
   onClose: () => void;
@@ -26,6 +38,8 @@ export function LeagueManager({ onClose }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [fileError, setFileError] = useState(false);
+  const [importSuccess, setImportSuccess] = useState(false);
 
   // Auto-focus & Escape to close
   useEffect(() => {
@@ -88,6 +102,62 @@ export function LeagueManager({ onClose }: Props) {
     URL.revokeObjectURL(url);
   }, []);
 
+  const handleExportLeague = useCallback(async (league: League) => {
+    const json = exportLeagueToJSON(league);
+    const fileName = `${(league.name || 'league').replace(/[^a-zA-Z0-9äöüÄÖÜß\-_ ]/g, '')}.json`;
+
+    const fsWindow = window as unknown as WindowWithFilePicker;
+    if (typeof fsWindow.showSaveFilePicker === 'function') {
+      try {
+        const handle = await fsWindow.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        return;
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+      }
+    }
+
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleImportLeague = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = parseLeagueFile(text);
+        if (data) {
+          importLeague(data);
+          setLeagues(loadLeagues());
+          setImportSuccess(true);
+          setTimeout(() => setImportSuccess(false), 3000);
+        } else {
+          setFileError(true);
+          setTimeout(() => setFileError(false), 3000);
+        }
+      } catch {
+        setFileError(true);
+        setTimeout(() => setFileError(false), 3000);
+      }
+    };
+    input.click();
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div
@@ -108,6 +178,12 @@ export function LeagueManager({ onClose }: Props) {
               + {t('league.newLeague')}
             </button>
             <button
+              onClick={handleImportLeague}
+              className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+            >
+              {t('league.importFile')}
+            </button>
+            <button
               onClick={onClose}
               className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
             >
@@ -115,6 +191,18 @@ export function LeagueManager({ onClose }: Props) {
             </button>
           </div>
         </div>
+
+        {/* Status banners */}
+        {fileError && (
+          <div className="mx-5 mt-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700/40 rounded-lg text-red-700 dark:text-red-300 text-xs">
+            {t('league.invalidFile')}
+          </div>
+        )}
+        {importSuccess && (
+          <div className="mx-5 mt-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700/40 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs">
+            {t('league.importSuccess')}
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
@@ -137,6 +225,7 @@ export function LeagueManager({ onClose }: Props) {
                 onCancelDelete={() => setConfirmDeleteId(null)}
                 onCopyText={() => handleCopyText(league)}
                 onDownloadCSV={() => handleDownloadCSV(league)}
+                onExportJSON={() => handleExportLeague(league)}
               />
             ))
           )}
@@ -161,6 +250,7 @@ function LeagueEntry({
   onCancelDelete,
   onCopyText,
   onDownloadCSV,
+  onExportJSON,
 }: {
   league: League;
   expanded: boolean;
@@ -175,6 +265,7 @@ function LeagueEntry({
   onCancelDelete: () => void;
   onCopyText: () => void;
   onDownloadCSV: () => void;
+  onExportJSON: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -295,6 +386,12 @@ function LeagueEntry({
               className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
             >
               {t('league.downloadCSV')}
+            </button>
+            <button
+              onClick={onExportJSON}
+              className="px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+            >
+              {t('league.exportFile')}
             </button>
             <div className="flex-1" />
             {confirmDelete ? (

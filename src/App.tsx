@@ -83,6 +83,7 @@ const TournamentFinished = lazy(() => import('./components/TournamentFinished').
 const SharedResultView = lazy(() => import('./components/SharedResultView').then(m => ({ default: m.SharedResultView })));
 const CallTheClock = lazy(() => import('./components/CallTheClock').then(m => ({ default: m.CallTheClock })));
 const MultiTablePanel = lazy(() => import('./components/MultiTablePanel').then(m => ({ default: m.MultiTablePanel })));
+const SeatingOverlay = lazy(() => import('./components/SeatingOverlay').then(m => ({ default: m.SeatingOverlay })));
 
 type Mode = 'setup' | 'game';
 
@@ -127,6 +128,8 @@ function App() {
   const tvWindowRef = useRef<Window | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const [showCallTheClock, setShowCallTheClock] = useState(false);
+  const [showDealerBadges, setShowDealerBadges] = useState(true);
+  const [showSeatingOverlay, setShowSeatingOverlay] = useState(false);
   const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
@@ -577,6 +580,10 @@ function App() {
     }));
   }, []);
 
+  const handleToggleDealerBadges = useCallback(() => {
+    setShowDealerBadges((prev) => !prev);
+  }, []);
+
   // --- Eliminate player handler ---
   const lastMysteryDrawRef = useRef<number | null>(null);
   const pendingTableMovesRef = useRef<TableMove[]>([]);
@@ -960,7 +967,10 @@ function App() {
   });
 
   // Voice announcements: level change, break warning, 5-min warning, bounty, milestones, timer pause/resume
-  const handleLevelChange = useCallback(() => setLastHandActive(false), []);
+  const handleLevelChange = useCallback(() => {
+    setLastHandActive(false);
+    setShowDealerBadges(false);
+  }, []);
   const { reset: resetVoice } = useVoiceAnnouncements({
     mode,
     settings,
@@ -1035,11 +1045,24 @@ function App() {
     setCleanView(false);
     setShowPlayerPanel(true);
     setShowSidebar(true);
+    setShowDealerBadges(true);
     setMode('game');
-    timer.restart();
     initSpeech();
-    if (settings.voiceEnabled) announceTournamentStart(t);
+
+    if (config.tables && config.tables.length > 0) {
+      // Multi-table: show seating overlay, timer starts when user dismisses
+      setShowSeatingOverlay(true);
+    } else {
+      timer.restart();
+      if (settings.voiceEnabled) announceTournamentStart(t);
+    }
   };
+
+  const handleDismissSeating = useCallback(() => {
+    setShowSeatingOverlay(false);
+    timer.restart();
+    if (settings.voiceEnabled) announceTournamentStart(t);
+  }, [timer, settings.voiceEnabled, t]);
 
   const switchToSetup = () => {
     cancelSpeech();
@@ -1254,6 +1277,8 @@ function App() {
                   onEliminatePlayer={eliminatePlayer}
                   onReinstatePlayer={reinstatePlayer}
                   onAdvanceDealer={handleAdvanceDealer}
+                  showDealerBadges={showDealerBadges}
+                  onToggleDealerBadges={handleToggleDealerBadges}
                   onUpdateStack={updatePlayerStack}
                   onInitStacks={initStacks}
                   onClearStacks={clearStacks}
@@ -1400,6 +1425,17 @@ function App() {
           </Suspense>
         )}
       </main>
+
+      {/* Seating Overlay (multi-table start) */}
+      {showSeatingOverlay && mode === 'game' && config.tables && (
+        <Suspense fallback={null}>
+          <SeatingOverlay
+            tables={config.tables}
+            players={config.players}
+            onDismiss={handleDismissSeating}
+          />
+        </Suspense>
+      )}
 
       {/* Call the Clock Modal */}
       {showCallTheClock && mode === 'game' && (
