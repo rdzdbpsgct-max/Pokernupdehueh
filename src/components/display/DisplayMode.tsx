@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table, ExtendedLeagueStanding } from '../../domain/types';
 import { formatTime, getLevelLabel, getBlindsText, computePrizePool, computeAverageStackInBB, computeRebuyPot, isRebuyActive } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
@@ -40,6 +40,33 @@ interface Props {
 }
 
 const ROTATION_INTERVAL = 15_000;
+
+/** Memoized ticker banner — only re-renders when ticker text actually changes */
+const TickerBanner = memo(function TickerBanner({ items }: { items: string[] }) {
+  return (
+    <div className="border-t border-gray-800/60 overflow-hidden bg-gray-900/80">
+      <div className="animate-ticker-scroll whitespace-nowrap py-2.5 text-base text-gray-200 font-semibold tracking-wide will-change-transform">
+        {items.map((item, i) => (
+          <span key={i}>
+            <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>◆</span>
+            {item}
+          </span>
+        ))}
+        {/* Duplicate for seamless loop */}
+        {items.map((item, i) => (
+          <span key={`dup-${i}`}>
+            <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>◆</span>
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}, (prev, next) => {
+  // Only re-render when ticker items actually change
+  if (prev.items.length !== next.items.length) return false;
+  return prev.items.every((item, i) => item === next.items[i]);
+});
 
 export function DisplayMode({
   timerState,
@@ -344,23 +371,7 @@ export function DisplayMode({
       </div>
 
       {/* Ticker banner */}
-      <div className="border-t border-gray-800/60 overflow-hidden bg-gray-900/80">
-        <div className="animate-ticker-scroll whitespace-nowrap py-2.5 text-base text-gray-200 font-semibold tracking-wide">
-          {tickerItems.map((item, i) => (
-            <span key={i}>
-              <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>◆</span>
-              {item}
-            </span>
-          ))}
-          {/* Duplicate for seamless loop */}
-          {tickerItems.map((item, i) => (
-            <span key={`dup-${i}`}>
-              <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>◆</span>
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
+      <TickerBanner items={tickerItems} />
 
       {/* Bottom bar: rotation hint */}
       <div className="px-6 py-1 border-t border-gray-800/60 text-center">

@@ -93,7 +93,8 @@
 }
 
 @utility animate-ticker-scroll {
-  animation: ticker-scroll 30s linear infinite;
+  animation: ticker-scroll 25s linear infinite;
+  will-change: transform;
 }
 
 /* === Theme Variables === */
@@ -101,7 +102,7 @@
 :root {
   --timer-glow-color: rgba(0, 0, 0, 0.1);
   --timer-glow-color-strong: rgba(0, 0, 0, 0.2);
-  /* Accent color defaults (emerald) — overridden dynamically by ThemeContext */
+  /* Accent color (emerald) */
   --accent-400: #34d399;
   --accent-500: #10b981;
   --accent-600: #059669;
@@ -130,7 +131,10 @@ html, body, #root {
 
 body {
   background-color: #f9fafb;
-  background-image: var(--bg-pattern);
+  background-image:
+    var(--bg-pattern, none),
+    radial-gradient(ellipse at 20% 50%, rgba(16, 185, 129, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
   background-attachment: fixed;
   color: #111827;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;

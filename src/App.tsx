@@ -81,6 +81,7 @@ const CallTheClock = lazy(() => import('./components/CallTheClock').then(m => ({
 const MultiTablePanel = lazy(() => import('./components/MultiTablePanel').then(m => ({ default: m.MultiTablePanel })));
 const SeatingOverlay = lazy(() => import('./components/SeatingOverlay').then(m => ({ default: m.SeatingOverlay })));
 const RemoteHostModal = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteHostModal })));
+const RemoteControllerView = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteControllerView })));
 const LeagueView = lazy(() => import('./components/LeagueView').then(m => ({ default: m.LeagueView })));
 
 type Mode = 'setup' | 'game' | 'league';
@@ -127,6 +128,17 @@ function App() {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       }
       return result;
+    }
+    return null;
+  });
+  const [remoteOffer, setRemoteOffer] = useState<string | null>(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#rc=')) {
+      const offer = hash.slice(4);
+      if (offer) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        return offer;
+      }
     }
     return null;
   });
@@ -1389,6 +1401,16 @@ function App() {
             leagueName={sharedLeague.leagueName}
             standings={sharedLeague.standings}
             onClose={() => setSharedLeague(null)}
+          />
+        </Suspense>
+      )}
+
+      {/* Remote Controller (from QR code #rc= hash) */}
+      {remoteOffer && (
+        <Suspense fallback={null}>
+          <RemoteControllerView
+            offerData={remoteOffer}
+            onClose={() => setRemoteOffer(null)}
           />
         </Suspense>
       )}

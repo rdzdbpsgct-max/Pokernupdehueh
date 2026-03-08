@@ -96,7 +96,7 @@ export function RemoteHostModal({ onCommand, onClose, onHostReady }: HostProps) 
             <div className="flex justify-center">
               <div className="p-3 bg-white dark:bg-gray-800 rounded-xl">
                 <QRCodeSVG
-                  value={offerQR}
+                  value={`${window.location.origin}${import.meta.env.BASE_URL || '/'}#rc=${offerQR}`}
                   size={200}
                   fgColor={qrFg}
                   bgColor={qrBg}

@@ -386,26 +386,30 @@ export function TournamentFinished({
             onClick={captureScreenshot}
             disabled={capturing}
             className="w-full px-6 py-3 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl text-lg font-medium transition-all duration-200 shadow-lg shadow-emerald-900/30 active:scale-[0.98] disabled:opacity-50"
+            title={t('finished.shareResults')}
           >
             {capturing ? t('finished.capturing') : t('finished.shareResults')}
           </button>
           <div className="flex gap-2">
             <button
               onClick={handleCopyText}
-              className="flex-1 px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40"
+              className="flex-1 px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40 active:scale-[0.97]"
+              title={t('finished.copyText')}
             >
               {copied ? t('finished.textCopied') : t('finished.copyText')}
             </button>
             <button
               onClick={handleDownloadCSV}
-              className="flex-1 px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40"
+              className="flex-1 px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40 active:scale-[0.97]"
+              title={t('finished.downloadCSV')}
             >
               {t('finished.downloadCSV')}
             </button>
           </div>
           <button
             onClick={() => window.print()}
-            className="w-full px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40"
+            className="w-full px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40 active:scale-[0.97]"
+            title={t('finished.print')}
           >
             {t('finished.print')}
           </button>
@@ -415,7 +419,8 @@ export function TournamentFinished({
         <div>
           <button
             onClick={onBackToSetup}
-            className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl text-lg font-medium transition-all duration-200 border border-gray-200 dark:border-gray-600/30"
+            className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl text-lg font-medium transition-all duration-200 border border-gray-200 dark:border-gray-600/30 active:scale-[0.97]"
+            title={t('finished.backToSetup')}
           >
             {t('finished.backToSetup')}
           </button>

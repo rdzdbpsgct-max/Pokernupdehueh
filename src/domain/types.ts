@@ -131,8 +131,6 @@ export interface TournamentConfig {
   tables?: Table[];
 }
 
-export type AccentColor = 'emerald' | 'blue' | 'purple' | 'red' | 'amber' | 'cyan';
-
 export type BackgroundImage = 'none' | 'felt-green' | 'felt-blue' | 'felt-red' | 'casino' | 'dark-wood' | 'abstract' | 'midnight' | 'sunset';
 
 export interface Settings {
@@ -145,8 +143,6 @@ export interface Settings {
   volume: number;
   /** Call-the-Clock countdown duration in seconds. Default: 30. */
   callTheClockSeconds: number;
-  /** Custom accent color. Default: 'emerald'. */
-  accentColor?: AccentColor;
   /** Background image/pattern. Default: 'none'. */
   backgroundImage?: BackgroundImage;
 }

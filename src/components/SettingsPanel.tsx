@@ -1,4 +1,4 @@
-import type { Settings, AccentColor, BackgroundImage } from '../domain/types';
+import type { Settings, BackgroundImage } from '../domain/types';
 import { useTranslation } from '../i18n';
 import { NumberStepper } from './NumberStepper';
 import { useTheme } from '../theme';
@@ -44,18 +44,9 @@ const BG_OPTIONS: { value: BackgroundImage; gradient: string; labelKey: string }
   { value: 'sunset',     gradient: 'linear-gradient(135deg, rgba(245,158,11,0.4), rgba(239,68,68,0.4))', labelKey: 'settings.bgSunset' },
 ];
 
-const ACCENT_OPTIONS: { color: AccentColor; bg: string; label: string }[] = [
-  { color: 'emerald', bg: '#10b981', label: 'Emerald' },
-  { color: 'blue',    bg: '#3b82f6', label: 'Blue' },
-  { color: 'purple',  bg: '#8b5cf6', label: 'Purple' },
-  { color: 'red',     bg: '#ef4444', label: 'Red' },
-  { color: 'amber',   bg: '#f59e0b', label: 'Amber' },
-  { color: 'cyan',    bg: '#06b6d4', label: 'Cyan' },
-];
-
 export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props) {
   const { t } = useTranslation();
-  const { accentColor, setAccentColor, backgroundImage, setBackgroundImage } = useTheme();
+  const { backgroundImage, setBackgroundImage } = useTheme();
 
   const toggle = (key: keyof Settings) => {
     onChange({ ...settings, [key]: !settings[key] });
@@ -117,30 +108,6 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
         >
           {t('settings.fullscreen')}
         </button>
-      </div>
-
-      {/* Accent Color */}
-      <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
-        <span className="text-sm text-gray-700 dark:text-gray-300 block mb-1.5">{t('settings.accentColor')}</span>
-        <div className="flex items-center gap-2">
-          {ACCENT_OPTIONS.map((opt) => (
-            <button
-              key={opt.color}
-              onClick={() => setAccentColor(opt.color)}
-              className={`w-7 h-7 rounded-full transition-all duration-200 ${
-                accentColor === opt.color
-                  ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110'
-                  : 'hover:scale-110 opacity-70 hover:opacity-100'
-              }`}
-              style={{
-                backgroundColor: opt.bg,
-                ...(accentColor === opt.color ? { ringColor: opt.bg } : {}),
-              }}
-              title={opt.label}
-              aria-label={opt.label}
-            />
-          ))}
-        </div>
       </div>
 
       {/* Background Image */}
