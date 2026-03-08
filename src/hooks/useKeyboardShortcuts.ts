@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 interface KeyboardShortcutHandlers {
-  mode: 'setup' | 'game';
+  mode: 'setup' | 'game' | 'league';
   onToggleStartPause: () => void;
   onNextLevel: () => void;
   onPreviousLevel: () => void;

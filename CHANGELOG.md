@@ -5,6 +5,66 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [5.1.1] – 2026-03-08
+
+### Liga-Vervollständigung: Spielerdetails, QR-Sharing & Player-ID
+
+- **Spieler-Detail-Modal**: Klick auf Spielernamen in der Liga-Tabelle öffnet detaillierte Spielerstatistiken — Punkteverlauf, Platzierungsverteilung (Balkendiagramm), Serien (Siege/ITM aktuell + best), Form der letzten 5 Spiele (W/C/X), Head-to-Head-Bilanz vs. alle Gegner. Lazy-loaded (~8.7 KB Chunk).
+- **QR-Code Liga-Sharing**: Geteilte Liga-Tabellen via `#ls=` URL-Hash werden jetzt beim App-Start erkannt und in einem `SharedLeagueView`-Modal angezeigt — analog zu `#r=` für Turnierergebnisse.
+- **Registered Player ID**: `GameDayParticipant.registeredPlayerId` verknüpft Spieltag-Teilnehmer mit der persistenten Spielerdatenbank für stabile Identität. Automatisch befüllt in `createGameDayFromResult()` (Turnierende) und `GameDayEditor` (manuelle Eingabe), case-insensitiver Name-Matching.
+- **Neue Dateien**: `LeaguePlayerDetail.tsx`, `SharedLeagueView.tsx`
+- **44 Translation-Keys** (22 DE + 22 EN): Spielerdetail-Modal, Shared-League-Title
+- **5 neue Tests** — **408 Tests gesamt**
+
+---
+
+## [5.1.0] – 2026-03-08
+
+### Homegame-Ligamodus: Vollausbau in 3 Phasen
+
+**Phase 1 — MVP „Digitaler Ligabogen":**
+- **Liga als dritter App-Modus**: `type Mode = 'setup' | 'game' | 'league'`. Dedizierter Liga-View statt Modal. Lazy-loaded.
+- **GameDay-Entität**: Explizite Spieltag-Zuordnung zu Liga mit Teilnehmern, Punkten, Finanzen. localStorage: `poker-timer-gamedays`.
+- **Auto-GameDay**: Automatische Erstellung bei Turnierende wenn Liga verknüpft.
+- **Erweiterte Standings**: `ExtendedLeagueStanding` mit totalCost, totalPayout, netBalance, participationRate, knockouts, corrections, rank.
+- **Domain-Modul**: `league.ts` (~525 Zeilen) — GameDay CRUD, standings, finances, tiebreaker, QR-Encoding, player stats.
+- **5 neue UI-Komponenten**: `LeagueView.tsx`, `LeagueStandingsTable.tsx`, `LeagueGameDays.tsx`, `LeagueFinances.tsx`.
+
+**Phase 2 — Comfort & Sonderfälle:**
+- **GameDayEditor**: Manuelles Erstellen/Bearbeiten von Spieltagen ohne Timer. Spieler-Autocomplete, individuelle Buy-Ins.
+- **LeagueSettings**: Tiebreaker-Konfiguration (avgPlace, wins, cashes, headToHead, lastResult), Saison-Verwaltung.
+- **Gastspieler**: `isGuest`-Flag mit optionalem Ausschluss aus Gesamttabelle.
+- **Punkt-Korrekturen**: Bonus/Abzug pro Spieler mit Grund. Badge in Standings.
+- **Saison-Konzept**: Erstellen, aktivieren, beenden. Filter in LeagueView.
+
+**Phase 3 — Statistics & Export:**
+- **Spieler-Statistiken**: `computeLeaguePlayerStats()` — Punkteverlauf, Platzverteilung, Streaks, Form, Head-to-Head.
+- **TV-Display Liga-Screen**: `LeagueScreen.tsx` — Top-10-Tabelle im TV-Modus als rotierende Sekundäranzeige.
+- **Druckbare Liga-Tabelle**: PrintView erweitert um Liga-Standings-Sektion.
+- **QR-Code Sharing**: Liga-Tabelle als QR-Code teilbar. `encodeLeagueStandingsForQR()` / `decodeLeagueStandingsFromQR()`.
+- **LeagueExport v2**: JSON Export/Import inkludiert GameDays. Rückwärtskompatibel mit v1.
+- **Erweiterte CSV-Exports**: Standings + Finanzen als CSV.
+
+- **8 neue Dateien**: `league.ts`, `LeagueView.tsx`, `LeagueStandingsTable.tsx`, `LeagueGameDays.tsx`, `LeagueFinances.tsx`, `GameDayEditor.tsx`, `LeagueSettings.tsx`, `LeagueScreen.tsx`
+- **10 geänderte Dateien**: `types.ts`, `logic.ts`, `persistence.ts`, `App.tsx`, `translations.ts`, `DisplayMode.tsx`, `displayChannel.ts`, `TVDisplayWindow.tsx`, `PrintView.tsx`, `display/index.ts`
+- **~110 Translation-Keys**, **60 neue Tests** — **403 Tests gesamt**
+
+---
+
+## [5.0.1] – 2026-03-08
+
+### QA-Fixes: Akzentfarbe, Hintergründe, Remote-Kompression, TV-Modus & Tooltips
+
+- **Akzentfarbe vollständig migriert**: ~40 hardkodierte `emerald-*` Tailwind-Klassen in Game-Mode-Komponenten durch `var(--accent-*)` CSS Custom Properties ersetzt. Betroffene Dateien: `PlayerPanel.tsx`, `RebuyStatus.tsx`, `LevelPreview.tsx`, `RemoteControl.tsx`, `ThemeSwitcher.tsx`, `LanguageSwitcher.tsx`, `VoiceSwitcher.tsx`, `PlayersScreen.tsx`. Pattern: `color-mix(in srgb, var(--accent-500) 10%, transparent)` für semi-transparente Hintergründe.
+- **3 neue Hintergrund-Optionen**: „Roter Filz" (`felt-red`), „Mitternacht" (`midnight`), „Sonnenuntergang" (`sunset`) — jetzt 9 Hintergrundmuster insgesamt. 6 neue Translation-Keys (3 DE + 3 EN).
+- **Header-Tooltips**: Alle Header-Buttons (Vorlagen, Ligen, Historie, Modus-Toggle, Theme-Switcher, Language-Switcher, Voice-Switcher) haben jetzt `title`-Attribute für Mouseover-Erklärung.
+- **Remote-Steuerung DEFLATE-Kompression**: `compressSDP()` und `decompressSDP()` in `remote.ts` komplett neu geschrieben — nutzen jetzt `CompressionStream('deflate-raw')` API für echte DEFLATE-Kompression statt nur Base64. Prefix-basiertes Format: `D:` (DEFLATE), `B:` (Base64-Fallback). Backward-kompatibel mit Legacy-Format (ohne Prefix). ~50% kleinere QR-Codes.
+- **TV-Spieleranzeige kompakter**: `PlayersScreen.tsx` — adaptives Grid (5 Spalten bei 16+ Spielern, 4 bei 8+, 3 bei ≤8). Reduzierte Padding/Spacing (`text-xs`, `gap-1`, `py-1`). `max-w-5xl` Container.
+- **Dealerbutton TV-bedingt**: `showDealerBadges` durch `DisplayStatePayload` → `DisplayMode` → `SeatingScreen` durchgereicht. Dealer-Badge im TV-Modus nur wenn in der Hauptansicht aktiviert.
+- **6 Translation-Keys** (3 DE + 3 EN), **keine neuen Tests** — **343 Tests gesamt**
+
+---
+
 ## [5.0.0] – 2026-03-08
 
 ### Feature-Komplett: Remote-Steuerung, Presets, Akzentfarben, Re-Entry & Refactoring

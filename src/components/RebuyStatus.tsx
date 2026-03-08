@@ -24,11 +24,11 @@ export function RebuyStatus({ active, rebuy, currentPlayLevel, elapsedSeconds }:
     }
 
     return (
-      <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700/60 rounded-xl text-center backdrop-blur-sm shadow-sm shadow-emerald-200/20 dark:shadow-emerald-900/10">
-        <span className="text-emerald-700 dark:text-emerald-400 text-sm font-medium">
+      <div className="px-4 py-2 rounded-xl text-center backdrop-blur-sm shadow-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-500) 30%, transparent)' }}>
+        <span className="text-sm font-medium" style={{ color: 'var(--accent-500)' }}>
           {t('rebuyStatus.active')}
         </span>
-        <span className="text-emerald-600 dark:text-emerald-500/70 text-xs ml-2">({detail})</span>
+        <span className="text-xs ml-2" style={{ color: 'var(--accent-600)' }}>({detail})</span>
       </div>
     );
   }

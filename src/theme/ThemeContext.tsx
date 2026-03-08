@@ -7,14 +7,32 @@ const THEME_KEY = 'poker-timer-theme';
 const ACCENT_KEY = 'poker-timer-accent';
 const BG_KEY = 'poker-timer-bg';
 
-/** CSS color values for each accent color */
+/** CSS color values for each accent color — consumed via var(--accent-*) throughout the app */
 const ACCENT_COLORS: Record<AccentColor, Record<string, string>> = {
-  emerald: { '--accent-500': '#10b981', '--accent-600': '#059669', '--accent-400': '#34d399', '--accent-ring': 'rgba(16,185,129,0.25)', '--accent-glow': 'rgba(16,185,129,0.15)', '--accent-glow-strong': 'rgba(16,185,129,0.3)' },
-  blue:    { '--accent-500': '#3b82f6', '--accent-600': '#2563eb', '--accent-400': '#60a5fa', '--accent-ring': 'rgba(59,130,246,0.25)', '--accent-glow': 'rgba(59,130,246,0.15)', '--accent-glow-strong': 'rgba(59,130,246,0.3)' },
-  purple:  { '--accent-500': '#8b5cf6', '--accent-600': '#7c3aed', '--accent-400': '#a78bfa', '--accent-ring': 'rgba(139,92,246,0.25)', '--accent-glow': 'rgba(139,92,246,0.15)', '--accent-glow-strong': 'rgba(139,92,246,0.3)' },
-  red:     { '--accent-500': '#ef4444', '--accent-600': '#dc2626', '--accent-400': '#f87171', '--accent-ring': 'rgba(239,68,68,0.25)', '--accent-glow': 'rgba(239,68,68,0.15)', '--accent-glow-strong': 'rgba(239,68,68,0.3)' },
-  amber:   { '--accent-500': '#f59e0b', '--accent-600': '#d97706', '--accent-400': '#fbbf24', '--accent-ring': 'rgba(245,158,11,0.25)', '--accent-glow': 'rgba(245,158,11,0.15)', '--accent-glow-strong': 'rgba(245,158,11,0.3)' },
-  cyan:    { '--accent-500': '#06b6d4', '--accent-600': '#0891b2', '--accent-400': '#22d3ee', '--accent-ring': 'rgba(6,182,212,0.25)', '--accent-glow': 'rgba(6,182,212,0.15)', '--accent-glow-strong': 'rgba(6,182,212,0.3)' },
+  emerald: {
+    '--accent-400': '#34d399', '--accent-500': '#10b981', '--accent-600': '#059669', '--accent-700': '#047857', '--accent-900': 'rgba(6,78,59,0.3)',
+    '--accent-ring': 'rgba(16,185,129,0.25)', '--accent-glow': 'rgba(16,185,129,0.4)', '--accent-glow-strong': 'rgba(16,185,129,0.5)',
+  },
+  blue: {
+    '--accent-400': '#60a5fa', '--accent-500': '#3b82f6', '--accent-600': '#2563eb', '--accent-700': '#1d4ed8', '--accent-900': 'rgba(30,58,138,0.3)',
+    '--accent-ring': 'rgba(59,130,246,0.25)', '--accent-glow': 'rgba(59,130,246,0.4)', '--accent-glow-strong': 'rgba(59,130,246,0.5)',
+  },
+  purple: {
+    '--accent-400': '#a78bfa', '--accent-500': '#8b5cf6', '--accent-600': '#7c3aed', '--accent-700': '#6d28d9', '--accent-900': 'rgba(76,29,149,0.3)',
+    '--accent-ring': 'rgba(139,92,246,0.25)', '--accent-glow': 'rgba(139,92,246,0.4)', '--accent-glow-strong': 'rgba(139,92,246,0.5)',
+  },
+  red: {
+    '--accent-400': '#f87171', '--accent-500': '#ef4444', '--accent-600': '#dc2626', '--accent-700': '#b91c1c', '--accent-900': 'rgba(127,29,29,0.3)',
+    '--accent-ring': 'rgba(239,68,68,0.25)', '--accent-glow': 'rgba(239,68,68,0.4)', '--accent-glow-strong': 'rgba(239,68,68,0.5)',
+  },
+  amber: {
+    '--accent-400': '#fbbf24', '--accent-500': '#f59e0b', '--accent-600': '#d97706', '--accent-700': '#b45309', '--accent-900': 'rgba(120,53,15,0.3)',
+    '--accent-ring': 'rgba(245,158,11,0.25)', '--accent-glow': 'rgba(245,158,11,0.4)', '--accent-glow-strong': 'rgba(245,158,11,0.5)',
+  },
+  cyan: {
+    '--accent-400': '#22d3ee', '--accent-500': '#06b6d4', '--accent-600': '#0891b2', '--accent-700': '#0e7490', '--accent-900': 'rgba(22,78,99,0.3)',
+    '--accent-ring': 'rgba(6,182,212,0.25)', '--accent-glow': 'rgba(6,182,212,0.4)', '--accent-glow-strong': 'rgba(6,182,212,0.5)',
+  },
 };
 
 function applyAccentColor(accent: AccentColor) {
@@ -25,28 +43,40 @@ function applyAccentColor(accent: AccentColor) {
   }
 }
 
-/** CSS background patterns for each background image option */
+/** CSS background patterns for each background image option — 2-3× stronger than v5.0 */
 const BG_PATTERNS: Record<BackgroundImage, { light: string; dark: string }> = {
   none: { light: '', dark: '' },
   'felt-green': {
-    light: 'radial-gradient(ellipse at 50% 50%, rgba(22,163,74,0.12) 0%, rgba(22,163,74,0.04) 50%, transparent 80%)',
-    dark:  'radial-gradient(ellipse at 50% 50%, rgba(22,163,74,0.18) 0%, rgba(22,163,74,0.06) 50%, transparent 80%)',
+    light: 'radial-gradient(ellipse at 50% 50%, rgba(22,163,74,0.25) 0%, rgba(22,163,74,0.10) 50%, transparent 80%)',
+    dark:  'radial-gradient(ellipse at 50% 50%, rgba(22,163,74,0.35) 0%, rgba(22,163,74,0.12) 50%, transparent 80%)',
   },
   'felt-blue': {
-    light: 'radial-gradient(ellipse at 50% 50%, rgba(37,99,235,0.10) 0%, rgba(37,99,235,0.04) 50%, transparent 80%)',
-    dark:  'radial-gradient(ellipse at 50% 50%, rgba(37,99,235,0.16) 0%, rgba(37,99,235,0.06) 50%, transparent 80%)',
+    light: 'radial-gradient(ellipse at 50% 50%, rgba(37,99,235,0.20) 0%, rgba(37,99,235,0.08) 50%, transparent 80%)',
+    dark:  'radial-gradient(ellipse at 50% 50%, rgba(37,99,235,0.30) 0%, rgba(37,99,235,0.12) 50%, transparent 80%)',
+  },
+  'felt-red': {
+    light: 'radial-gradient(ellipse at 50% 50%, rgba(185,28,28,0.18) 0%, rgba(185,28,28,0.06) 50%, transparent 80%)',
+    dark:  'radial-gradient(ellipse at 50% 50%, rgba(185,28,28,0.30) 0%, rgba(185,28,28,0.10) 50%, transparent 80%)',
   },
   casino: {
-    light: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 2px, transparent 2px, transparent 12px), radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.08) 0%, transparent 60%)',
-    dark:  'repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 12px), radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.1) 0%, transparent 60%)',
+    light: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.025) 0px, rgba(0,0,0,0.025) 2px, transparent 2px, transparent 12px), radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.15) 0%, transparent 60%)',
+    dark:  'repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 2px, transparent 2px, transparent 12px), radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.20) 0%, transparent 60%)',
   },
   'dark-wood': {
-    light: 'repeating-linear-gradient(90deg, rgba(120,80,40,0.04) 0px, transparent 1px, transparent 6px, rgba(120,80,40,0.04) 7px), linear-gradient(180deg, rgba(120,80,40,0.06) 0%, rgba(80,50,20,0.04) 100%)',
-    dark:  'repeating-linear-gradient(90deg, rgba(180,130,70,0.04) 0px, transparent 1px, transparent 6px, rgba(180,130,70,0.04) 7px), linear-gradient(180deg, rgba(100,60,30,0.08) 0%, rgba(60,30,10,0.06) 100%)',
+    light: 'repeating-linear-gradient(90deg, rgba(120,80,40,0.08) 0px, transparent 1px, transparent 6px, rgba(120,80,40,0.08) 7px), linear-gradient(180deg, rgba(120,80,40,0.12) 0%, rgba(80,50,20,0.08) 100%)',
+    dark:  'repeating-linear-gradient(90deg, rgba(180,130,70,0.08) 0px, transparent 1px, transparent 6px, rgba(180,130,70,0.08) 7px), linear-gradient(180deg, rgba(100,60,30,0.16) 0%, rgba(60,30,10,0.12) 100%)',
   },
   abstract: {
-    light: 'radial-gradient(circle at 20% 30%, rgba(139,92,246,0.06) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(6,182,212,0.06) 0%, transparent 40%)',
-    dark:  'radial-gradient(circle at 20% 30%, rgba(139,92,246,0.1) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(6,182,212,0.08) 0%, transparent 40%)',
+    light: 'radial-gradient(circle at 20% 30%, rgba(139,92,246,0.12) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(6,182,212,0.12) 0%, transparent 40%)',
+    dark:  'radial-gradient(circle at 20% 30%, rgba(139,92,246,0.20) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(6,182,212,0.16) 0%, transparent 40%)',
+  },
+  midnight: {
+    light: 'radial-gradient(ellipse at 50% 0%, rgba(30,58,138,0.15) 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, rgba(88,28,135,0.10) 0%, transparent 50%)',
+    dark:  'radial-gradient(ellipse at 50% 0%, rgba(30,58,138,0.30) 0%, transparent 50%), radial-gradient(ellipse at 50% 100%, rgba(88,28,135,0.20) 0%, transparent 50%)',
+  },
+  sunset: {
+    light: 'radial-gradient(ellipse at 30% 80%, rgba(245,158,11,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 20%, rgba(239,68,68,0.10) 0%, transparent 50%)',
+    dark:  'radial-gradient(ellipse at 30% 80%, rgba(245,158,11,0.22) 0%, transparent 50%), radial-gradient(ellipse at 70% 20%, rgba(239,68,68,0.18) 0%, transparent 50%)',
   },
 };
 

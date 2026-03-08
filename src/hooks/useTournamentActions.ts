@@ -27,7 +27,7 @@ type TranslationFn = (key: TranslationKey, params?: Record<string, string | numb
 interface UseTournamentActionsParams {
   config: TournamentConfig;
   setConfig: React.Dispatch<React.SetStateAction<TournamentConfig>>;
-  mode: 'setup' | 'game';
+  mode: 'setup' | 'game' | 'league';
   settings: { voiceEnabled: boolean };
   t: TranslationFn;
   setRecentTableMoves: React.Dispatch<React.SetStateAction<TableMove[]>>;

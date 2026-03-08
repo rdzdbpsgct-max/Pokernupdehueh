@@ -33,16 +33,21 @@ export function ScheduleScreen({ levels, currentLevelIndex }: Props) {
                 isCurrent
                   ? level.type === 'break'
                     ? 'bg-amber-900/40 border border-amber-500/70 text-amber-200 shadow-lg shadow-amber-900/20'
-                    : 'bg-emerald-900/40 border border-emerald-500/70 text-white shadow-lg shadow-emerald-900/20'
+                    : 'border text-white shadow-lg'
                   : isPast
                   ? 'bg-gray-900/30 text-gray-600 line-through'
                   : level.type === 'break'
                   ? 'bg-amber-950/20 text-amber-400/70 border border-amber-800/30'
                   : 'bg-gray-900/40 text-gray-400 border border-gray-800/40'
               }`}
+              style={isCurrent && level.type !== 'break' ? {
+                backgroundColor: 'color-mix(in srgb, var(--accent-600) 25%, transparent)',
+                borderColor: 'color-mix(in srgb, var(--accent-500) 70%, transparent)',
+                boxShadow: `0 10px 15px -3px var(--accent-900)`,
+              } : undefined}
             >
               <span className="flex items-center gap-2">
-                {isCurrent && <span className="text-emerald-400 text-base">▸</span>}
+                {isCurrent && <span className="text-base" style={{ color: 'var(--accent-400)' }}>▸</span>}
                 <span className="font-medium">{levelLabel}</span>
                 {level.type === 'level' && (
                   <span className={isCurrent ? 'text-gray-300' : 'text-gray-500'}>{getBlindsText(level)}</span>

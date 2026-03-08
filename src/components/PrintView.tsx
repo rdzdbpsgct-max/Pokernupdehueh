@@ -1,13 +1,15 @@
-import type { TournamentConfig, TournamentResult } from '../domain/types';
+import type { TournamentConfig, TournamentResult, ExtendedLeagueStanding } from '../domain/types';
 import { getLevelLabel, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
   config: TournamentConfig;
   result?: TournamentResult | null;
+  leagueStandings?: ExtendedLeagueStanding[];
+  leagueName?: string;
 }
 
-export function PrintView({ config, result }: Props) {
+export function PrintView({ config, result, leagueStandings, leagueName }: Props) {
   const { t } = useTranslation();
 
   const tournamentName = config.name || t('app.title');
@@ -133,6 +135,49 @@ export function PrintView({ config, result }: Props) {
             {result.totalRebuys > 0 && ` \u00b7 ${result.totalRebuys} Rebuys`}
             {result.totalAddOns > 0 && ` \u00b7 ${result.totalAddOns} Add-Ons`}
           </div>
+        </div>
+      )}
+
+      {/* League Standings (if provided) */}
+      {leagueStandings && leagueStandings.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-base font-semibold mb-2 border-b border-black pb-1">
+            {leagueName ?? t('league.standings')}
+          </h3>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b-2 border-black">
+                <th className="text-left py-1 px-2">#</th>
+                <th className="text-left py-1 px-2">{t('league.standings.name')}</th>
+                <th className="text-right py-1 px-2">{t('league.standings.points')}</th>
+                <th className="text-right py-1 px-2">{t('league.standings.gameDays')}</th>
+                <th className="text-right py-1 px-2">{t('league.standings.wins')}</th>
+                <th className="text-right py-1 px-2">{t('league.standings.itm')}</th>
+                <th className="text-right py-1 px-2">{t('league.standings.avgPlace')}</th>
+                <th className="text-right py-1 px-2">{t('league.standings.cost')}</th>
+                <th className="text-right py-1 px-2">{t('league.standings.payout')}</th>
+                <th className="text-right py-1 px-2">{t('league.standings.balance')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leagueStandings.map((s) => (
+                <tr key={s.name} className={`border-b border-gray-200 ${s.rank <= 3 ? 'font-bold' : ''}`}>
+                  <td className="py-1 px-2">{s.rank}.</td>
+                  <td className="py-1 px-2">{s.name}{s.corrections !== 0 ? ` (${s.corrections > 0 ? '+' : ''}${s.corrections})` : ''}</td>
+                  <td className="text-right py-1 px-2 font-mono">{s.points}</td>
+                  <td className="text-right py-1 px-2">{s.tournaments}</td>
+                  <td className="text-right py-1 px-2">{s.wins}</td>
+                  <td className="text-right py-1 px-2">{s.cashes}</td>
+                  <td className="text-right py-1 px-2">{s.avgPlace}</td>
+                  <td className="text-right py-1 px-2 font-mono">{s.totalCost.toFixed(2)}</td>
+                  <td className="text-right py-1 px-2 font-mono">{s.totalPayout.toFixed(2)}</td>
+                  <td className={`text-right py-1 px-2 font-mono ${s.netBalance > 0 ? 'text-green-700' : s.netBalance < 0 ? 'text-red-700' : ''}`}>
+                    {s.netBalance >= 0 ? '+' : ''}{s.netBalance.toFixed(2)} EUR
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

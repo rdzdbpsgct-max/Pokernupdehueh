@@ -65,23 +65,111 @@ export type RemoteMessage = RemoteCommand | RemoteState | RemotePing;
 // SDP compression utilities
 // ---------------------------------------------------------------------------
 
-/** Compress SDP string for QR code (Base64 + strip redundant lines) */
-export function compressSDP(sdp: string): string {
-  // Strip empty lines and comment lines to reduce size
+/**
+ * Compress SDP string for QR code using DEFLATE (CompressionStream API)
+ * with Base64 fallback for browsers without CompressionStream support.
+ * Returns a prefixed string: "D:" for DEFLATE-compressed, "B:" for Base64-only.
+ */
+export async function compressSDP(sdp: string): Promise<string> {
+  // Strip empty lines to reduce size before compression
   const stripped = sdp
     .split('\n')
     .filter(line => line.trim().length > 0)
     .join('\n');
-  // Encode to base64 for safe transport
+
+  // Try DEFLATE compression via CompressionStream API
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const encoder = new TextEncoder();
+      const input = encoder.encode(stripped);
+      const cs = new CompressionStream('deflate-raw');
+      const writer = cs.writable.getWriter();
+      writer.write(input);
+      writer.close();
+      const reader = cs.readable.getReader();
+      const chunks: Uint8Array[] = [];
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      const totalLength = chunks.reduce((s, c) => s + c.length, 0);
+      const compressed = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        compressed.set(chunk, offset);
+        offset += chunk.length;
+      }
+      // Convert to Base64 for QR-safe transport
+      let binary = '';
+      for (let i = 0; i < compressed.length; i++) {
+        binary += String.fromCharCode(compressed[i]);
+      }
+      return 'D:' + btoa(binary);
+    } catch {
+      // Fallback to Base64-only
+    }
+  }
+
+  // Fallback: Base64-only encoding
   try {
-    return btoa(unescape(encodeURIComponent(stripped)));
+    return 'B:' + btoa(unescape(encodeURIComponent(stripped)));
   } catch {
-    return btoa(stripped);
+    return 'B:' + btoa(stripped);
   }
 }
 
-/** Decompress SDP string from QR code */
-export function decompressSDP(compressed: string): string {
+/**
+ * Decompress SDP string from QR code.
+ * Handles both DEFLATE-compressed ("D:" prefix) and Base64-only ("B:" prefix) formats.
+ * Also handles legacy format (no prefix) for backward compatibility.
+ */
+export async function decompressSDP(compressed: string): Promise<string> {
+  // DEFLATE-compressed format
+  if (compressed.startsWith('D:')) {
+    try {
+      const base64 = compressed.slice(2);
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const ds = new DecompressionStream('deflate-raw');
+      const writer = ds.writable.getWriter();
+      writer.write(bytes);
+      writer.close();
+      const reader = ds.readable.getReader();
+      const chunks: Uint8Array[] = [];
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      const totalLength = chunks.reduce((s, c) => s + c.length, 0);
+      const result = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return new TextDecoder().decode(result);
+    } catch {
+      // If decompression fails, return the raw data
+      return compressed;
+    }
+  }
+
+  // Base64-only format (with prefix)
+  if (compressed.startsWith('B:')) {
+    const base64 = compressed.slice(2);
+    try {
+      return decodeURIComponent(escape(atob(base64)));
+    } catch {
+      try { return atob(base64); } catch { return base64; }
+    }
+  }
+
+  // Legacy format (no prefix) — backward compatibility
   try {
     return decodeURIComponent(escape(atob(compressed)));
   } catch {
@@ -152,7 +240,7 @@ export class RemoteHost {
   /** Accept answer SDP from controller (scanned from QR or pasted) */
   async acceptAnswer(compressedAnswer: string): Promise<void> {
     if (!this.pc) throw new Error('No peer connection');
-    const sdp = decompressSDP(compressedAnswer);
+    const sdp = await decompressSDP(compressedAnswer);
     await this.pc.setRemoteDescription({ type: 'answer', sdp });
   }
 
@@ -245,7 +333,7 @@ export class RemoteController {
 
   /** Connect to host using compressed offer SDP, returns compressed answer SDP */
   async connect(compressedOffer: string): Promise<string> {
-    const offerSDP = decompressSDP(compressedOffer);
+    const offerSDP = await decompressSDP(compressedOffer);
 
     this.pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],

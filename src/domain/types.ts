@@ -133,7 +133,7 @@ export interface TournamentConfig {
 
 export type AccentColor = 'emerald' | 'blue' | 'purple' | 'red' | 'amber' | 'cyan';
 
-export type BackgroundImage = 'none' | 'felt-green' | 'felt-blue' | 'casino' | 'dark-wood' | 'abstract';
+export type BackgroundImage = 'none' | 'felt-green' | 'felt-blue' | 'felt-red' | 'casino' | 'dark-wood' | 'abstract' | 'midnight' | 'sunset';
 
 export interface Settings {
   soundEnabled: boolean;
@@ -223,6 +223,29 @@ export interface PointSystem {
   entries: PointEntry[];
 }
 
+export interface Season {
+  id: string;
+  name: string;           // e.g. "Saison 2025/26"
+  startDate: string;      // ISO date
+  endDate?: string;       // ISO date, undefined = ongoing
+}
+
+export type TiebreakerCriterion = 'avgPlace' | 'wins' | 'headToHead' | 'lastResult' | 'cashes';
+
+export interface TiebreakerConfig {
+  /** Ordered list of tiebreaker criteria applied when points are equal */
+  criteria: TiebreakerCriterion[];
+}
+
+export interface LeagueCorrection {
+  id: string;
+  playerName: string;
+  /** Positive = bonus, negative = penalty */
+  points: number;
+  reason: string;
+  date: string; // ISO date
+}
+
 export interface League {
   id: string;
   name: string;
@@ -230,6 +253,14 @@ export interface League {
   createdAt: string; // ISO timestamp
   /** Optional tournament defaults stored with this league */
   defaultConfig?: Partial<TournamentConfig>;
+  /** League seasons for grouping game days */
+  seasons?: Season[];
+  /** Currently active season ID */
+  activeSeasonId?: string;
+  /** Tiebreaker configuration for equal points */
+  tiebreaker?: TiebreakerConfig;
+  /** Manual point corrections (bonus/penalty) */
+  corrections?: LeagueCorrection[];
 }
 
 export interface LeagueStanding {
@@ -240,6 +271,52 @@ export interface LeagueStanding {
   cashes: number;
   avgPlace: number;
   bestPlace: number;
+}
+
+export interface ExtendedLeagueStanding extends LeagueStanding {
+  totalCost: number;
+  totalPayout: number;
+  netBalance: number;
+  /** Participation rate 0–1 (gameDays attended / total gameDays) */
+  participationRate: number;
+  knockouts: number;
+  /** Sum of manual point corrections */
+  corrections: number;
+  /** 1-based rank in standings */
+  rank: number;
+}
+
+export interface GameDayParticipant {
+  name: string;
+  place: number;
+  points: number;
+  buyIn: number;
+  rebuys: number;
+  addOnCost: number;
+  payout: number;
+  /** payout - buyIn - rebuyCost - addOnCost */
+  netBalance: number;
+  /** When true, this player is a guest and may be excluded from overall standings */
+  isGuest?: boolean;
+  /** Optional link to RegisteredPlayer for stable identity */
+  registeredPlayerId?: string;
+}
+
+export interface GameDay {
+  id: string;
+  leagueId: string;
+  seasonId?: string;
+  date: string;           // ISO date
+  label?: string;         // e.g. "Spieltag 5"
+  /** Link to the automatically saved TournamentResult */
+  tournamentResultId?: string;
+  participants: GameDayParticipant[];
+  totalPrizePool: number;
+  totalBuyIns: number;
+  /** totalBuyIns - totalPrizePool (cash balance for this game day) */
+  cashBalance: number;
+  notes?: string;
+  venue?: string;
 }
 
 export type TableStatus = 'active' | 'dissolved';

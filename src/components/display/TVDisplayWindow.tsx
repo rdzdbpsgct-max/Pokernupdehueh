@@ -132,6 +132,9 @@ export function TVDisplayWindow() {
         averageStack={state.averageStack}
         tournamentElapsed={state.tournamentElapsed}
         tables={state.tables}
+        showDealerBadges={state.showDealerBadges}
+        leagueName={state.leagueName}
+        leagueStandings={state.leagueStandings}
       />
       {ctcPayload && (
         <CallTheClock

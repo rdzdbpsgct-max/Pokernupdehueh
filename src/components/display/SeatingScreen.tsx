@@ -6,6 +6,7 @@ interface Props {
   players: Player[];
   dealerIndex: number;
   tables?: Table[];
+  showDealerBadges?: boolean;
 }
 
 function TableCard({
@@ -14,12 +15,14 @@ function TableCard({
   dealerIndex,
   chipLeaderId,
   isDissolved,
+  showDealerBadges = true,
 }: {
   table: { name: string; seats: { seatNumber: number; playerId: string | null }[]; dealerSeat: number | null };
   players: Player[];
   dealerIndex: number;
   chipLeaderId: string | null;
   isDissolved?: boolean;
+  showDealerBadges?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -40,7 +43,7 @@ function TableCard({
     >
       {/* Table header */}
       <div className="flex items-center justify-between mb-2">
-        <span className={`text-sm font-bold ${isDissolved ? 'text-gray-500' : 'text-emerald-400'}`}>
+        <span className={`text-sm font-bold ${isDissolved ? 'text-gray-500' : ''}`} style={isDissolved ? undefined : { color: 'var(--accent-400)' }}>
           {table.name}
         </span>
         <span className="text-xs text-gray-500">
@@ -80,7 +83,7 @@ function TableCard({
                 <>
                   {/* Green dot for active */}
                   {isActive && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--accent-500)' }} />
                   )}
 
                   {/* Player name */}
@@ -92,8 +95,8 @@ function TableCard({
                     {player.name}
                   </span>
 
-                  {/* Badges */}
-                  {isDealer && isActive && (
+                  {/* Badges — dealer badge only shown when enabled */}
+                  {showDealerBadges && isDealer && isActive && (
                     <span className="shrink-0 w-4 h-4 flex items-center justify-center rounded-full bg-amber-500 text-gray-900 text-[9px] font-bold leading-none">
                       D
                     </span>
@@ -113,7 +116,7 @@ function TableCard({
   );
 }
 
-export function SeatingScreen({ players, dealerIndex, tables }: Props) {
+export function SeatingScreen({ players, dealerIndex, tables, showDealerBadges = true }: Props) {
   const { t } = useTranslation();
   const chipLeaderId = findChipLeader(players);
 
@@ -135,6 +138,7 @@ export function SeatingScreen({ players, dealerIndex, tables }: Props) {
               players={players}
               dealerIndex={dealerIndex}
               chipLeaderId={chipLeaderId}
+              showDealerBadges={showDealerBadges}
             />
           ))}
           {dissolvedTables.map((tbl) => (
@@ -145,6 +149,7 @@ export function SeatingScreen({ players, dealerIndex, tables }: Props) {
               dealerIndex={dealerIndex}
               chipLeaderId={chipLeaderId}
               isDissolved
+              showDealerBadges={showDealerBadges}
             />
           ))}
         </div>
@@ -166,7 +171,7 @@ export function SeatingScreen({ players, dealerIndex, tables }: Props) {
     <div className="w-full max-w-3xl mx-auto h-full flex flex-col">
       <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 text-center">
         {t('display.seating')}
-        {tableName && <span className="ml-2 text-emerald-400">{tableName}</span>}
+        {tableName && <span className="ml-2" style={{ color: 'var(--accent-400)' }}>{tableName}</span>}
       </h2>
       <div className="flex-1 flex items-center justify-center">
         <TableCard
@@ -174,6 +179,7 @@ export function SeatingScreen({ players, dealerIndex, tables }: Props) {
           players={players}
           dealerIndex={dealerIndex}
           chipLeaderId={chipLeaderId}
+          showDealerBadges={showDealerBadges}
         />
       </div>
     </div>

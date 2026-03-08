@@ -5,7 +5,7 @@ import { playVictorySound, playBubbleSound, playInTheMoneySound } from '../domai
 import { announceWinner, announceTournamentWinner, announceBubble, announceInTheMoney } from '../domain/speech';
 
 interface Params {
-  mode: 'setup' | 'game';
+  mode: 'setup' | 'game' | 'league';
   settings: Settings;
   tournamentFinished: boolean;
   bubbleActive: boolean;

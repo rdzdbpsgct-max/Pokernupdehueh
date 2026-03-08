@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table } from '../../domain/types';
+import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table, ExtendedLeagueStanding } from '../../domain/types';
 import { formatTime, getLevelLabel, getBlindsText, computePrizePool, computeAverageStackInBB, computeRebuyPot, isRebuyActive } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
 import { PlayersScreen } from './PlayersScreen';
@@ -8,8 +8,9 @@ import { PayoutScreen } from './PayoutScreen';
 import { ScheduleScreen } from './ScheduleScreen';
 import { ChipsScreen } from './ChipsScreen';
 import { SeatingScreen } from './SeatingScreen';
+import { LeagueScreen } from './LeagueScreen';
 
-type SecondaryScreen = 'players' | 'stats' | 'payout' | 'schedule' | 'chips' | 'seating';
+type SecondaryScreen = 'players' | 'stats' | 'payout' | 'schedule' | 'chips' | 'seating' | 'league';
 
 interface Props {
   timerState: TimerState;
@@ -33,6 +34,9 @@ interface Props {
   averageStack: number;
   tournamentElapsed: number;
   tables?: Table[];
+  showDealerBadges?: boolean;
+  leagueName?: string;
+  leagueStandings?: ExtendedLeagueStanding[];
 }
 
 const ROTATION_INTERVAL = 15_000;
@@ -59,6 +63,9 @@ export function DisplayMode({
   averageStack,
   tournamentElapsed,
   tables,
+  showDealerBadges,
+  leagueName,
+  leagueStandings,
 }: Props) {
   const { t } = useTranslation();
 
@@ -67,6 +74,7 @@ export function DisplayMode({
     const screens: SecondaryScreen[] = ['players', 'stats', 'payout', 'schedule'];
     if (chipConfig?.enabled) screens.push('chips');
     if (players.length > 0) screens.push('seating');
+    if (leagueStandings && leagueStandings.length > 0) screens.push('league');
     return screens;
   })();
 
@@ -172,9 +180,10 @@ export function DisplayMode({
                   onClick={() => setActiveSecondary(s)}
                   className={`w-2 h-2 rounded-full transition-all duration-300 ${
                     s === activeSecondary
-                      ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]'
+                      ? ''
                       : 'bg-gray-600 hover:bg-gray-500'
                   }`}
+                  style={s === activeSecondary ? { backgroundColor: 'var(--accent-400)', boxShadow: `0 0 6px var(--accent-glow)` } : undefined}
                   aria-label={s}
                 />
               ))}
@@ -214,9 +223,12 @@ export function DisplayMode({
         </div>
 
         {/* Level label */}
-        <p className={`font-bold uppercase tracking-wider text-xl sm:text-2xl ${
-          isBreak ? 'text-amber-400' : 'text-emerald-400'
-        }`}>
+        <p
+          className={`font-bold uppercase tracking-wider text-xl sm:text-2xl ${
+            isBreak ? 'text-amber-400' : ''
+          }`}
+          style={isBreak ? undefined : { color: 'var(--accent-400)' }}
+        >
           {label}
         </p>
 
@@ -256,9 +268,15 @@ export function DisplayMode({
             className={`h-full rounded-full transition-all duration-500 ${
               isBreak
                 ? 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]'
-                : 'bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                : ''
             }`}
-            style={{ width: `${pct}%` }}
+            style={{
+              width: `${pct}%`,
+              ...(isBreak ? {} : {
+                background: 'linear-gradient(to right, var(--accent-600), var(--accent-400))',
+                boxShadow: `0 0 10px var(--accent-glow)`,
+              }),
+            }}
           />
         </div>
 
@@ -318,23 +336,26 @@ export function DisplayMode({
           <ChipsScreen chipConfig={chipConfig} colorUpMap={colorUpMap} currentLevelIndex={timerState.currentLevelIndex} levels={levels} />
         )}
         {activeSecondary === 'seating' && (
-          <SeatingScreen players={players} dealerIndex={dealerIndex} tables={tables} />
+          <SeatingScreen players={players} dealerIndex={dealerIndex} tables={tables} showDealerBadges={showDealerBadges} />
+        )}
+        {activeSecondary === 'league' && leagueName && leagueStandings && (
+          <LeagueScreen leagueName={leagueName} standings={leagueStandings} />
         )}
       </div>
 
       {/* Ticker banner */}
-      <div className="border-t border-gray-800/60 overflow-hidden bg-gray-900/60">
-        <div className="animate-ticker-scroll whitespace-nowrap py-1.5 text-sm text-gray-400 font-medium">
+      <div className="border-t border-gray-800/60 overflow-hidden bg-gray-900/80">
+        <div className="animate-ticker-scroll whitespace-nowrap py-2.5 text-base text-gray-200 font-semibold tracking-wide">
           {tickerItems.map((item, i) => (
             <span key={i}>
-              <span className="text-emerald-500/70 mx-3">◆</span>
+              <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>◆</span>
               {item}
             </span>
           ))}
           {/* Duplicate for seamless loop */}
           {tickerItems.map((item, i) => (
             <span key={`dup-${i}`}>
-              <span className="text-emerald-500/70 mx-3">◆</span>
+              <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>◆</span>
               {item}
             </span>
           ))}

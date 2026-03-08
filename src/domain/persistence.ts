@@ -17,12 +17,14 @@ import type {
   Table,
   Seat,
   MultiTableConfig,
+  GameDay,
 } from './types';
 import { generateBlindStructure } from './blinds';
 import { defaultChipConfig } from './chips';
 import { defaultPayoutConfig } from './tournament';
 import { defaultLateRegistrationConfig } from './validation';
 import { defaultMultiTableConfig } from './tables';
+import { loadGameDaysForLeague, saveGameDay } from './league';
 
 // ---------------------------------------------------------------------------
 // Default Configs
@@ -370,7 +372,7 @@ export function clearCheckpoint(): void {
 // ---------------------------------------------------------------------------
 
 const HISTORY_KEY = 'poker-timer-history';
-const MAX_HISTORY = 50;
+const MAX_HISTORY = 200;
 
 export function saveTournamentResult(result: TournamentResult): void {
   try {
@@ -597,19 +599,22 @@ export function extractLeagueConfig(config: TournamentConfig): Partial<Tournamen
 // ---------------------------------------------------------------------------
 
 export interface LeagueExport {
-  version: 1;
+  version: 1 | 2;
   league: League;
   results: TournamentResult[];
+  gameDays?: GameDay[];
   exportedAt: string;
 }
 
 export function exportLeagueToJSON(league: League): string {
   const history = loadTournamentHistory();
   const results = history.filter((r) => r.leagueId === league.id);
+  const gameDays = loadGameDaysForLeague(league.id);
   const payload: LeagueExport = {
-    version: 1,
+    version: 2,
     league,
     results,
+    gameDays: gameDays.length > 0 ? gameDays : undefined,
     exportedAt: new Date().toISOString(),
   };
   return JSON.stringify(payload, null, 2);
@@ -630,6 +635,8 @@ export function parseLeagueFile(json: string): LeagueExport | null {
         delete parsed.league.defaultConfig;
       }
     }
+    // Backward compat: v1 files have no gameDays field
+    if (!parsed.gameDays) parsed.gameDays = [];
     return parsed as LeagueExport;
   } catch {
     return null;
@@ -638,15 +645,27 @@ export function parseLeagueFile(json: string): LeagueExport | null {
 
 export function importLeague(data: LeagueExport): League {
   // Generate new ID to avoid collisions
+  const newLeagueId = `league_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const league: League = {
     ...data.league,
-    id: `league_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    id: newLeagueId,
   };
   saveLeague(league);
 
   // Import linked tournament results with updated leagueId
   for (const result of data.results) {
-    saveTournamentResult({ ...result, leagueId: league.id });
+    saveTournamentResult({ ...result, leagueId: newLeagueId });
+  }
+
+  // v2: Import game days with updated leagueId
+  if (data.gameDays && data.gameDays.length > 0) {
+    for (const gd of data.gameDays) {
+      saveGameDay({
+        ...gd,
+        id: `gd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        leagueId: newLeagueId,
+      });
+    }
   }
 
   return league;

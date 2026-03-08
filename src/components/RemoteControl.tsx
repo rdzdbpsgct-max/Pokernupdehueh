@@ -121,7 +121,8 @@ export function RemoteHostModal({ onCommand, onClose, onHostReady }: HostProps) 
                   value={answerInput}
                   onChange={(e) => setAnswerInput(e.target.value)}
                   placeholder={t('remote.answerPlaceholder')}
-                  className="flex-1 px-3 py-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/25 focus:outline-none"
+                  className="flex-1 px-3 py-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-sm focus:ring-2 focus:outline-none"
+                  style={{ '--tw-ring-color': 'var(--accent-ring)' } as React.CSSProperties}
                 />
                 <button
                   onClick={handlePasteAnswer}
@@ -133,7 +134,8 @@ export function RemoteHostModal({ onCommand, onClose, onHostReady }: HostProps) 
                 <button
                   onClick={handleAcceptAnswer}
                   disabled={!answerInput.trim()}
-                  className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                  className="px-3 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                  style={{ backgroundColor: 'var(--accent-600)' }}
                 >
                   {t('remote.connect')}
                 </button>
@@ -145,7 +147,7 @@ export function RemoteHostModal({ onCommand, onClose, onHostReady }: HostProps) 
         {status === 'connected' && (
           <div className="text-center py-6 space-y-3">
             <div className="text-4xl">✅</div>
-            <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{t('remote.connected')}</p>
+            <p className="text-lg font-semibold" style={{ color: 'var(--accent-500)' }}>{t('remote.connected')}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('remote.connectedHint')}</p>
           </div>
         )}
@@ -228,7 +230,8 @@ export function RemoteControllerView({ offerData, onClose }: ControllerProps) {
               onClick={() => {
                 try { navigator.clipboard.writeText(answerQR); } catch { /* ignore */ }
               }}
-              className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium"
+              className="w-full px-4 py-2 text-white rounded-lg text-sm font-medium"
+              style={{ backgroundColor: 'var(--accent-600)' }}
             >
               {t('remote.copyAnswer')}
             </button>
@@ -255,7 +258,7 @@ export function RemoteControllerView({ offerData, onClose }: ControllerProps) {
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>{state.activePlayerCount}/{state.totalPlayerCount} {t('remote.players')}</span>
-                  <span className={`font-medium ${state.timerStatus === 'running' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                  <span className={`font-medium ${state.timerStatus !== 'running' ? 'text-amber-500' : ''}`} style={state.timerStatus === 'running' ? { color: 'var(--accent-500)' } : undefined}>
                     {state.timerStatus === 'running' ? '▶' : '⏸'}
                   </span>
                 </div>
@@ -276,7 +279,8 @@ export function RemoteControllerView({ offerData, onClose }: ControllerProps) {
               </button>
               <button
                 onClick={() => sendCmd('toggle')}
-                className="aspect-square flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-3xl active:scale-95 transition-transform shadow-lg shadow-emerald-900/30"
+                className="aspect-square flex items-center justify-center text-white rounded-xl text-3xl active:scale-95 transition-transform shadow-lg"
+                style={{ backgroundColor: 'var(--accent-600)', boxShadow: `0 10px 15px -3px var(--accent-900)` }}
                 title={state?.timerStatus === 'running' ? t('remote.pause') : t('remote.play')}
               >
                 {state?.timerStatus === 'running' ? '⏸' : '▶️'}

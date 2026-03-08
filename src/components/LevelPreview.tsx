@@ -25,16 +25,17 @@ export function LevelPreview({ timerState, levels }: Props) {
               key={level.id}
               className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-sm ${
                 isCurrent
-                  ? 'bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-400 dark:border-emerald-600/70 text-emerald-900 dark:text-white shadow-sm shadow-emerald-200/30 dark:shadow-emerald-900/20'
+                  ? 'dark:text-white shadow-sm'
                   : isNext
                   ? 'bg-gray-100 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600/50 text-gray-800 dark:text-gray-200'
                   : isPast
                   ? 'bg-gray-50 dark:bg-gray-900/30 text-gray-300 dark:text-gray-600 line-through'
                   : 'bg-gray-50/90 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400'
               }`}
+              style={isCurrent ? { backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-500) 40%, transparent)' } : undefined}
             >
               <span className="flex items-center gap-2">
-                {isCurrent && <span className="text-emerald-400">▸</span>}
+                {isCurrent && <span style={{ color: 'var(--accent-400)' }}>▸</span>}
                 {isNext && <span className="text-gray-500 dark:text-gray-400">▸</span>}
                 <span>{getLevelLabel(level, i, levels)}</span>
                 {level.type === 'level' && (

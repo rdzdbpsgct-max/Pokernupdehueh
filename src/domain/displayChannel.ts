@@ -9,6 +9,7 @@ import type {
   AddOnConfig,
   BountyConfig,
   Table,
+  ExtendedLeagueStanding,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -37,6 +38,9 @@ export interface DisplayStatePayload {
   averageStack: number;
   tournamentElapsed: number;
   tables?: Table[];
+  showDealerBadges?: boolean;
+  leagueName?: string;
+  leagueStandings?: ExtendedLeagueStanding[];
 }
 
 // ---------------------------------------------------------------------------

@@ -58,11 +58,11 @@ export function Controls({
 
         <button
           onClick={onToggleStartPause}
-          className={`px-8 py-3 rounded-xl text-lg font-bold transition-all duration-200 active:scale-[0.97] active:shadow-md ${
-            isRunning
-              ? 'bg-gradient-to-b from-yellow-500 to-yellow-700 hover:from-yellow-400 hover:to-yellow-600 text-white shadow-lg shadow-yellow-900/30'
-              : 'bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white shadow-lg shadow-emerald-900/30'
-          }`}
+          className="px-8 py-3 rounded-xl text-lg font-bold transition-all duration-200 active:scale-[0.97] active:shadow-md text-white shadow-lg"
+          style={isRunning
+            ? { background: 'linear-gradient(to bottom, #eab308, #a16207)', boxShadow: '0 10px 15px -3px rgba(113,63,18,0.3)' }
+            : { background: `linear-gradient(to bottom, var(--accent-500), var(--accent-700))`, boxShadow: `0 10px 15px -3px var(--accent-900)` }
+          }
           title={t('controls.startPauseTooltip')}
           aria-label={isRunning ? t('controls.pause') : t('controls.start')}
           aria-pressed={isRunning}
@@ -84,7 +84,8 @@ export function Controls({
       {handForHandActive && onNextHand && timerState.status !== 'running' && (
         <button
           onClick={onNextHand}
-          className="px-8 py-3 rounded-xl text-lg font-bold transition-all duration-200 active:scale-[0.97] active:shadow-md bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white shadow-lg shadow-emerald-900/30"
+          className="px-8 py-3 rounded-xl text-lg font-bold transition-all duration-200 active:scale-[0.97] active:shadow-md text-white shadow-lg"
+          style={{ background: `linear-gradient(to bottom, var(--accent-500), var(--accent-700))`, boxShadow: `0 10px 15px -3px var(--accent-900)` }}
           title={t('controls.nextHandTooltip')}
         >
           {t('controls.nextHand')}
@@ -124,9 +125,10 @@ export function Controls({
             onClick={onToggleCleanView}
             className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm ${
               cleanView
-                ? 'bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white border-emerald-500 dark:border-emerald-600 shadow-emerald-300/30 dark:shadow-emerald-900/30'
+                ? 'text-white border-transparent'
                 : 'bg-white dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600/40 shadow-gray-200/30 dark:shadow-black/15'
             }`}
+            style={cleanView ? { backgroundColor: 'var(--accent-600)', borderColor: 'var(--accent-500)' } : undefined}
             title={cleanView ? t('game.cleanViewOff') : t('game.cleanViewOn')}
           >
             {cleanView ? t('game.cleanViewOn') : t('game.cleanViewOff')}

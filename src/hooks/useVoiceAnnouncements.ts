@@ -22,7 +22,7 @@ import {
 } from '../domain/speech';
 
 interface Params {
-  mode: 'setup' | 'game';
+  mode: 'setup' | 'game' | 'league';
   settings: Settings;
   config: TournamentConfig;
   timerState: TimerState;

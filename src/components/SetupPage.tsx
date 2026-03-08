@@ -223,7 +223,8 @@ export function SetupPage({
             <div className="flex gap-2">
               <button
                 onClick={onRestoreCheckpoint}
-                className="px-4 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-emerald-900/30 active:scale-[0.97]"
+                className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97]"
+                style={{ background: 'linear-gradient(to bottom, var(--accent-600), var(--accent-700))', boxShadow: `0 4px 6px -1px var(--accent-900)` }}
               >
                 {t('checkpoint.restore')}
               </button>
@@ -399,14 +400,15 @@ export function SetupPage({
                   onClick={handleToggleMultiTable}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     config.tables && config.tables.length > 0
-                      ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                      ? 'text-white'
                       : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
                   }`}
+                  style={config.tables && config.tables.length > 0 ? { backgroundColor: 'var(--accent-700)' } : undefined}
                 >
                   {config.tables && config.tables.length > 0 ? t('multiTable.title') + ' ✓' : t('multiTable.title')}
                 </button>
                 {config.tables && config.tables.length > 0 && (
-                  <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+                  <div className="space-y-3 pl-2 border-l-2" style={{ borderColor: 'var(--accent-700)' }}>
                     {config.players.length >= 6 && (
                       <p className="text-xs text-gray-400 dark:text-gray-500">
                         {t('multiTable.suggested', { n: Math.max(2, Math.ceil(config.players.length / 8)) })}
@@ -555,9 +557,10 @@ export function SetupPage({
                 onClick={toggleAnte}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   config.anteEnabled
-                    ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                    ? 'text-white'
                     : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
                 }`}
+                style={config.anteEnabled ? { backgroundColor: 'var(--accent-700)' } : undefined}
               >
                 {config.anteEnabled ? t('app.withAnte') : t('app.withoutAnte')}
               </button>
@@ -571,9 +574,10 @@ export function SetupPage({
                     }))}
                     className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                       config.anteMode === 'standard'
-                        ? 'bg-emerald-700 text-white'
+                        ? 'text-white'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
+                    style={config.anteMode === 'standard' ? { backgroundColor: 'var(--accent-700)' } : undefined}
                   >
                     {t('app.anteStandard')}
                   </button>
@@ -585,9 +589,10 @@ export function SetupPage({
                     }))}
                     className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                       config.anteMode === 'bigBlindAnte'
-                        ? 'bg-emerald-700 text-white'
+                        ? 'text-white'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
+                    style={config.anteMode === 'bigBlindAnte' ? { backgroundColor: 'var(--accent-700)' } : undefined}
                   >
                     {t('app.anteBBA')}
                   </button>
@@ -669,14 +674,15 @@ export function SetupPage({
                   }))}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     config.lateRegistration?.enabled
-                      ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                      ? 'text-white'
                       : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
                   }`}
+                  style={config.lateRegistration?.enabled ? { backgroundColor: 'var(--accent-700)' } : undefined}
                 >
                   {config.lateRegistration?.enabled ? t('lateReg.enabled') : t('lateReg.disabled')}
                 </button>
                 {config.lateRegistration?.enabled && (
-                  <div className="flex items-center gap-2 pl-2 border-l-2 border-emerald-800">
+                  <div className="flex items-center gap-2 pl-2 border-l-2" style={{ borderColor: 'var(--accent-700)' }}>
                     <label className="text-sm text-gray-700 dark:text-gray-300">{t('lateReg.untilLevel')}</label>
                     <NumberStepper
                       value={config.lateRegistration.levelLimit}
@@ -727,8 +733,8 @@ export function SetupPage({
               ))}
             </div>
           ) : (
-            <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 rounded-lg p-3">
-              <p className="text-emerald-700 dark:text-emerald-400 text-sm">{t('app.allReady')}</p>
+            <div className="rounded-lg p-3 border" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', borderColor: 'var(--accent-600)' }}>
+              <p className="text-sm" style={{ color: 'var(--accent-500)' }}>{t('app.allReady')}</p>
             </div>
           )}
         </div>
@@ -738,7 +744,8 @@ export function SetupPage({
           <button
             onClick={onSwitchToGame}
             disabled={startErrors.length > 0}
-            className="w-full px-6 py-3 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl text-lg font-bold transition-all duration-200 shadow-lg shadow-emerald-900/30 active:scale-[0.98] active:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:from-emerald-600 disabled:hover:to-emerald-700 disabled:active:scale-100"
+            className="w-full px-6 py-3 text-white rounded-xl text-lg font-bold transition-all duration-200 active:scale-[0.98] active:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+            style={{ background: 'linear-gradient(to bottom, var(--accent-600), var(--accent-700))', boxShadow: `0 10px 15px -3px var(--accent-900)` }}
           >
             {t('app.startTournament')}
           </button>

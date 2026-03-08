@@ -14,32 +14,39 @@ export function PlayersScreen({ players }: Props) {
     .filter((p) => p.status === 'eliminated')
     .sort((a, b) => (a.placement ?? 0) - (b.placement ?? 0));
 
+  // Adaptive grid: more columns for more players (compact TV layout)
+  const gridCols = activePlayers.length > 16
+    ? 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5'
+    : activePlayers.length > 8
+    ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+    : 'grid-cols-2 sm:grid-cols-3';
+
   return (
-    <div className="w-full max-w-4xl mx-auto h-full flex flex-col">
-      <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2 text-center">
+    <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
+      <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1.5 text-center">
         {t('display.players')} ({activePlayers.length}/{players.length})
       </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 flex-1 overflow-hidden">
+      <div className={`grid ${gridCols} gap-1 flex-1 overflow-hidden content-start`}>
         {activePlayers.map((p, i) => (
           <div
             key={p.id}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/60 border border-gray-700/40 text-sm"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-800/60 border border-gray-700/40 text-xs"
           >
-            <span className="text-gray-500 font-mono text-xs w-5 shrink-0">{i + 1}</span>
+            <span className="text-gray-500 font-mono w-4 shrink-0">{i + 1}</span>
             <span className="text-gray-200 font-medium truncate flex-1">{p.name}</span>
             {p.id === chipLeaderId && (
-              <span className="text-amber-400 text-xs font-bold shrink-0">{t('display.chipLeaderBadge')}</span>
+              <span className="text-amber-400 font-bold shrink-0">{t('display.chipLeaderBadge')}</span>
             )}
             {p.rebuys > 0 && (
-              <span className="text-emerald-400/70 text-xs shrink-0">R{p.rebuys}</span>
+              <span className="shrink-0 opacity-70" style={{ color: 'var(--accent-400)' }}>R{p.rebuys}</span>
             )}
           </div>
         ))}
       </div>
       {eliminatedPlayers.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 justify-center">
+        <div className="mt-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 justify-center">
           {eliminatedPlayers.map((p) => (
-            <span key={p.id} className="text-gray-600 text-xs">
+            <span key={p.id} className="text-gray-600 text-[10px]">
               {p.placement ?? '?'}. {p.name}
             </span>
           ))}

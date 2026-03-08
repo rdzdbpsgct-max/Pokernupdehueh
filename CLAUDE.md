@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 5.0.0
+**Version**: 5.1.1
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (343 tests, single run)
+npm run test         # Vitest run (408 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -59,12 +59,20 @@ src/
 │   │   ├── ScheduleScreen.tsx   # Blind schedule table
 │   │   ├── ChipsScreen.tsx      # Chip denominations display
 │   │   ├── SeatingScreen.tsx    # SVG oval poker table seating diagram
+│   │   ├── LeagueScreen.tsx      # League standings display for TV mode
 │   │   └── index.ts             # Barrel export
 │   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
 │   ├── MultiTablePanel.tsx      # Game-mode multi-table panel with balancing and moves
 │   ├── PrintView.tsx            # Print-optimized blind structure for window.print()
 │   ├── LeagueManager.tsx        # League CRUD, leaderboard, export
+│   ├── LeagueView.tsx           # Dedicated league mode — standings, game days, finances, corrections
+│   ├── LeagueStandingsTable.tsx  # Sortable league standings with financial data, QR sharing
+│   ├── LeagueGameDays.tsx        # League game day list with expandable details
+│   ├── LeagueFinances.tsx        # League financial overview — per game day and cumulative
+│   ├── GameDayEditor.tsx         # Manual game day entry modal with player management
+│   ├── LeagueSettings.tsx        # League settings — tiebreaker config, seasons, point system
+│   ├── LeaguePlayerDetail.tsx    # League player detail stats modal
 │   ├── LevelPreview.tsx         # Next-level sidebar
 │   ├── NumberStepper.tsx        # Custom +/- stepper with long-press support
 │   ├── PayoutEditor.tsx         # Prize distribution config
@@ -83,6 +91,7 @@ src/
 │   ├── VoiceSwitcher.tsx        # Sound/Voice segmented toggle in header
 │   ├── TimerDisplay.tsx         # Main timer, blinds display, progress bar
 │   ├── TournamentFinished.tsx   # Results & payout display with screenshot/share/text-copy/CSV/QR
+│   ├── SharedLeagueView.tsx      # Shared league standings from QR code
 │   ├── SharedResultView.tsx     # Read-only modal for QR-shared tournament results
 │   ├── TournamentHistory.tsx    # Tournament history modal with standings, player stats, export
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
@@ -98,7 +107,9 @@ src/
 │   ├── validation.ts            # Config validation, rebuy/late-reg checks
 │   ├── tournament.ts            # Results, payouts, stats, CSV/text export, league standings, mystery bounty
 │   ├── persistence.ts           # localStorage CRUD, config parsing, templates, player database, league management, wizard
+│   ├── league.ts                 # League domain logic — game days, standings, finances, tiebreaker, QR
 │   ├── tables.ts                # Multi-table management: seat-level CRUD, distribution, balancing, dissolution, final table merge, per-table dealer
+│   ├── displayChannel.ts         # BroadcastChannel communication for TV display window
 │   ├── remote.ts                # WebRTC peer connection for serverless remote control (host + controller)
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
@@ -118,11 +129,11 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~690+ keys)
+    ├── translations.ts          # DE/EN translation strings (~850+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-├── logic.test.ts                # 329 unit tests for domain logic + remote SDP compression
+├── logic.test.ts                # 394 unit tests for domain logic + remote SDP compression
 ├── components.test.tsx          # 14 UI component tests (NumberStepper, CollapsibleSection, PrintView)
 └── setup.ts                     # Test setup: jest-dom matchers, matchMedia mock
 
@@ -139,7 +150,7 @@ public/
 - **useTimer** hook manages timer state with drift-free wall-clock computation
 - **Props drilling** for passing state and callbacks to child components
 - **React Context** for i18n (language selection) and theme (dark/light mode)
-- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`, `poker-timer-history`, `poker-timer-players`, `poker-timer-leagues`, `poker-timer-wizard-completed`
+- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`, `poker-timer-history`, `poker-timer-players`, `poker-timer-leagues`, `poker-timer-gamedays`, `poker-timer-wizard-completed`
 
 ### Component Conventions
 - Functional components with hooks only (no class components)
@@ -230,6 +241,10 @@ public/
 - **Player database**: Persistent player name storage in `poker-timer-players` (localStorage). Auto-save on tournament finish via `syncPlayersToDatabase()`. Autocomplete via native `<datalist>` in PlayerManager. `importPlayersFromHistory()` for one-time migration. Case-insensitive deduplication.
 - **Call the Clock**: Shot-clock countdown modal (`CallTheClock.tsx`, lazy-loaded ~2.3 KB). Configurable duration (10–300s, default 60s) via `callTheClockSeconds` in Settings. Wall-clock-based countdown, progress bar, tension beeps in last 10s, auto-close at 0. Keyboard shortcut `C` to toggle. `NumberStepper` config in SettingsPanel. Voice announcements: `announceCallTheClock()` on start, `announceCallTheClockExpired()` on timeout.
 - **League Management**: Multi-league support with point system. `League` type with customizable `PointSystem` (default: 1st→10, 2nd→7, 3rd→5, ..., 7th→1). CRUD in `poker-timer-leagues` (localStorage). `LeagueManager.tsx` modal with create/edit/delete, inline point editing, embedded sortable leaderboard. `computeLeagueStandings()` aggregates by normalized player name across league-tagged tournaments. Text export (WhatsApp-friendly) + CSV download. Tournament-to-league assignment via `leagueId` dropdown in Setup.
+- **League Mode (Homegame Liga)**: Third app mode (`'league'`). `GameDay` entity links tournaments to leagues with per-player financials. `league.ts` domain module with pure functions: GameDay CRUD, `computeExtendedStandings()` (aggregates points, costs, payout, netBalance, participationRate, tiebreaker), `applyTiebreaker()` (configurable criteria chain), `computeLeagueFinances()`, `computeLeaguePlayerStats()`. Season support, guest players, point corrections. QR-sharing via `encodeLeagueStandingsForQR()`. LeagueExport v2 includes GameDays. TV display integration via `LeagueScreen` secondary screen.
+- **Player Detail Modal**: Click on player name in LeagueStandingsTable → lazy-loaded `LeaguePlayerDetail.tsx` modal showing per-player stats (points history, place distribution, streaks, form, head-to-head). Uses `computeLeaguePlayerStats()` from league.ts.
+- **QR Sharing for League Standings**: `encodeLeagueStandingsForQR()` creates compact `#ls=` hash URL. `decodeLeagueStandingsFromQR()` parses it back. App.tsx handles `#ls=` on startup and shows `SharedLeagueView.tsx` modal (similar to `#r=` for tournament results).
+- **Registered Player ID**: `GameDayParticipant.registeredPlayerId` links game day participants to the persistent `RegisteredPlayer` database for stable identity across name changes. Populated in `createGameDayFromResult()` (from App.tsx) and `GameDayEditor.tsx` save handler.
 - **Mystery Bounty**: Alternative to fixed bounty — `BountyConfig.type: 'fixed' | 'mystery'`. Configurable pool of random bounty amounts (`mysteryPool: number[]`). `drawMysteryBounty()` randomly draws from pool on elimination. Voice announcement `announceMysteryBounty()` reveals drawn amount. Segmented toggle in BountyEditor with pool editor + presets. Backward-compatible via `parseConfigObject`.
 - **Printable blind structure**: `PrintView.tsx` renders print-optimized blind table, chip values, payout, and tournament info. "Print" button in SetupPage triggers `window.print()`. `@media print` CSS hides all UI except print content. Clean black-on-white design.
 - **Setup Wizard**: Guided 5-step first-time setup (`SetupWizard.tsx`, ~230 lines). Steps: Welcome → Players → Buy-In → Blind Speed → Review. Shows only on first visit (`poker-timer-wizard-completed` in localStorage). Generates full config with `defaultConfig`, `generateBlindStructure`, `defaultPlayers`. Skippable. `isWizardCompleted()` / `markWizardCompleted()` in persistence.ts.
@@ -238,20 +253,20 @@ public/
 - **Tournament Presets**: 3 built-in tournament profiles ("Quick Cash Game", "Standard Home Game", "Deep Stack Tournament") for instant start. `getBuiltInPresets()` in persistence.ts. Preset buttons on SetupPage.
 - **Side-Pot Calculator**: `computeSidePots()` in tournament.ts calculates main/side pots from all-in stacks. `SidePotCalculator.tsx` modal with player stack input and result table. Accessible from PlayerPanel header.
 - **Ticker Banner**: Scrolling info bar at bottom of TV Display Mode. Shows rotating tournament info (next level, avg stack, player count, prizepool). Pure CSS animation (`animate-ticker-scroll`).
-- **Custom Accent Color**: 6 selectable accent colors (emerald, blue, purple, red, amber, cyan). CSS custom properties (`--accent-500/600/400`). Picker in SettingsPanel. `AccentColor` type in types.ts.
-- **Background Patterns**: 6 selectable CSS gradient backgrounds (none, felt-green, felt-blue, casino, dark-wood, abstract). `--bg-pattern` CSS custom property. Picker in SettingsPanel. `BackgroundImage` type in types.ts.
+- **Custom Accent Color**: 6 selectable accent colors (emerald, blue, purple, red, amber, cyan). CSS custom properties (`--accent-500/600/400/700/900/ring/glow/glow-strong`). Picker in SettingsPanel. `AccentColor` type in types.ts. Game-mode components migrated from hardcoded `emerald-*` classes to `var(--accent-*)` inline styles using `color-mix()` for semi-transparent variants.
+- **Background Patterns**: 9 selectable CSS gradient backgrounds (none, felt-green, felt-blue, felt-red, casino, dark-wood, abstract, midnight, sunset). `--bg-pattern` CSS custom property. Picker in SettingsPanel. `BackgroundImage` type in types.ts.
 - **Blinds by End Time**: `generateBlindsByEndTime()` in blinds.ts generates blind structure targeting a specific tournament duration. Tab in BlindGenerator with time picker + live preview.
 - **Re-Entry Mode**: Players can re-enter after elimination (new ID, same person). `reEnterPlayer()` in players.ts. `reEntryEnabled/maxReEntries` in RebuyConfig. Re-entry button on eliminated players. Auto-seat at smallest table.
 - **Seat Locking**: Lock individual seats at multi-table setup. `Seat.locked` property. `toggleSeatLock()` in tables.ts. Locked seats skipped during distribution and balancing.
 - **Druckbare Ergebnisse**: Tournament results printable from TournamentFinished screen via PrintView.
-- **Remote Control (WebRTC)**: Serverless smartphone remote control via WebRTC data channel. QR code-based signaling (SDP offer/answer as Base64). `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + smartphone controller UI (play/pause/next/prev, timer display, call-the-clock). STUN via `stun.l.google.com:19302`. Keepalive pings every 10s. Lazy-loaded ~12KB chunk.
+- **Remote Control (WebRTC)**: Serverless smartphone remote control via WebRTC data channel. QR code-based signaling (SDP offer/answer with DEFLATE compression via `CompressionStream` API, Base64 fallback). Prefix-based format: `D:` for DEFLATE, `B:` for Base64. `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + smartphone controller UI (play/pause/next/prev, timer display, call-the-clock). STUN via `stun.l.google.com:19302`. Keepalive pings every 10s. Lazy-loaded ~12KB chunk.
 - **App.tsx Refactoring**: Extracted `useKeyboardShortcuts` (72 lines) and `useTournamentActions` (317 lines) hooks. App.tsx reduced from ~1543 to ~1300 lines.
 - **UI Integration Tests**: 14 component tests via `@testing-library/react` in `tests/components.test.tsx` (NumberStepper, CollapsibleSection, PrintView).
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
 
-- Tests live in `tests/logic.test.ts` (329 tests) and `tests/components.test.tsx` (14 tests) — 343 total
+- Tests live in `tests/logic.test.ts` (394 tests) and `tests/components.test.tsx` (14 tests) — 408 total
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
@@ -286,6 +301,53 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v5.1.1 — Liga-Detail & QR-Sharing
+
+- **Spieler-Detail-Modal**: Klick auf Spielername in LeagueStandingsTable öffnet lazy-loaded `LeaguePlayerDetail.tsx` — Punkteverlauf, Platzverteilung, Streaks, Form, Head-to-Head-Statistiken. Nutzt `computeLeaguePlayerStats()` aus league.ts.
+- **QR-Sharing für Liga-Tabelle**: `encodeLeagueStandingsForQR()` erzeugt kompakte `#ls=` Hash-URL. `decodeLeagueStandingsFromQR()` parst zurück. `SharedLeagueView.tsx` Modal für geteilte Liga-Standings (analog zu `#r=` für Turnierergebnisse). App.tsx erkennt `#ls=` beim Start.
+- **Registered Player ID**: `GameDayParticipant.registeredPlayerId` verknüpft Spieltag-Teilnehmer mit persistenter `RegisteredPlayer`-Datenbank für stabile Identität bei Namensänderungen. Befüllt in `createGameDayFromResult()` (App.tsx) und `GameDayEditor.tsx`.
+- **Neue Dateien**: `LeaguePlayerDetail.tsx`, `SharedLeagueView.tsx`
+- **~44 Translation-Keys** (22 DE + 22 EN: playerDetail + shared.leagueTitle), **5 neue Tests** — **408 Tests gesamt**
+
+### v5.1.0 — Homegame-Ligamodus: Vollausbau in 3 Phasen
+
+**Phase 1 — MVP „Digitaler Ligabogen":**
+- **Liga als dritter App-Modus**: `type Mode = 'setup' | 'game' | 'league'`. Dedizierter Liga-View statt Modal.
+- **GameDay-Entität**: Explizite Spieltag-Zuordnung zu Liga mit Teilnehmern, Punkten, Finanzen. localStorage: `poker-timer-gamedays`.
+- **Auto-GameDay**: Automatische Erstellung bei Turnierende wenn Liga verknüpft.
+- **Erweiterte Standings**: `ExtendedLeagueStanding` mit totalCost, totalPayout, netBalance, participationRate, knockouts, corrections, rank.
+- **Domain-Modul**: `league.ts` (~525 Zeilen) — GameDay CRUD, standings, finances, tiebreaker, QR-Encoding, player stats.
+- **5 neue UI-Komponenten**: `LeagueView.tsx`, `LeagueStandingsTable.tsx`, `LeagueGameDays.tsx`, `LeagueFinances.tsx`.
+
+**Phase 2 — Comfort & Sonderfälle:**
+- **GameDayEditor**: Manuelles Erstellen/Bearbeiten von Spieltagen ohne Timer. Spieler-Autocomplete, individuelle Buy-Ins.
+- **LeagueSettings**: Tiebreaker-Konfiguration (avgPlace, wins, cashes, headToHead, lastResult), Saison-Verwaltung.
+- **Gastspieler**: `isGuest`-Flag mit optionalem Ausschluss aus Gesamttabelle.
+- **Punkt-Korrekturen**: Bonus/Abzug pro Spieler mit Grund. Badge in Standings.
+- **Saison-Konzept**: Erstellen, aktivieren, beenden. Filter in LeagueView.
+
+**Phase 3 — Statistics & Export:**
+- **Spieler-Statistiken**: `computeLeaguePlayerStats()` — Punkteverlauf, Platzverteilung, Streaks, Form, Head-to-Head.
+- **TV-Display Liga-Screen**: `LeagueScreen.tsx` — Top-10-Tabelle im TV-Modus als rotierende Sekundäranzeige.
+- **Druckbare Liga-Tabelle**: PrintView erweitert um Liga-Standings-Sektion.
+- **QR-Code Sharing**: Liga-Tabelle als QR-Code teilbar. `encodeLeagueStandingsForQR()` / `decodeLeagueStandingsFromQR()`.
+- **LeagueExport v2**: JSON Export/Import inkludiert GameDays. Rückwärtskompatibel mit v1.
+- **Erweiterte CSV-Exports**: Standings + Finanzen als CSV.
+
+- **8 neue Dateien**: `league.ts`, `LeagueView.tsx`, `LeagueStandingsTable.tsx`, `LeagueGameDays.tsx`, `LeagueFinances.tsx`, `GameDayEditor.tsx`, `LeagueSettings.tsx`, `LeagueScreen.tsx`
+- **10 geänderte Dateien**: `types.ts`, `logic.ts`, `persistence.ts`, `App.tsx`, `translations.ts`, `DisplayMode.tsx`, `displayChannel.ts`, `TVDisplayWindow.tsx`, `PrintView.tsx`, `display/index.ts`
+- **~110 Translation-Keys**, **60 neue Tests** — **403 Tests gesamt**
+
+### v5.0.1 — QA-Fixes: Akzentfarbe, Hintergründe, Remote-Kompression, TV-Modus & Tooltips
+
+- **Akzentfarbe vollständig migriert**: ~40 hardkodierte `emerald-*` Tailwind-Klassen in Game-Mode-Komponenten durch `var(--accent-*)` CSS Custom Properties ersetzt. Betroffene: `PlayerPanel.tsx`, `RebuyStatus.tsx`, `LevelPreview.tsx`, `RemoteControl.tsx`, `ThemeSwitcher.tsx`, `LanguageSwitcher.tsx`, `VoiceSwitcher.tsx`, `PlayersScreen.tsx`. Pattern: `color-mix(in srgb, var(--accent-500) 10%, transparent)`.
+- **3 neue Hintergrund-Optionen**: `felt-red`, `midnight`, `sunset` — 9 Hintergrundmuster gesamt. 6 neue Translation-Keys.
+- **Header-Tooltips**: `title`-Attribute auf allen Header-Buttons (Vorlagen, Ligen, Historie, Modus-Toggle, Theme/Language/Voice-Switcher).
+- **Remote DEFLATE-Kompression**: `compressSDP()` / `decompressSDP()` in `remote.ts` nutzen `CompressionStream('deflate-raw')`. Prefix-Format: `D:` (DEFLATE), `B:` (Base64-Fallback). Backward-kompatibel. ~50% kleinere QR-Codes.
+- **TV-Spieleranzeige kompakter**: `PlayersScreen.tsx` — adaptives Grid (5/4/3 Spalten nach Spielerzahl), reduziertes Spacing.
+- **Dealerbutton TV-bedingt**: `showDealerBadges` durch `DisplayStatePayload` → `DisplayMode` → `SeatingScreen` durchgereicht.
+- **6 Translation-Keys**, **343 Tests gesamt**
 
 ### v5.0.0 — Feature-Komplett: Remote-Steuerung, Presets, Akzentfarben, Re-Entry & Refactoring
 

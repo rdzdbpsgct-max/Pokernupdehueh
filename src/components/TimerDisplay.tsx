@@ -118,9 +118,12 @@ function ScrubSlider({
             className={`h-full rounded-full ${
               isBreak
                 ? 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
-                : 'bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                : ''
             }`}
-            style={{ width: `${pct}%` }}
+            style={isBreak ? undefined : {
+              background: 'linear-gradient(to right, var(--accent-600), var(--accent-400))',
+              boxShadow: `0 0 8px var(--accent-glow)`,
+            }}
           />
         </div>
         {/* Thumb */}
@@ -128,9 +131,15 @@ function ScrubSlider({
           className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 border-white/30 pointer-events-none ${
             isBreak
               ? 'bg-gradient-to-b from-amber-400 to-amber-600 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
-              : 'bg-gradient-to-b from-emerald-400 to-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+              : ''
           }`}
-          style={{ left: `${pct}%` }}
+          style={{
+            left: `${pct}%`,
+            ...(isBreak ? {} : {
+              background: 'linear-gradient(to bottom, var(--accent-400), var(--accent-600))',
+              boxShadow: `0 0 8px var(--accent-glow)`,
+            }),
+          }}
         />
       </div>
       <span className="text-xs text-gray-400 dark:text-gray-500 w-12">
@@ -167,17 +176,26 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       >
         <div
           className={`h-full rounded-full transition-all duration-500 ${
-            isBreak ? 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+            isBreak ? 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : ''
           }`}
-          style={{ width: `${Math.min(100, progress * 100)}%` }}
+          style={{
+            width: `${Math.min(100, progress * 100)}%`,
+            ...(isBreak ? {} : {
+              background: 'linear-gradient(to right, var(--accent-600), var(--accent-400))',
+              boxShadow: `0 0 8px var(--accent-glow)`,
+            }),
+          }}
         />
       </div>
 
       {/* Level info */}
       <div className="text-center" aria-live="polite">
-        <p className={`font-bold uppercase tracking-wider ${
-          isBreak ? 'text-amber-400' : 'text-emerald-400'
-        } ${largeDisplay ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}>
+        <p
+          className={`font-bold uppercase tracking-wider ${
+            isBreak ? 'text-amber-400' : ''
+          } ${largeDisplay ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}
+          style={isBreak ? undefined : { color: 'var(--accent-400)' }}
+        >
           {label}
         </p>
         {currentLevel.type === 'level' && (

@@ -110,8 +110,27 @@ import {
   reEnterPlayer,
   canReEntry,
   toggleSeatLock,
+  loadGameDays,
+  loadGameDaysForLeague,
+  loadGameDaysForSeason,
+  saveGameDay,
+  deleteGameDay,
+  createGameDayFromResult,
+  computeExtendedStandings,
+  applyTiebreaker,
+  computeLeagueFinances,
+  getActiveSeason,
+  getGameDaysInSeason,
+  createSeason,
+  normalizePlayerName,
+  formatLeagueStandingsAsText,
+  formatLeagueStandingsAsCSV,
+  computeLeaguePlayerStats,
+  encodeLeagueStandingsForQR,
+  decodeLeagueStandingsFromQR,
+  formatLeagueFinancesAsCSV,
 } from '../src/domain/logic';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table } from '../src/domain/types';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding } from '../src/domain/types';
 import { compressSDP, decompressSDP } from '../src/domain/remote';
 
 // Helper to create a full TournamentConfig for tests
@@ -2447,7 +2466,7 @@ describe('Tournament History persistence', () => {
     expect(remaining[0].name).toBe('T2');
   });
 
-  it('caps history at 50 entries', () => {
+  it('caps history at 200 entries', () => {
     const levels: Level[] = [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }];
     const config = makeConfig({
       name: 'Cap',
@@ -2459,13 +2478,13 @@ describe('Tournament History persistence', () => {
       ],
       payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
     });
-    for (let i = 0; i < 55; i++) {
+    for (let i = 0; i < 205; i++) {
       saveTournamentResult(buildTournamentResult({ ...config, name: `T${i}` }, 600, 1));
     }
     const history = loadTournamentHistory();
-    expect(history).toHaveLength(50);
+    expect(history).toHaveLength(200);
     // Most recent should be first
-    expect(history[0].name).toBe('T54');
+    expect(history[0].name).toBe('T204');
   });
 
   it('clearTournamentHistory removes all', () => {
@@ -3529,7 +3548,7 @@ describe('League Export / Import', () => {
     };
     const json = exportLeagueToJSON(league);
     const parsed = JSON.parse(json);
-    expect(parsed.version).toBe(1);
+    expect(parsed.version).toBe(2);
     expect(parsed.league.id).toBe('test-league');
     expect(parsed.league.name).toBe('Friday Night');
     expect(Array.isArray(parsed.results)).toBe(true);
@@ -3904,42 +3923,1033 @@ describe('toggleSeatLock', () => {
 // =============================================================================
 
 describe('compressSDP / decompressSDP', () => {
-  it('round-trips a simple SDP string', () => {
+  it('round-trips a simple SDP string', async () => {
     const sdp = 'v=0\no=- 1234567890 1234567890 IN IP4 0.0.0.0\ns=-\nt=0 0\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\n';
-    const compressed = compressSDP(sdp);
+    const compressed = await compressSDP(sdp);
     expect(typeof compressed).toBe('string');
     expect(compressed.length).toBeGreaterThan(0);
-    const decompressed = decompressSDP(compressed);
+    const decompressed = await decompressSDP(compressed);
     // Empty lines are stripped during compression
     const strippedOriginal = sdp.split('\n').filter(l => l.trim().length > 0).join('\n');
     expect(decompressed).toBe(strippedOriginal);
   });
 
-  it('handles empty string', () => {
-    const compressed = compressSDP('');
-    const decompressed = decompressSDP(compressed);
+  it('handles empty string', async () => {
+    const compressed = await compressSDP('');
+    const decompressed = await decompressSDP(compressed);
     expect(decompressed).toBe('');
   });
 
-  it('handles UTF-8 characters', () => {
+  it('handles UTF-8 characters', async () => {
     const sdp = 'v=0\ns=Pokern up de Hüh\na=charset:UTF-8\n';
-    const compressed = compressSDP(sdp);
-    const decompressed = decompressSDP(compressed);
+    const compressed = await compressSDP(sdp);
+    const decompressed = await decompressSDP(compressed);
     expect(decompressed).toContain('Hüh');
   });
 
-  it('strips empty lines during compression', () => {
+  it('strips empty lines during compression', async () => {
     const sdp = 'v=0\n\n\no=- 1234 IN IP4 0.0.0.0\n\ns=-\n';
-    const compressed = compressSDP(sdp);
-    const decompressed = decompressSDP(compressed);
+    const compressed = await compressSDP(sdp);
+    const decompressed = await decompressSDP(compressed);
     expect(decompressed).not.toContain('\n\n');
     expect(decompressed).toContain('v=0');
     expect(decompressed).toContain('s=-');
   });
 
-  it('returns original string for invalid base64 input', () => {
+  it('returns original string for invalid base64 input', async () => {
     const invalid = '!!!not-base64!!!';
-    const result = decompressSDP(invalid);
+    const result = await decompressSDP(invalid);
     expect(result).toBe(invalid);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// League Module (GameDay CRUD, Extended Standings, Finances, etc.)
+// ---------------------------------------------------------------------------
+
+describe('League Module', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  const makeLeague = (overrides?: Partial<League>): League => ({
+    id: 'league1',
+    name: 'Test League',
+    pointSystem: defaultPointSystem(),
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  });
+
+  const makeGameDay = (overrides?: Partial<GameDay>): GameDay => ({
+    id: `gd_${Math.random().toString(36).slice(2)}`,
+    leagueId: 'league1',
+    date: '2025-01-15',
+    label: 'Spieltag 1',
+    participants: [
+      { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 25, netBalance: 15 },
+      { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 1, addOnCost: 0, payout: 15, netBalance: -5 },
+      { name: 'Charlie', place: 3, points: 5, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+    ],
+    totalPrizePool: 40,
+    totalBuyIns: 40,
+    cashBalance: 0,
+    ...overrides,
+  });
+
+  const makeTournamentResult = (overrides?: Partial<TournamentResult>): TournamentResult => ({
+    id: 'result1',
+    name: 'Test Tournament',
+    date: new Date().toISOString(),
+    playerCount: 3,
+    buyIn: 10,
+    prizePool: 30,
+    players: [
+      { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 2, bountyEarned: 0, netBalance: 10 },
+      { name: 'Bob', place: 2, payout: 10, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 0 },
+      { name: 'Charlie', place: 3, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+    ],
+    bountyEnabled: false,
+    bountyAmount: 0,
+    rebuyEnabled: false,
+    totalRebuys: 0,
+    addOnEnabled: false,
+    totalAddOns: 0,
+    elapsedSeconds: 3600,
+    levelsPlayed: 8,
+    leagueId: 'league1',
+    ...overrides,
+  });
+
+  // --- GameDay CRUD ---
+
+  describe('GameDay CRUD', () => {
+    it('saveGameDay stores and loadGameDays retrieves', () => {
+      const gd = makeGameDay({ id: 'gd1' });
+      saveGameDay(gd);
+      const all = loadGameDays();
+      expect(all).toHaveLength(1);
+      expect(all[0].id).toBe('gd1');
+    });
+
+    it('saveGameDay upserts existing game day', () => {
+      const gd = makeGameDay({ id: 'gd1', label: 'Spieltag 1' });
+      saveGameDay(gd);
+      saveGameDay({ ...gd, label: 'Spieltag 1 (updated)' });
+      const all = loadGameDays();
+      expect(all).toHaveLength(1);
+      expect(all[0].label).toBe('Spieltag 1 (updated)');
+    });
+
+    it('loadGameDaysForLeague filters by leagueId', () => {
+      saveGameDay(makeGameDay({ id: 'gd1', leagueId: 'league1' }));
+      saveGameDay(makeGameDay({ id: 'gd2', leagueId: 'league2' }));
+      saveGameDay(makeGameDay({ id: 'gd3', leagueId: 'league1' }));
+      expect(loadGameDaysForLeague('league1')).toHaveLength(2);
+      expect(loadGameDaysForLeague('league2')).toHaveLength(1);
+    });
+
+    it('deleteGameDay removes the game day', () => {
+      saveGameDay(makeGameDay({ id: 'gd1' }));
+      saveGameDay(makeGameDay({ id: 'gd2' }));
+      deleteGameDay('gd1');
+      expect(loadGameDays()).toHaveLength(1);
+      expect(loadGameDays()[0].id).toBe('gd2');
+    });
+
+    it('loadGameDays returns empty array for missing key', () => {
+      expect(loadGameDays()).toEqual([]);
+    });
+  });
+
+  // --- createGameDayFromResult ---
+
+  describe('createGameDayFromResult', () => {
+    it('correctly maps PlayerResult to GameDayParticipant with points', () => {
+      const league = makeLeague();
+      const result = makeTournamentResult();
+      const gd = createGameDayFromResult(result, league);
+
+      expect(gd.participants).toHaveLength(3);
+      expect(gd.participants[0].name).toBe('Alice');
+      expect(gd.participants[0].place).toBe(1);
+      expect(gd.participants[0].points).toBe(10); // 1st place = 10 points
+      expect(gd.participants[1].points).toBe(7);  // 2nd place = 7 points
+      expect(gd.participants[2].points).toBe(5);  // 3rd place = 5 points
+    });
+
+    it('sets correct totalBuyIns and totalPrizePool', () => {
+      const league = makeLeague();
+      const result = makeTournamentResult();
+      const gd = createGameDayFromResult(result, league);
+
+      expect(gd.totalPrizePool).toBe(30);
+      expect(gd.leagueId).toBe('league1');
+      expect(gd.tournamentResultId).toBe('result1');
+    });
+
+    it('assigns auto-incrementing label', () => {
+      const league = makeLeague();
+      const result1 = makeTournamentResult({ id: 'r1' });
+      const result2 = makeTournamentResult({ id: 'r2' });
+      createGameDayFromResult(result1, league);
+      const gd2 = createGameDayFromResult(result2, league);
+      expect(gd2.label).toBe('Spieltag 2');
+    });
+
+    it('assigns zero points for places beyond point system', () => {
+      const league = makeLeague({
+        pointSystem: { entries: [{ place: 1, points: 10 }] },
+      });
+      const result = makeTournamentResult();
+      const gd = createGameDayFromResult(result, league);
+      expect(gd.participants[0].points).toBe(10);
+      expect(gd.participants[1].points).toBe(0);
+      expect(gd.participants[2].points).toBe(0);
+    });
+  });
+
+  // --- computeExtendedStandings ---
+
+  describe('computeExtendedStandings', () => {
+    it('aggregates points, costs, and balance across game days', () => {
+      const league = makeLeague();
+      const gd1 = makeGameDay({ id: 'gd1', date: '2025-01-15' });
+      const gd2 = makeGameDay({
+        id: 'gd2',
+        date: '2025-01-22',
+        participants: [
+          { name: 'Alice', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 10, netBalance: 0 },
+          { name: 'Bob', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ],
+      });
+
+      const standings = computeExtendedStandings(league, [gd1, gd2]);
+      const alice = standings.find((s) => s.name === 'Alice')!;
+      const bob = standings.find((s) => s.name === 'Bob')!;
+
+      expect(alice.points).toBe(17); // 10 + 7
+      expect(alice.tournaments).toBe(2);
+      expect(alice.wins).toBe(1);
+      expect(bob.points).toBe(17); // 7 + 10
+      expect(bob.tournaments).toBe(2);
+    });
+
+    it('applies corrections to standings', () => {
+      const league = makeLeague({
+        corrections: [
+          { id: 'c1', playerName: 'Alice', points: 3, reason: 'Bonus', date: '2025-01-20' },
+          { id: 'c2', playerName: 'Bob', points: -2, reason: 'Penalty', date: '2025-01-20' },
+        ],
+      });
+      const gd = makeGameDay();
+      const standings = computeExtendedStandings(league, [gd]);
+
+      const alice = standings.find((s) => s.name === 'Alice')!;
+      const bob = standings.find((s) => s.name === 'Bob')!;
+      expect(alice.points).toBe(13); // 10 + 3
+      expect(alice.corrections).toBe(3);
+      expect(bob.points).toBe(5); // 7 - 2
+      expect(bob.corrections).toBe(-2);
+    });
+
+    it('calculates participation rate correctly', () => {
+      const league = makeLeague();
+      const gd1 = makeGameDay({ id: 'gd1' }); // Alice, Bob, Charlie
+      const gd2 = makeGameDay({
+        id: 'gd2',
+        participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ],
+      });
+
+      const standings = computeExtendedStandings(league, [gd1, gd2]);
+      const alice = standings.find((s) => s.name === 'Alice')!;
+      const bob = standings.find((s) => s.name === 'Bob')!;
+
+      expect(alice.participationRate).toBe(1); // 2/2
+      expect(bob.participationRate).toBe(0.5); // 1/2
+    });
+
+    it('sorts by points DESC then avgPlace ASC', () => {
+      const league = makeLeague();
+      const gd = makeGameDay();
+      const standings = computeExtendedStandings(league, [gd]);
+
+      expect(standings[0].name).toBe('Alice'); // 10 pts
+      expect(standings[1].name).toBe('Bob');   // 7 pts
+      expect(standings[2].name).toBe('Charlie'); // 5 pts
+    });
+
+    it('assigns correct ranks', () => {
+      const league = makeLeague();
+      const gd = makeGameDay();
+      const standings = computeExtendedStandings(league, [gd]);
+
+      expect(standings[0].rank).toBe(1);
+      expect(standings[1].rank).toBe(2);
+      expect(standings[2].rank).toBe(3);
+    });
+
+    it('excludes guests when option is set', () => {
+      const league = makeLeague();
+      const gd = makeGameDay({
+        participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Guest', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 10, netBalance: 0, isGuest: true },
+        ],
+      });
+
+      const withGuests = computeExtendedStandings(league, [gd]);
+      const withoutGuests = computeExtendedStandings(league, [gd], { excludeGuests: true });
+
+      expect(withGuests).toHaveLength(2);
+      expect(withoutGuests).toHaveLength(1);
+      expect(withoutGuests[0].name).toBe('Alice');
+    });
+  });
+
+  // --- applyTiebreaker ---
+
+  describe('applyTiebreaker', () => {
+    it('breaks ties using avgPlace', () => {
+      const standings: ExtendedLeagueStanding[] = [
+        { name: 'A', points: 10, tournaments: 2, wins: 0, cashes: 1, avgPlace: 3.0, bestPlace: 2, totalCost: 20, totalPayout: 15, netBalance: -5, participationRate: 1, knockouts: 0, corrections: 0, rank: 0 },
+        { name: 'B', points: 10, tournaments: 2, wins: 0, cashes: 1, avgPlace: 2.0, bestPlace: 1, totalCost: 20, totalPayout: 15, netBalance: -5, participationRate: 1, knockouts: 0, corrections: 0, rank: 0 },
+      ];
+      applyTiebreaker(standings, [], { criteria: ['avgPlace'] });
+      expect(standings[0].name).toBe('B'); // lower avg = better
+      expect(standings[1].name).toBe('A');
+    });
+
+    it('breaks ties using wins', () => {
+      const standings: ExtendedLeagueStanding[] = [
+        { name: 'A', points: 10, tournaments: 2, wins: 0, cashes: 1, avgPlace: 2.0, bestPlace: 2, totalCost: 20, totalPayout: 15, netBalance: -5, participationRate: 1, knockouts: 0, corrections: 0, rank: 0 },
+        { name: 'B', points: 10, tournaments: 2, wins: 2, cashes: 2, avgPlace: 2.0, bestPlace: 1, totalCost: 20, totalPayout: 25, netBalance: 5, participationRate: 1, knockouts: 0, corrections: 0, rank: 0 },
+      ];
+      applyTiebreaker(standings, [], { criteria: ['wins'] });
+      expect(standings[0].name).toBe('B'); // more wins = better
+    });
+
+    it('applies multiple criteria in order', () => {
+      const standings: ExtendedLeagueStanding[] = [
+        { name: 'A', points: 10, tournaments: 2, wins: 1, cashes: 1, avgPlace: 2.0, bestPlace: 1, totalCost: 20, totalPayout: 15, netBalance: -5, participationRate: 1, knockouts: 0, corrections: 0, rank: 0 },
+        { name: 'B', points: 10, tournaments: 2, wins: 1, cashes: 2, avgPlace: 1.5, bestPlace: 1, totalCost: 20, totalPayout: 25, netBalance: 5, participationRate: 1, knockouts: 0, corrections: 0, rank: 0 },
+      ];
+      // wins tie (both 1), so fall through to avgPlace
+      applyTiebreaker(standings, [], { criteria: ['wins', 'avgPlace'] });
+      expect(standings[0].name).toBe('B'); // B has lower avgPlace
+    });
+  });
+
+  // --- computeLeagueFinances ---
+
+  describe('computeLeagueFinances', () => {
+    it('computes cumulative cash balance correctly', () => {
+      const gd1 = makeGameDay({ id: 'gd1', date: '2025-01-15', totalBuyIns: 40, totalPrizePool: 30, cashBalance: 10 });
+      const gd2 = makeGameDay({ id: 'gd2', date: '2025-01-22', totalBuyIns: 50, totalPrizePool: 50, cashBalance: 0 });
+      const gd3 = makeGameDay({ id: 'gd3', date: '2025-01-29', totalBuyIns: 40, totalPrizePool: 45, cashBalance: -5 });
+
+      const finances = computeLeagueFinances([gd1, gd2, gd3]);
+
+      expect(finances.totalBuyIns).toBe(130);
+      expect(finances.totalPayouts).toBe(125);
+      expect(finances.totalCashBalance).toBe(5);
+      expect(finances.perGameDay).toHaveLength(3);
+      expect(finances.perGameDay[0].cumulative).toBe(10);
+      expect(finances.perGameDay[1].cumulative).toBe(10);
+      expect(finances.perGameDay[2].cumulative).toBe(5);
+    });
+
+    it('returns zero values for empty game days', () => {
+      const finances = computeLeagueFinances([]);
+      expect(finances.totalBuyIns).toBe(0);
+      expect(finances.totalPayouts).toBe(0);
+      expect(finances.totalCashBalance).toBe(0);
+      expect(finances.perGameDay).toHaveLength(0);
+    });
+
+    it('sorts game days by date for cumulative', () => {
+      const gd1 = makeGameDay({ id: 'gd1', date: '2025-01-22', cashBalance: 5 });
+      const gd2 = makeGameDay({ id: 'gd2', date: '2025-01-15', cashBalance: 10 });
+      // gd2 is earlier but passed second — should be sorted first
+      const finances = computeLeagueFinances([gd1, gd2]);
+      expect(finances.perGameDay[0].date).toBe('2025-01-15');
+      expect(finances.perGameDay[1].date).toBe('2025-01-22');
+    });
+  });
+
+  // --- Season Helpers ---
+
+  describe('Season Helpers', () => {
+    it('getActiveSeason returns active season', () => {
+      const league = makeLeague({
+        seasons: [
+          { id: 's1', name: 'Season 1', startDate: '2024-01-01', endDate: '2024-12-31' },
+          { id: 's2', name: 'Season 2', startDate: '2025-01-01' },
+        ],
+        activeSeasonId: 's2',
+      });
+      const season = getActiveSeason(league);
+      expect(season?.name).toBe('Season 2');
+    });
+
+    it('getActiveSeason returns undefined when no active season', () => {
+      const league = makeLeague();
+      expect(getActiveSeason(league)).toBeUndefined();
+    });
+
+    it('getGameDaysInSeason filters by seasonId', () => {
+      const gds: GameDay[] = [
+        makeGameDay({ id: 'gd1', seasonId: 's1' }),
+        makeGameDay({ id: 'gd2', seasonId: 's2' }),
+        makeGameDay({ id: 'gd3', seasonId: 's1' }),
+      ];
+      expect(getGameDaysInSeason(gds, 's1')).toHaveLength(2);
+      expect(getGameDaysInSeason(gds, 's2')).toHaveLength(1);
+    });
+
+    it('createSeason generates valid season', () => {
+      const season = createSeason('Saison 2025/26');
+      expect(season.name).toBe('Saison 2025/26');
+      expect(season.id).toMatch(/^season_/);
+      expect(season.startDate).toBeTruthy();
+      expect(season.endDate).toBeUndefined();
+    });
+  });
+
+  // --- normalizePlayerName ---
+
+  describe('normalizePlayerName', () => {
+    it('normalizes to lowercase and trims', () => {
+      expect(normalizePlayerName('  Alice  ')).toBe('alice');
+      expect(normalizePlayerName('BOB')).toBe('bob');
+    });
+  });
+
+  // --- Export Helpers ---
+
+  describe('League Export Helpers', () => {
+    it('formatLeagueStandingsAsText produces readable text', () => {
+      const league = makeLeague();
+      const standings: ExtendedLeagueStanding[] = [
+        { name: 'Alice', points: 20, tournaments: 2, wins: 2, cashes: 2, avgPlace: 1.0, bestPlace: 1, totalCost: 20, totalPayout: 40, netBalance: 20, participationRate: 1, knockouts: 3, corrections: 0, rank: 1 },
+        { name: 'Bob', points: 14, tournaments: 2, wins: 0, cashes: 1, avgPlace: 2.5, bestPlace: 2, totalCost: 20, totalPayout: 10, netBalance: -10, participationRate: 1, knockouts: 0, corrections: 0, rank: 2 },
+      ];
+      const text = formatLeagueStandingsAsText(league, standings);
+      expect(text).toContain('Test League');
+      expect(text).toContain('Alice');
+      expect(text).toContain('20 Pts');
+    });
+
+    it('formatLeagueStandingsAsCSV includes all columns', () => {
+      const standings: ExtendedLeagueStanding[] = [
+        { name: 'Alice', points: 20, tournaments: 2, wins: 2, cashes: 2, avgPlace: 1.0, bestPlace: 1, totalCost: 20, totalPayout: 40, netBalance: 20, participationRate: 1, knockouts: 3, corrections: 0, rank: 1 },
+      ];
+      const csv = formatLeagueStandingsAsCSV(standings);
+      expect(csv).toContain('Rank,Name,Points');
+      expect(csv).toContain('1,"Alice",20');
+    });
+  });
+
+  // --- QR Encoding ---
+
+  describe('League QR Encoding', () => {
+    it('round-trips encode/decode', () => {
+      const league = makeLeague();
+      const standings: ExtendedLeagueStanding[] = [
+        { name: 'Alice', points: 20, tournaments: 2, wins: 2, cashes: 2, avgPlace: 1.0, bestPlace: 1, totalCost: 20, totalPayout: 40, netBalance: 20, participationRate: 1, knockouts: 3, corrections: 0, rank: 1 },
+      ];
+      const hash = encodeLeagueStandingsForQR(league, standings);
+      expect(hash).toMatch(/^#ls=/);
+      const decoded = decodeLeagueStandingsFromQR(hash);
+      expect(decoded).not.toBeNull();
+      expect(decoded!.leagueName).toBe('Test League');
+      expect(decoded!.standings[0].name).toBe('Alice');
+      expect(decoded!.standings[0].points).toBe(20);
+    });
+
+    it('returns null for invalid hash', () => {
+      expect(decodeLeagueStandingsFromQR('#invalid')).toBeNull();
+      expect(decodeLeagueStandingsFromQR('#ls=')).toBeNull();
+    });
+  });
+
+  // --- Player Stats ---
+
+  describe('computeLeaguePlayerStats', () => {
+    it('computes points history and streaks', () => {
+      const gameDays: GameDay[] = [
+        makeGameDay({ id: 'gd1', date: '2025-01-15', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 10, netBalance: 0 },
+        ]}),
+        makeGameDay({ id: 'gd2', date: '2025-01-22', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 3, points: 5, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+      ];
+
+      const stats = computeLeaguePlayerStats('Alice', gameDays);
+      expect(stats.pointsHistory).toHaveLength(2);
+      expect(stats.pointsHistory[0].cumulative).toBe(10);
+      expect(stats.pointsHistory[1].cumulative).toBe(20);
+      expect(stats.streaks.currentWin).toBe(2);
+      expect(stats.streaks.bestWin).toBe(2);
+      expect(stats.formLast5).toEqual(['W', 'W']);
+    });
+
+    it('computes head-to-head correctly', () => {
+      const gameDays: GameDay[] = [
+        makeGameDay({ id: 'gd1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 10, netBalance: 0 },
+        ]}),
+      ];
+      const stats = computeLeaguePlayerStats('Alice', gameDays);
+      expect(stats.headToHead['bob']).toEqual({ wins: 1, losses: 0 });
+    });
+
+    it('computes place distribution', () => {
+      const gameDays: GameDay[] = [
+        makeGameDay({ id: 'gd1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+        makeGameDay({ id: 'gd2', participants: [
+          { name: 'Alice', place: 3, points: 5, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+        makeGameDay({ id: 'gd3', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const stats = computeLeaguePlayerStats('Alice', gameDays);
+      expect(stats.placeDistribution[1]).toBe(2);
+      expect(stats.placeDistribution[3]).toBe(1);
+    });
+  });
+
+  // === Phase 2 Tests ===
+
+  describe('Guest players', () => {
+    it('excludes guests from standings when excludeGuests is true', () => {
+      const league = makeLeague();
+      const gameDays = [
+        makeGameDay({ participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Guest1', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10, isGuest: true },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays, { excludeGuests: true });
+      expect(standings).toHaveLength(1);
+      expect(standings[0].name).toBe('Alice');
+    });
+
+    it('includes guests in standings by default', () => {
+      const league = makeLeague();
+      const gameDays = [
+        makeGameDay({ participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Guest1', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10, isGuest: true },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays);
+      expect(standings).toHaveLength(2);
+    });
+  });
+
+  describe('Variable Buy-Ins', () => {
+    it('computes netBalance correctly with different buy-ins', () => {
+      const league = makeLeague();
+      const gameDays = [
+        makeGameDay({ participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 20, rebuys: 0, addOnCost: 0, payout: 50, netBalance: 30 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 1, addOnCost: 5, payout: 15, netBalance: -10 },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays);
+      const alice = standings.find(s => s.name === 'Alice');
+      const bob = standings.find(s => s.name === 'Bob');
+      expect(alice?.totalCost).toBe(20);
+      expect(alice?.netBalance).toBe(30);
+      expect(bob?.totalCost).toBe(25); // 10 + 10 (rebuy) + 5 (addon)
+      expect(bob?.netBalance).toBe(-10);
+    });
+  });
+
+  describe('Point Corrections', () => {
+    it('adds corrections to standings points', () => {
+      const league = makeLeague({
+        corrections: [
+          { id: 'c1', playerName: 'Alice', points: 3, reason: 'Bonus', date: '2025-01-01' },
+        ],
+      });
+      const gameDays = [
+        makeGameDay({ participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays);
+      expect(standings[0].points).toBe(13); // 10 + 3 correction
+      expect(standings[0].corrections).toBe(3);
+    });
+
+    it('applies negative corrections', () => {
+      const league = makeLeague({
+        corrections: [
+          { id: 'c1', playerName: 'Alice', points: -2, reason: 'Penalty', date: '2025-01-01' },
+        ],
+      });
+      const gameDays = [
+        makeGameDay({ participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays);
+      expect(standings[0].points).toBe(8); // 10 - 2
+      expect(standings[0].corrections).toBe(-2);
+    });
+
+    it('applies multiple corrections for same player', () => {
+      const league = makeLeague({
+        corrections: [
+          { id: 'c1', playerName: 'Alice', points: 2, reason: 'Bonus', date: '2025-01-01' },
+          { id: 'c2', playerName: 'Alice', points: -1, reason: 'Penalty', date: '2025-01-02' },
+        ],
+      });
+      const gameDays = [
+        makeGameDay({ participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays);
+      expect(standings[0].points).toBe(11); // 10 + 2 - 1
+      expect(standings[0].corrections).toBe(1);
+    });
+  });
+
+  describe('Tiebreaker Configuration', () => {
+    it('breaks tie using cashes criterion', () => {
+      const league = makeLeague({
+        tiebreaker: { criteria: ['cashes'] },
+      });
+      const gameDays = [
+        makeGameDay({ id: 'gd1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 15, netBalance: 5 },
+        ]}),
+        makeGameDay({ id: 'gd2', participants: [
+          { name: 'Alice', place: 3, points: 5, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+          { name: 'Bob', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Charlie', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 15, netBalance: 5 },
+        ]}),
+      ];
+      // Alice: 15pts, Bob: 17pts, Charlie: 7pts
+      const standings = computeExtendedStandings(league, gameDays);
+      expect(standings[0].name).toBe('Bob');
+      expect(standings[0].rank).toBe(1);
+    });
+
+    it('uses headToHead tiebreaker', () => {
+      const league = makeLeague({
+        tiebreaker: { criteria: ['headToHead'] },
+      });
+      // Both get same points across 2 game days
+      const gameDays = [
+        makeGameDay({ id: 'gd1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+        makeGameDay({ id: 'gd2', participants: [
+          { name: 'Alice', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+          { name: 'Bob', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      // Both have 17pts — tied. H2H is 1-1. Falls through to default.
+      const standings = computeExtendedStandings(league, gameDays);
+      expect(standings).toHaveLength(2);
+      expect(standings[0].points).toBe(standings[1].points);
+    });
+
+    it('uses lastResult tiebreaker to break tie', () => {
+      const league = makeLeague({
+        tiebreaker: { criteria: ['lastResult'] },
+      });
+      const gameDays = [
+        makeGameDay({ id: 'gd1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+        makeGameDay({ id: 'gd2', participants: [
+          { name: 'Alice', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+          { name: 'Bob', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      // Both have 17pts. Last GD: Alice 2nd, Bob 1st → Bob should be ranked higher
+      const standings = computeExtendedStandings(league, gameDays);
+      expect(standings[0].name).toBe('Bob');
+    });
+  });
+
+  describe('Season filtering', () => {
+    it('loadGameDaysForSeason filters by seasonId', () => {
+      saveGameDay(makeGameDay({ id: 'gd1', leagueId: 'league1', seasonId: 's1' }));
+      saveGameDay(makeGameDay({ id: 'gd2', leagueId: 'league1', seasonId: 's2' }));
+      saveGameDay(makeGameDay({ id: 'gd3', leagueId: 'league1', seasonId: 's1' }));
+      const s1Days = loadGameDaysForSeason('league1', 's1');
+      expect(s1Days).toHaveLength(2);
+      expect(s1Days.every(gd => gd.seasonId === 's1')).toBe(true);
+    });
+
+    it('standings can be computed per season', () => {
+      const league = makeLeague();
+      const s1Days = [
+        makeGameDay({ seasonId: 's1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const s2Days = [
+        makeGameDay({ seasonId: 's2', participants: [
+          { name: 'Bob', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const s1Standings = computeExtendedStandings(league, s1Days);
+      expect(s1Standings).toHaveLength(1);
+      expect(s1Standings[0].name).toBe('Alice');
+
+      const s2Standings = computeExtendedStandings(league, s2Days);
+      expect(s2Standings).toHaveLength(1);
+      expect(s2Standings[0].name).toBe('Bob');
+    });
+  });
+
+  describe('Venue support', () => {
+    it('saves and loads GameDay with venue', () => {
+      const gd = makeGameDay({ venue: 'Pauls Garage' });
+      saveGameDay(gd);
+      const loaded = loadGameDays();
+      expect(loaded[0].venue).toBe('Pauls Garage');
+    });
+  });
+
+  // ==========================================================================
+  // Phase 3: Statistics, Exports, QR, LeagueExport v2
+  // ==========================================================================
+
+  describe('League Player Stats', () => {
+    it('computes points history with cumulative total', () => {
+      const gameDays = [
+        makeGameDay({ id: 'gd1', date: '2025-01-01', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+        makeGameDay({ id: 'gd2', date: '2025-01-15', participants: [
+          { name: 'Alice', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 10, netBalance: 0 },
+          { name: 'Bob', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const stats = computeLeaguePlayerStats('Alice', gameDays);
+      expect(stats.pointsHistory).toHaveLength(2);
+      expect(stats.pointsHistory[0].points).toBe(10);
+      expect(stats.pointsHistory[0].cumulative).toBe(10);
+      expect(stats.pointsHistory[1].points).toBe(7);
+      expect(stats.pointsHistory[1].cumulative).toBe(17);
+    });
+
+    it('computes place distribution', () => {
+      const gameDays = [
+        makeGameDay({ id: 'gd1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+        makeGameDay({ id: 'gd2', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+        makeGameDay({ id: 'gd3', participants: [
+          { name: 'Alice', place: 3, points: 5, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+      ];
+      const stats = computeLeaguePlayerStats('Alice', gameDays);
+      expect(stats.placeDistribution[1]).toBe(2);
+      expect(stats.placeDistribution[3]).toBe(1);
+    });
+
+    it('computes streaks', () => {
+      const gameDays = [
+        makeGameDay({ id: 'gd1', date: '2025-01-01', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+        makeGameDay({ id: 'gd2', date: '2025-01-08', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+        makeGameDay({ id: 'gd3', date: '2025-01-15', participants: [
+          { name: 'Alice', place: 3, points: 5, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+      ];
+      const stats = computeLeaguePlayerStats('Alice', gameDays);
+      expect(stats.streaks.bestWin).toBe(2);
+      expect(stats.streaks.currentWin).toBe(0);
+    });
+
+    it('computes formLast5', () => {
+      const gameDays = Array.from({ length: 6 }, (_, i) =>
+        makeGameDay({ id: `gd${i}`, date: `2025-01-${String(i + 1).padStart(2, '0')}`, participants: [
+          { name: 'Alice', place: i % 3 === 0 ? 1 : i % 3 === 1 ? 2 : 5, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: i % 3 === 0 ? 20 : i % 3 === 1 ? 10 : 0, netBalance: 0 },
+        ]}),
+      );
+      const stats = computeLeaguePlayerStats('Alice', gameDays);
+      expect(stats.formLast5).toHaveLength(5); // Last 5 only
+    });
+
+    it('computes head-to-head records', () => {
+      const gameDays = [
+        makeGameDay({ id: 'gd1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+        makeGameDay({ id: 'gd2', participants: [
+          { name: 'Alice', place: 3, points: 5, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+          { name: 'Bob', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const stats = computeLeaguePlayerStats('Alice', gameDays);
+      expect(stats.headToHead['bob'].wins).toBe(1);
+      expect(stats.headToHead['bob'].losses).toBe(1);
+    });
+  });
+
+  describe('League Exports (Phase 3)', () => {
+    it('formatLeagueStandingsAsText includes medals and balance', () => {
+      const league = makeLeague({ name: 'Test Liga' });
+      const gameDays = [
+        makeGameDay({ participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+          { name: 'Bob', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 0, netBalance: -10 },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays);
+      const text = formatLeagueStandingsAsText(league, standings);
+      expect(text).toContain('Test Liga');
+      expect(text).toContain('Alice');
+      expect(text).toContain('Bob');
+    });
+
+    it('formatLeagueStandingsAsCSV includes all columns', () => {
+      const league = makeLeague();
+      const gameDays = [
+        makeGameDay({ participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays);
+      const csv = formatLeagueStandingsAsCSV(standings);
+      expect(csv).toContain('Rank,Name,Points');
+      expect(csv).toContain('TotalCost,TotalPayout,NetBalance');
+      expect(csv).toContain('"Alice"');
+    });
+
+    it('formatLeagueFinancesAsCSV includes per-gameday data', () => {
+      saveGameDay(makeGameDay({ id: 'gd1', date: '2025-01-01', cashBalance: 5, totalBuyIns: 30, totalPrizePool: 25, leagueId: 'league1' }));
+      saveGameDay(makeGameDay({ id: 'gd2', date: '2025-01-08', cashBalance: -3, totalBuyIns: 40, totalPrizePool: 43, leagueId: 'league1' }));
+      const gameDays = loadGameDaysForLeague('league1');
+      const csv = formatLeagueFinancesAsCSV(gameDays);
+      expect(csv).toContain('Date,Label');
+      expect(csv).toContain('Cumulative');
+    });
+  });
+
+  describe('QR Encoding for League Standings', () => {
+    it('encodes and decodes league standings round-trip', () => {
+      const league = makeLeague({ name: 'Poker Liga' });
+      const standings: ExtendedLeagueStanding[] = [
+        { name: 'Alice', points: 30, tournaments: 4, wins: 2, cashes: 3, avgPlace: 1.5, bestPlace: 1, totalCost: 40, totalPayout: 80, netBalance: 40, participationRate: 1, knockouts: 5, corrections: 0, rank: 1 },
+        { name: 'Bob', points: 20, tournaments: 4, wins: 1, cashes: 2, avgPlace: 2.5, bestPlace: 1, totalCost: 40, totalPayout: 50, netBalance: 10, participationRate: 1, knockouts: 3, corrections: 0, rank: 2 },
+      ];
+      const hash = encodeLeagueStandingsForQR(league, standings);
+      expect(hash).toMatch(/^#ls=/);
+      const decoded = decodeLeagueStandingsFromQR(hash);
+      expect(decoded).not.toBeNull();
+      expect(decoded!.leagueName).toBe('Poker Liga');
+      expect(decoded!.standings).toHaveLength(2);
+      expect(decoded!.standings[0].name).toBe('Alice');
+      expect(decoded!.standings[0].points).toBe(30);
+      expect(decoded!.standings[1].netBalance).toBe(10);
+    });
+
+    it('returns null for invalid hash', () => {
+      expect(decodeLeagueStandingsFromQR('#invalid')).toBeNull();
+      expect(decodeLeagueStandingsFromQR('')).toBeNull();
+    });
+  });
+
+  describe('LeagueExport v2', () => {
+    it('exportLeagueToJSON includes gameDays', () => {
+      const league = makeLeague();
+      saveLeague(league);
+      saveGameDay(makeGameDay({ id: 'gd1', leagueId: league.id }));
+      const json = exportLeagueToJSON(league);
+      const parsed = JSON.parse(json);
+      expect(parsed.version).toBe(2);
+      expect(parsed.gameDays).toBeDefined();
+      expect(parsed.gameDays).toHaveLength(1);
+    });
+
+    it('parseLeagueFile handles v1 format (no gameDays)', () => {
+      const v1Data = JSON.stringify({
+        version: 1,
+        league: makeLeague(),
+        results: [],
+        exportedAt: new Date().toISOString(),
+      });
+      const parsed = parseLeagueFile(v1Data);
+      expect(parsed).not.toBeNull();
+      expect(parsed!.gameDays).toEqual([]);
+    });
+
+    it('parseLeagueFile handles v2 format with gameDays', () => {
+      const v2Data = JSON.stringify({
+        version: 2,
+        league: makeLeague(),
+        results: [],
+        gameDays: [makeGameDay({ id: 'gd1' })],
+        exportedAt: new Date().toISOString(),
+      });
+      const parsed = parseLeagueFile(v2Data);
+      expect(parsed).not.toBeNull();
+      expect(parsed!.gameDays).toHaveLength(1);
+    });
+  });
+
+  describe('Name normalization', () => {
+    it('normalizePlayerName trims and lowercases', () => {
+      expect(normalizePlayerName('  Alice  ')).toBe('alice');
+      expect(normalizePlayerName('BOB')).toBe('bob');
+      expect(normalizePlayerName('Charlie')).toBe('charlie');
+    });
+
+    it('standings aggregate case-insensitively', () => {
+      const league = makeLeague();
+      const gameDays = [
+        makeGameDay({ id: 'gd1', participants: [
+          { name: 'Alice', place: 1, points: 10, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 20, netBalance: 10 },
+        ]}),
+        makeGameDay({ id: 'gd2', participants: [
+          { name: 'alice', place: 2, points: 7, buyIn: 10, rebuys: 0, addOnCost: 0, payout: 10, netBalance: 0 },
+        ]}),
+      ];
+      const standings = computeExtendedStandings(league, gameDays);
+      // Should merge into one player
+      expect(standings).toHaveLength(1);
+      expect(standings[0].tournaments).toBe(2);
+      expect(standings[0].points).toBe(17);
+    });
+  });
+
+  describe('registeredPlayerId population', () => {
+    it('createGameDayFromResult populates registeredPlayerId when players match', () => {
+      const result = {
+        id: 'r1',
+        name: 'Test',
+        date: '2025-01-01',
+        players: [
+          { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 10 },
+          { name: 'Bob', place: 2, payout: 10, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 0 },
+        ],
+        prizePool: 30,
+        buyIn: 10,
+        playerCount: 2,
+        totalRebuys: 0,
+        totalAddOns: 0,
+        rebuyEnabled: false,
+        bountyEnabled: false,
+        bountyAmount: 0,
+        elapsedSeconds: 3600,
+        leagueId: 'league1',
+      } as const;
+      const league = makeLeague();
+      const registeredPlayers = [
+        { id: 'rp_alice', name: 'Alice', createdAt: '2025-01-01', lastPlayedAt: '2025-01-01' },
+        { id: 'rp_charlie', name: 'Charlie', createdAt: '2025-01-01', lastPlayedAt: '2025-01-01' },
+      ];
+      const gd = createGameDayFromResult(result, league, registeredPlayers);
+      // Alice should have registeredPlayerId
+      const alice = gd.participants.find(p => p.name === 'Alice');
+      expect(alice?.registeredPlayerId).toBe('rp_alice');
+      // Bob should not (not in registered players)
+      const bob = gd.participants.find(p => p.name === 'Bob');
+      expect(bob?.registeredPlayerId).toBeUndefined();
+    });
+
+    it('createGameDayFromResult matches case-insensitively', () => {
+      const result = {
+        id: 'r2',
+        name: 'Test',
+        date: '2025-01-01',
+        players: [
+          { name: 'alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 10 },
+        ],
+        prizePool: 20,
+        buyIn: 10,
+        playerCount: 1,
+        totalRebuys: 0,
+        totalAddOns: 0,
+        rebuyEnabled: false,
+        bountyEnabled: false,
+        bountyAmount: 0,
+        elapsedSeconds: 1800,
+      } as const;
+      const league = makeLeague();
+      const registeredPlayers = [
+        { id: 'rp_ALICE', name: 'ALICE', createdAt: '2025-01-01', lastPlayedAt: '2025-01-01' },
+      ];
+      const gd = createGameDayFromResult(result, league, registeredPlayers);
+      expect(gd.participants[0].registeredPlayerId).toBe('rp_ALICE');
+    });
+
+    it('createGameDayFromResult works without registeredPlayers param', () => {
+      const result = {
+        id: 'r3',
+        name: 'Test',
+        date: '2025-01-01',
+        players: [
+          { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 10 },
+        ],
+        prizePool: 20,
+        buyIn: 10,
+        playerCount: 1,
+        totalRebuys: 0,
+        totalAddOns: 0,
+        rebuyEnabled: false,
+        bountyEnabled: false,
+        bountyAmount: 0,
+        elapsedSeconds: 1800,
+      } as const;
+      const league = makeLeague();
+      const gd = createGameDayFromResult(result, league);
+      // Should not have registeredPlayerId when no players provided
+      expect(gd.participants[0].registeredPlayerId).toBeUndefined();
+    });
+  });
+
+  describe('decodeLeagueStandingsFromQR', () => {
+    it('returns null for non-ls hash', () => {
+      expect(decodeLeagueStandingsFromQR('#r=something')).toBeNull();
+      expect(decodeLeagueStandingsFromQR('#foo')).toBeNull();
+      expect(decodeLeagueStandingsFromQR('')).toBeNull();
+    });
+
+    it('decodes a valid league standings hash', () => {
+      const league = makeLeague();
+      const standings = [
+        { rank: 1, name: 'Alice', points: 20, tournaments: 3, wins: 2, cashes: 3, avgPlace: 1.5, bestPlace: 1, knockouts: 5, totalCost: 30, totalPayout: 60, netBalance: 30, participationRate: 1, corrections: 0 },
+        { rank: 2, name: 'Bob', points: 15, tournaments: 3, wins: 1, cashes: 2, avgPlace: 2.0, bestPlace: 1, knockouts: 3, totalCost: 30, totalPayout: 40, netBalance: 10, participationRate: 1, corrections: 0 },
+      ] as ExtendedLeagueStanding[];
+      const hash = encodeLeagueStandingsForQR(league, standings);
+      const decoded = decodeLeagueStandingsFromQR(hash);
+      expect(decoded).not.toBeNull();
+      expect(decoded!.leagueName).toBe(league.name);
+      expect(decoded!.standings).toHaveLength(2);
+      expect(decoded!.standings[0].name).toBe('Alice');
+      expect(decoded!.standings[0].points).toBe(20);
+      expect(decoded!.standings[1].name).toBe('Bob');
+      expect(decoded!.standings[1].netBalance).toBe(10);
+    });
   });
 });

@@ -23,7 +23,13 @@ import {
   buildTournamentResult,
   saveTournamentResult,
   decodeResultFromQR,
+  decodeLeagueStandingsFromQR,
   distributePlayersToTables,
+  loadLeagues,
+  createGameDayFromResult,
+  computeExtendedStandings,
+  loadGameDaysForLeague,
+  loadPlayerDatabase,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
@@ -70,12 +76,14 @@ const SettingsPanel = lazy(() => import('./components/SettingsPanel').then(m => 
 const TournamentFinished = lazy(() => import('./components/TournamentFinished').then(m => ({ default: m.TournamentFinished })));
 // DisplayMode is now rendered in a separate TV window via TVDisplayWindow
 const SharedResultView = lazy(() => import('./components/SharedResultView').then(m => ({ default: m.SharedResultView })));
+const SharedLeagueView = lazy(() => import('./components/SharedLeagueView').then(m => ({ default: m.SharedLeagueView })));
 const CallTheClock = lazy(() => import('./components/CallTheClock').then(m => ({ default: m.CallTheClock })));
 const MultiTablePanel = lazy(() => import('./components/MultiTablePanel').then(m => ({ default: m.MultiTablePanel })));
 const SeatingOverlay = lazy(() => import('./components/SeatingOverlay').then(m => ({ default: m.SeatingOverlay })));
 const RemoteHostModal = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteHostModal })));
+const LeagueView = lazy(() => import('./components/LeagueView').then(m => ({ default: m.LeagueView })));
 
-type Mode = 'setup' | 'game';
+type Mode = 'setup' | 'game' | 'league';
 
 function App() {
   const { t, language } = useTranslation();
@@ -104,6 +112,17 @@ function App() {
     if (hash.startsWith('#r=')) {
       const encoded = decodeURIComponent(hash.slice(3));
       const result = decodeResultFromQR(encoded);
+      if (result) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      return result;
+    }
+    return null;
+  });
+  const [sharedLeague, setSharedLeague] = useState(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#ls=')) {
+      const result = decodeLeagueStandingsFromQR(hash);
       if (result) {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       }
@@ -613,6 +632,17 @@ function App() {
   // ---------------------------------------------------------------------------
 
   // Build full-state payload
+  // Compute league standings for TV display (only when leagueId is set)
+  const leagueDisplayData = useMemo(() => {
+    if (!config.leagueId) return undefined;
+    const leagues = loadLeagues();
+    const league = leagues.find((l) => l.id === config.leagueId);
+    if (!league) return undefined;
+    const gameDays = loadGameDaysForLeague(league.id);
+    if (gameDays.length === 0) return undefined;
+    return { name: league.name, standings: computeExtendedStandings(league, gameDays) };
+  }, [config.leagueId]);
+
   const buildFullStatePayload = useCallback((): DisplayStatePayload => ({
     timerState: timer.timerState,
     levels: config.levels,
@@ -634,7 +664,10 @@ function App() {
     averageStack,
     tournamentElapsed,
     tables: config.tables,
-  }), [timer.timerState, config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed]);
+    showDealerBadges,
+    leagueName: leagueDisplayData?.name,
+    leagueStandings: leagueDisplayData?.standings,
+  }), [timer.timerState, config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed, showDealerBadges, leagueDisplayData]);
 
   // Send full-state on significant changes
   useEffect(() => {
@@ -671,7 +704,17 @@ function App() {
       clearCheckpoint();
       if (!resultSavedRef.current) {
         resultSavedRef.current = true;
-        saveTournamentResult(buildTournamentResult(config, tournamentElapsed, currentPlayLevel));
+        const result = buildTournamentResult(config, tournamentElapsed, currentPlayLevel);
+        saveTournamentResult(result);
+        // Auto-create GameDay when tournament is linked to a league
+        if (config.leagueId) {
+          const leagues = loadLeagues();
+          const league = leagues.find(l => l.id === config.leagueId);
+          if (league) {
+            const registeredPlayers = loadPlayerDatabase();
+            createGameDayFromResult(result, league, registeredPlayers);
+          }
+        }
       }
     }
     if (!tournamentFinished) {
@@ -985,48 +1028,69 @@ function App() {
                 onClick={tvWindowActive ? closeTVWindow : openTVWindow}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
                   tvWindowActive
-                    ? 'bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white border-emerald-500 dark:border-emerald-600 shadow-sm shadow-emerald-300/30 dark:shadow-emerald-900/30'
+                    ? 'text-white shadow-sm'
                     : 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600/30'
                 }`}
+                style={tvWindowActive ? { backgroundColor: 'var(--accent-600)', borderColor: 'var(--accent-500)', boxShadow: `0 1px 2px var(--accent-900)` } : undefined}
                 title={tvWindowActive ? t('display.tvWindowActive') : t('display.activate')}
               >
                 📺
               </button>
             </>
           )}
-          <button
-            onClick={() => {
-              if (mode === 'game') {
-                handleExitToSetup();
-              } else {
-                setMode('game');
-              }
-            }}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              mode === 'game'
-                ? 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30'
-                : 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-md shadow-emerald-900/20'
-            }`}
-          >
-            {mode === 'setup' ? t('app.startGame') : t('app.setup')}
-          </button>
-          {mode === 'setup' && (
+          {mode !== 'game' && (
+            <button
+              onClick={() => {
+                if (mode === 'league') setMode('setup');
+                else setMode('game');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                mode === 'league'
+                  ? 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30'
+                  : 'text-white shadow-md'
+              }`}
+              style={mode === 'setup' ? { background: 'linear-gradient(to bottom, var(--accent-600), var(--accent-700))', boxShadow: `0 4px 6px -1px var(--accent-900)` } : undefined}
+              title={mode === 'setup' ? t('app.startGame') : t('app.setup')}
+            >
+              {mode === 'setup' ? t('app.startGame') : t('app.setup')}
+            </button>
+          )}
+          {mode === 'game' && (
+            <button
+              onClick={handleExitToSetup}
+              className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30 rounded-lg text-sm font-medium transition-all duration-200"
+              title={t('app.setup')}
+            >
+              {t('app.setup')}
+            </button>
+          )}
+          {(mode === 'setup' || mode === 'league') && (
             <>
+              {mode === 'setup' && (
+                <button
+                  onClick={() => setShowTemplates(true)}
+                  className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+                  title={t('app.templates')}
+                >
+                  {t('app.templates')}
+                </button>
+              )}
               <button
-                onClick={() => setShowTemplates(true)}
-                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
-              >
-                {t('app.templates')}
-              </button>
-              <button
-                onClick={() => setShowLeagues(true)}
-                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+                onClick={() => setMode(mode === 'league' ? 'setup' : 'league')}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-200 border ${
+                  mode === 'league'
+                    ? 'text-white shadow-sm'
+                    : 'bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700/30'
+                }`}
+                style={mode === 'league' ? { backgroundColor: 'var(--accent-600)', borderColor: 'var(--accent-500)' } : undefined}
+                title={t('app.leagues')}
               >
                 {t('app.leagues')}
               </button>
               <button
                 onClick={() => setShowHistory(true)}
                 className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+                title={t('app.history')}
               >
                 {t('app.history')}
               </button>
@@ -1037,7 +1101,17 @@ function App() {
 
       {/* Main content */}
       <main className="flex-1 flex">
-        {mode === 'setup' ? (
+        {mode === 'league' ? (
+          /* League Mode */
+          <Suspense fallback={null}>
+            <LeagueView
+              onStartTournament={(leagueId) => {
+                setConfig(prev => ({ ...prev, leagueId }));
+                setMode('setup');
+              }}
+            />
+          </Suspense>
+        ) : mode === 'setup' ? (
           /* Setup Mode */
           <SetupPage
             config={config}
@@ -1179,9 +1253,10 @@ function App() {
                     onClick={() => setShowPlayerPanel((v) => !v)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       showPlayerPanel
-                        ? 'bg-emerald-700 text-white'
+                        ? 'text-white'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                     }`}
+                    style={showPlayerPanel ? { backgroundColor: 'var(--accent-700)' } : undefined}
                   >
                     {showPlayerPanel ? `✓ ${t('app.players')}` : t('app.players')}
                   </button>
@@ -1190,9 +1265,10 @@ function App() {
                   onClick={() => setShowSidebar((v) => !v)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     showSidebar
-                      ? 'bg-emerald-700 text-white'
+                      ? 'text-white'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                   }`}
+                  style={showSidebar ? { backgroundColor: 'var(--accent-700)' } : undefined}
                 >
                   {showSidebar ? `✓ ${t('app.sidebar')}` : t('app.sidebar')}
                 </button>
@@ -1303,6 +1379,17 @@ function App() {
       {sharedResult && (
         <Suspense fallback={null}>
           <SharedResultView result={sharedResult} onClose={() => setSharedResult(null)} />
+        </Suspense>
+      )}
+
+      {/* Shared League Standings Modal (from QR code) */}
+      {sharedLeague && (
+        <Suspense fallback={null}>
+          <SharedLeagueView
+            leagueName={sharedLeague.leagueName}
+            standings={sharedLeague.standings}
+            onClose={() => setSharedLeague(null)}
+          />
         </Suspense>
       )}
 

@@ -113,11 +113,11 @@ export function PlayerPanel({
       {/* Prize Pool */}
       <div>
         <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('playerPanel.prizePool')}</h3>
-        <div className="mt-1 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700/50 rounded-xl shadow-md shadow-emerald-200/30 dark:shadow-emerald-900/10">
-          <p className="text-emerald-700 dark:text-emerald-300 text-lg font-bold">
+        <div className="mt-1 px-3 py-2 rounded-xl shadow-md" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-500) 30%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-500) 30%, transparent)' }}>
+          <p className="text-lg font-bold" style={{ color: 'var(--accent-500)' }}>
             {prizePool.toFixed(2)} {t('unit.eur')}
           </p>
-          <p className="text-emerald-600 dark:text-emerald-500/70 text-xs">
+          <p className="text-xs" style={{ color: 'var(--accent-600)' }}>
             {players.length} &times; {buyIn} {t('unit.eur')}
             {totalRebuys > 0 && !rebuyConfig.separatePot && (
               <> + {totalRebuys} Rebuy{totalRebuys > 1 ? 's' : ''} &times; {rebuyConfig.rebuyCost} {t('unit.eur')}</>
@@ -221,7 +221,8 @@ export function PlayerPanel({
             {lateRegOpen && onAddLatePlayer && (
               <button
                 onClick={onAddLatePlayer}
-                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-800/40 text-emerald-700 dark:text-emerald-400 transition-colors border border-emerald-300 dark:border-emerald-700/40"
+                className="px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)', color: 'var(--accent-500)', border: '1px solid color-mix(in srgb, var(--accent-500) 30%, transparent)' }}
               >
                 + {t('lateReg.addPlayer')}
               </button>
@@ -293,7 +294,7 @@ export function PlayerPanel({
                   </span>
                 )}
                 {!rebuyActive && player.rebuys > 0 && (
-                  <span className="inline-block bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full px-1.5 text-xs font-medium shrink-0">
+                  <span className="inline-block rounded-full px-1.5 text-xs font-medium shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)', color: 'var(--accent-500)' }}>
                     {player.rebuys} RB
                   </span>
                 )}
@@ -313,7 +314,8 @@ export function PlayerPanel({
                     inputMode="numeric"
                     value={player.chips}
                     onChange={(e) => onUpdateStack(player.id, Math.max(0, Number(e.target.value) || 0))}
-                    className="w-20 px-1 py-0.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/40 rounded text-xs text-right font-mono text-gray-800 dark:text-gray-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/25"
+                    className="w-20 px-1 py-0.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/40 rounded text-xs text-right font-mono text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1"
+                    style={{ '--tw-ring-color': 'var(--accent-ring)' } as React.CSSProperties}
                   />
                 </div>
               )}
@@ -341,7 +343,8 @@ export function PlayerPanel({
                         onUpdateRebuys(player.id, player.rebuys + 1)
                       }
                       disabled={!canPlayerRebuy(player, rebuyConfig)}
-                      className="w-7 h-7 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="w-7 h-7 rounded-lg text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      style={{ backgroundColor: 'var(--accent-700)' }}
                     >
                       +
                     </button>
@@ -354,9 +357,10 @@ export function PlayerPanel({
                     onClick={() => onUpdateAddOn(player.id, !player.addOn)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                       player.addOn
-                        ? 'bg-emerald-100 dark:bg-emerald-700/50 text-emerald-700 dark:text-emerald-300'
+                        ? ''
                         : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400'
                     }`}
+                    style={player.addOn ? { backgroundColor: 'color-mix(in srgb, var(--accent-500) 20%, transparent)', color: 'var(--accent-500)' } : undefined}
                     title="Add-On"
                   >
                     {player.addOn ? '✓ AO' : 'AO'}
@@ -458,7 +462,8 @@ export function PlayerPanel({
                     {onReEntryPlayer && lateRegOpen && canReEntry(player, rebuyConfig) && (
                       <button
                         onClick={() => onReEntryPlayer(player.id)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-900/40 hover:bg-emerald-800 text-emerald-300 text-xs font-medium transition-all duration-200 border border-emerald-800/30"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
+                        style={{ backgroundColor: 'color-mix(in srgb, var(--accent-600) 30%, transparent)', color: 'var(--accent-400)', border: '1px solid color-mix(in srgb, var(--accent-600) 20%, transparent)' }}
                         title={t('playerPanel.reEntryTooltip')}
                       >
                         {t('playerPanel.reEntry')}

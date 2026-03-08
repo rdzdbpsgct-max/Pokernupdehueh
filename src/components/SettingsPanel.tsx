@@ -18,9 +18,10 @@ function CheckBox({ checked, onChange }: { checked: boolean; onChange: () => voi
       onClick={onChange}
       className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-all duration-200 ${
         checked
-          ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 shadow-sm shadow-emerald-500/30'
+          ? 'shadow-sm'
           : 'bg-gray-200 dark:bg-gray-700/80 border border-gray-300 dark:border-gray-600/60'
       }`}
+      style={checked ? { background: 'linear-gradient(to bottom, var(--accent-400), var(--accent-600))', boxShadow: `0 1px 2px var(--accent-glow)` } : undefined}
     >
       {checked && (
         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -35,9 +36,12 @@ const BG_OPTIONS: { value: BackgroundImage; gradient: string; labelKey: string }
   { value: 'none',       gradient: 'linear-gradient(135deg, #e5e7eb, #d1d5db)', labelKey: 'settings.bgNone' },
   { value: 'felt-green', gradient: 'radial-gradient(circle, rgba(22,163,74,0.5) 0%, rgba(22,163,74,0.2) 100%)', labelKey: 'settings.bgFeltGreen' },
   { value: 'felt-blue',  gradient: 'radial-gradient(circle, rgba(37,99,235,0.5) 0%, rgba(37,99,235,0.2) 100%)', labelKey: 'settings.bgFeltBlue' },
+  { value: 'felt-red',   gradient: 'radial-gradient(circle, rgba(185,28,28,0.5) 0%, rgba(185,28,28,0.2) 100%)', labelKey: 'settings.bgFeltRed' },
   { value: 'casino',     gradient: 'repeating-linear-gradient(45deg, rgba(245,158,11,0.15) 0px, rgba(245,158,11,0.15) 2px, transparent 2px, transparent 6px)', labelKey: 'settings.bgCasino' },
   { value: 'dark-wood',  gradient: 'linear-gradient(180deg, rgba(120,80,40,0.4) 0%, rgba(80,50,20,0.5) 100%)', labelKey: 'settings.bgDarkWood' },
   { value: 'abstract',   gradient: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.3))', labelKey: 'settings.bgAbstract' },
+  { value: 'midnight',   gradient: 'linear-gradient(180deg, rgba(30,58,138,0.5) 0%, rgba(88,28,135,0.4) 100%)', labelKey: 'settings.bgMidnight' },
+  { value: 'sunset',     gradient: 'linear-gradient(135deg, rgba(245,158,11,0.4), rgba(239,68,68,0.4))', labelKey: 'settings.bgSunset' },
 ];
 
 const ACCENT_OPTIONS: { color: AccentColor; bg: string; label: string }[] = [
@@ -149,10 +153,15 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
               onClick={() => setBackgroundImage(opt.value)}
               className={`relative w-full aspect-[3/2] rounded-lg overflow-hidden transition-all duration-200 border-2 ${
                 backgroundImage === opt.value
-                  ? 'border-emerald-500 dark:border-emerald-400 ring-1 ring-emerald-500/30 scale-[1.02]'
+                  ? 'scale-[1.02]'
                   : 'border-gray-300 dark:border-gray-700/60 hover:border-gray-400 dark:hover:border-gray-600 opacity-70 hover:opacity-100'
               }`}
-              style={{ background: opt.gradient }}
+              style={{
+                background: opt.gradient,
+                ...(backgroundImage === opt.value
+                  ? { borderColor: 'var(--accent-500)', boxShadow: `0 0 0 1px var(--accent-ring)` }
+                  : {}),
+              }}
               title={t(opt.labelKey as Parameters<typeof t>[0])}
               aria-label={t(opt.labelKey as Parameters<typeof t>[0])}
             >

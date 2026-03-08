@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-5.0.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-5.1.1-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-343%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-408%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -88,6 +88,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Blinds nach Endzeit | Blindstruktur automatisch generieren basierend auf gewünschter Turnierdauer |
 | Re-Entry | Spieler können sich nach Elimination neu einkaufen (neuer Stack, separate Statistik) |
 | Seat-Locking | Bestimmte Sitzplätze an Tischen sperren (Multi-Table) |
+| Liga-Modus | Homegame-Liga mit Spieltagen, Punktesystem, Tiebreaker, Saisons, Finanzen, Gastspieler, Spieler-Detailansicht, QR-Teilen, TV-Display, Druckansicht |
 | Fernsteuerung | Turnier vom Smartphone steuern via WebRTC (Play/Pause/Next, Call the Clock) — QR-Code-Verbindung |
 | Premium UI | Glassmorphism, Gradient-Buttons, Timer-Glow, benutzerdefinierte Animationen, taktile Interaktionen |
 | Design-System | Einheitliche Abrundungen, Border-Opacities, Focus-Glow, Custom Number-Stepper, SVG-Chevrons |
@@ -184,6 +185,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Blinds by End Time | Auto-generate blind structure based on target tournament duration |
 | Re-Entry | Players can re-enter after elimination (fresh stack, separate stats) |
 | Seat Locking | Lock specific seats at tables (multi-table) |
+| League Mode | Home game league with game days, point system, tiebreaker, seasons, finances, guest players, player detail modal, QR sharing, TV display, print view |
 | Remote Control | Control tournament from smartphone via WebRTC (Play/Pause/Next, Call the Clock) — QR code connection |
 | Premium UI | Glassmorphism, gradient buttons, timer glow, custom animations, tactile interactions |
 | Design system | Unified rounding, border opacities, focus glow, custom number stepper, SVG chevrons |
@@ -209,7 +211,7 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-195_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-408_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 
 - **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
 - **TypeScript 5.9** — Strikte Typisierung / Strict typing
