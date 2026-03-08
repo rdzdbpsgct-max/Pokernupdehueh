@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table } from '../../domain/types';
-import { formatTime, getLevelLabel, getBlindsText } from '../../domain/logic';
+import { formatTime, getLevelLabel, getBlindsText, computePrizePool, computeAverageStackInBB, computeRebuyPot, isRebuyActive } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
 import { PlayersScreen } from './PlayersScreen';
 import { StatsScreen } from './StatsScreen';
@@ -113,6 +113,35 @@ export function DisplayMode({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  // Ticker banner items (must be before early return to satisfy hook rules)
+  const tickerItems = useMemo(() => {
+    const items: string[] = [];
+    items.push(`${activePlayerCount}/${totalPlayerCount} ${t('display.playersRemaining')}`);
+    const pool = computePrizePool(players, buyIn, rebuy.rebuyCost, addOn.enabled ? addOn.cost : 0, rebuy.separatePot);
+    items.push(`${t('stats.prizePool')}: ${pool} ${t('unit.eur')}`);
+    const rPot = rebuy.separatePot ? computeRebuyPot(players, rebuy.rebuyCost) : 0;
+    if (rPot > 0) items.push(`${t('rebuy.separatePotLabel')}: ${rPot} ${t('unit.eur')}`);
+    const curLvl = levels[timerState.currentLevelIndex];
+    const curBB = curLvl?.type === 'level' ? (curLvl.bigBlind ?? 0) : 0;
+    if (curBB > 0) {
+      const avgBB = computeAverageStackInBB(averageStack, curBB);
+      items.push(`${t('stats.avgStackBB')}: ${avgBB} BB`);
+    }
+    const nIdx = timerState.currentLevelIndex + 1;
+    const nLvl = nIdx < levels.length ? levels[nIdx] : null;
+    if (nLvl) {
+      if (nLvl.type === 'break') {
+        items.push(`${t('display.nextLevel')}: ${nLvl.label || t('display.break')}`);
+      } else {
+        items.push(`${t('display.nextLevel')}: ${getBlindsText(nLvl)}`);
+      }
+    }
+    if (rebuy.enabled && isRebuyActive(rebuy, timerState.currentLevelIndex, levels, tournamentElapsed)) {
+      items.push('Rebuy ✓');
+    }
+    return items;
+  }, [activePlayerCount, totalPlayerCount, players, buyIn, rebuy, addOn, levels, timerState.currentLevelIndex, averageStack, tournamentElapsed, t]);
 
   const currentLevel = levels[timerState.currentLevelIndex];
   if (!currentLevel) return null;
@@ -293,9 +322,28 @@ export function DisplayMode({
         )}
       </div>
 
+      {/* Ticker banner */}
+      <div className="border-t border-gray-800/60 overflow-hidden bg-gray-900/60">
+        <div className="animate-ticker-scroll whitespace-nowrap py-1.5 text-sm text-gray-400 font-medium">
+          {tickerItems.map((item, i) => (
+            <span key={i}>
+              <span className="text-emerald-500/70 mx-3">◆</span>
+              {item}
+            </span>
+          ))}
+          {/* Duplicate for seamless loop */}
+          {tickerItems.map((item, i) => (
+            <span key={`dup-${i}`}>
+              <span className="text-emerald-500/70 mx-3">◆</span>
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Bottom bar: rotation hint */}
-      <div className="px-6 py-1.5 border-t border-gray-800/60 text-center">
-        <p className="text-gray-600 text-xs">
+      <div className="px-6 py-1 border-t border-gray-800/60 text-center">
+        <p className="text-gray-600 text-[10px]">
           {secondaryScreens.length > 1
             ? `${t('display.rotationHint', { n: ROTATION_INTERVAL / 1000 })} · ← → ${t('display.navigate')}`
             : `← → ${t('display.navigate')}`

@@ -7,6 +7,7 @@ import type {
   PointSystem,
   LeagueStanding,
   League,
+  SidePot,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -36,6 +37,42 @@ export function computePrizePool(
 
 export function computeRebuyPot(players: Player[], rebuyCost: number): number {
   return computeTotalRebuys(players) * rebuyCost;
+}
+
+/**
+ * Compute side pots from a list of all-in stack sizes.
+ * Classic side-pot algorithm: sort stacks ascending, each unique stack level
+ * creates a pot where only players with at least that many chips are eligible.
+ *
+ * @param stacks Array of stack sizes for each player in the pot
+ * @returns Array of SidePot objects (Main Pot first, then Side Pots)
+ */
+export function computeSidePots(stacks: number[]): SidePot[] {
+  if (stacks.length < 2) return [];
+
+  // Sort ascending and work through unique levels
+  const sorted = [...stacks].sort((a, b) => a - b);
+  const pots: SidePot[] = [];
+  let previousLevel = 0;
+
+  for (let i = 0; i < sorted.length; i++) {
+    const currentStack = sorted[i];
+    if (currentStack <= previousLevel) continue; // skip duplicate levels
+
+    const contribution = currentStack - previousLevel;
+    const eligiblePlayers = sorted.length - i;
+    const amount = contribution * eligiblePlayers;
+
+    pots.push({
+      amount,
+      eligiblePlayers,
+      label: pots.length === 0 ? 'Main Pot' : `Side Pot ${pots.length}`,
+    });
+
+    previousLevel = currentStack;
+  }
+
+  return pots;
 }
 
 export function computePayouts(
@@ -125,27 +162,57 @@ export function buildTournamentResult(
   const payouts = computePayouts(config.payout, prizePool);
   const payoutMap = new Map(payouts.map((p) => [p.place, p.amount]));
 
-  const sorted = [...config.players].sort((a, b) => {
-    if (a.status === 'active' && b.status !== 'active') return -1;
-    if (b.status === 'active' && a.status !== 'active') return 1;
-    if (a.placement != null && b.placement != null) return a.placement - b.placement;
-    return 0;
+  // Group re-entry instances by original player
+  const reEntryGroups = new Map<string, typeof config.players>();
+  for (const p of config.players) {
+    const key = p.originalPlayerId ?? p.id;
+    const group = reEntryGroups.get(key) ?? [];
+    group.push(p);
+    reEntryGroups.set(key, group);
+  }
+
+  // Aggregate re-entry groups into single player results
+  const aggregated: { name: string; bestPlace: number; isActive: boolean; totalRebuys: number; hasAddOn: boolean; totalKnockouts: number; totalBuyIns: number }[] = [];
+  for (const group of reEntryGroups.values()) {
+    const bestInstance = group.reduce((best, p) => {
+      if (p.status === 'active') return p;
+      if (best.status === 'active') return best;
+      if ((p.placement ?? Infinity) < (best.placement ?? Infinity)) return p;
+      return best;
+    });
+    const isActive = group.some((p) => p.status === 'active');
+    const bestPlace = isActive ? 1 : (bestInstance.placement ?? 999);
+    aggregated.push({
+      name: bestInstance.name,
+      bestPlace,
+      isActive,
+      totalRebuys: group.reduce((sum, p) => sum + p.rebuys, 0),
+      hasAddOn: group.some((p) => p.addOn),
+      totalKnockouts: group.reduce((sum, p) => sum + p.knockouts, 0),
+      totalBuyIns: group.length, // Each entry costs one buy-in
+    });
+  }
+
+  const sorted = [...aggregated].sort((a, b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (b.isActive && !a.isActive) return 1;
+    return a.bestPlace - b.bestPlace;
   });
 
   const players: PlayerResult[] = sorted.map((p, i) => {
-    const place = p.status === 'active' ? 1 : (p.placement ?? i + 1);
+    const place = p.isActive ? 1 : (p.bestPlace !== 999 ? p.bestPlace : i + 1);
     const payout = payoutMap.get(place) ?? 0;
-    const totalCost = config.buyIn
-      + p.rebuys * (config.rebuy.enabled ? config.rebuy.rebuyCost : config.buyIn)
-      + (p.addOn ? (config.addOn.enabled ? config.addOn.cost : config.buyIn) : 0);
-    const bountyEarned = config.bounty.enabled ? p.knockouts * config.bounty.amount : 0;
+    const totalCost = p.totalBuyIns * config.buyIn
+      + p.totalRebuys * (config.rebuy.enabled ? config.rebuy.rebuyCost : config.buyIn)
+      + (p.hasAddOn ? (config.addOn.enabled ? config.addOn.cost : config.buyIn) : 0);
+    const bountyEarned = config.bounty.enabled ? p.totalKnockouts * config.bounty.amount : 0;
     return {
       name: p.name,
       place,
       payout,
-      rebuys: p.rebuys,
-      addOn: p.addOn,
-      knockouts: p.knockouts,
+      rebuys: p.totalRebuys,
+      addOn: p.hasAddOn,
+      knockouts: p.totalKnockouts,
       bountyEarned,
       netBalance: payout + bountyEarned - totalCost,
     };

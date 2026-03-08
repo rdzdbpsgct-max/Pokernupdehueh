@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 4.1.0
+**Version**: 5.0.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (291 tests, single run)
+npm run test         # Vitest run (343 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -75,7 +75,9 @@ src/
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
 │   ├── SetupPage.tsx            # Setup mode UI — collapsible sections, config editors, start button
 │   ├── SetupWizard.tsx          # Guided first-time setup wizard (5 steps)
-│   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume, call-the-clock
+│   ├── RemoteControl.tsx        # WebRTC remote control — host QR modal + smartphone controller UI
+│   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume, call-the-clock, accent color, background
+│   ├── SidePotCalculator.tsx    # Side pot calculator modal for all-in situations
 │   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
 │   ├── ThemeSwitcher.tsx        # System/Light/Dark 3-way toggle
 │   ├── VoiceSwitcher.tsx        # Sound/Voice segmented toggle in header
@@ -97,13 +99,16 @@ src/
 │   ├── tournament.ts            # Results, payouts, stats, CSV/text export, league standings, mystery bounty
 │   ├── persistence.ts           # localStorage CRUD, config parsing, templates, player database, league management, wizard
 │   ├── tables.ts                # Multi-table management: seat-level CRUD, distribution, balancing, dissolution, final table merge, per-table dealer
+│   ├── remote.ts                # WebRTC peer connection for serverless remote control (host + controller)
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
 │   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
 ├── hooks/
 │   ├── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
 │   ├── useVoiceAnnouncements.ts # Voice announcement effects (extracted from App.tsx)
-│   └── useGameEvents.ts         # Game event effects: victory, bubble, ITM sounds
+│   ├── useGameEvents.ts         # Game event effects: victory, bubble, ITM sounds
+│   ├── useKeyboardShortcuts.ts  # Keyboard shortcut handler (extracted from App.tsx)
+│   └── useTournamentActions.ts  # Tournament action callbacks (extracted from App.tsx)
 ├── theme/                       # Dark/Light mode system
 │   ├── index.ts                 # Public re-exports
 │   ├── ThemeContext.tsx          # React Context provider, system preference listener, localStorage persistence
@@ -113,11 +118,13 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~590+ keys)
+    ├── translations.ts          # DE/EN translation strings (~690+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-└── logic.test.ts                # 277 unit tests for domain/logic.ts
+├── logic.test.ts                # 329 unit tests for domain logic + remote SDP compression
+├── components.test.tsx          # 14 UI component tests (NumberStepper, CollapsibleSection, PrintView)
+└── setup.ts                     # Test setup: jest-dom matchers, matchMedia mock
 
 public/
 ├── favicon.svg                  # Spade symbol favicon
@@ -203,7 +210,7 @@ public/
 - **Stack Tracking**: Optional per-player `chips` field in Player interface. "Initialize stacks" button in PlayerPanel computes starting chips + rebuys + add-ons. Inline number input for editing stacks. Chip Leader badge ("C" amber circle). Auto-adjusts on rebuy/add-on/elimination. `initializePlayerStacks()`, `findChipLeader()`, `computeAverageStackFromPlayers()` in logic.ts.
 - **Tournament stats**: Live display of players, prizepool, avg stack in BB, elapsed/remaining time
 - **Dark/Light mode**: 3-way toggle (System/Light/Dark) in header; `ThemeProvider` manages mode + system preference listener + `dark` class on `<html>`; `useTheme()` hook; `poker-timer-theme` in localStorage; PWA `theme-color` meta tag updated dynamically
-- **Code splitting**: Game-mode components lazy-loaded via `React.lazy()` + `Suspense`; `html-to-image` dynamically imported only when capturing screenshots; main bundle ~302KB + ~30KB game chunks
+- **Code splitting**: Game-mode components lazy-loaded via `React.lazy()` + `Suspense`; `html-to-image` dynamically imported only when capturing screenshots; main bundle ~480KB + ~80KB game chunks (incl. RemoteControl ~12KB)
 - **SVG Chevrons**: `ChevronIcon` component with CSS rotation animation replaces Unicode triangles for collapsible sections
 - **NumberStepper**: Custom `+`/`-` stepper component replaces native number input spinners; long-press support via pointer events (400ms delay, 100ms repeat); optional `snap` function; used across all numeric inputs in setup
 - **Screenshot/share**: `html-to-image` (dynamic import) capture → Web Share API (mobile) or PNG download (desktop); theme-aware background color
@@ -228,11 +235,23 @@ public/
 - **Setup Wizard**: Guided 5-step first-time setup (`SetupWizard.tsx`, ~230 lines). Steps: Welcome → Players → Buy-In → Blind Speed → Review. Shows only on first visit (`poker-timer-wizard-completed` in localStorage). Generates full config with `defaultConfig`, `generateBlindStructure`, `defaultPlayers`. Skippable. `isWizardCompleted()` / `markWizardCompleted()` in persistence.ts.
 - **Seating Diagram**: SVG oval poker table in TV Display Mode (`SeatingScreen.tsx`, ~155 lines). Players arranged elliptically around green felt table. Shows active/eliminated status, dealer button (D), chip leader badge (CL). 6th rotating screen in DisplayMode. `viewBox="0 0 1000 600"`, responsive.
 - **Multi-Table Support**: `Table` and `TableMove` types in types.ts. `tables.ts` module with pure functions: `createTable()`, `distributePlayersToTables()`, `getActivePlayersPerTable()`, `removePlayerFromTable()`, `findPlayerTable()`, `balanceTables()` (iterative, max ±1 diff), `shouldMergeToFinalTable()`, `mergeToFinalTable()`. `MultiTablePanel.tsx` (lazy-loaded) shows table list, balance button, move announcements. Setup: CollapsibleSection with table count/seats config, distribute button. Auto-detect final table on elimination. Voice: `announceTableMove()` and `announceFinalTable()` via Web Speech API. `parseConfigObject()` handles backward-compat (undefined if missing).
+- **Tournament Presets**: 3 built-in tournament profiles ("Quick Cash Game", "Standard Home Game", "Deep Stack Tournament") for instant start. `getBuiltInPresets()` in persistence.ts. Preset buttons on SetupPage.
+- **Side-Pot Calculator**: `computeSidePots()` in tournament.ts calculates main/side pots from all-in stacks. `SidePotCalculator.tsx` modal with player stack input and result table. Accessible from PlayerPanel header.
+- **Ticker Banner**: Scrolling info bar at bottom of TV Display Mode. Shows rotating tournament info (next level, avg stack, player count, prizepool). Pure CSS animation (`animate-ticker-scroll`).
+- **Custom Accent Color**: 6 selectable accent colors (emerald, blue, purple, red, amber, cyan). CSS custom properties (`--accent-500/600/400`). Picker in SettingsPanel. `AccentColor` type in types.ts.
+- **Background Patterns**: 6 selectable CSS gradient backgrounds (none, felt-green, felt-blue, casino, dark-wood, abstract). `--bg-pattern` CSS custom property. Picker in SettingsPanel. `BackgroundImage` type in types.ts.
+- **Blinds by End Time**: `generateBlindsByEndTime()` in blinds.ts generates blind structure targeting a specific tournament duration. Tab in BlindGenerator with time picker + live preview.
+- **Re-Entry Mode**: Players can re-enter after elimination (new ID, same person). `reEnterPlayer()` in players.ts. `reEntryEnabled/maxReEntries` in RebuyConfig. Re-entry button on eliminated players. Auto-seat at smallest table.
+- **Seat Locking**: Lock individual seats at multi-table setup. `Seat.locked` property. `toggleSeatLock()` in tables.ts. Locked seats skipped during distribution and balancing.
+- **Druckbare Ergebnisse**: Tournament results printable from TournamentFinished screen via PrintView.
+- **Remote Control (WebRTC)**: Serverless smartphone remote control via WebRTC data channel. QR code-based signaling (SDP offer/answer as Base64). `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + smartphone controller UI (play/pause/next/prev, timer display, call-the-clock). STUN via `stun.l.google.com:19302`. Keepalive pings every 10s. Lazy-loaded ~12KB chunk.
+- **App.tsx Refactoring**: Extracted `useKeyboardShortcuts` (72 lines) and `useTournamentActions` (317 lines) hooks. App.tsx reduced from ~1543 to ~1300 lines.
+- **UI Integration Tests**: 14 component tests via `@testing-library/react` in `tests/components.test.tsx` (NumberStepper, CollapsibleSection, PrintView).
 - **Offline-first**: Zero network dependencies at runtime
 
 ## Testing
 
-- Tests live in `tests/logic.test.ts` covering `src/domain/logic.ts`
+- Tests live in `tests/logic.test.ts` (329 tests) and `tests/components.test.tsx` (14 tests) — 343 total
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
@@ -267,6 +286,28 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v5.0.0 — Feature-Komplett: Remote-Steuerung, Presets, Akzentfarben, Re-Entry & Refactoring
+
+**Phase 1 — Quick Wins:**
+- **Turnier-Presets**: 3 vordefinierte Turnierprofile (Schnelles Cashgame, Standard Home Game, Deep Stack). `getBuiltInPresets()` in persistence.ts. Preset-Buttons auf SetupPage.
+- **Side-Pot-Rechner**: `computeSidePots()` in tournament.ts. `SidePotCalculator.tsx` Modal mit Spieler-Stack-Eingabe. Aufrufbar aus PlayerPanel.
+- **Ticker-Banner**: Scrollende Info-Zeile im TV-Display (nächster Level, Avg Stack, Spielerzahl, Prizepool). Reine CSS-Animation.
+- **Custom-Akzentfarbe**: 6 wählbare Farben (emerald/blue/purple/red/amber/cyan). CSS Custom Properties `--accent-*`. Farbkreis-Picker im SettingsPanel.
+
+**Phase 2 — Differenzierung:**
+- **Hintergrundbilder**: 6 CSS-Gradient-Backgrounds (none/felt-green/felt-blue/casino/dark-wood/abstract). `--bg-pattern` Custom Property. Vorschau-Grid im SettingsPanel.
+- **Blindstruktur nach Ziel-Endzeit**: `generateBlindsByEndTime()` in blinds.ts. Tab im BlindGenerator mit Zeitpicker + Live-Preview.
+- **Re-Entry-Modus**: `reEnterPlayer()` in players.ts. Neuer Spieler-Eintrag mit frischem Stack, `originalPlayerId`-Verknüpfung, `reEntryCount`. Button bei eliminierten Spielern. Auto-Platzierung am kleinsten Tisch.
+- **Seat-Locking**: `Seat.locked` Property. `toggleSeatLock()` in tables.ts. Gesperrte Sitze werden bei Verteilung und Balancing übersprungen. Toggle im Setup.
+- **Druckbare Ergebnisse**: Tournament-Ergebnisse über PrintView druckbar.
+
+**Phase 3 — Innovation:**
+- **Remote-Steuerung (WebRTC)**: Serverlose Smartphone-Fernsteuerung via WebRTC Data Channel. QR-Code-basiertes Signaling (SDP als Base64). `RemoteHost` + `RemoteController` Klassen in `remote.ts`. `RemoteControl.tsx` mit Host-QR-Modal + Controller-UI (Play/Pause/Next/Prev, Timer, Call the Clock). STUN via Google. Lazy-loaded ~12KB Chunk.
+- **App.tsx Refactoring**: `useKeyboardShortcuts` (72 Zeilen) und `useTournamentActions` (317 Zeilen) extrahiert. App.tsx von ~1543 auf ~1300 Zeilen reduziert.
+- **UI-Integrationstests**: 14 Komponententests via `@testing-library/react` (NumberStepper, CollapsibleSection, PrintView). Test-Setup mit jest-dom + matchMedia Mock.
+- **Neue Dateien**: `remote.ts`, `RemoteControl.tsx`, `SidePotCalculator.tsx`, `useKeyboardShortcuts.ts`, `useTournamentActions.ts`, `tests/components.test.tsx`, `tests/setup.ts`
+- **~100 Translation-Keys**, **52 neue Tests** — **343 Tests gesamt**
 
 ### v4.1.0 — Multi-Table Overhaul: Seat-Level Tournament Management
 

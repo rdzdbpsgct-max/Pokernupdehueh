@@ -1,12 +1,13 @@
-import type { TournamentConfig } from '../domain/types';
+import type { TournamentConfig, TournamentResult } from '../domain/types';
 import { getLevelLabel, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
   config: TournamentConfig;
+  result?: TournamentResult | null;
 }
 
-export function PrintView({ config }: Props) {
+export function PrintView({ config, result }: Props) {
   const { t } = useTranslation();
 
   const tournamentName = config.name || t('app.title');
@@ -96,6 +97,42 @@ export function PrintView({ config }: Props) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Tournament Results (if provided) */}
+      {result && (
+        <div className="mb-6">
+          <h3 className="text-base font-semibold mb-2 border-b border-black pb-1">{t('print.results')}</h3>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b-2 border-black">
+                <th className="text-left py-1 px-2">{t('playerPanel.place')}</th>
+                <th className="text-left py-1 px-2">{t('print.name')}</th>
+                <th className="text-right py-1 px-2">{t('print.payout')}</th>
+                <th className="text-right py-1 px-2">{t('print.balance')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.players.map((p, idx) => (
+                <tr key={idx} className={`border-b border-gray-200 ${p.place === 1 ? 'font-bold' : ''}`}>
+                  <td className="py-1 px-2">{p.place}.</td>
+                  <td className="py-1 px-2">{p.name}</td>
+                  <td className="text-right py-1 px-2 font-mono">
+                    {p.payout > 0 ? `${p.payout.toFixed(2)} EUR` : '—'}
+                  </td>
+                  <td className={`text-right py-1 px-2 font-mono ${p.netBalance > 0 ? 'text-green-700' : p.netBalance < 0 ? 'text-red-700' : ''}`}>
+                    {p.netBalance >= 0 ? '+' : ''}{p.netBalance.toFixed(2)} EUR
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-2 text-xs text-gray-500">
+            Prizepool: {result.prizePool.toFixed(2)} EUR &middot; {result.playerCount} {t('finished.players')}
+            {result.totalRebuys > 0 && ` \u00b7 ${result.totalRebuys} Rebuys`}
+            {result.totalAddOns > 0 && ` \u00b7 ${result.totalAddOns} Add-Ons`}
+          </div>
         </div>
       )}
 

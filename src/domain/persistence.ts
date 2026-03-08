@@ -87,6 +87,80 @@ export function defaultConfig(): TournamentConfig {
 }
 
 // ---------------------------------------------------------------------------
+// Tournament Presets (Quick Start)
+// ---------------------------------------------------------------------------
+
+export interface TournamentPreset {
+  id: string;
+  nameKey: string;
+  descKey: string;
+  config: Partial<TournamentConfig>;
+}
+
+/**
+ * Return 3 built-in tournament presets for quick start.
+ * Each provides a complete tournament config (minus per-tournament fields).
+ */
+export function getBuiltInPresets(): TournamentPreset[] {
+  return [
+    {
+      id: 'turbo',
+      nameKey: 'preset.turbo',
+      descKey: 'preset.turboDesc',
+      config: {
+        name: '',
+        buyIn: 5,
+        startingChips: 10000,
+        anteEnabled: false,
+        anteMode: 'standard',
+        levels: generateBlindStructure({ startingChips: 10000, speed: 'fast', anteEnabled: false }),
+        payout: defaultPayoutConfig(),
+        rebuy: defaultRebuyConfig(5, 10000),
+        addOn: defaultAddOnConfig(5, 10000),
+        bounty: defaultBountyConfig(),
+        chips: defaultChipConfig(),
+      },
+    },
+    {
+      id: 'standard',
+      nameKey: 'preset.standard',
+      descKey: 'preset.standardDesc',
+      config: {
+        name: '',
+        buyIn: 10,
+        startingChips: 20000,
+        anteEnabled: false,
+        anteMode: 'standard',
+        levels: generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false }),
+        payout: defaultPayoutConfig(),
+        rebuy: { ...defaultRebuyConfig(10, 20000), enabled: true },
+        addOn: defaultAddOnConfig(10, 20000),
+        bounty: defaultBountyConfig(),
+        chips: defaultChipConfig(),
+      },
+    },
+    {
+      id: 'deepstack',
+      nameKey: 'preset.deepStack',
+      descKey: 'preset.deepStackDesc',
+      config: {
+        name: '',
+        buyIn: 20,
+        startingChips: 40000,
+        anteEnabled: true,
+        anteMode: 'standard',
+        levels: generateBlindStructure({ startingChips: 40000, speed: 'slow', anteEnabled: true }),
+        payout: defaultPayoutConfig(),
+        rebuy: { ...defaultRebuyConfig(20, 40000), enabled: true },
+        addOn: defaultAddOnConfig(20, 40000),
+        bounty: defaultBountyConfig(),
+        chips: defaultChipConfig(),
+      },
+    },
+  ];
+}
+
+// ---------------------------------------------------------------------------
 // Config Parsing
 // ---------------------------------------------------------------------------
 
@@ -507,6 +581,17 @@ export function deleteLeague(id: string): void {
   } catch { /* ignore */ }
 }
 
+/**
+ * Extract league-relevant config fields from a TournamentConfig.
+ * Strips per-tournament data (players, dealerIndex, tables, leagueId)
+ * so only structural settings (blinds, buy-in, payout, rebuy, etc.) remain.
+ */
+export function extractLeagueConfig(config: TournamentConfig): Partial<TournamentConfig> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { players: _p, dealerIndex: _d, tables: _t, leagueId: _l, ...leagueConfig } = config;
+  return leagueConfig;
+}
+
 // ---------------------------------------------------------------------------
 // League Export / Import
 // ---------------------------------------------------------------------------
@@ -536,6 +621,15 @@ export function parseLeagueFile(json: string): LeagueExport | null {
     if (!parsed || typeof parsed !== 'object') return null;
     if (!parsed.league || typeof parsed.league.id !== 'string' || typeof parsed.league.name !== 'string') return null;
     if (!Array.isArray(parsed.results)) return null;
+    // Normalize defaultConfig if present (backward compat)
+    if (parsed.league.defaultConfig && typeof parsed.league.defaultConfig === 'object') {
+      const normalized = parseConfigObject(parsed.league.defaultConfig as Record<string, unknown>);
+      if (normalized) {
+        parsed.league.defaultConfig = extractLeagueConfig(normalized);
+      } else {
+        delete parsed.league.defaultConfig;
+      }
+    }
     return parsed as LeagueExport;
   } catch {
     return null;

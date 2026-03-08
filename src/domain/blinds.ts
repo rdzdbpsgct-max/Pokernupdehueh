@@ -198,6 +198,143 @@ export function generateBlindStructure(params: GenerateBlindParams): Level[] {
 }
 
 // ---------------------------------------------------------------------------
+// Blind Structure Generator — By Target End Time
+// ---------------------------------------------------------------------------
+
+export interface GenerateByEndTimeParams {
+  startingChips: number;
+  targetMinutes: number;
+  playerCount: number;
+  anteEnabled: boolean;
+  anteMode?: AnteMode;
+  smallestChip?: number;
+}
+
+/**
+ * Generate a blind structure that aims to finish within a target duration.
+ * Derives speed and level duration from the target minutes, then iteratively
+ * adjusts until the estimated tournament length is within ±10 minutes.
+ */
+export function generateBlindsByEndTime(params: GenerateByEndTimeParams): Level[] {
+  const { startingChips, targetMinutes, playerCount, anteEnabled, anteMode = 'standard', smallestChip } = params;
+  if (targetMinutes <= 0 || playerCount < 2) {
+    return generateBlindStructure({ startingChips, speed: 'normal', anteEnabled, anteMode, smallestChip });
+  }
+
+  const targetSeconds = targetMinutes * 60;
+
+  // Determine best speed based on target duration and player count
+  // Short tournaments → fast sequence, long → slow sequence
+  const targetPerPlayer = targetMinutes / playerCount;
+  let speed: BlindSpeed;
+  if (targetPerPlayer < 12) {
+    speed = 'fast';
+  } else if (targetPerPlayer < 25) {
+    speed = 'normal';
+  } else {
+    speed = 'slow';
+  }
+
+  // Binary search for optimal level duration
+  let lowDuration = 120; // 2 min minimum
+  let highDuration = 2400; // 40 min maximum
+  let bestLevels: Level[] = [];
+  let bestDiff = Infinity;
+
+  for (let iteration = 0; iteration < 15; iteration++) {
+    const levelDuration = Math.round((lowDuration + highDuration) / 2);
+    const breakDuration = Math.round(levelDuration * 0.7); // Break ~70% of level duration
+
+    const levels = generateBlindStructureWithDuration(
+      startingChips, speed, anteEnabled, anteMode, smallestChip,
+      levelDuration, breakDuration,
+    );
+
+    const playedLevels = estimatePlayedLevels(levels, playerCount, startingChips);
+    const estimated = estimateDuration(playedLevels);
+    const diff = estimated - targetSeconds;
+
+    if (Math.abs(diff) < Math.abs(bestDiff)) {
+      bestDiff = diff;
+      bestLevels = levels;
+    }
+
+    if (Math.abs(diff) < 600) break; // Within 10 minutes — good enough
+
+    if (diff > 0) {
+      // Too long → shorter levels
+      highDuration = levelDuration - 1;
+    } else {
+      // Too short → longer levels
+      lowDuration = levelDuration + 1;
+    }
+
+    if (lowDuration > highDuration) break;
+  }
+
+  return bestLevels;
+}
+
+/**
+ * Internal: generate blind structure with explicit level/break durations.
+ */
+function generateBlindStructureWithDuration(
+  startingChips: number,
+  speed: BlindSpeed,
+  anteEnabled: boolean,
+  anteMode: AnteMode,
+  smallestChip: number | undefined,
+  levelDurationSeconds: number,
+  breakDurationSeconds: number,
+): Level[] {
+  const scale = startingChips / REFERENCE_STACKS;
+  const round = smallestChip != null && smallestChip > 0
+    ? (v: number) => roundToChipMultiple(v, smallestChip)
+    : roundToNice;
+
+  const playLevels: Level[] = [];
+  let lastBB = 0;
+
+  for (const refBB of BB_SEQUENCES[speed]) {
+    const rawBB = round(refBB * scale);
+    if (rawBB <= lastBB) continue;
+    const sb = round(rawBB / 2);
+    const bb = sb * 2;
+    if (sb >= bb) continue;
+    const rawAnte = anteEnabled ? computeDefaultAnte(bb, anteMode) : 0;
+    const ante = rawAnte > 0 && smallestChip ? round(rawAnte) : rawAnte;
+
+    playLevels.push({
+      id: generateId(),
+      type: 'level',
+      durationSeconds: levelDurationSeconds,
+      smallBlind: sb,
+      bigBlind: bb,
+      ante,
+    });
+    lastBB = bb;
+  }
+
+  // Insert breaks every 4 play levels
+  const levels: Level[] = [];
+  let playCount = 0;
+  for (const level of playLevels) {
+    if (playCount > 0 && playCount % 4 === 0) {
+      levels.push({
+        id: generateId(),
+        type: 'break',
+        durationSeconds: breakDurationSeconds,
+        label: moduleT('logic.defaultBreakLabel'),
+      });
+    }
+    levels.push(level);
+    playCount++;
+  }
+
+  return levels;
+}
+
+// ---------------------------------------------------------------------------
 // Duration estimates
 // ---------------------------------------------------------------------------
 

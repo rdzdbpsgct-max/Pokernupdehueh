@@ -55,10 +55,10 @@ export function countActivePlayersAtTable(table: Table, players: Player[]): numb
   return getActivePlayerIdsAtTable(table, players).length;
 }
 
-/** Find the lowest-numbered empty seat at a table. Returns null if table is full. */
+/** Find the lowest-numbered empty and unlocked seat at a table. Returns null if table is full. */
 export function findLowestAvailableSeat(table: Table): number | null {
   for (const seat of table.seats) {
-    if (seat.playerId === null) return seat.seatNumber;
+    if (seat.playerId === null && !seat.locked) return seat.seatNumber;
   }
   return null;
 }
@@ -87,6 +87,22 @@ export function findPlayerSeat(tables: Table[], playerId: string): { table: Tabl
   return null;
 }
 
+/** Toggle the locked state of a seat at a table. Only empty seats can be locked. */
+export function toggleSeatLock(tables: Table[], tableId: string, seatNumber: number): Table[] {
+  return tables.map(t => {
+    if (t.id !== tableId) return t;
+    return {
+      ...t,
+      seats: t.seats.map(s => {
+        if (s.seatNumber !== seatNumber) return s;
+        // Only toggle lock on empty seats
+        if (s.playerId !== null) return s;
+        return { ...s, locked: !s.locked };
+      }),
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Player distribution
 // ---------------------------------------------------------------------------
@@ -100,26 +116,34 @@ export function distributePlayersToTables(playerIds: string[], tables: Table[]):
   const activeTables = tables.filter(t => t.status === 'active');
   if (activeTables.length === 0) return tables;
 
-  // Clear all seats on active tables
+  // Clear all non-locked seats on active tables
   const updated = tables.map(t => {
     if (t.status !== 'active') return t;
     return {
       ...t,
-      seats: t.seats.map(s => ({ ...s, playerId: null })),
+      seats: t.seats.map(s => s.locked ? s : { ...s, playerId: null }),
     };
   });
 
   // Build index map for active tables in the updated array
   const activeUpdated = updated.filter(t => t.status === 'active');
 
-  // Round-robin: player i goes to table (i % tableCount), seat (floor(i / tableCount) + 1)
-  for (let i = 0; i < playerIds.length; i++) {
-    const tableIdx = i % activeUpdated.length;
-    const table = activeUpdated[tableIdx];
-    const seatIdx = Math.floor(i / activeUpdated.length);
-    if (seatIdx < table.seats.length) {
-      table.seats[seatIdx] = { ...table.seats[seatIdx], playerId: playerIds[i] };
+  // Round-robin: player i goes to table (i % tableCount), at lowest available seat
+  let playerIdx = 0;
+  let tableIdx = 0;
+  while (playerIdx < playerIds.length) {
+    const table = activeUpdated[tableIdx % activeUpdated.length];
+    const seatNum = findLowestAvailableSeat(table);
+    if (seatNum !== null) {
+      const seatIdx = table.seats.findIndex(s => s.seatNumber === seatNum);
+      if (seatIdx >= 0) {
+        table.seats[seatIdx] = { ...table.seats[seatIdx], playerId: playerIds[playerIdx] };
+        playerIdx++;
+      }
     }
+    tableIdx++;
+    // Safety: stop if we've cycled through all tables without placing anyone
+    if (tableIdx > playerIds.length * activeUpdated.length) break;
   }
 
   return updated;

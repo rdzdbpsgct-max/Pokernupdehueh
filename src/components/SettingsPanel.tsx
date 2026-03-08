@@ -1,6 +1,7 @@
-import type { Settings } from '../domain/types';
+import type { Settings, AccentColor, BackgroundImage } from '../domain/types';
 import { useTranslation } from '../i18n';
 import { NumberStepper } from './NumberStepper';
+import { useTheme } from '../theme';
 
 interface Props {
   settings: Settings;
@@ -30,8 +31,27 @@ function CheckBox({ checked, onChange }: { checked: boolean; onChange: () => voi
   );
 }
 
+const BG_OPTIONS: { value: BackgroundImage; gradient: string; labelKey: string }[] = [
+  { value: 'none',       gradient: 'linear-gradient(135deg, #e5e7eb, #d1d5db)', labelKey: 'settings.bgNone' },
+  { value: 'felt-green', gradient: 'radial-gradient(circle, rgba(22,163,74,0.5) 0%, rgba(22,163,74,0.2) 100%)', labelKey: 'settings.bgFeltGreen' },
+  { value: 'felt-blue',  gradient: 'radial-gradient(circle, rgba(37,99,235,0.5) 0%, rgba(37,99,235,0.2) 100%)', labelKey: 'settings.bgFeltBlue' },
+  { value: 'casino',     gradient: 'repeating-linear-gradient(45deg, rgba(245,158,11,0.15) 0px, rgba(245,158,11,0.15) 2px, transparent 2px, transparent 6px)', labelKey: 'settings.bgCasino' },
+  { value: 'dark-wood',  gradient: 'linear-gradient(180deg, rgba(120,80,40,0.4) 0%, rgba(80,50,20,0.5) 100%)', labelKey: 'settings.bgDarkWood' },
+  { value: 'abstract',   gradient: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.3))', labelKey: 'settings.bgAbstract' },
+];
+
+const ACCENT_OPTIONS: { color: AccentColor; bg: string; label: string }[] = [
+  { color: 'emerald', bg: '#10b981', label: 'Emerald' },
+  { color: 'blue',    bg: '#3b82f6', label: 'Blue' },
+  { color: 'purple',  bg: '#8b5cf6', label: 'Purple' },
+  { color: 'red',     bg: '#ef4444', label: 'Red' },
+  { color: 'amber',   bg: '#f59e0b', label: 'Amber' },
+  { color: 'cyan',    bg: '#06b6d4', label: 'Cyan' },
+];
+
 export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props) {
   const { t } = useTranslation();
+  const { accentColor, setAccentColor, backgroundImage, setBackgroundImage } = useTheme();
 
   const toggle = (key: keyof Settings) => {
     onChange({ ...settings, [key]: !settings[key] });
@@ -93,6 +113,55 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
         >
           {t('settings.fullscreen')}
         </button>
+      </div>
+
+      {/* Accent Color */}
+      <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
+        <span className="text-sm text-gray-700 dark:text-gray-300 block mb-1.5">{t('settings.accentColor')}</span>
+        <div className="flex items-center gap-2">
+          {ACCENT_OPTIONS.map((opt) => (
+            <button
+              key={opt.color}
+              onClick={() => setAccentColor(opt.color)}
+              className={`w-7 h-7 rounded-full transition-all duration-200 ${
+                accentColor === opt.color
+                  ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110'
+                  : 'hover:scale-110 opacity-70 hover:opacity-100'
+              }`}
+              style={{
+                backgroundColor: opt.bg,
+                ...(accentColor === opt.color ? { ringColor: opt.bg } : {}),
+              }}
+              title={opt.label}
+              aria-label={opt.label}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Background Image */}
+      <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
+        <span className="text-sm text-gray-700 dark:text-gray-300 block mb-1.5">{t('settings.backgroundImage')}</span>
+        <div className="grid grid-cols-3 gap-1.5">
+          {BG_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setBackgroundImage(opt.value)}
+              className={`relative w-full aspect-[3/2] rounded-lg overflow-hidden transition-all duration-200 border-2 ${
+                backgroundImage === opt.value
+                  ? 'border-emerald-500 dark:border-emerald-400 ring-1 ring-emerald-500/30 scale-[1.02]'
+                  : 'border-gray-300 dark:border-gray-700/60 hover:border-gray-400 dark:hover:border-gray-600 opacity-70 hover:opacity-100'
+              }`}
+              style={{ background: opt.gradient }}
+              title={t(opt.labelKey as Parameters<typeof t>[0])}
+              aria-label={t(opt.labelKey as Parameters<typeof t>[0])}
+            >
+              <span className="absolute bottom-0 inset-x-0 text-[9px] text-center py-0.5 bg-black/30 text-white truncate">
+                {t(opt.labelKey as Parameters<typeof t>[0])}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Keyboard shortcuts reference */}

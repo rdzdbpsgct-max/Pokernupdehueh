@@ -177,6 +177,39 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
             </button>
             <span className="text-xs text-gray-400 dark:text-gray-500">{t('rebuyEditor.separatePotHint')}</span>
           </div>
+
+          {/* Re-Entry */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onChange({ ...rebuy, reEntryEnabled: !rebuy.reEntryEnabled })}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  rebuy.reEntryEnabled
+                    ? 'bg-purple-700 hover:bg-purple-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {t('rebuyEditor.reEntry')}
+              </button>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{t('rebuyEditor.reEntryHint')}</span>
+            </div>
+            {rebuy.reEntryEnabled && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700 dark:text-gray-300">{t('rebuyEditor.maxReEntries')}</label>
+                <NumberStepper
+                  value={rebuy.maxReEntries ?? 0}
+                  onChange={(v) => onChange({ ...rebuy, maxReEntries: v <= 0 ? undefined : v })}
+                  min={0}
+                  max={5}
+                  step={1}
+                  inputClassName="w-16"
+                />
+                <span className="text-gray-400 dark:text-gray-500 text-xs">
+                  {rebuy.maxReEntries === undefined ? t('rebuyEditor.unlimited') : ''}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

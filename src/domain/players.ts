@@ -1,4 +1,4 @@
-import type { Player } from './types';
+import type { Player, RebuyConfig } from './types';
 import { generatePlayerId } from './helpers';
 import { t as moduleT } from '../i18n/translations';
 
@@ -59,6 +59,54 @@ export function advanceDealer(players: Player[], currentDealerIndex: number): nu
     if (players[candidate].status === 'active') return candidate;
   }
   return currentDealerIndex;
+}
+
+// ---------------------------------------------------------------------------
+// Re-Entry
+// ---------------------------------------------------------------------------
+
+/**
+ * Check if a player can re-enter the tournament.
+ * Requires: reEntryEnabled, player is eliminated, within max re-entries limit.
+ */
+export function canReEntry(player: Player, rebuy: RebuyConfig): boolean {
+  if (!rebuy.reEntryEnabled) return false;
+  if (player.status !== 'eliminated') return false;
+  const count = player.reEntryCount ?? 0;
+  if (rebuy.maxReEntries !== undefined && count >= rebuy.maxReEntries) return false;
+  return true;
+}
+
+/**
+ * Create a re-entry for an eliminated player.
+ * Returns the updated players array with the eliminated player's re-entry count
+ * incremented and a new active player added.
+ */
+export function reEnterPlayer(players: Player[], eliminatedPlayerId: string): Player[] {
+  const eliminated = players.find((p) => p.id === eliminatedPlayerId);
+  if (!eliminated || eliminated.status !== 'eliminated') return players;
+
+  const originalId = eliminated.originalPlayerId ?? eliminated.id;
+  const reEntryCount = (eliminated.reEntryCount ?? 0) + 1;
+
+  const newPlayer: Player = {
+    id: generatePlayerId(),
+    name: eliminated.name,
+    rebuys: 0,
+    addOn: false,
+    status: 'active',
+    placement: null,
+    eliminatedBy: null,
+    knockouts: 0,
+    reEntryCount,
+    originalPlayerId: originalId,
+  };
+
+  // Mark old instance with updated reEntryCount, add new player
+  const updated = players.map((p) =>
+    p.id === eliminatedPlayerId ? { ...p, reEntryCount } : p,
+  );
+  return [...updated, newPlayer];
 }
 
 // ---------------------------------------------------------------------------

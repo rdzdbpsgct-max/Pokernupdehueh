@@ -18,6 +18,10 @@ export interface Player {
   eliminatedBy: string | null;
   knockouts: number;
   chips?: number;
+  /** Number of re-entries this player has used */
+  reEntryCount?: number;
+  /** Original player ID when this is a re-entry instance */
+  originalPlayerId?: string;
 }
 
 export type PayoutMode = 'percent' | 'euro';
@@ -49,6 +53,10 @@ export interface RebuyConfig {
   maxRebuysPerPlayer?: number;
   /** When true, rebuy money is tracked as a separate pot instead of adding to prize pool */
   separatePot?: boolean;
+  /** When true, eliminated players can re-enter the tournament with a fresh buy-in */
+  reEntryEnabled?: boolean;
+  /** Maximum number of re-entries per player (undefined = unlimited) */
+  maxReEntries?: number;
 }
 
 export interface AddOnConfig {
@@ -123,6 +131,10 @@ export interface TournamentConfig {
   tables?: Table[];
 }
 
+export type AccentColor = 'emerald' | 'blue' | 'purple' | 'red' | 'amber' | 'cyan';
+
+export type BackgroundImage = 'none' | 'felt-green' | 'felt-blue' | 'casino' | 'dark-wood' | 'abstract';
+
 export interface Settings {
   soundEnabled: boolean;
   countdownEnabled: boolean;
@@ -133,6 +145,10 @@ export interface Settings {
   volume: number;
   /** Call-the-Clock countdown duration in seconds. Default: 30. */
   callTheClockSeconds: number;
+  /** Custom accent color. Default: 'emerald'. */
+  accentColor?: AccentColor;
+  /** Background image/pattern. Default: 'none'. */
+  backgroundImage?: BackgroundImage;
 }
 
 export interface TournamentCheckpoint {
@@ -212,6 +228,8 @@ export interface League {
   name: string;
   pointSystem: PointSystem;
   createdAt: string; // ISO timestamp
+  /** Optional tournament defaults stored with this league */
+  defaultConfig?: Partial<TournamentConfig>;
 }
 
 export interface LeagueStanding {
@@ -231,6 +249,8 @@ export interface Seat {
   seatNumber: number;
   /** Player ID occupying this seat, or null if empty */
   playerId: string | null;
+  /** When true, this seat cannot be assigned to players during distribution/balancing */
+  locked?: boolean;
 }
 
 export interface Table {
@@ -260,6 +280,15 @@ export interface TableMove {
   reason: TableMoveReason;
   /** Epoch ms when the move occurred */
   timestamp: number;
+}
+
+export interface SidePot {
+  /** Pot amount in chips */
+  amount: number;
+  /** Number of players eligible for this pot */
+  eligiblePlayers: number;
+  /** Display label: "Main Pot" or "Side Pot 1", etc. */
+  label: string;
 }
 
 export type TimerStatus = 'stopped' | 'running' | 'paused';

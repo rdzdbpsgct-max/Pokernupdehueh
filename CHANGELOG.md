@@ -5,6 +5,33 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [5.0.0] – 2026-03-08
+
+### Feature-Komplett: Remote-Steuerung, Presets, Akzentfarben, Re-Entry & Refactoring
+
+**Phase 1 — Quick Wins:**
+- **Turnier-Presets**: 3 vordefinierte Turnierprofile (Schnelles Cashgame 6 Spieler/15min, Standard Home Game 8–10 Spieler/20min, Deep Stack 10+ Spieler/30min) für sofortigen Start ohne Konfiguration. `getBuiltInPresets()` in persistence.ts. Preset-Buttons auf SetupPage.
+- **Side-Pot-Rechner**: Berechnung von Haupt- und Nebenpötten bei All-In-Situationen mit unterschiedlichen Stack-Größen. `computeSidePots()` in tournament.ts. `SidePotCalculator.tsx` Modal mit Spieler-Stack-Eingabe (NumberStepper) und Ergebnis-Tabelle. Aufrufbar aus PlayerPanel-Header.
+- **Ticker-Banner**: Scrollende Info-Zeile am unteren Rand des TV-Displays (wie bei Live-Poker-Übertragungen). Zeigt rotierende Infos: nächster Level, Avg Stack in BB, Spielerzahl, Prizepool. Reine CSS-Animation (`animate-ticker-scroll`).
+- **Custom-Akzentfarbe**: 6 wählbare Farbakzente (Emerald, Blue, Purple, Red, Amber, Cyan) statt hardkodiertem Emerald. CSS Custom Properties (`--accent-500/600/400/ring/glow`). Farbkreis-Picker in SettingsPanel. `AccentColor` Typ in types.ts.
+
+**Phase 2 — Differenzierung:**
+- **Hintergrundbilder**: 6 CSS-Gradient-Backgrounds (none, felt-green, felt-blue, casino, dark-wood, abstract). `--bg-pattern` CSS Custom Property auf `<html>`. Vorschau-Grid in SettingsPanel. `BackgroundImage` Typ in types.ts. Dark/Light-aware via ThemeContext.
+- **Blindstruktur nach Ziel-Endzeit**: `generateBlindsByEndTime()` in blinds.ts — automatische Blindstruktur-Generierung basierend auf gewünschter Turnierdauer. Tab im BlindGenerator mit Zeitpicker (60–480 Min) + Live-Preview.
+- **Re-Entry-Modus**: Spieler können sich nach Elimination neu einkaufen. `reEnterPlayer()` in players.ts erstellt neuen Spieler mit frischem Stack, `originalPlayerId`-Verknüpfung, `reEntryCount`. `reEntryEnabled/maxReEntries` in RebuyConfig. Re-Entry-Button bei eliminierten Spielern. Auto-Platzierung am kleinsten Tisch.
+- **Seat-Locking (Multi-Table)**: Bestimmte Sitzplätze an Tischen sperren. `Seat.locked` Property. `toggleSeatLock()` in tables.ts. Gesperrte Sitze werden bei Verteilung und Balancing übersprungen. Toggle im Setup-Sitzplatz-Preview.
+- **Druckbare Ergebnisse**: Tournament-Ergebnisse über PrintView druckbar vom TournamentFinished-Screen.
+
+**Phase 3 — Innovation:**
+- **Remote-Steuerung (WebRTC)**: Serverlose Smartphone-Fernsteuerung via WebRTC Data Channel. QR-Code-basiertes Signaling (SDP Offer/Answer als Base64-komprimiert). `RemoteHost` + `RemoteController` Klassen in `remote.ts`. `RemoteControl.tsx` (~260 Zeilen) mit Host-QR-Modal + Smartphone-Controller-UI (Play/Pause/Next/Prev, Timer-Anzeige, Call the Clock, Reset). STUN via `stun.l.google.com:19302`. Keepalive Pings alle 10s. Lazy-loaded ~12KB Chunk. 📱-Button im Game-Mode-Header.
+- **App.tsx Refactoring**: `useKeyboardShortcuts` Hook (72 Zeilen) — Keyboard-Shortcuts extrahiert. `useTournamentActions` Hook (317 Zeilen) — Eliminate, Reinstate, Rebuy, Add-On, Stacks, Late Reg, Re-Entry, Mystery Bounty, Table Moves extrahiert. App.tsx von ~1543 auf ~1300 Zeilen reduziert.
+- **UI-Integrationstests**: 14 Komponententests via `@testing-library/react` in `tests/components.test.tsx` — NumberStepper (6 Tests), CollapsibleSection (4 Tests), PrintView (4 Tests). Test-Setup mit `@testing-library/jest-dom` + `window.matchMedia` Mock.
+- **Neue Dateien**: `remote.ts`, `RemoteControl.tsx`, `SidePotCalculator.tsx`, `useKeyboardShortcuts.ts`, `useTournamentActions.ts`, `tests/components.test.tsx`, `tests/setup.ts`
+- **~100 neue Translation-Keys** (50 DE + 50 EN)
+- **52 neue Tests** — **343 Tests gesamt**
+
+---
+
 ## [4.1.0] – 2026-03-07
 
 ### Multi-Table Overhaul: Seat-Level Tournament Management

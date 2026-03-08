@@ -1,9 +1,12 @@
 import { useState, useMemo } from 'react';
 import type { Level, ChipConfig, AnteMode } from '../domain/types';
 import type { BlindSpeed } from '../domain/logic';
-import { generateBlindStructure, estimateAllDurations, formatTime } from '../domain/logic';
+import { generateBlindStructure, generateBlindsByEndTime, estimateAllDurations, estimatePlayedLevels, estimateDuration, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { CollapsibleSubSection } from './CollapsibleSubSection';
+import { NumberStepper } from './NumberStepper';
+
+type GeneratorMode = 'speed' | 'endTime';
 
 interface Props {
   startingChips: number;
@@ -16,7 +19,9 @@ interface Props {
 
 export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCount, chipConfig, onApply }: Props) {
   const { t } = useTranslation();
+  const [mode, setMode] = useState<GeneratorMode>('speed');
   const [selectedSpeed, setSelectedSpeed] = useState<BlindSpeed>('normal');
+  const [targetMinutes, setTargetMinutes] = useState(180); // 3 hours default
 
   // When chips are enabled, use smallest denomination as rounding base
   const smallestChip = useMemo(() => {
@@ -29,13 +34,28 @@ export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCou
     [startingChips, anteEnabled, playerCount, smallestChip, anteMode],
   );
 
-  const preview = useMemo(
+  const speedPreview = useMemo(
     () => generateBlindStructure({ startingChips, speed: selectedSpeed, anteEnabled, anteMode, smallestChip }),
     [startingChips, selectedSpeed, anteEnabled, anteMode, smallestChip],
   );
 
+  const endTimePreview = useMemo(
+    () => generateBlindsByEndTime({ startingChips, targetMinutes, playerCount, anteEnabled, anteMode, smallestChip }),
+    [startingChips, targetMinutes, playerCount, anteEnabled, anteMode, smallestChip],
+  );
+
+  const preview = mode === 'speed' ? speedPreview : endTimePreview;
   const previewPlayLevels = preview.filter((l) => l.type === 'level');
   const previewBreaks = preview.filter((l) => l.type === 'break');
+
+  // Estimated duration for end-time mode
+  const endTimeEstimate = useMemo(() => {
+    if (mode !== 'endTime') return 0;
+    const playedLevels = playerCount >= 2
+      ? estimatePlayedLevels(endTimePreview, playerCount, startingChips)
+      : endTimePreview;
+    return estimateDuration(playedLevels);
+  }, [mode, endTimePreview, playerCount, startingChips]);
 
   const formatDuration = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -52,32 +72,83 @@ export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCou
   return (
     <CollapsibleSubSection title={t('blindGenerator.title')} defaultOpen={false}>
       <div className="space-y-4">
-        {/* Speed selection with duration estimates */}
-        <div className="flex flex-wrap gap-2">
-          {speeds.map((speed) => {
-            const estimate = estimates.find((e) => e.speed === speed.key);
-            const isSelected = selectedSpeed === speed.key;
-            return (
-              <button
-                key={speed.key}
-                onClick={() => setSelectedSpeed(speed.key)}
-                className={`flex flex-col items-start px-3 py-2 rounded-lg text-left transition-colors flex-1 min-w-[100px] ${
-                  isSelected
-                    ? 'bg-emerald-700/40 border border-emerald-500/60 text-gray-900 dark:text-white shadow-md shadow-emerald-900/20'
-                    : 'bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/40 hover:border-gray-300 dark:hover:border-gray-600/70 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/80'
-                }`}
-              >
-                <span className="text-sm font-medium">{speed.label}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{speed.desc}</span>
-                {estimate && (
-                  <span className={`text-xs mt-1 ${isSelected ? 'text-emerald-300' : 'text-gray-400 dark:text-gray-500'}`}>
-                    {formatDuration(estimate.totalSeconds)}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Mode toggle: Speed vs End Time */}
+        <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700/40">
+          <button
+            onClick={() => setMode('speed')}
+            className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
+              mode === 'speed'
+                ? 'bg-emerald-700/40 text-gray-900 dark:text-white'
+                : 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/60'
+            }`}
+          >
+            {t('blindGenerator.modeSpeed')}
+          </button>
+          <button
+            onClick={() => setMode('endTime')}
+            className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
+              mode === 'endTime'
+                ? 'bg-emerald-700/40 text-gray-900 dark:text-white'
+                : 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/60'
+            }`}
+          >
+            {t('blindGenerator.modeEndTime')}
+          </button>
         </div>
+
+        {mode === 'speed' ? (
+          <>
+            {/* Speed selection with duration estimates */}
+            <div className="flex flex-wrap gap-2">
+              {speeds.map((speed) => {
+                const estimate = estimates.find((e) => e.speed === speed.key);
+                const isSelected = selectedSpeed === speed.key;
+                return (
+                  <button
+                    key={speed.key}
+                    onClick={() => setSelectedSpeed(speed.key)}
+                    className={`flex flex-col items-start px-3 py-2 rounded-lg text-left transition-colors flex-1 min-w-[100px] ${
+                      isSelected
+                        ? 'bg-emerald-700/40 border border-emerald-500/60 text-gray-900 dark:text-white shadow-md shadow-emerald-900/20'
+                        : 'bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/40 hover:border-gray-300 dark:hover:border-gray-600/70 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/80'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{speed.label}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{speed.desc}</span>
+                    {estimate && (
+                      <span className={`text-xs mt-1 ${isSelected ? 'text-emerald-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                        {formatDuration(estimate.totalSeconds)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* End Time mode: target duration picker */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                  {t('blindGenerator.targetDuration')}
+                </label>
+                <NumberStepper
+                  value={targetMinutes}
+                  onChange={setTargetMinutes}
+                  min={60}
+                  max={480}
+                  step={15}
+                />
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('blindGenerator.minutes')}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                <span>{t('blindGenerator.estimatedResult')}</span>
+                <span className="text-emerald-400 font-medium">{formatDuration(endTimeEstimate)}</span>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Level count info */}
         <p className="text-xs text-gray-400 dark:text-gray-500">

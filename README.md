@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-2.9.3-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-5.0.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-233%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-343%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -81,6 +81,14 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Kompatibilität | Safe Area Insets, dynamische Viewport-Höhe, optimierte Touch-Targets, numerische Tastatur, Tablet-Layout |
 | Usability | Aufklappbare Sektionen mit Summary-Badges, ausklappbare Blindstruktur, Sticky Start-Button auf Mobile |
 | Dark/Light Mode | 3-Wege-Umschalter (System/Hell/Dunkel), folgt Systemeinstellung, merkt sich Auswahl |
+| Turnier-Presets | 3 vordefinierte Profile (Schnelles Cashgame, Standard, Deep Stack) für sofortigen Start |
+| Side-Pot-Rechner | Berechnung von Haupt- und Nebenpötten bei All-In-Situationen |
+| Akzentfarbe | 6 wählbare Farbthemen (Emerald, Blue, Purple, Red, Amber, Cyan) |
+| Hintergrundbilder | 6 CSS-Gradient-Backgrounds (Filz, Casino, Holz, Abstrakt) |
+| Blinds nach Endzeit | Blindstruktur automatisch generieren basierend auf gewünschter Turnierdauer |
+| Re-Entry | Spieler können sich nach Elimination neu einkaufen (neuer Stack, separate Statistik) |
+| Seat-Locking | Bestimmte Sitzplätze an Tischen sperren (Multi-Table) |
+| Fernsteuerung | Turnier vom Smartphone steuern via WebRTC (Play/Pause/Next, Call the Clock) — QR-Code-Verbindung |
 | Premium UI | Glassmorphism, Gradient-Buttons, Timer-Glow, benutzerdefinierte Animationen, taktile Interaktionen |
 | Design-System | Einheitliche Abrundungen, Border-Opacities, Focus-Glow, Custom Number-Stepper, SVG-Chevrons |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
@@ -169,6 +177,14 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Compatibility | Safe area insets, dynamic viewport height, optimized touch targets, numeric keyboard, tablet layout |
 | Usability | Collapsible sections with summary badges, collapsible blind structure, sticky start button on mobile |
 | Dark/Light mode | 3-way toggle (System/Light/Dark), follows system preference, remembers selection |
+| Tournament Presets | 3 built-in profiles (Quick Cash Game, Standard, Deep Stack) for instant start |
+| Side-Pot Calculator | Calculate main and side pots for all-in situations |
+| Accent Color | 6 selectable color themes (Emerald, Blue, Purple, Red, Amber, Cyan) |
+| Backgrounds | 6 CSS gradient backgrounds (felt, casino, wood, abstract) |
+| Blinds by End Time | Auto-generate blind structure based on target tournament duration |
+| Re-Entry | Players can re-enter after elimination (fresh stack, separate stats) |
+| Seat Locking | Lock specific seats at tables (multi-table) |
+| Remote Control | Control tournament from smartphone via WebRTC (Play/Pause/Next, Call the Clock) — QR code connection |
 | Premium UI | Glassmorphism, gradient buttons, timer glow, custom animations, tactile interactions |
 | Design system | Unified rounding, border opacities, focus glow, custom number stepper, SVG chevrons |
 | Validation | Input validation before tournament start with clear error messages |

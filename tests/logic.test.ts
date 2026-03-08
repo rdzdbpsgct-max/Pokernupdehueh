@@ -103,8 +103,16 @@ import {
   advanceTableDealer,
   exportLeagueToJSON,
   parseLeagueFile,
+  extractLeagueConfig,
+  getBuiltInPresets,
+  computeSidePots,
+  generateBlindsByEndTime,
+  reEnterPlayer,
+  canReEntry,
+  toggleSeatLock,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table } from '../src/domain/types';
+import { compressSDP, decompressSDP } from '../src/domain/remote';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -3560,5 +3568,378 @@ describe('League Export / Import', () => {
     const result = parseLeagueFile(JSON.stringify(payload));
     expect(result).not.toBeNull();
     expect(result!.results).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe('extractLeagueConfig', () => {
+  it('removes per-tournament fields (players, dealerIndex, tables, leagueId)', () => {
+    const config = makeConfig({
+      name: 'League Night',
+      levels: [{ type: 'level', duration: 600, smallBlind: 25, bigBlind: 50 }],
+      buyIn: 20,
+      startingChips: 30000,
+    });
+    config.players = [{ id: '1', name: 'Alice', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 }];
+    config.dealerIndex = 2;
+    config.leagueId = 'league_123';
+    config.tables = [{ id: 't1', name: 'Table 1', maxSeats: 10, seats: [], status: 'active', dealerSeat: null }];
+
+    const extracted = extractLeagueConfig(config);
+    expect(extracted).not.toHaveProperty('players');
+    expect(extracted).not.toHaveProperty('dealerIndex');
+    expect(extracted).not.toHaveProperty('tables');
+    expect(extracted).not.toHaveProperty('leagueId');
+    expect(extracted).toHaveProperty('name', 'League Night');
+    expect(extracted).toHaveProperty('buyIn', 20);
+    expect(extracted).toHaveProperty('startingChips', 30000);
+    expect(extracted).toHaveProperty('levels');
+    expect(extracted).toHaveProperty('payout');
+    expect(extracted).toHaveProperty('rebuy');
+  });
+
+  it('preserves multiTable config field', () => {
+    const config = makeConfig({
+      name: 'MT League',
+      levels: [{ type: 'level', duration: 600, smallBlind: 25, bigBlind: 50 }],
+    });
+    config.multiTable = { seatsPerTable: 8, dissolveThreshold: 3, autoBalanceOnElimination: true };
+    const extracted = extractLeagueConfig(config);
+    expect(extracted).toHaveProperty('multiTable');
+    expect((extracted as TournamentConfig).multiTable?.seatsPerTable).toBe(8);
+  });
+
+  it('league with defaultConfig saves and loads via CRUD', () => {
+    const leagueConfig = extractLeagueConfig(makeConfig({
+      name: 'Config League',
+      levels: [{ type: 'level', duration: 600, smallBlind: 25, bigBlind: 50 }],
+      buyIn: 15,
+    }));
+    const league: League = {
+      id: 'league_with_config',
+      name: 'Config League',
+      pointSystem: defaultPointSystem(),
+      createdAt: new Date().toISOString(),
+      defaultConfig: leagueConfig,
+    };
+    saveLeague(league);
+    const loaded = loadLeagues();
+    const found = loaded.find(l => l.id === 'league_with_config');
+    expect(found).toBeDefined();
+    expect(found!.defaultConfig).toBeDefined();
+    expect(found!.defaultConfig!.buyIn).toBe(15);
+  });
+
+  it('league export/import preserves defaultConfig', () => {
+    const leagueConfig = extractLeagueConfig(makeConfig({
+      name: 'Export Test',
+      levels: [{ type: 'level', duration: 600, smallBlind: 25, bigBlind: 50 }],
+      buyIn: 25,
+    }));
+    const league: League = {
+      id: 'export_config',
+      name: 'Export Config',
+      pointSystem: defaultPointSystem(),
+      createdAt: new Date().toISOString(),
+      defaultConfig: { ...leagueConfig, buyIn: 25 },
+    };
+    saveLeague(league);
+    const json = exportLeagueToJSON(league);
+    const parsed = parseLeagueFile(json);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.league.defaultConfig).toBeDefined();
+    expect(parsed!.league.defaultConfig!.buyIn).toBe(25);
+  });
+
+  it('parseLeagueFile handles league without defaultConfig (backward compat)', () => {
+    const payload = {
+      version: 1,
+      league: { id: 'old', name: 'Old League', pointSystem: { entries: [] }, createdAt: '2024-01-01' },
+      results: [],
+      exportedAt: '2024-01-01',
+    };
+    const parsed = parseLeagueFile(JSON.stringify(payload));
+    expect(parsed).not.toBeNull();
+    expect(parsed!.league.defaultConfig).toBeUndefined();
+  });
+});
+
+// ============================================================================
+// Tournament Presets
+// ============================================================================
+
+describe('getBuiltInPresets', () => {
+  it('returns 3 presets with valid configs', () => {
+    const presets = getBuiltInPresets();
+    expect(presets).toHaveLength(3);
+    for (const preset of presets) {
+      expect(preset.id).toBeTruthy();
+      expect(preset.nameKey).toBeTruthy();
+      expect(preset.descKey).toBeTruthy();
+      expect(preset.config.levels).toBeDefined();
+      expect(Array.isArray(preset.config.levels)).toBe(true);
+      expect(preset.config.levels!.length).toBeGreaterThan(0);
+      expect(preset.config.buyIn).toBeGreaterThan(0);
+      expect(preset.config.startingChips).toBeGreaterThan(0);
+    }
+  });
+
+  it('preset configs do not contain per-tournament fields', () => {
+    const presets = getBuiltInPresets();
+    for (const preset of presets) {
+      expect(preset.config.players).toBeUndefined();
+      expect(preset.config.dealerIndex).toBeUndefined();
+      expect(preset.config.tables).toBeUndefined();
+      expect(preset.config.leagueId).toBeUndefined();
+    }
+  });
+
+  it('applying preset preserves existing players', () => {
+    const players: Player[] = [
+      { id: 'p1', name: 'Alice', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 },
+      { id: 'p2', name: 'Bob', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 },
+    ];
+    const baseConfig = makeConfig({ name: 'Test', levels: [], players, dealerIndex: 1 });
+    const preset = getBuiltInPresets()[0];
+    const applied = { ...baseConfig, ...preset.config, players: baseConfig.players, dealerIndex: baseConfig.dealerIndex, tables: baseConfig.tables, leagueId: baseConfig.leagueId };
+    expect(applied.players).toEqual(players);
+    expect(applied.dealerIndex).toBe(1);
+    expect(applied.buyIn).toBe(preset.config.buyIn);
+    expect(applied.startingChips).toBe(preset.config.startingChips);
+  });
+});
+
+// ============================================================================
+// Side Pot Calculator
+// ============================================================================
+
+describe('computeSidePots', () => {
+  it('returns empty for fewer than 2 stacks', () => {
+    expect(computeSidePots([])).toEqual([]);
+    expect(computeSidePots([100])).toEqual([]);
+  });
+
+  it('computes correct pots for 2 players with different stacks', () => {
+    const pots = computeSidePots([500, 1000]);
+    expect(pots).toHaveLength(2);
+    expect(pots[0]).toEqual({ amount: 1000, eligiblePlayers: 2, label: 'Main Pot' });
+    expect(pots[1]).toEqual({ amount: 500, eligiblePlayers: 1, label: 'Side Pot 1' });
+    // Total should equal sum of stacks
+    expect(pots.reduce((s, p) => s + p.amount, 0)).toBe(1500);
+  });
+
+  it('computes correct pots for 3 players', () => {
+    const pots = computeSidePots([300, 600, 1000]);
+    expect(pots).toHaveLength(3);
+    expect(pots[0]).toEqual({ amount: 900, eligiblePlayers: 3, label: 'Main Pot' });
+    expect(pots[1]).toEqual({ amount: 600, eligiblePlayers: 2, label: 'Side Pot 1' });
+    expect(pots[2]).toEqual({ amount: 400, eligiblePlayers: 1, label: 'Side Pot 2' });
+    expect(pots.reduce((s, p) => s + p.amount, 0)).toBe(1900);
+  });
+
+  it('handles equal stacks (single pot)', () => {
+    const pots = computeSidePots([500, 500, 500]);
+    expect(pots).toHaveLength(1);
+    expect(pots[0]).toEqual({ amount: 1500, eligiblePlayers: 3, label: 'Main Pot' });
+  });
+
+  it('handles duplicate stack values among different players', () => {
+    const pots = computeSidePots([200, 200, 500]);
+    expect(pots).toHaveLength(2);
+    expect(pots[0]).toEqual({ amount: 600, eligiblePlayers: 3, label: 'Main Pot' });
+    expect(pots[1]).toEqual({ amount: 300, eligiblePlayers: 1, label: 'Side Pot 1' });
+  });
+});
+
+// ============================================================================
+// Blind Structure by End Time
+// ============================================================================
+
+describe('generateBlindsByEndTime', () => {
+  it('generates a structure for a 2-hour tournament', () => {
+    const levels = generateBlindsByEndTime({
+      startingChips: 20000,
+      targetMinutes: 120,
+      playerCount: 8,
+      anteEnabled: false,
+    });
+    expect(levels.length).toBeGreaterThan(0);
+    const playLevels = levels.filter(l => l.type === 'level');
+    expect(playLevels.length).toBeGreaterThan(3);
+    // All play levels should have consistent duration
+    const durations = new Set(playLevels.map(l => l.durationSeconds));
+    expect(durations.size).toBe(1);
+  });
+
+  it('generates a structure for a 4-hour tournament with longer levels', () => {
+    const short = generateBlindsByEndTime({
+      startingChips: 20000,
+      targetMinutes: 120,
+      playerCount: 8,
+      anteEnabled: false,
+    });
+    const long = generateBlindsByEndTime({
+      startingChips: 20000,
+      targetMinutes: 240,
+      playerCount: 8,
+      anteEnabled: false,
+    });
+    const shortDuration = short.filter(l => l.type === 'level')[0]?.durationSeconds ?? 0;
+    const longDuration = long.filter(l => l.type === 'level')[0]?.durationSeconds ?? 0;
+    // Longer tournament should have longer levels
+    expect(longDuration).toBeGreaterThan(shortDuration);
+  });
+
+  it('falls back to normal structure for invalid inputs', () => {
+    const levels = generateBlindsByEndTime({
+      startingChips: 20000,
+      targetMinutes: -1,
+      playerCount: 1,
+      anteEnabled: false,
+    });
+    expect(levels.length).toBeGreaterThan(0);
+  });
+});
+
+// ============================================================================
+// Re-Entry
+// ============================================================================
+
+describe('canReEntry', () => {
+  const baseRebuy = defaultRebuyConfig(10, 20000);
+
+  it('returns false when re-entry is not enabled', () => {
+    const player: Player = { id: '1', name: 'A', rebuys: 0, addOn: false, status: 'eliminated', placement: 5, eliminatedBy: null, knockouts: 0 };
+    expect(canReEntry(player, { ...baseRebuy, reEntryEnabled: false })).toBe(false);
+  });
+
+  it('returns false for active players', () => {
+    const player: Player = { id: '1', name: 'A', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 };
+    expect(canReEntry(player, { ...baseRebuy, reEntryEnabled: true })).toBe(false);
+  });
+
+  it('returns true for eliminated players when enabled', () => {
+    const player: Player = { id: '1', name: 'A', rebuys: 0, addOn: false, status: 'eliminated', placement: 5, eliminatedBy: null, knockouts: 0 };
+    expect(canReEntry(player, { ...baseRebuy, reEntryEnabled: true })).toBe(true);
+  });
+
+  it('respects maxReEntries limit', () => {
+    const player: Player = { id: '1', name: 'A', rebuys: 0, addOn: false, status: 'eliminated', placement: 5, eliminatedBy: null, knockouts: 0, reEntryCount: 2 };
+    expect(canReEntry(player, { ...baseRebuy, reEntryEnabled: true, maxReEntries: 2 })).toBe(false);
+    expect(canReEntry(player, { ...baseRebuy, reEntryEnabled: true, maxReEntries: 3 })).toBe(true);
+  });
+});
+
+describe('reEnterPlayer', () => {
+  it('creates a new active player and updates original', () => {
+    const players: Player[] = [
+      { id: '1', name: 'Alice', rebuys: 0, addOn: false, status: 'eliminated', placement: 3, eliminatedBy: null, knockouts: 0 },
+      { id: '2', name: 'Bob', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 },
+    ];
+    const result = reEnterPlayer(players, '1');
+    expect(result).toHaveLength(3);
+
+    // Original player updated with reEntryCount
+    const original = result.find(p => p.id === '1');
+    expect(original?.reEntryCount).toBe(1);
+    expect(original?.status).toBe('eliminated');
+
+    // New player is active with correct metadata
+    const newPlayer = result[2];
+    expect(newPlayer.name).toBe('Alice');
+    expect(newPlayer.status).toBe('active');
+    expect(newPlayer.reEntryCount).toBe(1);
+    expect(newPlayer.originalPlayerId).toBe('1');
+    expect(newPlayer.rebuys).toBe(0);
+    expect(newPlayer.id).not.toBe('1');
+  });
+
+  it('returns same array if player not found or not eliminated', () => {
+    const players: Player[] = [
+      { id: '1', name: 'Alice', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 },
+    ];
+    expect(reEnterPlayer(players, '1')).toBe(players);
+    expect(reEnterPlayer(players, 'nonexistent')).toBe(players);
+  });
+});
+
+// ===================== Seat Locking =====================
+
+describe('toggleSeatLock', () => {
+  it('locks an empty seat and unlocks it again', () => {
+    const tables: Table[] = [createTable('T1', 6)];
+    const id = tables[0].id;
+    const locked = toggleSeatLock(tables, id, 1);
+    expect(locked[0].seats[0].locked).toBe(true);
+    const unlocked = toggleSeatLock(locked, id, 1);
+    expect(unlocked[0].seats[0].locked).toBe(false);
+  });
+
+  it('does not lock an occupied seat', () => {
+    const tables: Table[] = [createTable('T1', 6)];
+    const id = tables[0].id;
+    tables[0].seats[0].playerId = 'p1';
+    const result = toggleSeatLock(tables, id, 1);
+    expect(result[0].seats[0].locked).toBeUndefined();
+  });
+
+  it('distributePlayersToTables skips locked seats', () => {
+    const tables: Table[] = [createTable('T1', 4), createTable('T2', 4)];
+    const t1Id = tables[0].id;
+    // Lock seats 1 and 2 at T1
+    tables[0].seats[0].locked = true;
+    tables[0].seats[1].locked = true;
+    const ids = ['a', 'b', 'c', 'd'];
+    const result = distributePlayersToTables(ids, tables);
+    // T1 seat 1+2 locked → first player at T1 goes to seat 3
+    const t1 = result.find(t => t.id === t1Id)!;
+    expect(t1.seats[0].playerId).toBeNull(); // locked, empty
+    expect(t1.seats[1].playerId).toBeNull(); // locked, empty
+    expect(t1.seats[2].playerId).not.toBeNull(); // first player assigned here
+  });
+});
+
+// =============================================================================
+// SDP Compression (Remote Control)
+// =============================================================================
+
+describe('compressSDP / decompressSDP', () => {
+  it('round-trips a simple SDP string', () => {
+    const sdp = 'v=0\no=- 1234567890 1234567890 IN IP4 0.0.0.0\ns=-\nt=0 0\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\n';
+    const compressed = compressSDP(sdp);
+    expect(typeof compressed).toBe('string');
+    expect(compressed.length).toBeGreaterThan(0);
+    const decompressed = decompressSDP(compressed);
+    // Empty lines are stripped during compression
+    const strippedOriginal = sdp.split('\n').filter(l => l.trim().length > 0).join('\n');
+    expect(decompressed).toBe(strippedOriginal);
+  });
+
+  it('handles empty string', () => {
+    const compressed = compressSDP('');
+    const decompressed = decompressSDP(compressed);
+    expect(decompressed).toBe('');
+  });
+
+  it('handles UTF-8 characters', () => {
+    const sdp = 'v=0\ns=Pokern up de Hüh\na=charset:UTF-8\n';
+    const compressed = compressSDP(sdp);
+    const decompressed = decompressSDP(compressed);
+    expect(decompressed).toContain('Hüh');
+  });
+
+  it('strips empty lines during compression', () => {
+    const sdp = 'v=0\n\n\no=- 1234 IN IP4 0.0.0.0\n\ns=-\n';
+    const compressed = compressSDP(sdp);
+    const decompressed = decompressSDP(compressed);
+    expect(decompressed).not.toContain('\n\n');
+    expect(decompressed).toContain('v=0');
+    expect(decompressed).toContain('s=-');
+  });
+
+  it('returns original string for invalid base64 input', () => {
+    const invalid = '!!!not-base64!!!';
+    const result = decompressSDP(invalid);
+    expect(result).toBe(invalid);
   });
 });

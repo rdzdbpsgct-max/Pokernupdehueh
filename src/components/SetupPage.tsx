@@ -11,6 +11,10 @@ import {
   createTable,
   distributePlayersToTables,
   defaultMultiTableConfig,
+  parseLeagueFile,
+  importLeague,
+  getBuiltInPresets,
+  toggleSeatLock,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { ConfigEditor } from './ConfigEditor';
@@ -50,7 +54,7 @@ export function SetupPage({
   const { t } = useTranslation();
 
   // Load leagues for the dropdown (refresh when SetupPage mounts)
-  const [leagues] = useState<League[]>(() => loadLeagues());
+  const [leagues, setLeagues] = useState<League[]>(() => loadLeagues());
 
   // --- Section summaries for collapsed CollapsibleSection cards ---
   const chipsSummary = useMemo(() => {
@@ -149,6 +153,37 @@ export function SetupPage({
     });
   }, [setConfig]);
 
+  const handleImportLeagueInSetup = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = parseLeagueFile(text);
+        if (!data) return;
+        const imported = importLeague(data);
+        setLeagues(loadLeagues());
+        setConfig((prev) => {
+          if (imported.defaultConfig) {
+            return {
+              ...prev,
+              ...imported.defaultConfig,
+              players: prev.players,
+              dealerIndex: prev.dealerIndex,
+              tables: prev.tables,
+              leagueId: imported.id,
+            };
+          }
+          return { ...prev, leagueId: imported.id };
+        });
+      } catch { /* ignore */ }
+    };
+    input.click();
+  }, [setConfig]);
+
   // --- Ante toggle ---
   const toggleAnte = useCallback(() => {
     setConfig((prev) => {
@@ -201,6 +236,32 @@ export function SetupPage({
             </div>
           </div>
         )}
+
+        {/* Quick Start Presets */}
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('preset.title')}</p>
+          <div className="flex gap-2 flex-wrap">
+            {getBuiltInPresets().map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => {
+                  setConfig((prev) => ({
+                    ...prev,
+                    ...preset.config,
+                    players: prev.players,
+                    dealerIndex: prev.dealerIndex,
+                    tables: prev.tables,
+                    leagueId: prev.leagueId,
+                  }));
+                }}
+                className="flex-1 min-w-[120px] px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-gray-200 dark:border-gray-700/40 hover:border-emerald-400 dark:hover:border-emerald-700/60 rounded-xl text-left transition-all duration-200 group"
+              >
+                <span className="block text-sm font-medium text-gray-800 dark:text-gray-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">{t(preset.nameKey as Parameters<typeof t>[0])}</span>
+                <span className="block text-xs text-gray-400 dark:text-gray-500">{t(preset.descKey as Parameters<typeof t>[0])}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Turnier-Grundlagen (Name + Buy-In + Startchips) */}
         <CollapsibleSection title={t('app.tournamentBasics')}>
@@ -266,22 +327,43 @@ export function SetupPage({
                 <span className="text-gray-500 dark:text-gray-400 text-sm">{t('unit.chips')}</span>
               </div>
             </div>
-            {/* League dropdown */}
-            {leagues.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-400 dark:text-gray-500">{t('league.assignLeague')}</label>
-                <select
-                  value={config.leagueId ?? ''}
-                  onChange={(e) => setConfig((prev) => ({ ...prev, leagueId: e.target.value || undefined }))}
-                  className="px-3 py-1.5 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
-                >
-                  <option value="">{t('league.noLeague')}</option>
-                  {leagues.map((l) => (
-                    <option key={l.id} value={l.id}>{l.name || l.id}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* League dropdown + import */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="text-xs text-gray-400 dark:text-gray-500">{t('league.assignLeague')}</label>
+              <select
+                value={config.leagueId ?? ''}
+                onChange={(e) => {
+                  const leagueId = e.target.value || undefined;
+                  setConfig((prev) => {
+                    if (!leagueId) return { ...prev, leagueId: undefined };
+                    const selectedLeague = leagues.find(l => l.id === leagueId);
+                    if (selectedLeague?.defaultConfig) {
+                      return {
+                        ...prev,
+                        ...selectedLeague.defaultConfig,
+                        players: prev.players,
+                        dealerIndex: prev.dealerIndex,
+                        tables: prev.tables,
+                        leagueId,
+                      };
+                    }
+                    return { ...prev, leagueId };
+                  });
+                }}
+                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+              >
+                <option value="">{t('league.noLeague')}</option>
+                {leagues.map((l) => (
+                  <option key={l.id} value={l.id}>{l.name || l.id}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleImportLeagueInSetup}
+                className="px-2 py-1.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-colors border border-gray-200 dark:border-gray-700/40"
+              >
+                {t('league.importFile')}
+              </button>
+            </div>
           </div>
         </CollapsibleSection>
 
@@ -387,25 +469,53 @@ export function SetupPage({
                     >
                       {t('multiTable.distribute')}
                     </button>
-                    {config.tables.some(tbl => tbl.seats.some(s => s.playerId !== null)) && (
+                    {config.tables.length > 0 && !config.tables.some(tbl => tbl.seats.some(s => s.playerId !== null)) && (
+                      <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/40 rounded-lg">
+                        <p className="text-amber-700 dark:text-amber-300 text-xs">
+                          {t('multiTable.notDistributed')}
+                        </p>
+                      </div>
+                    )}
+                    {config.tables.some(tbl => tbl.seats.some(s => s.playerId !== null || s.locked)) && (
                       <div className="space-y-1.5">
                         {config.tables.map((tbl) => {
-                          const seatedPlayers = tbl.seats
-                            .filter(s => s.playerId !== null)
-                            .map(s => {
-                              const player = config.players.find(p => p.id === s.playerId);
-                              return { seat: s.seatNumber, name: player?.name ?? '?' };
-                            });
-                          if (seatedPlayers.length === 0) return null;
+                          const seatInfos = tbl.seats.map(s => {
+                            const player = s.playerId ? config.players.find(p => p.id === s.playerId) : null;
+                            return { seat: s.seatNumber, name: player?.name ?? null, locked: !!s.locked, empty: s.playerId === null };
+                          });
+                          const hasContent = seatInfos.some(s => s.name || s.locked);
+                          if (!hasContent) return null;
                           return (
                             <div key={tbl.id} className="text-xs text-gray-500 dark:text-gray-400">
                               <span className="font-medium text-gray-600 dark:text-gray-300">{tbl.name}:</span>{' '}
-                              {seatedPlayers.map((sp, i) => (
+                              {seatInfos.filter(s => s.name || s.locked).map((sp, i) => (
                                 <span key={sp.seat}>
                                   {i > 0 && ', '}
-                                  <span className="text-gray-400 dark:text-gray-500">{t('multiTable.seatShort', { n: sp.seat })}</span>={sp.name}
+                                  <span className="text-gray-400 dark:text-gray-500">{t('multiTable.seatShort', { n: sp.seat })}</span>
+                                  ={sp.locked ? (
+                                    <button
+                                      onClick={() => setConfig(prev => ({ ...prev, tables: toggleSeatLock(prev.tables ?? [], tbl.id, sp.seat) }))}
+                                      className="text-red-400 hover:text-red-300"
+                                      title={t('multiTable.unlockSeat')}
+                                    >&#128274;</button>
+                                  ) : sp.name ?? '?'}
                                 </span>
                               ))}
+                              {/* Show lock buttons for empty unlocked seats */}
+                              {seatInfos.filter(s => s.empty && !s.locked).length > 0 && (
+                                <span className="ml-1">
+                                  {seatInfos.filter(s => s.empty && !s.locked).slice(0, 3).map(s => (
+                                    <button
+                                      key={s.seat}
+                                      onClick={() => setConfig(prev => ({ ...prev, tables: toggleSeatLock(prev.tables ?? [], tbl.id, s.seat) }))}
+                                      className="text-gray-400 dark:text-gray-600 hover:text-red-400 dark:hover:text-red-400 ml-0.5"
+                                      title={t('multiTable.lockSeat', { n: s.seat })}
+                                    >
+                                      S{s.seat}&#128275;
+                                    </button>
+                                  ))}
+                                </span>
+                              )}
                             </div>
                           );
                         })}

@@ -403,6 +403,12 @@ export function TournamentFinished({
               {t('finished.downloadCSV')}
             </button>
           </div>
+          <button
+            onClick={() => window.print()}
+            className="w-full px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40"
+          >
+            {t('finished.print')}
+          </button>
         </div>
 
         {/* Back to setup */}

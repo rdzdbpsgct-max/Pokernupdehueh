@@ -13,33 +13,23 @@ import {
   clearCheckpoint,
   isRebuyActive,
   isLateRegistrationOpen,
-  generatePlayerId,
   computeTournamentElapsedSeconds,
-  computeNextPlacement,
   validatePayoutConfig,
   validateConfig,
   computeAverageStack,
-  initializePlayerStacks,
   scheduleToColorUpMap,
   isBubble,
   isInTheMoney,
-  advanceDealer,
   buildTournamentResult,
   saveTournamentResult,
   decodeResultFromQR,
-  drawMysteryBounty,
-  removePlayerFromTable,
-  shouldMergeToFinalTable,
-  mergeToFinalTable,
   distributePlayersToTables,
-  balanceTables,
-  findTableToDissolve,
-  dissolveTable,
-  seatPlayerAtSmallestTable,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
 import { useGameEvents } from './hooks/useGameEvents';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useTournamentActions } from './hooks/useTournamentActions';
 import { useTranslation } from './i18n';
 import {
   setSpeechLanguage,
@@ -50,8 +40,6 @@ import {
   announceHandForHand,
   announceTableMove,
   announceFinalTable,
-  announceTableDissolution,
-  announceMysteryBounty,
   announceLateRegistrationClosed,
   setSpeechVolume,
 } from './domain/speech';
@@ -68,6 +56,7 @@ import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { VoiceSwitcher } from './components/VoiceSwitcher';
 import { useTheme } from './theme';
+import type { RemoteHost, RemoteCommand } from './domain/remote';
 
 // Game-mode components (lazy — only needed after tournament starts)
 const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
@@ -84,6 +73,7 @@ const SharedResultView = lazy(() => import('./components/SharedResultView').then
 const CallTheClock = lazy(() => import('./components/CallTheClock').then(m => ({ default: m.CallTheClock })));
 const MultiTablePanel = lazy(() => import('./components/MultiTablePanel').then(m => ({ default: m.MultiTablePanel })));
 const SeatingOverlay = lazy(() => import('./components/SeatingOverlay').then(m => ({ default: m.SeatingOverlay })));
+const RemoteHostModal = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteHostModal })));
 
 type Mode = 'setup' | 'game';
 
@@ -131,6 +121,8 @@ function App() {
   const [showDealerBadges, setShowDealerBadges] = useState(true);
   const [showSeatingOverlay, setShowSeatingOverlay] = useState(false);
   const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
+  const [showRemoteControl, setShowRemoteControl] = useState(false);
+  const remoteHostRef = useRef<RemoteHost | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -412,84 +404,54 @@ function App() {
     timer.start();
   }, [timer]);
 
-  // Stack tracking handlers
-  const updatePlayerStack = useCallback((playerId: string, chips: number) => {
-    setConfig((prev) => ({
-      ...prev,
-      players: prev.players.map((p) =>
-        p.id === playerId ? { ...p, chips } : p,
-      ),
-    }));
-  }, []);
-
-  const initStacks = useCallback(() => {
-    setConfig((prev) => ({
-      ...prev,
-      players: initializePlayerStacks(
-        prev.players,
-        prev.startingChips,
-        prev.rebuy.enabled ? prev.rebuy.rebuyChips : 0,
-        prev.addOn.enabled ? prev.addOn.chips : 0,
-      ),
-    }));
-  }, []);
-
-  const clearStacks = useCallback(() => {
-    setConfig((prev) => ({
-      ...prev,
-      players: prev.players.map((p) => ({ ...p, chips: undefined })),
-    }));
-  }, []);
+  // Tournament actions (eliminate, rebuy, add-on, stacks, late reg, re-entry, dealer)
+  const {
+    updatePlayerStack,
+    initStacks,
+    clearStacks,
+    updatePlayerRebuys,
+    updatePlayerAddOn,
+    handleAdvanceDealer,
+    addLatePlayer,
+    handleReEntry,
+    reinstatePlayer,
+    eliminatePlayer,
+  } = useTournamentActions({
+    config,
+    setConfig,
+    mode,
+    settings,
+    t,
+    setRecentTableMoves,
+  });
 
   // Keyboard shortcuts (only in game mode)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (mode !== 'game') return;
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+  const handleResetLevelShortcut = useCallback(() => {
+    setConfirmAction({
+      title: t('confirm.resetLevel.title'),
+      message: t('confirm.resetLevel.message'),
+      confirmLabel: t('confirm.resetLevel.confirm'),
+      onConfirm: timer.resetLevel,
+    });
+  }, [t, timer.resetLevel]);
 
-      switch (e.code) {
-        case 'Space':
-          e.preventDefault();
-          timer.toggleStartPause();
-          break;
-        case 'KeyN':
-          timer.nextLevel();
-          break;
-        case 'KeyV':
-          timer.previousLevel();
-          break;
-        case 'KeyR':
-          setConfirmAction({
-            title: t('confirm.resetLevel.title'),
-            message: t('confirm.resetLevel.message'),
-            confirmLabel: t('confirm.resetLevel.confirm'),
-            onConfirm: timer.resetLevel,
-          });
-          break;
-        case 'KeyF':
-          toggleCleanView();
-          break;
-        case 'KeyL':
-          handleLastHand();
-          break;
-        case 'KeyT':
-          if (tvWindowActive) {
-            closeTVWindow();
-          } else {
-            openTVWindow();
-          }
-          break;
-        case 'KeyH':
-          handleHandForHand();
-          break;
-        case 'KeyC':
-          setShowCallTheClock((v) => !v);
-          break;
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, timer, t, toggleCleanView, handleLastHand, handleHandForHand, tvWindowActive, openTVWindow, closeTVWindow]);
+  const handleToggleTVWindow = useCallback(() => {
+    if (tvWindowActive) closeTVWindow();
+    else openTVWindow();
+  }, [tvWindowActive, closeTVWindow, openTVWindow]);
+
+  useKeyboardShortcuts({
+    mode,
+    onToggleStartPause: timer.toggleStartPause,
+    onNextLevel: timer.nextLevel,
+    onPreviousLevel: timer.previousLevel,
+    onResetLevel: handleResetLevelShortcut,
+    onToggleCleanView: toggleCleanView,
+    onLastHand: handleLastHand,
+    onToggleTVWindow: handleToggleTVWindow,
+    onHandForHand: handleHandForHand,
+    onCallTheClock: useCallback(() => setShowCallTheClock((v) => !v), []),
+  });
 
   const toggleFullscreen = useCallback(() => {
     try {
@@ -508,232 +470,19 @@ function App() {
     }
   }, []);
 
-  // --- Late registration: add player during tournament ---
-  const addLatePlayer = useCallback(() => {
-    const playerNumber = config.players.length + 1;
-    const name = t('playerManager.playerN', { n: playerNumber });
-    const newId = generatePlayerId();
-    setConfig((prev) => {
-      const newPlayer = {
-        id: newId,
-        name,
-        rebuys: 0,
-        addOn: false,
-        status: 'active' as const,
-        placement: null,
-        eliminatedBy: null,
-        knockouts: 0,
-      };
-      const updatedPlayers = [...prev.players, newPlayer];
-
-      // Seat at table with fewest active players (multi-table mode)
-      let updatedTables = prev.tables;
-      if (updatedTables && updatedTables.length > 0) {
-        const result = seatPlayerAtSmallestTable(updatedTables, updatedPlayers, newId);
-        if (result) {
-          updatedTables = result.tables;
-        }
-      }
-
-      return { ...prev, players: updatedPlayers, tables: updatedTables };
-    });
-  }, [config.players.length, t]);
-
-  // --- Rebuy update handler ---
-  const updatePlayerRebuys = useCallback((playerId: string, newCount: number) => {
-    setConfig((prev) => ({
-      ...prev,
-      players: prev.players.map((p) => {
-        if (p.id !== playerId) return p;
-        const diff = newCount - p.rebuys;
-        const updated = { ...p, rebuys: newCount };
-        if (p.chips !== undefined && diff !== 0) {
-          updated.chips = Math.max(0, p.chips + diff * prev.rebuy.rebuyChips);
-        }
-        return updated;
-      }),
-    }));
-  }, []);
-
-  // --- Add-on update handler ---
-  const updatePlayerAddOn = useCallback((playerId: string, hasAddOn: boolean) => {
-    setConfig((prev) => ({
-      ...prev,
-      players: prev.players.map((p) => {
-        if (p.id !== playerId) return p;
-        const updated = { ...p, addOn: hasAddOn };
-        if (p.chips !== undefined) {
-          updated.chips = hasAddOn
-            ? p.chips + prev.addOn.chips
-            : Math.max(0, p.chips - prev.addOn.chips);
-        }
-        return updated;
-      }),
-    }));
-  }, []);
-
-  // --- Advance dealer ---
-  const handleAdvanceDealer = useCallback(() => {
-    setConfig((prev) => ({
-      ...prev,
-      dealerIndex: advanceDealer(prev.players, prev.dealerIndex),
-    }));
-  }, []);
-
   const handleToggleDealerBadges = useCallback(() => {
     setShowDealerBadges((prev) => !prev);
   }, []);
 
-  // --- Eliminate player handler ---
-  const lastMysteryDrawRef = useRef<number | null>(null);
-  const pendingTableMovesRef = useRef<TableMove[]>([]);
-  const pendingDissolutionRef = useRef<string | null>(null);
-  const eliminatePlayer = useCallback((playerId: string, eliminatedBy: string | null) => {
-    pendingTableMovesRef.current = [];
-    pendingDissolutionRef.current = null;
-    setConfig((prev) => {
-      const placement = computeNextPlacement(prev.players);
-
-      // Mystery bounty: draw from pool if applicable
-      let updatedBounty = prev.bounty;
-      if (prev.bounty.enabled && prev.bounty.type === 'mystery' && prev.bounty.mysteryPool && prev.bounty.mysteryPool.length > 0 && eliminatedBy) {
-        const draw = drawMysteryBounty(prev.bounty.mysteryPool);
-        lastMysteryDrawRef.current = draw.amount;
-        updatedBounty = { ...prev.bounty, amount: draw.amount, mysteryPool: draw.remainingPool };
-      }
-
-      const updatedPlayers = prev.players.map((p) => {
-        if (p.id === playerId) {
-          return { ...p, status: 'eliminated' as const, placement, eliminatedBy, chips: p.chips !== undefined ? 0 : undefined };
-        }
-        if (eliminatedBy && p.id === eliminatedBy) {
-          return { ...p, knockouts: p.knockouts + 1 };
-        }
-        return p;
-      });
-
-      // Multi-table: remove eliminated player from their table + dissolution + balance
-      let updatedTables = prev.tables;
-      const allMoves: TableMove[] = [];
-
-      if (updatedTables && updatedTables.length > 0) {
-        updatedTables = removePlayerFromTable(updatedTables, playerId);
-
-        const threshold = prev.multiTable?.dissolveThreshold ?? 3;
-
-        // Check dissolution: dissolve tables below threshold
-        let tableToDissolve = findTableToDissolve(updatedTables, updatedPlayers, threshold);
-        while (tableToDissolve) {
-          pendingDissolutionRef.current = tableToDissolve.name;
-          const dissResult = dissolveTable(updatedTables, updatedPlayers, tableToDissolve.id);
-          updatedTables = dissResult.tables;
-          allMoves.push(...dissResult.moves);
-          tableToDissolve = findTableToDissolve(updatedTables, updatedPlayers, threshold);
-        }
-
-        // Check for final table merge
-        const activeTables = updatedTables.filter(t => t.status === 'active');
-        if (activeTables.length > 1 && shouldMergeToFinalTable(updatedTables, updatedPlayers)) {
-          const mergeResult = mergeToFinalTable(updatedTables, updatedPlayers);
-          updatedTables = mergeResult.tables;
-          allMoves.push(...mergeResult.moves);
-        }
-
-        // Auto-balance if enabled
-        if (prev.multiTable?.autoBalanceOnElimination !== false) {
-          const balResult = balanceTables(updatedTables, updatedPlayers);
-          updatedTables = balResult.tables;
-          allMoves.push(...balResult.moves);
-        }
-
-        if (allMoves.length > 0) {
-          pendingTableMovesRef.current = allMoves;
-        }
-      }
-
-      return {
-        ...prev,
-        bounty: updatedBounty,
-        players: updatedPlayers,
-        tables: updatedTables,
-      };
-    });
-  }, []);
-
-  // Voice: Mystery bounty draw
-  useEffect(() => {
-    if (mode !== 'game' || !settings.voiceEnabled) return;
-    if (lastMysteryDrawRef.current !== null) {
-      announceMysteryBounty(lastMysteryDrawRef.current, t);
-      lastMysteryDrawRef.current = null;
-    }
-  }, [mode, settings.voiceEnabled, config.bounty, t]);
-
-  // Process pending table moves from elimination handler (dissolution, balance, merge)
-  useEffect(() => {
-    if (pendingTableMovesRef.current.length === 0) return;
-    const moves = pendingTableMovesRef.current;
-    pendingTableMovesRef.current = [];
-    setRecentTableMoves(prev => [...prev, ...moves]);
-    if (settings.voiceEnabled) {
-      if (pendingDissolutionRef.current) {
-        announceTableDissolution(pendingDissolutionRef.current, t);
-        pendingDissolutionRef.current = null;
-      }
-      for (const move of moves) {
-        announceTableMove(move.playerName, move.toTableName, move.toSeat, t);
-      }
-    }
-  }, [config.tables, settings.voiceEnabled, t]);
-
   // Auto-dismiss recent table moves after 30 seconds
   useEffect(() => {
     if (recentTableMoves.length === 0) return;
-    const timer = setTimeout(() => {
+    const timerId = setTimeout(() => {
       const cutoff = Date.now() - 30_000;
       setRecentTableMoves(prev => prev.filter(m => m.timestamp > cutoff));
     }, 30_000);
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timerId);
   }, [recentTableMoves]);
-
-  // --- Reinstate (undo elimination) handler ---
-  const reinstatePlayer = useCallback((playerId: string) => {
-    setConfig((prev) => {
-      const player = prev.players.find((p) => p.id === playerId);
-      if (!player || player.status !== 'eliminated') return prev;
-
-      const killedBy = player.eliminatedBy;
-      const reinstatedPlacement = player.placement;
-
-      const updated = prev.players.map((p) => {
-        // Reset the reinstated player
-        if (p.id === playerId) {
-          return { ...p, status: 'active' as const, placement: null, eliminatedBy: null };
-        }
-        // Decrement knockout count of the killer
-        if (killedBy && p.id === killedBy) {
-          return { ...p, knockouts: Math.max(0, p.knockouts - 1) };
-        }
-        // Recalculate placements: players eliminated before the reinstated one
-        // had higher placement numbers; shift them down by 1
-        if (p.status === 'eliminated' && reinstatedPlacement != null && p.placement != null && p.placement > reinstatedPlacement) {
-          return { ...p, placement: p.placement - 1 };
-        }
-        return p;
-      });
-
-      // Re-seat reinstated player at the table with fewest active players
-      let updatedTables = prev.tables;
-      if (updatedTables && updatedTables.length > 0) {
-        const result = seatPlayerAtSmallestTable(updatedTables, updated, playerId);
-        if (result) {
-          updatedTables = result.tables;
-        }
-      }
-
-      return { ...prev, players: updated, tables: updatedTables };
-    });
-  }, []);
 
   // --- Computed rebuy state for game mode ---
   const tournamentElapsed = useMemo(
@@ -1011,6 +760,52 @@ function App() {
     }
   }, [settings.voiceEnabled, t]);
 
+  // --- Remote control ---
+  const handleRemoteCommand = useCallback((cmd: RemoteCommand) => {
+    switch (cmd.action) {
+      case 'toggle': timer.toggleStartPause(); break;
+      case 'play': timer.start(); break;
+      case 'pause': timer.pause(); break;
+      case 'next': timer.nextLevel(); break;
+      case 'prev': timer.previousLevel(); break;
+      case 'reset': timer.resetLevel(); break;
+      case 'call-the-clock': setShowCallTheClock(v => !v); break;
+    }
+  }, [timer]);
+
+  const handleRemoteHostReady = useCallback((host: RemoteHost) => {
+    remoteHostRef.current = host;
+  }, []);
+
+  // Send state updates to connected remote controller
+  useEffect(() => {
+    const host = remoteHostRef.current;
+    if (!host || !host.connected || mode !== 'game') return;
+
+    const currentLevel = config.levels[timer.timerState.currentLevelIndex];
+    const levelLabel = currentLevel?.type === 'break'
+      ? (currentLevel.label || t('config.break'))
+      : `Level ${config.levels.slice(0, timer.timerState.currentLevelIndex + 1).filter(l => l.type === 'level').length}`;
+
+    const sb = currentLevel?.type === 'level' ? currentLevel.smallBlind : 0;
+    const bb = currentLevel?.type === 'level' ? currentLevel.bigBlind : 0;
+    const levelAnte = currentLevel?.type === 'level' ? currentLevel.ante : undefined;
+
+    host.sendState({
+      timerStatus: timer.timerState.status === 'running' ? 'running' : 'paused',
+      remainingSeconds: timer.timerState.remainingSeconds,
+      currentLevelIndex: timer.timerState.currentLevelIndex,
+      levelLabel,
+      smallBlind: sb ?? 0,
+      bigBlind: bb ?? 0,
+      ante: levelAnte,
+      activePlayerCount,
+      totalPlayerCount: config.players.length,
+      isBubble: bubbleActive,
+      tournamentName: config.name,
+    });
+  }, [mode, timer.timerState, config.levels, config.players, config.name, activePlayerCount, bubbleActive, t]);
+
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
     setConfig((prev) => {
@@ -1071,6 +866,12 @@ function App() {
     setLastHandActive(false);
     setHandForHandActive(false);
     closeTVWindow();
+    // Close remote control
+    if (remoteHostRef.current) {
+      remoteHostRef.current.close();
+      remoteHostRef.current = null;
+    }
+    setShowRemoteControl(false);
     resetGameEvents();
     resetVoice();
     clearCheckpoint();
@@ -1155,7 +956,7 @@ function App() {
 
   return (
     <>
-    <PrintView config={config} />
+    <PrintView config={config} result={finishedResult} />
     <div className="min-h-full flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700/30 bg-gray-50/90 dark:bg-gray-900/50 backdrop-blur-sm">
@@ -1172,17 +973,26 @@ function App() {
           <LanguageSwitcher />
           <VoiceSwitcher settings={settings} onChange={setSettings} />
           {mode === 'game' && !tournamentFinished && (
-            <button
-              onClick={tvWindowActive ? closeTVWindow : openTVWindow}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
-                tvWindowActive
-                  ? 'bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white border-emerald-500 dark:border-emerald-600 shadow-sm shadow-emerald-300/30 dark:shadow-emerald-900/30'
-                  : 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600/30'
-              }`}
-              title={tvWindowActive ? t('display.tvWindowActive') : t('display.activate')}
-            >
-              📺
-            </button>
+            <>
+              <button
+                onClick={() => setShowRemoteControl(true)}
+                className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30 rounded-lg text-sm font-medium transition-all duration-200"
+                title={t('remote.openRemote')}
+              >
+                📱
+              </button>
+              <button
+                onClick={tvWindowActive ? closeTVWindow : openTVWindow}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
+                  tvWindowActive
+                    ? 'bg-emerald-600 dark:bg-emerald-700 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white border-emerald-500 dark:border-emerald-600 shadow-sm shadow-emerald-300/30 dark:shadow-emerald-900/30'
+                    : 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600/30'
+                }`}
+                title={tvWindowActive ? t('display.tvWindowActive') : t('display.activate')}
+              >
+                📺
+              </button>
+            </>
           )}
           <button
             onClick={() => {
@@ -1284,6 +1094,7 @@ function App() {
                   onClearStacks={clearStacks}
                   lateRegOpen={lateRegOpen}
                   onAddLatePlayer={addLatePlayer}
+                  onReEntryPlayer={handleReEntry}
                   tables={config.tables}
                 />
               </aside>
@@ -1437,6 +1248,17 @@ function App() {
         </Suspense>
       )}
 
+      {/* Remote Control Modal */}
+      {showRemoteControl && mode === 'game' && (
+        <Suspense fallback={null}>
+          <RemoteHostModal
+            onCommand={handleRemoteCommand}
+            onClose={() => setShowRemoteControl(false)}
+            onHostReady={handleRemoteHostReady}
+          />
+        </Suspense>
+      )}
+
       {/* Call the Clock Modal */}
       {showCallTheClock && mode === 'game' && (
         <Suspense fallback={null}>
@@ -1463,7 +1285,7 @@ function App() {
       )}
 
       {showLeagues && (
-        <LeagueManager onClose={() => setShowLeagues(false)} />
+        <LeagueManager onClose={() => setShowLeagues(false)} currentConfig={config} />
       )}
 
       {/* Setup Wizard (first-time users) */}

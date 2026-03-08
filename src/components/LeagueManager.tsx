@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { League, LeagueStanding } from '../domain/types';
+import type { League, LeagueStanding, TournamentConfig } from '../domain/types';
 import {
   loadLeagues,
   saveLeague,
@@ -12,6 +12,7 @@ import {
   exportLeagueToJSON,
   parseLeagueFile,
   importLeague,
+  extractLeagueConfig,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { ChevronIcon } from './ChevronIcon';
@@ -28,9 +29,10 @@ interface WindowWithFilePicker extends Window {
 
 interface Props {
   onClose: () => void;
+  currentConfig?: TournamentConfig;
 }
 
-export function LeagueManager({ onClose }: Props) {
+export function LeagueManager({ onClose, currentConfig }: Props) {
   const { t } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [leagues, setLeagues] = useState<League[]>(() => loadLeagues());
@@ -40,6 +42,17 @@ export function LeagueManager({ onClose }: Props) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [fileError, setFileError] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [savedConfigId, setSavedConfigId] = useState<string | null>(null);
+
+  const handleSaveConfigToLeague = useCallback((league: League) => {
+    if (!currentConfig) return;
+    const leagueConfig = extractLeagueConfig(currentConfig);
+    const updated: League = { ...league, defaultConfig: leagueConfig };
+    saveLeague(updated);
+    setLeagues(loadLeagues());
+    setSavedConfigId(league.id);
+    setTimeout(() => setSavedConfigId(null), 2000);
+  }, [currentConfig]);
 
   // Auto-focus & Escape to close
   useEffect(() => {
@@ -226,6 +239,8 @@ export function LeagueManager({ onClose }: Props) {
                 onCopyText={() => handleCopyText(league)}
                 onDownloadCSV={() => handleDownloadCSV(league)}
                 onExportJSON={() => handleExportLeague(league)}
+                onSaveConfig={currentConfig ? () => handleSaveConfigToLeague(league) : undefined}
+                savedConfig={savedConfigId === league.id}
               />
             ))
           )}
@@ -251,6 +266,8 @@ function LeagueEntry({
   onCopyText,
   onDownloadCSV,
   onExportJSON,
+  onSaveConfig,
+  savedConfig,
 }: {
   league: League;
   expanded: boolean;
@@ -266,6 +283,8 @@ function LeagueEntry({
   onCopyText: () => void;
   onDownloadCSV: () => void;
   onExportJSON: () => void;
+  onSaveConfig?: () => void;
+  savedConfig?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -293,6 +312,9 @@ function LeagueEntry({
           </div>
           <div className="flex items-center gap-3 mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             <span>{league.pointSystem.entries.length} {t('league.points')}</span>
+            {league.defaultConfig && (
+              <span className="text-xs text-emerald-500 dark:text-emerald-600">{t('league.hasConfig')}</span>
+            )}
           </div>
         </div>
         <ChevronIcon open={expanded} />
@@ -393,6 +415,14 @@ function LeagueEntry({
             >
               {t('league.exportFile')}
             </button>
+            {onSaveConfig && (
+              <button
+                onClick={onSaveConfig}
+                className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-medium transition-colors border border-emerald-200 dark:border-emerald-800/40"
+              >
+                {savedConfig ? t('league.configSaved') : t('league.saveConfig')}
+              </button>
+            )}
             <div className="flex-1" />
             {confirmDelete ? (
               <div className="flex items-center gap-2">
