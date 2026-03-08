@@ -34,6 +34,8 @@ export function useKeyboardShortcuts({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (mode !== 'game') return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // Ignore keyboard shortcuts when modifier keys are held (e.g. Ctrl+C, Cmd+R)
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       switch (e.code) {
         case 'Space':

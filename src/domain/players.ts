@@ -183,7 +183,7 @@ export function computeAverageStackFromPlayers(players: Player[]): number | null
   const tracked = active.filter((p) => p.chips !== undefined);
   if (tracked.length === 0) return null;
   const total = tracked.reduce((sum, p) => sum + (p.chips ?? 0), 0);
-  return Math.round(total / active.length);
+  return Math.round(total / tracked.length);
 }
 
 export function addRebuyToStack(player: Player, rebuyChips: number): Player {

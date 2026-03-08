@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (432 tests, single run)
+npm run test         # Vitest run (509 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -135,7 +135,7 @@ src/
 
 tests/
 ├── logic.test.ts                # 418 unit tests for domain logic + PeerJS remote control
-├── components.test.tsx          # 14 UI component tests (NumberStepper, CollapsibleSection, PrintView)
+├── components.test.tsx          # 66 UI component tests (NumberStepper, CollapsibleSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, CollapsibleSubSection, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog)
 └── setup.ts                     # Test setup: jest-dom matchers, matchMedia mock
 
 public/
@@ -262,12 +262,12 @@ public/
 - **Druckbare Ergebnisse**: Tournament results printable from TournamentFinished screen via PrintView.
 - **Remote Control (PeerJS)**: Smartphone remote control via PeerJS (WebRTC data channel with cloud-brokered signaling). One-scan flow: host generates peer ID (`PKR-XXXXX`), QR code contains app URL with `#remote=` hash, phone scans → opens app → auto-connects. `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + touch-optimized fullscreen controller UI (play/pause/next/prev/dealer/sound/call-the-clock). `useRemoteControl` hook manages state. Auto-reconnect (3 attempts, exponential backoff). Wake Lock on controller. Keepalive pings every 10s. Lazy-loaded ~9KB chunk.
 - **App.tsx Refactoring**: Extracted `useKeyboardShortcuts` (72 lines) and `useTournamentActions` (317 lines) hooks. App.tsx reduced from ~1543 to ~1300 lines.
-- **UI Integration Tests**: 14 component tests via `@testing-library/react` in `tests/components.test.tsx` (NumberStepper, CollapsibleSection, PrintView).
+- **UI Integration Tests**: 66 component tests via `@testing-library/react` in `tests/components.test.tsx` covering 13 components/hooks (NumberStepper, CollapsibleSection, CollapsibleSubSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog).
 - **Offline-first**: Core functionality works offline. PeerJS signaling server required only for Remote Control pairing
 
 ## Testing
 
-- Tests live in `tests/logic.test.ts` (418 tests) and `tests/components.test.tsx` (14 tests) — 432 total
+- Tests live in `tests/logic.test.ts` (443 tests) and `tests/components.test.tsx` (66 tests) — 509 total
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests

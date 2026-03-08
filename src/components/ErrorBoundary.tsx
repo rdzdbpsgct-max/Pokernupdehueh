@@ -9,6 +9,7 @@ interface State {
   hasError: boolean;
 }
 
+/** Full-screen error boundary — wraps the entire app in main.tsx */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
@@ -37,6 +38,40 @@ export class ErrorBoundary extends Component<Props, State> {
               className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors"
             >
               Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/** Compact inline error boundary — wraps lazy-loaded sections within a page */
+export class SectionErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false };
+
+  static getDerivedStateFromError(): State {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('SectionErrorBoundary caught:', error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center p-8 text-center">
+          <div className="space-y-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Failed to load this section.
+            </p>
+            <button
+              onClick={() => this.setState({ hasError: false })}
+              className="px-4 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm transition-colors"
+            >
+              Retry
             </button>
           </div>
         </div>

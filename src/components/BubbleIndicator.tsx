@@ -16,7 +16,7 @@ export function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOn
   return (
     <>
       {lastHandActive && (
-        <div className="w-full max-w-xl px-4 py-3 bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-400 dark:border-amber-500 rounded-xl text-center animate-addon-pulse backdrop-blur-sm" role="status" aria-live="assertive">
+        <div className="w-full max-w-xl px-4 py-3 bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-400 dark:border-amber-500 rounded-xl text-center animate-addon-pulse backdrop-blur-sm" role="status" aria-live="polite">
           <p className="text-amber-700 dark:text-amber-300 text-lg font-bold tracking-wider">
             {t('game.lastHand')}
           </p>
@@ -27,7 +27,7 @@ export function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOn
       )}
 
       {handForHandActive && (
-        <div className="w-full max-w-xl px-4 py-3 bg-red-50 dark:bg-red-900/30 border-2 border-red-400 dark:border-red-500 rounded-xl text-center animate-bubble-pulse backdrop-blur-sm" role="status" aria-live="assertive">
+        <div className="w-full max-w-xl px-4 py-3 bg-red-50 dark:bg-red-900/30 border-2 border-red-400 dark:border-red-500 rounded-xl text-center animate-bubble-pulse backdrop-blur-sm" role="status" aria-live="polite">
           <p className="text-red-700 dark:text-red-300 text-lg font-bold tracking-wider">
             {t('game.handForHand')}
           </p>
@@ -38,7 +38,7 @@ export function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOn
       )}
 
       {showItmFlash && (
-        <div className="w-full max-w-xl px-4 py-3 bg-emerald-50 dark:bg-emerald-900/40 border-2 border-emerald-400 dark:border-emerald-500 rounded-xl text-center animate-itm-flash backdrop-blur-sm" role="status" aria-live="assertive">
+        <div className="w-full max-w-xl px-4 py-3 bg-emerald-50 dark:bg-emerald-900/40 border-2 border-emerald-400 dark:border-emerald-500 rounded-xl text-center animate-itm-flash backdrop-blur-sm" role="status" aria-live="polite">
           <p className="text-emerald-700 dark:text-emerald-300 text-lg font-bold">
             💰 {t('bubble.inTheMoney')} 💰
           </p>

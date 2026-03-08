@@ -103,6 +103,12 @@ export interface RemotePing {
 
 export type RemoteMessage = RemoteCommand | RemoteState | RemotePing;
 
+/** Valid command actions for whitelist validation */
+const VALID_COMMAND_ACTIONS: ReadonlySet<RemoteCommand['action']> = new Set([
+  'play', 'pause', 'toggle', 'next', 'prev', 'reset',
+  'call-the-clock', 'advanceDealer', 'toggleSound',
+]);
+
 export type HostStatus = 'initializing' | 'ready' | 'connected' | 'error';
 export type ControllerStatus = 'connecting' | 'connected' | 'reconnecting' | 'error';
 
@@ -199,7 +205,7 @@ export class RemoteHost {
     conn.on('data', (raw) => {
       try {
         const msg = (typeof raw === 'string' ? JSON.parse(raw) : raw) as RemoteMessage;
-        if (msg.type === 'command') {
+        if (msg.type === 'command' && VALID_COMMAND_ACTIONS.has(msg.action)) {
           this.callbacks.onCommand(msg);
         } else if (msg.type === 'pong') {
           // Keepalive response

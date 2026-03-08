@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import type { TournamentConfig, Settings, TournamentCheckpoint, Table, TableMove, PotResult, PlayerPayout } from './domain/types';
-import { createDisplayChannel, sendDisplayMessage, serializeColorUpMap } from './domain/displayChannel';
+import { serializeColorUpMap } from './domain/displayChannel';
 import type { DisplayStatePayload } from './domain/displayChannel';
 import {
   defaultConfig,
@@ -36,6 +36,9 @@ import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
 import { useGameEvents } from './hooks/useGameEvents';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTournamentActions } from './hooks/useTournamentActions';
+import { useTVDisplay } from './hooks/useTVDisplay';
+import { useWakeLock } from './hooks/useWakeLock';
+import { useConfirmDialog } from './hooks/useConfirmDialog';
 import { useTranslation } from './i18n';
 import {
   setSpeechLanguage,
@@ -64,6 +67,7 @@ import { VoiceSwitcher } from './components/VoiceSwitcher';
 import { useTheme } from './theme';
 import type { RemoteCommand } from './domain/remote';
 import { useRemoteControl } from './hooks/useRemoteControl';
+import { SectionErrorBoundary } from './components/ErrorBoundary';
 
 // Game-mode components (lazy — only needed after tournament starts)
 const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
@@ -135,20 +139,12 @@ function App() {
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
   const [handForHandActive, setHandForHandActive] = useState(false);
-  const [tvWindowActive, setTvWindowActive] = useState(false);
-  const tvWindowRef = useRef<Window | null>(null);
-  const channelRef = useRef<BroadcastChannel | null>(null);
   const [showCallTheClock, setShowCallTheClock] = useState(false);
   const [showDealerBadges, setShowDealerBadges] = useState(true);
   const [sidePotData, setSidePotData] = useState<{ pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null>(null);
   const [showSeatingOverlay, setShowSeatingOverlay] = useState(false);
   const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
-  const [confirmAction, setConfirmAction] = useState<{
-    title: string;
-    message: string;
-    confirmLabel: string;
-    onConfirm: () => void;
-  } | null>(null);
+  const { confirmAction, dialogRef: confirmDialogRef, confirm: confirmBeforeAction, dismiss: dismissConfirm, execute: executeConfirm } = useConfirmDialog();
 
   const [pendingCheckpoint, setPendingCheckpoint] = useState<TournamentCheckpoint | null>(() => loadCheckpoint());
 
@@ -187,22 +183,6 @@ function App() {
   }, [config.addOn.enabled, lastRebuyLevelIndex, config.levels]);
 
   const timer = useTimer(config.levels, settings, addOnPauseLevelIndex);
-  const confirmDialogRef = useRef<HTMLDivElement>(null);
-
-  // Auto-focus confirm dialog & close on Escape
-  useEffect(() => {
-    if (!confirmAction) return;
-    const el = confirmDialogRef.current;
-    if (el) {
-      const focusable = el.querySelector<HTMLElement>('button, input, [tabindex]');
-      focusable?.focus();
-    }
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setConfirmAction(null);
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [confirmAction]);
 
   // Track the level where rebuy ended (for one-level add-on window)
   const [addOnEndLevelIndex, setAddOnEndLevelIndex] = useState<number | null>(null);
@@ -244,144 +224,40 @@ function App() {
   }, [settings.volume]);
 
   // Auto-save tournament checkpoint in game mode
+  // Save immediately on level/status/config changes, and periodically every 5s for running timer
+  const checkpointIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     if (mode !== 'game') return;
-    saveCheckpoint({
-      version: 1,
-      config,
-      settings,
-      timer: {
-        currentLevelIndex: timer.timerState.currentLevelIndex,
-        remainingSeconds: timer.timerState.remainingSeconds,
-      },
-      savedAt: new Date().toISOString(),
-    });
-  }, [mode, config, settings, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds]);
-
-  // ---------------------------------------------------------------------------
-  // BroadcastChannel: sync state to TV display window
-  // ---------------------------------------------------------------------------
-
-  // Create/destroy channel based on game mode + tvWindowActive
-  useEffect(() => {
-    if (mode !== 'game' || !tvWindowActive) {
-      if (channelRef.current) {
-        channelRef.current.close();
-        channelRef.current = null;
-      }
-      return;
+    const doSave = () => {
+      saveCheckpoint({
+        version: 1,
+        config,
+        settings,
+        timer: {
+          currentLevelIndex: timer.timerState.currentLevelIndex,
+          remainingSeconds: timer.timerState.remainingSeconds,
+        },
+        savedAt: new Date().toISOString(),
+      });
+    };
+    // Save immediately on level/status/config changes
+    doSave();
+    // For running timer: periodic save every 5s (instead of every tick)
+    if (checkpointIntervalRef.current) clearInterval(checkpointIntervalRef.current);
+    if (timer.timerState.status === 'running') {
+      checkpointIntervalRef.current = setInterval(doSave, 5000);
     }
-    channelRef.current = createDisplayChannel();
     return () => {
-      if (channelRef.current) {
-        channelRef.current.close();
-        channelRef.current = null;
+      if (checkpointIntervalRef.current) {
+        clearInterval(checkpointIntervalRef.current);
+        checkpointIntervalRef.current = null;
       }
     };
-  }, [mode, tvWindowActive]);
-
-  // Poll for TV window closed
-  useEffect(() => {
-    if (!tvWindowActive) return;
-    const id = setInterval(() => {
-      if (tvWindowRef.current?.closed) {
-        tvWindowRef.current = null;
-        setTvWindowActive(false);
-      }
-    }, 2000);
-    return () => clearInterval(id);
-  }, [tvWindowActive]);
-
-  // Open TV window function
-  const openTVWindow = useCallback(() => {
-    if (tvWindowActive && tvWindowRef.current && !tvWindowRef.current.closed) {
-      // Already open — focus it
-      tvWindowRef.current.focus();
-      return;
-    }
-    const basePath = import.meta.env.BASE_URL || '/';
-    const url = basePath + '#display';
-    const win = window.open(url, 'poker-tv', 'width=1280,height=720');
-    if (win) {
-      tvWindowRef.current = win;
-      setTvWindowActive(true);
-    }
-  }, [tvWindowActive]);
-
-  // Close TV window function
-  const closeTVWindow = useCallback(() => {
-    if (channelRef.current) {
-      sendDisplayMessage(channelRef.current, { type: 'close' });
-    }
-    if (tvWindowRef.current && !tvWindowRef.current.closed) {
-      tvWindowRef.current.close();
-    }
-    tvWindowRef.current = null;
-    setTvWindowActive(false);
-  }, []);
-
-  // Sync Call the Clock state to TV window
-  useEffect(() => {
-    if (!channelRef.current || !tvWindowActive) return;
-    if (showCallTheClock) {
-      sendDisplayMessage(channelRef.current, {
-        type: 'call-the-clock',
-        payload: {
-          durationSeconds: settings.callTheClockSeconds,
-          soundEnabled: settings.soundEnabled,
-          voiceEnabled: settings.voiceEnabled,
-        },
-      });
-    } else {
-      sendDisplayMessage(channelRef.current, { type: 'call-the-clock-dismiss' });
-    }
-  }, [showCallTheClock, tvWindowActive, settings.callTheClockSeconds, settings.soundEnabled, settings.voiceEnabled]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- remainingSeconds intentionally excluded: interval handles periodic saves
+  }, [mode, config, settings, timer.timerState.currentLevelIndex, timer.timerState.status]);
 
   // Wake Lock: prevent screen from sleeping during active tournament
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-
-  useEffect(() => {
-    const isActive = mode === 'game' && timer.timerState.status === 'running';
-
-    const requestWakeLock = async () => {
-      if (!('wakeLock' in navigator)) return;
-      try {
-        wakeLockRef.current = await navigator.wakeLock.request('screen');
-      } catch {
-        // Wake lock request failed (e.g. low battery, tab hidden)
-      }
-    };
-
-    const releaseWakeLock = async () => {
-      if (wakeLockRef.current) {
-        try {
-          await wakeLockRef.current.release();
-        } catch {
-          // already released
-        }
-        wakeLockRef.current = null;
-      }
-    };
-
-    if (isActive) {
-      requestWakeLock();
-    } else {
-      releaseWakeLock();
-    }
-
-    // Re-acquire wake lock when tab becomes visible again
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && isActive) {
-        requestWakeLock();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      releaseWakeLock();
-    };
-  }, [mode, timer.timerState.status]);
+  useWakeLock(mode === 'game' && timer.timerState.status === 'running');
 
   // Toggle clean view: also controls both sidebars
   const toggleCleanView = useCallback(() => {
@@ -447,31 +323,14 @@ function App() {
 
   // Keyboard shortcuts (only in game mode)
   const handleResetLevelShortcut = useCallback(() => {
-    setConfirmAction({
-      title: t('confirm.resetLevel.title'),
-      message: t('confirm.resetLevel.message'),
-      confirmLabel: t('confirm.resetLevel.confirm'),
-      onConfirm: timer.resetLevel,
-    });
-  }, [t, timer.resetLevel]);
+    confirmBeforeAction(
+      t('confirm.resetLevel.title'),
+      t('confirm.resetLevel.message'),
+      t('confirm.resetLevel.confirm'),
+      timer.resetLevel,
+    );
+  }, [t, timer.resetLevel, confirmBeforeAction]);
 
-  const handleToggleTVWindow = useCallback(() => {
-    if (tvWindowActive) closeTVWindow();
-    else openTVWindow();
-  }, [tvWindowActive, closeTVWindow, openTVWindow]);
-
-  useKeyboardShortcuts({
-    mode,
-    onToggleStartPause: timer.toggleStartPause,
-    onNextLevel: timer.nextLevel,
-    onPreviousLevel: timer.previousLevel,
-    onResetLevel: handleResetLevelShortcut,
-    onToggleCleanView: toggleCleanView,
-    onLastHand: handleLastHand,
-    onToggleTVWindow: handleToggleTVWindow,
-    onHandForHand: handleHandForHand,
-    onCallTheClock: useCallback(() => setShowCallTheClock((v) => !v), []),
-  });
 
   const toggleFullscreen = useCallback(() => {
     try {
@@ -671,28 +530,36 @@ function App() {
     sidePotData: sidePotData ?? undefined,
   }), [timer.timerState, config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed, showDealerBadges, leagueDisplayData, sidePotData]);
 
-  // Send full-state on significant changes
-  useEffect(() => {
-    if (!channelRef.current || !tvWindowActive) return;
-    sendDisplayMessage(channelRef.current, { type: 'full-state', payload: buildFullStatePayload() });
-  }, [tvWindowActive, buildFullStatePayload]);
+  // TV Display: BroadcastChannel sync + window management
+  const { tvWindowActive, openTVWindow, closeTVWindow } = useTVDisplay({
+    mode,
+    buildFullStatePayload,
+    remainingSeconds: timer.timerState.remainingSeconds,
+    timerStatus: timer.timerState.status,
+    currentLevelIndex: timer.timerState.currentLevelIndex,
+    showCallTheClock,
+    callTheClockSeconds: settings.callTheClockSeconds,
+    soundEnabled: settings.soundEnabled,
+    voiceEnabled: settings.voiceEnabled,
+  });
 
-  // Send timer tick every 500ms for smooth timer display
-  useEffect(() => {
-    if (!tvWindowActive || mode !== 'game') return;
-    const id = setInterval(() => {
-      if (!channelRef.current) return;
-      sendDisplayMessage(channelRef.current, {
-        type: 'timer-tick',
-        payload: {
-          remainingSeconds: timer.timerState.remainingSeconds,
-          status: timer.timerState.status,
-          currentLevelIndex: timer.timerState.currentLevelIndex,
-        },
-      });
-    }, 500);
-    return () => clearInterval(id);
-  }, [tvWindowActive, mode, timer.timerState.remainingSeconds, timer.timerState.status, timer.timerState.currentLevelIndex]);
+  const handleToggleTVWindow = useCallback(() => {
+    if (tvWindowActive) closeTVWindow();
+    else openTVWindow();
+  }, [tvWindowActive, closeTVWindow, openTVWindow]);
+
+  useKeyboardShortcuts({
+    mode,
+    onToggleStartPause: timer.toggleStartPause,
+    onNextLevel: timer.nextLevel,
+    onPreviousLevel: timer.previousLevel,
+    onResetLevel: handleResetLevelShortcut,
+    onToggleCleanView: toggleCleanView,
+    onLastHand: handleLastHand,
+    onToggleTVWindow: handleToggleTVWindow,
+    onHandForHand: handleHandForHand,
+    onCallTheClock: useCallback(() => setShowCallTheClock((v) => !v), []),
+  });
 
   const tournamentFinished = useMemo(() => {
     if (config.players.length < 2) return false;
@@ -835,35 +702,54 @@ function App() {
     enabled: mode === 'game',
   });
 
-  // Send state updates to connected remote controller
+  // Send state updates to connected remote controller (throttled to 1/sec for running timer)
+  const remoteStateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     const host = remoteHostRef.current;
     if (!host || !host.connected || mode !== 'game') return;
 
-    const currentLevel = config.levels[timer.timerState.currentLevelIndex];
-    const levelLabel = currentLevel?.type === 'break'
-      ? (currentLevel.label || t('config.break'))
-      : `Level ${config.levels.slice(0, timer.timerState.currentLevelIndex + 1).filter(l => l.type === 'level').length}`;
+    const sendRemoteState = () => {
+      const currentLevel = config.levels[timer.timerState.currentLevelIndex];
+      const levelLabel = currentLevel?.type === 'break'
+        ? (currentLevel.label || t('config.break'))
+        : `Level ${config.levels.slice(0, timer.timerState.currentLevelIndex + 1).filter(l => l.type === 'level').length}`;
 
-    const sb = currentLevel?.type === 'level' ? currentLevel.smallBlind : 0;
-    const bb = currentLevel?.type === 'level' ? currentLevel.bigBlind : 0;
-    const levelAnte = currentLevel?.type === 'level' ? currentLevel.ante : undefined;
+      const sb = currentLevel?.type === 'level' ? currentLevel.smallBlind : 0;
+      const bb = currentLevel?.type === 'level' ? currentLevel.bigBlind : 0;
+      const levelAnte = currentLevel?.type === 'level' ? currentLevel.ante : undefined;
 
-    host.sendState({
-      timerStatus: timer.timerState.status === 'running' ? 'running' : 'paused',
-      remainingSeconds: timer.timerState.remainingSeconds,
-      currentLevelIndex: timer.timerState.currentLevelIndex,
-      levelLabel,
-      smallBlind: sb ?? 0,
-      bigBlind: bb ?? 0,
-      ante: levelAnte,
-      activePlayerCount,
-      totalPlayerCount: config.players.length,
-      isBubble: bubbleActive,
-      tournamentName: config.name,
-      soundEnabled: settings.soundEnabled,
-    });
-  }, [mode, timer.timerState, config.levels, config.players, config.name, activePlayerCount, bubbleActive, settings.soundEnabled, t, remoteHostRef]);
+      host.sendState({
+        timerStatus: timer.timerState.status === 'running' ? 'running' : 'paused',
+        remainingSeconds: timer.timerState.remainingSeconds,
+        currentLevelIndex: timer.timerState.currentLevelIndex,
+        levelLabel,
+        smallBlind: sb ?? 0,
+        bigBlind: bb ?? 0,
+        ante: levelAnte,
+        activePlayerCount,
+        totalPlayerCount: config.players.length,
+        isBubble: bubbleActive,
+        tournamentName: config.name,
+        soundEnabled: settings.soundEnabled,
+      });
+    };
+
+    // Send immediately on level/status/player changes
+    sendRemoteState();
+
+    // For running timer: periodic sync every 1s
+    if (remoteStateIntervalRef.current) clearInterval(remoteStateIntervalRef.current);
+    if (timer.timerState.status === 'running') {
+      remoteStateIntervalRef.current = setInterval(sendRemoteState, 1000);
+    }
+    return () => {
+      if (remoteStateIntervalRef.current) {
+        clearInterval(remoteStateIntervalRef.current);
+        remoteStateIntervalRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- remainingSeconds intentionally excluded: interval handles periodic sync
+  }, [mode, timer.timerState.status, timer.timerState.currentLevelIndex, config.levels, config.players, config.name, activePlayerCount, bubbleActive, settings.soundEnabled, t, remoteHostRef]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
@@ -952,15 +838,6 @@ function App() {
     clearCheckpoint();
     setPendingCheckpoint(null);
   }, []);
-
-  const confirmBeforeAction = (
-    title: string,
-    message: string,
-    confirmLabel: string,
-    onConfirm: () => void,
-  ) => {
-    setConfirmAction({ title, message, confirmLabel, onConfirm });
-  };
 
   const handleResetLevel = () => {
     confirmBeforeAction(
@@ -1121,14 +998,14 @@ function App() {
       <main className="flex-1 flex">
         {mode === 'league' ? (
           /* League Mode */
-          <Suspense fallback={null}>
+          <SectionErrorBoundary><Suspense fallback={null}>
             <LeagueView
               onStartTournament={(leagueId) => {
                 setConfig(prev => ({ ...prev, leagueId }));
                 setMode('setup');
               }}
             />
-          </Suspense>
+          </Suspense></SectionErrorBoundary>
         ) : mode === 'setup' ? (
           /* Setup Mode */
           <SetupPage
@@ -1143,7 +1020,7 @@ function App() {
           />
         ) : tournamentFinished && winner ? (
           /* Tournament Finished */
-          <Suspense fallback={null}>
+          <SectionErrorBoundary><Suspense fallback={null}>
             <TournamentFinished
               players={config.players}
               winner={winner}
@@ -1155,10 +1032,10 @@ function App() {
               tournamentResult={finishedResult}
               onBackToSetup={switchToSetup}
             />
-          </Suspense>
+          </Suspense></SectionErrorBoundary>
         ) : (
           /* Game Mode */
-          <Suspense fallback={null}>
+          <SectionErrorBoundary><Suspense fallback={null}>
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {/* Player Panel (LEFT) */}
             {showPlayerPanel && config.players.length > 0 && (
@@ -1328,42 +1205,42 @@ function App() {
               </aside>
             )}
           </div>
-          </Suspense>
+          </Suspense></SectionErrorBoundary>
         )}
       </main>
 
       {/* Seating Overlay (multi-table start) */}
       {showSeatingOverlay && mode === 'game' && config.tables && (
-        <Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={null}>
           <SeatingOverlay
             tables={config.tables}
             players={config.players}
             onDismiss={handleDismissSeating}
           />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Remote Control Modal */}
       {showRemoteControl && mode === 'game' && (
-        <Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={null}>
           <RemoteHostModal
             peerId={remoteHostRef.current?.peerId ?? ''}
             status={remoteHostStatus}
             onClose={() => setShowRemoteControl(false)}
           />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Call the Clock Modal */}
       {showCallTheClock && mode === 'game' && (
-        <Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={null}>
           <CallTheClock
             durationSeconds={settings.callTheClockSeconds}
             soundEnabled={settings.soundEnabled}
             voiceEnabled={settings.voiceEnabled}
             onClose={() => setShowCallTheClock(false)}
           />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Templates Modal */}
@@ -1396,30 +1273,30 @@ function App() {
 
       {/* Shared Result Modal (from QR code) */}
       {sharedResult && (
-        <Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={null}>
           <SharedResultView result={sharedResult} onClose={() => setSharedResult(null)} />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Shared League Standings Modal (from QR code) */}
       {sharedLeague && (
-        <Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={null}>
           <SharedLeagueView
             leagueName={sharedLeague.leagueName}
             standings={sharedLeague.standings}
             onClose={() => setSharedLeague(null)}
           />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Remote Controller (from QR code #remote= hash) */}
       {isControllerMode && controllerPeerId && (
-        <Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={null}>
           <RemoteControllerView
             hostPeerId={controllerPeerId}
             onClose={() => window.close()}
           />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Confirm Action Modal */}
@@ -1430,16 +1307,13 @@ function App() {
             <p className="text-gray-500 dark:text-gray-400 text-sm">{confirmAction.message}</p>
             <div className="flex gap-3 justify-end">
               <button
-                onClick={() => setConfirmAction(null)}
+                onClick={dismissConfirm}
                 className="px-4 py-2 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40"
               >
                 {t('app.cancel')}
               </button>
               <button
-                onClick={() => {
-                  confirmAction.onConfirm();
-                  setConfirmAction(null);
-                }}
+                onClick={executeConfirm}
                 className="px-4 py-2 bg-gradient-to-b from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-lg shadow-red-900/40 border border-red-700/30 active:scale-[0.97]"
               >
                 {confirmAction.confirmLabel}

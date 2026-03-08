@@ -189,9 +189,20 @@ export function parseConfigObject(parsed: Record<string, unknown>): TournamentCo
         chips: typeof addOnRaw.chips === 'number' ? addOnRaw.chips : startingChips,
       }
     : defaultAddOnConfig(buyIn, startingChips);
+  // Validate individual level objects — filter out malformed entries
+  const rawLevels = parsed.levels as Record<string, unknown>[];
+  const validatedLevels = rawLevels.filter((l) =>
+    l &&
+    typeof l === 'object' &&
+    typeof l.id === 'string' &&
+    typeof l.durationSeconds === 'number' &&
+    l.durationSeconds > 0 &&
+    (l.type === 'level' || l.type === 'break'),
+  ) as unknown as Level[];
+
   return {
     name: typeof parsed.name === 'string' ? parsed.name : 'Tournament',
-    levels: parsed.levels as Level[],
+    levels: validatedLevels,
     anteEnabled: (parsed.anteEnabled as boolean) ?? false,
     anteMode: (parsed.anteMode === 'bigBlindAnte' ? 'bigBlindAnte' : 'standard'),
     players: Array.isArray(parsed.players)

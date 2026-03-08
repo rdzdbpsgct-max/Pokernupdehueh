@@ -267,7 +267,6 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
             ? 'text-gray-400 dark:text-gray-500'
             : 'text-gray-900 dark:text-white animate-timer-glow'
         }`}
-        aria-live="assertive"
         aria-label={formatTime(remaining)}
       >
         {formatTime(remaining)}

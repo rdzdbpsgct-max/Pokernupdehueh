@@ -15,6 +15,7 @@ export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onCl
   const [remaining, setRemaining] = useState(durationSeconds);
   const startRef = useRef(0);
   const lastBeepRef = useRef(-1);
+  const closeFiredRef = useRef(false);
 
   // Drift-free countdown using wall-clock
   useEffect(() => {
@@ -40,9 +41,10 @@ export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onCl
     }
   }, [remaining, soundEnabled]);
 
-  // Auto-close at 0
+  // Auto-close at 0 — fire only once
   useEffect(() => {
-    if (remaining <= 0) {
+    if (remaining <= 0 && !closeFiredRef.current) {
+      closeFiredRef.current = true;
       if (soundEnabled) {
         playBeep(440, 500);
       }

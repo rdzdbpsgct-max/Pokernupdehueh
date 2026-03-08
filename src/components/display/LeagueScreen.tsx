@@ -1,4 +1,5 @@
 import type { ExtendedLeagueStanding } from '../../domain/types';
+import { useTranslation } from '../../i18n';
 
 interface Props {
   leagueName: string;
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export function LeagueScreen({ leagueName, standings }: Props) {
+  const { t } = useTranslation();
   const top10 = standings.slice(0, 10);
 
   const medal = (rank: number) => {
@@ -25,11 +27,11 @@ export function LeagueScreen({ leagueName, standings }: Props) {
           <thead>
             <tr className="border-b-2 border-gray-600 text-gray-400 text-sm">
               <th className="py-2 text-left w-12">#</th>
-              <th className="py-2 text-left">Name</th>
-              <th className="py-2 text-right">Pts</th>
-              <th className="py-2 text-right">W</th>
-              <th className="py-2 text-right">GD</th>
-              <th className="py-2 text-right">Balance</th>
+              <th className="py-2 text-left">{t('display.leagueName')}</th>
+              <th className="py-2 text-right">{t('display.leaguePoints')}</th>
+              <th className="py-2 text-right">{t('display.leagueWins')}</th>
+              <th className="py-2 text-right">{t('display.leagueGames')}</th>
+              <th className="py-2 text-right">{t('display.leagueBalance')}</th>
             </tr>
           </thead>
           <tbody>

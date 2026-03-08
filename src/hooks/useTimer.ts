@@ -11,7 +11,7 @@ import { initAudio, playBeep } from '../domain/sounds';
 import { initAudioContext } from '../domain/audioPlayer';
 import { initSpeech, announceCountdown } from '../domain/speech';
 
-const TICK_INTERVAL_MS = 100;
+const TICK_INTERVAL_MS = 250;
 
 export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?: number) {
   const [timerState, setTimerState] = useState<TimerState>(() =>

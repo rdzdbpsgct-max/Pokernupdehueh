@@ -2,8 +2,8 @@
 // HTMLAudioElement fallback for maximum compatibility
 
 import type { Language } from '../i18n/translations';
+import { getSharedAudioContext, initSharedAudioContext } from './audioContext';
 
-let audioContext: AudioContext | null = null;
 let scheduledSources: AudioBufferSourceNode[] = [];
 let currentHtmlAudio: HTMLAudioElement | null = null;
 let cancelRequested = false;
@@ -13,18 +13,6 @@ let audioVolume = 1.0;
 /** Set the master volume for MP3 playback (0.0 – 1.0). */
 export function setAudioVolume(v: number): void {
   audioVolume = Math.max(0, Math.min(1, v));
-}
-
-function getOrCreateContext(): AudioContext | null {
-  try {
-    if (typeof AudioContext === 'undefined') return null;
-    if (!audioContext || audioContext.state === 'closed') {
-      audioContext = new AudioContext();
-    }
-    return audioContext;
-  } catch {
-    return null;
-  }
 }
 
 function getBasePath(): string {
@@ -91,7 +79,7 @@ function trimTrailingSilence(ctx: AudioContext, buffer: AudioBuffer): AudioBuffe
 // ---------------------------------------------------------------------------
 
 function playWithWebAudio(files: string[], basePath: string): Promise<void> {
-  const ctx = getOrCreateContext();
+  const ctx = getSharedAudioContext();
   if (!ctx) return Promise.reject(new Error('AudioContext not available'));
 
   // Resume context if suspended (autoplay policy)
@@ -259,10 +247,5 @@ export function cancelAudioPlayback(): void {
  * Initialize AudioContext from a user gesture (unlocks autoplay).
  */
 export function initAudioContext(): void {
-  try {
-    const ctx = getOrCreateContext();
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-  } catch {
-    // Web Audio API not available
-  }
+  initSharedAudioContext();
 }

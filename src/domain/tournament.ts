@@ -468,10 +468,21 @@ export function formatResultAsText(result: TournamentResult, locale: string = 'd
   return lines.join('\n');
 }
 
+/** Escape a CSV field to prevent formula injection (=, +, -, @, tab, CR) */
+export function csvSafe(value: string): string {
+  // Wrap in quotes and escape existing quotes
+  const escaped = value.replace(/"/g, '""');
+  // Prefix with single-quote if field starts with a formula-triggering character
+  if (/^[=+\-@\t\r]/.test(escaped)) {
+    return `"'${escaped}"`;
+  }
+  return `"${escaped}"`;
+}
+
 export function formatResultAsCSV(result: TournamentResult): string {
   const header = 'Place,Name,Payout,Rebuys,AddOn,Knockouts,NetBalance';
   const rows = result.players.map((p) =>
-    [p.place, `"${p.name}"`, p.payout.toFixed(2), p.rebuys, p.addOn ? 1 : 0, p.knockouts, p.netBalance.toFixed(2)].join(','),
+    [p.place, csvSafe(p.name), p.payout.toFixed(2), p.rebuys, p.addOn ? 1 : 0, p.knockouts, p.netBalance.toFixed(2)].join(','),
   );
   return [header, ...rows].join('\n');
 }
@@ -623,25 +634,35 @@ export function decodeResultFromQR(encoded: string): TournamentResult | null {
     const levelsPlayed = Number(parts[9]);
     const playersRaw = parts.slice(10).join('|');
 
-    if (!name || isNaN(playerCount)) return null;
+    // Validate all numeric header fields
+    if (!name || [playerCount, buyIn, prizePool, bountyAmount, totalRebuys, totalAddOns, elapsedMinutes, levelsPlayed].some(isNaN)) return null;
 
     const players: PlayerResult[] = playersRaw.split(';').filter(Boolean).map(entry => {
       const [pName, place, payout, rebuys, addOn, knockouts] = entry.split(':');
+      const placeNum = Number(place);
+      const payoutNum = Number(payout) || 0;
       const rebuyCount = Number(rebuys) || 0;
       const hasAddOn = Number(addOn) === 1;
+      const knockoutsNum = Number(knockouts) || 0;
+      // Reject player entries with invalid place
+      if (!pName || isNaN(placeNum) || placeNum < 1) {
+        return null;
+      }
       const totalCost = buyIn + rebuyCount * buyIn + (hasAddOn ? buyIn : 0);
-      const bountyEarned = bountyAmount > 0 ? (Number(knockouts) || 0) * bountyAmount : 0;
+      const bountyEarned = bountyAmount > 0 ? knockoutsNum * bountyAmount : 0;
       return {
         name: pName,
-        place: Number(place),
-        payout: Number(payout) || 0,
+        place: placeNum,
+        payout: payoutNum,
         rebuys: rebuyCount,
         addOn: hasAddOn,
-        knockouts: Number(knockouts) || 0,
+        knockouts: knockoutsNum,
         bountyEarned,
-        netBalance: (Number(payout) || 0) + bountyEarned - totalCost,
+        netBalance: payoutNum + bountyEarned - totalCost,
       };
-    });
+    }).filter((p): p is PlayerResult => p !== null);
+
+    if (players.length === 0) return null;
 
     return {
       id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),

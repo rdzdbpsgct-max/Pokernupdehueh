@@ -131,9 +131,11 @@ import {
   encodeLeagueStandingsForQR,
   decodeLeagueStandingsFromQR,
   formatLeagueFinancesAsCSV,
+  csvSafe,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment } from '../src/domain/types';
 import { generatePeerId, buildRemoteUrl, parseRemoteHash } from '../src/domain/remote';
+import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -2778,6 +2780,16 @@ describe('computeAverageStackFromPlayers', () => {
     ];
     expect(computeAverageStackFromPlayers(players)).toBeNull();
   });
+
+  it('computes average only from players with tracked stacks (not all active)', () => {
+    // 3 active players, but only 2 have stacks → divide by 2, not 3
+    const players = [
+      makePlayer({ id: '1', name: 'A', chips: 30000 }),
+      makePlayer({ id: '2', name: 'B', chips: 50000 }),
+      makePlayer({ id: '3', name: 'C' }), // no chips tracked
+    ];
+    expect(computeAverageStackFromPlayers(players)).toBe(Math.round(80000 / 2));
+  });
 });
 
 describe('addRebuyToStack', () => {
@@ -5333,6 +5345,196 @@ describe('League Module', () => {
       expect(decoded!.standings[0].points).toBe(20);
       expect(decoded!.standings[1].name).toBe('Bob');
       expect(decoded!.standings[1].netBalance).toBe(10);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Sprint 3: Security & Robustness Tests
+  // ---------------------------------------------------------------------------
+
+  describe('csvSafe (CSV injection prevention)', () => {
+    it('wraps normal names in quotes', () => {
+      expect(csvSafe('Alice')).toBe('"Alice"');
+    });
+
+    it('escapes existing double quotes', () => {
+      expect(csvSafe('O"Brien')).toBe('"O""Brien"');
+    });
+
+    it('prefixes formula-triggering characters with single quote', () => {
+      expect(csvSafe('=cmd|calc')).toBe("\"'=cmd|calc\"");
+      expect(csvSafe('+cmd|calc')).toBe("\"'+cmd|calc\"");
+      expect(csvSafe('-cmd|calc')).toBe("\"'-cmd|calc\"");
+      expect(csvSafe('@cmd|calc')).toBe("\"'@cmd|calc\"");
+    });
+
+    it('does not prefix normal strings', () => {
+      expect(csvSafe('Normal Name')).toBe('"Normal Name"');
+    });
+  });
+
+  describe('decodeResultFromQR NaN guards', () => {
+    it('returns null for all-NaN numeric header fields', () => {
+      const encoded = 'Test|2024-01-01|abc|def|ghi|jkl|mno|pqr|stu|vwx|Player1:1:100:0:0:0';
+      expect(decodeResultFromQR(encoded)).toBeNull();
+    });
+
+    it('returns null when player entries have invalid place', () => {
+      const encoded = 'Test|2024-01-01|2|10|100|0|0|0|60|5|Player1:abc:100:0:0:0';
+      expect(decodeResultFromQR(encoded)).toBeNull();
+    });
+
+    it('filters out invalid player entries but keeps valid ones', () => {
+      const encoded = 'Test|2024-01-01|2|10|100|0|0|0|60|5|Valid:1:100:0:0:0;Invalid:abc:0:0:0:0';
+      const result = decodeResultFromQR(encoded);
+      expect(result).not.toBeNull();
+      expect(result!.players).toHaveLength(1);
+      expect(result!.players[0].name).toBe('Valid');
+    });
+  });
+
+  describe('decodeLeagueStandingsFromQR NaN guards', () => {
+    it('returns null for standings with NaN fields', () => {
+      const hash = '#ls=' + encodeURIComponent('Liga|abc:Alice:xyz:def:ghi:jkl');
+      expect(decodeLeagueStandingsFromQR(hash)).toBeNull();
+    });
+
+    it('filters out invalid entries and returns null if all invalid', () => {
+      const hash = '#ls=' + encodeURIComponent('Liga|abc::xyz:def:ghi:jkl');
+      expect(decodeLeagueStandingsFromQR(hash)).toBeNull();
+    });
+  });
+
+  describe('parseConfigObject level validation', () => {
+    it('filters out malformed level objects', () => {
+      const config = parseConfigObject({
+        name: 'Test',
+        levels: [
+          { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 },
+          { invalid: true }, // malformed — no id, no type, no duration
+          { id: '2', type: 'break', durationSeconds: 300 },
+        ],
+      });
+      expect(config).not.toBeNull();
+      expect(config!.levels).toHaveLength(2);
+      expect(config!.levels[0].id).toBe('1');
+      expect(config!.levels[1].id).toBe('2');
+    });
+
+    it('accepts empty levels array (backward compat)', () => {
+      const config = parseConfigObject({
+        name: 'Old',
+        levels: [],
+      });
+      expect(config).not.toBeNull();
+      expect(config!.levels).toHaveLength(0);
+    });
+
+    it('rejects levels with zero duration', () => {
+      const config = parseConfigObject({
+        name: 'Test',
+        levels: [
+          { id: '1', type: 'level', durationSeconds: 0, smallBlind: 25, bigBlind: 50 },
+        ],
+      });
+      expect(config).not.toBeNull();
+      expect(config!.levels).toHaveLength(0); // filtered out
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Sprint 4: Remote pure function Tests
+  // ---------------------------------------------------------------------------
+
+  describe('remote module — pure functions', () => {
+    it('generatePeerId returns PKR- prefix with 5 alphanumeric chars', () => {
+      const id = generatePeerId();
+      expect(id).toMatch(/^PKR-[A-Z2-9]{5}$/);
+    });
+
+    it('generatePeerId produces unique IDs', () => {
+      const ids = new Set(Array.from({ length: 20 }, () => generatePeerId()));
+      // With 30^5 = 24.3 million possibilities, 20 IDs should all be unique
+      expect(ids.size).toBe(20);
+    });
+
+    it('buildRemoteUrl includes peer ID as hash parameter', () => {
+      const url = buildRemoteUrl('PKR-ABCDE');
+      expect(url).toContain('#remote=PKR-ABCDE');
+      expect(url).toContain(window.location.origin);
+    });
+
+    it('parseRemoteHash extracts valid peer ID', () => {
+      expect(parseRemoteHash('#remote=PKR-AB3D5')).toBe('PKR-AB3D5');
+    });
+
+    it('parseRemoteHash returns null for invalid format', () => {
+      expect(parseRemoteHash('#remote=invalid')).toBeNull();
+      expect(parseRemoteHash('#remote=PKR-')).toBeNull();
+      expect(parseRemoteHash('#remote=PKR-ABCDE1')).toBeNull(); // too long
+      expect(parseRemoteHash('#other=PKR-ABCDE')).toBeNull();
+      expect(parseRemoteHash('')).toBeNull();
+    });
+
+    it('generatePeerId never produces confusable characters (I, O, 0, 1)', () => {
+      // Generate many IDs and verify none contain confusable chars
+      for (let i = 0; i < 50; i++) {
+        const id = generatePeerId();
+        const suffix = id.slice(4); // strip PKR-
+        expect(suffix).not.toMatch(/[IO01]/);
+      }
+    });
+
+    it('parseRemoteHash rejects lowercase', () => {
+      expect(parseRemoteHash('#remote=PKR-abcde')).toBeNull();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Sprint 4: displayChannel Tests
+  // ---------------------------------------------------------------------------
+
+  describe('displayChannel — serialization helpers', () => {
+    it('serializeColorUpMap converts Map to array', () => {
+      const map = new Map<number, { id: string; value: number; color: string; label: string }[]>();
+      map.set(3, [{ id: '1', value: 25, color: '#ff0000', label: 'Red' }]);
+      map.set(7, [{ id: '2', value: 100, color: '#0000ff', label: 'Blue' }]);
+      const result = serializeColorUpMap(map);
+      expect(result).toHaveLength(2);
+      expect(result![0].levelIndex).toBe(3);
+      expect(result![0].denoms[0].value).toBe(25);
+      expect(result![1].levelIndex).toBe(7);
+    });
+
+    it('serializeColorUpMap returns undefined for empty/undefined', () => {
+      expect(serializeColorUpMap(undefined)).toBeUndefined();
+      expect(serializeColorUpMap(new Map())).toBeUndefined();
+    });
+
+    it('deserializeColorUpMap converts array back to Map', () => {
+      const schedule = [
+        { levelIndex: 3, denoms: [{ id: '1', value: 25, color: '#ff0000', label: 'Red' }] },
+        { levelIndex: 7, denoms: [{ id: '2', value: 100, color: '#0000ff', label: 'Blue' }] },
+      ];
+      const map = deserializeColorUpMap(schedule);
+      expect(map).toBeInstanceOf(Map);
+      expect(map!.size).toBe(2);
+      expect(map!.get(3)![0].value).toBe(25);
+      expect(map!.get(7)![0].value).toBe(100);
+    });
+
+    it('deserializeColorUpMap returns undefined for empty/undefined', () => {
+      expect(deserializeColorUpMap(undefined)).toBeUndefined();
+      expect(deserializeColorUpMap([])).toBeUndefined();
+    });
+
+    it('round-trips through serialize/deserialize', () => {
+      const original = new Map<number, { id: string; value: number; color: string; label: string }[]>();
+      original.set(5, [{ id: 'a', value: 50, color: '#00ff00', label: 'Green' }]);
+      const serialized = serializeColorUpMap(original);
+      const restored = deserializeColorUpMap(serialized);
+      expect(restored!.size).toBe(original.size);
+      expect(restored!.get(5)![0].value).toBe(50);
     });
   });
 });

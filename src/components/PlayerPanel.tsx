@@ -65,10 +65,10 @@ export function PlayerPanel({
   const [selectedKiller, setSelectedKiller] = useState<string>('');
   const [showSidePot, setShowSidePot] = useState(false);
 
-  const totalRebuys = computeTotalRebuys(players);
-  const totalAddOns = computeTotalAddOns(players);
-  const prizePool = computePrizePool(players, buyIn, rebuyConfig.rebuyCost, addOnConfig.enabled ? addOnConfig.cost : 0, rebuyConfig.separatePot);
-  const payoutAmounts = computePayouts(payout, prizePool);
+  const totalRebuys = useMemo(() => computeTotalRebuys(players), [players]);
+  const totalAddOns = useMemo(() => computeTotalAddOns(players), [players]);
+  const prizePool = useMemo(() => computePrizePool(players, buyIn, rebuyConfig.rebuyCost, addOnConfig.enabled ? addOnConfig.cost : 0, rebuyConfig.separatePot), [players, buyIn, rebuyConfig.rebuyCost, addOnConfig.enabled, addOnConfig.cost, rebuyConfig.separatePot]);
+  const payoutAmounts = useMemo(() => computePayouts(payout, prizePool), [payout, prizePool]);
 
   const nameSizeClass = useMemo(() => {
     const maxLen = players.reduce((max, p) => Math.max(max, p.name.length), 0);
@@ -82,10 +82,10 @@ export function PlayerPanel({
   const hasAnyStacks = useMemo(() => players.some((p) => p.chips !== undefined), [players]);
   const multiTableActive = tables && tables.filter(tbl => tbl.status === 'active').length > 0;
 
-  const activePlayers = players.filter((p) => p.status === 'active');
-  const eliminatedPlayers = [...players]
+  const activePlayers = useMemo(() => players.filter((p) => p.status === 'active'), [players]);
+  const eliminatedPlayers = useMemo(() => [...players]
     .filter((p) => p.status === 'eliminated')
-    .sort((a, b) => (a.placement ?? 0) - (b.placement ?? 0));
+    .sort((a, b) => (a.placement ?? 0) - (b.placement ?? 0)), [players]);
 
   const handleEliminate = (playerId: string) => {
     if (bountyConfig.enabled) {

@@ -1,6 +1,7 @@
 // Sound effects using Web Audio API (no external files needed)
 
-let audioCtx: AudioContext | null = null;
+import { getSharedAudioContext, initSharedAudioContext } from './audioContext';
+
 let masterVolume = 1.0;
 
 /** Set the master volume for all sound effects (0.0 – 1.0). */
@@ -9,13 +10,9 @@ export function setMasterVolume(v: number): void {
 }
 
 function getAudioContext(): AudioContext {
-  if (!audioCtx) {
-    audioCtx = new AudioContext();
-  }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  return audioCtx;
+  const ctx = getSharedAudioContext();
+  if (!ctx) throw new Error('AudioContext not available');
+  return ctx;
 }
 
 /**
@@ -24,11 +21,7 @@ function getAudioContext(): AudioContext {
  * is unlocked before any programmatic sound playback.
  */
 export function initAudio(): void {
-  try {
-    getAudioContext();
-  } catch {
-    // audio not available
-  }
+  initSharedAudioContext();
 }
 
 function playNote(

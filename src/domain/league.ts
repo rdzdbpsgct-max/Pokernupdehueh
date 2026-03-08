@@ -7,6 +7,7 @@ import type {
   TiebreakerConfig,
   Season,
 } from './types';
+import { csvSafe } from './tournament';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -401,7 +402,7 @@ export function formatLeagueStandingsAsCSV(
 ): string {
   const header = 'Rank,Name,Points,GameDays,Wins,Cashes,AvgPlace,BestPlace,Knockouts,TotalCost,TotalPayout,NetBalance,ParticipationRate,Corrections';
   const rows = standings.map((s) =>
-    `${s.rank},"${s.name}",${s.points},${s.tournaments},${s.wins},${s.cashes},${s.avgPlace},${s.bestPlace},${s.knockouts},${s.totalCost.toFixed(2)},${s.totalPayout.toFixed(2)},${s.netBalance.toFixed(2)},${(s.participationRate * 100).toFixed(0)}%,${s.corrections}`,
+    `${s.rank},${csvSafe(s.name)},${s.points},${s.tournaments},${s.wins},${s.cashes},${s.avgPlace},${s.bestPlace},${s.knockouts},${s.totalCost.toFixed(2)},${s.totalPayout.toFixed(2)},${s.netBalance.toFixed(2)},${(s.participationRate * 100).toFixed(0)}%,${s.corrections}`,
   );
   return [header, ...rows].join('\n');
 }
@@ -412,7 +413,7 @@ export function formatLeagueFinancesAsCSV(
   const finances = computeLeagueFinances(gameDays);
   const header = 'Date,Label,BuyIns,Payouts,CashBalance,Cumulative';
   const rows = finances.perGameDay.map((gd) =>
-    `${gd.date},"${gd.label}",${gameDays.find((g) => g.id === gd.id)?.totalBuyIns.toFixed(2) ?? '0.00'},${gameDays.find((g) => g.id === gd.id)?.totalPrizePool.toFixed(2) ?? '0.00'},${gd.cashBalance.toFixed(2)},${gd.cumulative.toFixed(2)}`,
+    `${gd.date},${csvSafe(gd.label)},${gameDays.find((g) => g.id === gd.id)?.totalBuyIns.toFixed(2) ?? '0.00'},${gameDays.find((g) => g.id === gd.id)?.totalPrizePool.toFixed(2) ?? '0.00'},${gd.cashBalance.toFixed(2)},${gd.cumulative.toFixed(2)}`,
   );
   return [header, ...rows].join('\n');
 }
@@ -522,17 +523,26 @@ export function decodeLeagueStandingsFromQR(hash: string): { leagueName: string;
     const decoded = decodeURIComponent(hash.slice(4));
     const [leagueName, playersStr] = decoded.split('|');
     if (!leagueName || !playersStr) return null;
-    const standings = playersStr.split(';').map((entry) => {
+    const standings = playersStr.split(';').filter(Boolean).map((entry) => {
       const [rank, name, points, tournaments, wins, netBalance] = entry.split(':');
+      const rankNum = parseInt(rank, 10);
+      const pointsNum = parseInt(points, 10);
+      const tournamentsNum = parseInt(tournaments, 10);
+      const winsNum = parseInt(wins, 10);
+      const balanceNum = parseFloat(netBalance);
+      if (!name || [rankNum, pointsNum, tournamentsNum, winsNum, balanceNum].some(isNaN)) {
+        return null;
+      }
       return {
-        rank: parseInt(rank, 10),
+        rank: rankNum,
         name,
-        points: parseInt(points, 10),
-        tournaments: parseInt(tournaments, 10),
-        wins: parseInt(wins, 10),
-        netBalance: parseFloat(netBalance),
+        points: pointsNum,
+        tournaments: tournamentsNum,
+        wins: winsNum,
+        netBalance: balanceNum,
       };
-    });
+    }).filter(<T,>(v: T | null): v is T => v !== null);
+    if (standings.length === 0) return null;
     return { leagueName, standings };
   } catch {
     return null;

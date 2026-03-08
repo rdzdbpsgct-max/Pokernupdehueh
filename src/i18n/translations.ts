@@ -587,6 +587,13 @@ const de = {
   // --- Display: Seating ---
   'display.seating': 'Sitzplan',
 
+  // --- Display: League ---
+  'display.leagueName': 'Name',
+  'display.leaguePoints': 'Pkt',
+  'display.leagueWins': 'S',
+  'display.leagueGames': 'ST',
+  'display.leagueBalance': 'Bilanz',
+
   // --- Multi-Table ---
   'multiTable.title': 'Multi-Table',
   'multiTable.tables': 'Tische',
@@ -1394,6 +1401,13 @@ const en: Record<TranslationKey, string> = {
 
   // --- Display: Seating ---
   'display.seating': 'Seating',
+
+  // --- Display: League ---
+  'display.leagueName': 'Name',
+  'display.leaguePoints': 'Pts',
+  'display.leagueWins': 'W',
+  'display.leagueGames': 'GD',
+  'display.leagueBalance': 'Balance',
 
   // --- Multi-Table ---
   'multiTable.title': 'Multi-Table',

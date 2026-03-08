@@ -166,8 +166,19 @@ function speakUtterance(
     utterance.pitch = options?.pitch ?? 1.0;
     utterance.volume = (options?.volume ?? 0.8) * speechVolume;
 
-    utterance.onend = onDone;
-    utterance.onerror = onDone;
+    // Safety: guard against onend/onerror never firing (browser bug)
+    let done = false;
+    const safeOnDone = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(safetyTimeout);
+      onDone();
+    };
+    // Timeout: generous max of 15s per utterance to prevent permanent stall
+    const safetyTimeout = setTimeout(safeOnDone, 15_000);
+
+    utterance.onend = safeOnDone;
+    utterance.onerror = safeOnDone;
 
     window.speechSynthesis.speak(utterance);
   } catch {
