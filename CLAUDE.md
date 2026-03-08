@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 5.1.1
+**Version**: 5.2.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (408 tests, single run)
+npm run test         # Vitest run (432 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -83,7 +83,7 @@ src/
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
 │   ├── SetupPage.tsx            # Setup mode UI — collapsible sections, config editors, start button
 │   ├── SetupWizard.tsx          # Guided first-time setup wizard (5 steps)
-│   ├── RemoteControl.tsx        # WebRTC remote control — host QR modal + smartphone controller UI
+│   ├── RemoteControl.tsx        # PeerJS remote control — host QR modal + smartphone controller UI
 │   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume, call-the-clock, accent color, background
 │   ├── SidePotCalculator.tsx    # Side pot calculator modal for all-in situations
 │   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
@@ -110,7 +110,7 @@ src/
 │   ├── league.ts                 # League domain logic — game days, standings, finances, tiebreaker, QR
 │   ├── tables.ts                # Multi-table management: seat-level CRUD, distribution, balancing, dissolution, final table merge, per-table dealer
 │   ├── displayChannel.ts         # BroadcastChannel communication for TV display window
-│   ├── remote.ts                # WebRTC peer connection for serverless remote control (host + controller)
+│   ├── remote.ts                # PeerJS-based remote control (host + controller, signaling via PeerJS Cloud)
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
 │   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
@@ -119,7 +119,8 @@ src/
 │   ├── useVoiceAnnouncements.ts # Voice announcement effects (extracted from App.tsx)
 │   ├── useGameEvents.ts         # Game event effects: victory, bubble, ITM sounds
 │   ├── useKeyboardShortcuts.ts  # Keyboard shortcut handler (extracted from App.tsx)
-│   └── useTournamentActions.ts  # Tournament action callbacks (extracted from App.tsx)
+│   ├── useTournamentActions.ts  # Tournament action callbacks (extracted from App.tsx)
+│   └── useRemoteControl.ts     # Remote control state management hook (PeerJS)
 ├── theme/                       # Dark/Light mode system
 │   ├── index.ts                 # Public re-exports
 │   ├── ThemeContext.tsx          # React Context provider, system preference listener, localStorage persistence
@@ -133,7 +134,7 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-├── logic.test.ts                # 394 unit tests for domain logic + remote SDP compression
+├── logic.test.ts                # 418 unit tests for domain logic + PeerJS remote control
 ├── components.test.tsx          # 14 UI component tests (NumberStepper, CollapsibleSection, PrintView)
 └── setup.ts                     # Test setup: jest-dom matchers, matchMedia mock
 
@@ -221,7 +222,7 @@ public/
 - **Stack Tracking**: Optional per-player `chips` field in Player interface. "Initialize stacks" button in PlayerPanel computes starting chips + rebuys + add-ons. Inline number input for editing stacks. Chip Leader badge ("C" amber circle). Auto-adjusts on rebuy/add-on/elimination. `initializePlayerStacks()`, `findChipLeader()`, `computeAverageStackFromPlayers()` in logic.ts.
 - **Tournament stats**: Live display of players, prizepool, avg stack in BB, elapsed/remaining time
 - **Dark/Light mode**: 3-way toggle (System/Light/Dark) in header; `ThemeProvider` manages mode + system preference listener + `dark` class on `<html>`; `useTheme()` hook; `poker-timer-theme` in localStorage; PWA `theme-color` meta tag updated dynamically
-- **Code splitting**: Game-mode components lazy-loaded via `React.lazy()` + `Suspense`; `html-to-image` dynamically imported only when capturing screenshots; main bundle ~480KB + ~80KB game chunks (incl. RemoteControl ~12KB)
+- **Code splitting**: Game-mode components lazy-loaded via `React.lazy()` + `Suspense`; `html-to-image` dynamically imported only when capturing screenshots; main bundle ~606KB + game chunks (incl. RemoteControl ~9KB)
 - **SVG Chevrons**: `ChevronIcon` component with CSS rotation animation replaces Unicode triangles for collapsible sections
 - **NumberStepper**: Custom `+`/`-` stepper component replaces native number input spinners; long-press support via pointer events (400ms delay, 100ms repeat); optional `snap` function; used across all numeric inputs in setup
 - **Screenshot/share**: `html-to-image` (dynamic import) capture → Web Share API (mobile) or PNG download (desktop); theme-aware background color
@@ -259,14 +260,14 @@ public/
 - **Re-Entry Mode**: Players can re-enter after elimination (new ID, same person). `reEnterPlayer()` in players.ts. `reEntryEnabled/maxReEntries` in RebuyConfig. Re-entry button on eliminated players. Auto-seat at smallest table.
 - **Seat Locking**: Lock individual seats at multi-table setup. `Seat.locked` property. `toggleSeatLock()` in tables.ts. Locked seats skipped during distribution and balancing.
 - **Druckbare Ergebnisse**: Tournament results printable from TournamentFinished screen via PrintView.
-- **Remote Control (WebRTC)**: Serverless smartphone remote control via WebRTC data channel. QR code-based signaling (SDP offer/answer with DEFLATE compression via `CompressionStream` API, Base64 fallback). Prefix-based format: `D:` for DEFLATE, `B:` for Base64. `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + smartphone controller UI (play/pause/next/prev, timer display, call-the-clock). STUN via `stun.l.google.com:19302`. Keepalive pings every 10s. Lazy-loaded ~12KB chunk.
+- **Remote Control (PeerJS)**: Smartphone remote control via PeerJS (WebRTC data channel with cloud-brokered signaling). One-scan flow: host generates peer ID (`PKR-XXXXX`), QR code contains app URL with `#remote=` hash, phone scans → opens app → auto-connects. `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + touch-optimized fullscreen controller UI (play/pause/next/prev/dealer/sound/call-the-clock). `useRemoteControl` hook manages state. Auto-reconnect (3 attempts, exponential backoff). Wake Lock on controller. Keepalive pings every 10s. Lazy-loaded ~9KB chunk.
 - **App.tsx Refactoring**: Extracted `useKeyboardShortcuts` (72 lines) and `useTournamentActions` (317 lines) hooks. App.tsx reduced from ~1543 to ~1300 lines.
 - **UI Integration Tests**: 14 component tests via `@testing-library/react` in `tests/components.test.tsx` (NumberStepper, CollapsibleSection, PrintView).
-- **Offline-first**: Zero network dependencies at runtime
+- **Offline-first**: Core functionality works offline. PeerJS signaling server required only for Remote Control pairing
 
 ## Testing
 
-- Tests live in `tests/logic.test.ts` (394 tests) and `tests/components.test.tsx` (14 tests) — 408 total
+- Tests live in `tests/logic.test.ts` (418 tests) and `tests/components.test.tsx` (14 tests) — 432 total
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
@@ -301,6 +302,19 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v5.2.0 — Remote Control Rebuild mit PeerJS
+
+- **PeerJS-basierte Fernsteuerung**: Kompletter Neuaufbau der Remote-Control-Funktion. Alte WebRTC-SDP-basierte Signalisierung (2 QR-Scans) ersetzt durch PeerJS Cloud Signaling (1 QR-Scan). QR-Code enthält jetzt kurze App-URL mit `#remote=PKR-XXXXX` Hash — Phone-Kamera erkennt URL, öffnet App, verbindet automatisch.
+- **Touch-optimierter Controller**: Fullscreen-Smartphone-UI mit großen Touch-Targets (min 48px). Buttons: Play/Pause, Nächster/Vorheriger Level, Dealer weiterrücken, Sound An/Aus, Call the Clock, Level zurücksetzen. Timer-Anzeige mit Blinds, Spieleranzahl, Bubble-Badge. Dark-Mode forced, Safe-Area-Insets, Wake Lock.
+- **Auto-Reconnect**: Exponentieller Backoff (2s/4s/8s, max 3 Versuche). Status-Banner: Verbinden → Verbunden → Verbindung verloren → Erneut versuchen.
+- **Host-Modal vereinfacht**: Nur QR-Code + lesbare Raum-ID. Kein manueller Antwort-Code mehr nötig.
+- **Neuer Hook**: `useRemoteControl.ts` extrahiert Remote-State-Management aus App.tsx.
+- **Neue Dependency**: `peerjs` (~45KB gzip) für WebRTC-Signaling via PeerJS Cloud Server.
+- **Entfernt**: `compressSDP()`, `decompressSDP()`, SDP-Kompressionslogik, `#rc=` Hash-Support.
+- **Neue Dateien**: `useRemoteControl.ts`
+- **3 geänderte Dateien**: `remote.ts` (komplett neu), `RemoteControl.tsx` (komplett neu), `App.tsx`
+- **~4 Translation-Keys netto** (7 entfernt, 11 hinzugefügt pro Sprache), **432 Tests gesamt** (+2 netto)
 
 ### v5.1.1 — Liga-Detail & QR-Sharing
 
@@ -344,7 +358,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Akzentfarbe vollständig migriert**: ~40 hardkodierte `emerald-*` Tailwind-Klassen in Game-Mode-Komponenten durch `var(--accent-*)` CSS Custom Properties ersetzt. Betroffene: `PlayerPanel.tsx`, `RebuyStatus.tsx`, `LevelPreview.tsx`, `RemoteControl.tsx`, `ThemeSwitcher.tsx`, `LanguageSwitcher.tsx`, `VoiceSwitcher.tsx`, `PlayersScreen.tsx`. Pattern: `color-mix(in srgb, var(--accent-500) 10%, transparent)`.
 - **3 neue Hintergrund-Optionen**: `felt-red`, `midnight`, `sunset` — 9 Hintergrundmuster gesamt. 6 neue Translation-Keys.
 - **Header-Tooltips**: `title`-Attribute auf allen Header-Buttons (Vorlagen, Ligen, Historie, Modus-Toggle, Theme/Language/Voice-Switcher).
-- **Remote DEFLATE-Kompression**: `compressSDP()` / `decompressSDP()` in `remote.ts` nutzen `CompressionStream('deflate-raw')`. Prefix-Format: `D:` (DEFLATE), `B:` (Base64-Fallback). Backward-kompatibel. ~50% kleinere QR-Codes.
+- **Remote DEFLATE-Kompression** (veraltet, ersetzt durch PeerJS in v5.2.0): `compressSDP()` / `decompressSDP()` entfernt.
 - **TV-Spieleranzeige kompakter**: `PlayersScreen.tsx` — adaptives Grid (5/4/3 Spalten nach Spielerzahl), reduziertes Spacing.
 - **Dealerbutton TV-bedingt**: `showDealerBadges` durch `DisplayStatePayload` → `DisplayMode` → `SeatingScreen` durchgereicht.
 - **6 Translation-Keys**, **343 Tests gesamt**
@@ -365,7 +379,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Druckbare Ergebnisse**: Tournament-Ergebnisse über PrintView druckbar.
 
 **Phase 3 — Innovation:**
-- **Remote-Steuerung (WebRTC)**: Serverlose Smartphone-Fernsteuerung via WebRTC Data Channel. QR-Code-basiertes Signaling (SDP als Base64). `RemoteHost` + `RemoteController` Klassen in `remote.ts`. `RemoteControl.tsx` mit Host-QR-Modal + Controller-UI (Play/Pause/Next/Prev, Timer, Call the Clock). STUN via Google. Lazy-loaded ~12KB Chunk.
+- **Remote-Steuerung (WebRTC)**: Smartphone-Fernsteuerung via WebRTC Data Channel (ab v5.2.0 mit PeerJS Cloud Signaling). `RemoteHost` + `RemoteController` Klassen in `remote.ts`. `RemoteControl.tsx` mit Host-QR-Modal + Controller-UI. Lazy-loaded ~9KB Chunk.
 - **App.tsx Refactoring**: `useKeyboardShortcuts` (72 Zeilen) und `useTournamentActions` (317 Zeilen) extrahiert. App.tsx von ~1543 auf ~1300 Zeilen reduziert.
 - **UI-Integrationstests**: 14 Komponententests via `@testing-library/react` (NumberStepper, CollapsibleSection, PrintView). Test-Setup mit jest-dom + matchMedia Mock.
 - **Neue Dateien**: `remote.ts`, `RemoteControl.tsx`, `SidePotCalculator.tsx`, `useKeyboardShortcuts.ts`, `useTournamentActions.ts`, `tests/components.test.tsx`, `tests/setup.ts`

@@ -133,7 +133,7 @@ import {
   formatLeagueFinancesAsCSV,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment } from '../src/domain/types';
-import { compressSDP, decompressSDP } from '../src/domain/remote';
+import { generatePeerId, buildRemoteUrl, parseRemoteHash } from '../src/domain/remote';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -4288,47 +4288,61 @@ describe('toggleSeatLock', () => {
 });
 
 // =============================================================================
-// SDP Compression (Remote Control)
+// PeerJS Remote Control
 // =============================================================================
 
-describe('compressSDP / decompressSDP', () => {
-  it('round-trips a simple SDP string', async () => {
-    const sdp = 'v=0\no=- 1234567890 1234567890 IN IP4 0.0.0.0\ns=-\nt=0 0\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\n';
-    const compressed = await compressSDP(sdp);
-    expect(typeof compressed).toBe('string');
-    expect(compressed.length).toBeGreaterThan(0);
-    const decompressed = await decompressSDP(compressed);
-    // Empty lines are stripped during compression
-    const strippedOriginal = sdp.split('\n').filter(l => l.trim().length > 0).join('\n');
-    expect(decompressed).toBe(strippedOriginal);
+describe('generatePeerId', () => {
+  it('generates ID in PKR-XXXXX format', () => {
+    const id = generatePeerId();
+    expect(id).toMatch(/^PKR-[A-Z2-9]{5}$/);
   });
 
-  it('handles empty string', async () => {
-    const compressed = await compressSDP('');
-    const decompressed = await decompressSDP(compressed);
-    expect(decompressed).toBe('');
+  it('has correct length (9 chars total)', () => {
+    const id = generatePeerId();
+    expect(id.length).toBe(9); // "PKR-" (4) + 5
   });
 
-  it('handles UTF-8 characters', async () => {
-    const sdp = 'v=0\ns=Pokern up de Hüh\na=charset:UTF-8\n';
-    const compressed = await compressSDP(sdp);
-    const decompressed = await decompressSDP(compressed);
-    expect(decompressed).toContain('Hüh');
+  it('does not contain confusable characters (I, O, 0, 1)', () => {
+    // Generate many IDs and check none contain forbidden chars
+    for (let i = 0; i < 50; i++) {
+      const id = generatePeerId();
+      const suffix = id.slice(4); // Remove "PKR-" prefix
+      expect(suffix).not.toMatch(/[IO01]/);
+    }
   });
 
-  it('strips empty lines during compression', async () => {
-    const sdp = 'v=0\n\n\no=- 1234 IN IP4 0.0.0.0\n\ns=-\n';
-    const compressed = await compressSDP(sdp);
-    const decompressed = await decompressSDP(compressed);
-    expect(decompressed).not.toContain('\n\n');
-    expect(decompressed).toContain('v=0');
-    expect(decompressed).toContain('s=-');
+  it('generates unique IDs', () => {
+    const ids = new Set<string>();
+    for (let i = 0; i < 100; i++) {
+      ids.add(generatePeerId());
+    }
+    // With 30^5 = 24,300,000 possibilities, 100 should be unique
+    expect(ids.size).toBe(100);
+  });
+});
+
+describe('buildRemoteUrl', () => {
+  it('builds a valid URL with #remote= hash', () => {
+    const url = buildRemoteUrl('PKR-ABC23');
+    expect(url).toContain('#remote=PKR-ABC23');
+    expect(url).toContain(window.location.origin);
+  });
+});
+
+describe('parseRemoteHash', () => {
+  it('extracts peer ID from valid hash', () => {
+    expect(parseRemoteHash('#remote=PKR-ABC23')).toBe('PKR-ABC23');
+    expect(parseRemoteHash('#remote=PKR-ZZZZZ')).toBe('PKR-ZZZZZ');
   });
 
-  it('returns original string for invalid base64 input', async () => {
-    const invalid = '!!!not-base64!!!';
-    const result = await decompressSDP(invalid);
-    expect(result).toBe(invalid);
+  it('returns null for invalid or empty hashes', () => {
+    expect(parseRemoteHash('')).toBeNull();
+    expect(parseRemoteHash('#display')).toBeNull();
+    expect(parseRemoteHash('#remote=')).toBeNull();
+    expect(parseRemoteHash('#remote=invalid')).toBeNull();
+    expect(parseRemoteHash('#rc=someOldSDP')).toBeNull();
+    // Contains forbidden characters
+    expect(parseRemoteHash('#remote=PKR-IO012')).toBeNull();
   });
 });
 

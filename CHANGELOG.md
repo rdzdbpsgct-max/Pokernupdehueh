@@ -5,6 +5,22 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [5.2.0] – 2026-03-08
+
+### Remote Control Rebuild mit PeerJS
+
+- **PeerJS-basierte Fernsteuerung**: Kompletter Neuaufbau der Remote-Control-Funktion. Alte WebRTC-SDP-basierte Signalisierung (2 QR-Scans nötig) durch PeerJS Cloud Signaling ersetzt (1 QR-Scan genügt). QR-Code enthält jetzt kurze App-URL mit `#remote=PKR-XXXXX` Hash — Phone-Kamera erkennt URL, öffnet App, verbindet automatisch.
+- **Touch-optimierter Controller**: Fullscreen-Smartphone-UI mit großen Touch-Targets (min 48px). Neue Buttons: Dealer weiterrücken, Sound An/Aus. Timer-Anzeige mit Blinds, Spieleranzahl, Bubble-Badge, Sound-Status. Dark-Mode forced, Safe-Area-Insets, Wake Lock.
+- **Auto-Reconnect**: Exponentieller Backoff (2s/4s/8s, max 3 Versuche). Status-Banner: Verbinden → Verbunden → Verbindung verloren → Erneut versuchen.
+- **Host-Modal vereinfacht**: Nur QR-Code + lesbare Raum-ID (PKR-XXXXX). Kein manueller Antwort-Code mehr nötig.
+- **Neuer Hook**: `useRemoteControl.ts` extrahiert Remote-State-Management aus App.tsx.
+- **Neue Dependency**: `peerjs` (~45KB gzip) für WebRTC-Signaling.
+- **Entfernt**: `compressSDP()`, `decompressSDP()`, SDP-Kompressionslogik, `#rc=` Hash-Support.
+- **~4 Translation-Keys netto** (7 entfernt, 11 hinzugefügt pro Sprache)
+- **432 Tests gesamt** (+2 netto gegenüber v5.1.2)
+
+---
+
 ## [5.1.1] – 2026-03-08
 
 ### Liga-Vervollständigung: Spielerdetails, QR-Sharing & Player-ID

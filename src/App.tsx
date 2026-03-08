@@ -62,7 +62,8 @@ import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { VoiceSwitcher } from './components/VoiceSwitcher';
 import { useTheme } from './theme';
-import type { RemoteHost, RemoteCommand } from './domain/remote';
+import type { RemoteCommand } from './domain/remote';
+import { useRemoteControl } from './hooks/useRemoteControl';
 
 // Game-mode components (lazy — only needed after tournament starts)
 const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
@@ -131,17 +132,6 @@ function App() {
     }
     return null;
   });
-  const [remoteOffer, setRemoteOffer] = useState<string | null>(() => {
-    const hash = window.location.hash;
-    if (hash.startsWith('#rc=')) {
-      const offer = hash.slice(4);
-      if (offer) {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-        return offer;
-      }
-    }
-    return null;
-  });
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
   const [handForHandActive, setHandForHandActive] = useState(false);
@@ -153,8 +143,6 @@ function App() {
   const [sidePotData, setSidePotData] = useState<{ pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null>(null);
   const [showSeatingOverlay, setShowSeatingOverlay] = useState(false);
   const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
-  const [showRemoteControl, setShowRemoteControl] = useState(false);
-  const remoteHostRef = useRef<RemoteHost | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -827,12 +815,23 @@ function App() {
       case 'prev': timer.previousLevel(); break;
       case 'reset': timer.resetLevel(); break;
       case 'call-the-clock': setShowCallTheClock(v => !v); break;
+      case 'advanceDealer': handleAdvanceDealer(); break;
+      case 'toggleSound':
+        setSettings(prev => ({ ...prev, soundEnabled: !prev.soundEnabled, voiceEnabled: !prev.voiceEnabled }));
+        break;
     }
-  }, [timer]);
+  }, [timer, handleAdvanceDealer, setSettings]);
 
-  const handleRemoteHostReady = useCallback((host: RemoteHost) => {
-    remoteHostRef.current = host;
-  }, []);
+  const {
+    hostRef: remoteHostRef,
+    showRemoteModal: showRemoteControl,
+    setShowRemoteModal: setShowRemoteControl,
+    isControllerMode,
+    controllerPeerId,
+    handleHostReady: handleRemoteHostReady,
+  } = useRemoteControl({
+    enabled: mode === 'game',
+  });
 
   // Send state updates to connected remote controller
   useEffect(() => {
@@ -860,8 +859,9 @@ function App() {
       totalPlayerCount: config.players.length,
       isBubble: bubbleActive,
       tournamentName: config.name,
+      soundEnabled: settings.soundEnabled,
     });
-  }, [mode, timer.timerState, config.levels, config.players, config.name, activePlayerCount, bubbleActive, t]);
+  }, [mode, timer.timerState, config.levels, config.players, config.name, activePlayerCount, bubbleActive, settings.soundEnabled, t, remoteHostRef]);
 
   const switchToGame = () => {
     // Reset all player state when starting a new tournament
@@ -923,11 +923,7 @@ function App() {
     setLastHandActive(false);
     setHandForHandActive(false);
     closeTVWindow();
-    // Close remote control
-    if (remoteHostRef.current) {
-      remoteHostRef.current.close();
-      remoteHostRef.current = null;
-    }
+    // Remote control cleanup is handled by useRemoteControl hook (enabled: mode === 'game')
     setShowRemoteControl(false);
     resetGameEvents();
     resetVoice();
@@ -1408,12 +1404,12 @@ function App() {
         </Suspense>
       )}
 
-      {/* Remote Controller (from QR code #rc= hash) */}
-      {remoteOffer && (
+      {/* Remote Controller (from QR code #remote= hash) */}
+      {isControllerMode && controllerPeerId && (
         <Suspense fallback={null}>
           <RemoteControllerView
-            offerData={remoteOffer}
-            onClose={() => setRemoteOffer(null)}
+            hostPeerId={controllerPeerId}
+            onClose={() => window.close()}
           />
         </Suspense>
       )}

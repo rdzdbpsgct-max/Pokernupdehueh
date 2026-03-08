@@ -89,7 +89,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Re-Entry | Spieler können sich nach Elimination neu einkaufen (neuer Stack, separate Statistik) |
 | Seat-Locking | Bestimmte Sitzplätze an Tischen sperren (Multi-Table) |
 | Liga-Modus | Homegame-Liga mit Spieltagen, Punktesystem, Tiebreaker, Saisons, Finanzen, Gastspieler, Spieler-Detailansicht, QR-Teilen, TV-Display, Druckansicht |
-| Fernsteuerung | Turnier vom Smartphone steuern via WebRTC (Play/Pause/Next, Call the Clock) — QR-Code-Verbindung |
+| Fernsteuerung | Turnier vom Smartphone steuern via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock) — Ein-QR-Verbindung |
 | Premium UI | Glassmorphism, Gradient-Buttons, Timer-Glow, benutzerdefinierte Animationen, taktile Interaktionen |
 | Design-System | Einheitliche Abrundungen, Border-Opacities, Focus-Glow, Custom Number-Stepper, SVG-Chevrons |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
@@ -186,7 +186,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Re-Entry | Players can re-enter after elimination (fresh stack, separate stats) |
 | Seat Locking | Lock specific seats at tables (multi-table) |
 | League Mode | Home game league with game days, point system, tiebreaker, seasons, finances, guest players, player detail modal, QR sharing, TV display, print view |
-| Remote Control | Control tournament from smartphone via WebRTC (Play/Pause/Next, Call the Clock) — QR code connection |
+| Remote Control | Control tournament from smartphone via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock) — single QR scan |
 | Premium UI | Glassmorphism, gradient buttons, timer glow, custom animations, tactile interactions |
 | Design system | Unified rounding, border opacities, focus glow, custom number stepper, SVG chevrons |
 | Validation | Input validation before tournament start with clear error messages |
