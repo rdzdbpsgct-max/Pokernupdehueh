@@ -4,6 +4,7 @@ import type { League, ExtendedLeagueStanding, GameDay } from '../domain/types';
 import { formatLeagueStandingsAsText, formatLeagueStandingsAsCSV, encodeLeagueStandingsForQR } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
+import { LoadingFallback } from './LoadingFallback';
 
 const LeaguePlayerDetail = lazy(() => import('./LeaguePlayerDetail').then(m => ({ default: m.LeaguePlayerDetail })));
 
@@ -95,6 +96,8 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
     <th
       key={k}
       onClick={() => handleSort(k)}
+      aria-sort={sortKey === k ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+      aria-label={`${label} — ${sortKey === k && sortDir === 'asc' ? t('accessibility.sortDescending') : t('accessibility.sortAscending')}`}
       className={`px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none ${className ?? ''}`}
     >
       {label}
@@ -268,7 +271,7 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
       </div>
       {/* Player Detail Modal */}
       {selectedPlayer && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingFallback />}>
           <LeaguePlayerDetail
             playerName={selectedPlayer}
             gameDays={gameDays}

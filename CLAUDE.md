@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 5.2.1
+**Version**: 5.3.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (509 tests, single run)
+npm run test         # Vitest run (534 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -63,6 +63,7 @@ src/
 │   │   └── index.ts             # Barrel export
 │   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
+│   ├── LoadingFallback.tsx      # Suspense fallback with animated pulse dots
 │   ├── MultiTablePanel.tsx      # Game-mode multi-table panel with balancing and moves
 │   ├── PrintView.tsx            # Print-optimized blind structure for window.print()
 │   ├── LeagueManager.tsx        # League CRUD, leaderboard, export
@@ -130,12 +131,12 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~870+ keys)
+    ├── translations.ts          # DE/EN translation strings (~700 keys per language)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-├── logic.test.ts                # 418 unit tests for domain logic + PeerJS remote control
-├── components.test.tsx          # 66 UI component tests (NumberStepper, CollapsibleSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, CollapsibleSubSection, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog)
+├── logic.test.ts                # 451 unit tests for domain logic + PeerJS remote control
+├── components.test.tsx          # 83 UI component tests (NumberStepper, CollapsibleSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, CollapsibleSubSection, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog, LoadingFallback, ConfigEditor, SettingsPanel, PlayerPanel)
 └── setup.ts                     # Test setup: jest-dom matchers, matchMedia mock
 
 public/
@@ -267,7 +268,7 @@ public/
 
 ## Testing
 
-- Tests live in `tests/logic.test.ts` (448 tests) and `tests/components.test.tsx` (66 tests) — 514 total
+- Tests live in `tests/logic.test.ts` (451 tests) and `tests/components.test.tsx` (83 tests) — 534 total
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
@@ -303,13 +304,25 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 
 ## Changelog
 
-### v5.2.1 — Emerald-zu-Accent Migration, Aria-Labels & i18n-Fixes
+### v5.3.0 — Code-Qualität, Performance & Web Vitals
 
-- **Akzentfarbe vollständig migriert**: Alle 69 verbliebenen hardkodierten `emerald-*` Tailwind-Klassen in 20 Setup/Liga/Utility-Komponenten durch CSS Custom Properties (`var(--accent-*)`) ersetzt. 3 neue CSS `@utility` Klassen (`btn-accent-gradient`, `bg-accent-700`, `bg-accent-800`) für häufige Button-Patterns mit Hover-States. Betroffene Dateien: BountyEditor, RebuyEditor, AddOnEditor, ChipEditor, PayoutEditor, TemplateManager, BlindGenerator, SetupWizard, LeagueManager, TournamentFinished, TournamentHistory, SharedResultView, BubbleIndicator, CallTheClock, SeatingOverlay, ErrorBoundary, ConfigEditor, SetupPage, PlayerManager, LeagueSettings.
-- **Aria-Labels auf Icon-Buttons**: 25+ Icon-only Buttons (✕, ✓, ▲, ▼, ⧉, 📝, ⚙️, ✏️, 🗑️) mit `aria-label` Attributen versehen für Screenreader-Zugänglichkeit. Betroffene: LeagueSettings (6×), ConfigEditor (4×), GameDayEditor (4×), ChipEditor (2×), SidePotCalculator (2×), LeagueView (7×).
-- **Hardkodierte Strings i18n**: `"Pts"` → `t('league.settings.pointsAbbr')` (DE: „Pkt", EN: „Pts"), `'Rebuy ✓'` → `t('display.rebuyActive')`.
-- **11 neue Translation-Keys** (pro Sprache): 9× `accessibility.*` (close, remove, delete, moveUp, moveDown, confirm, cancel, sortAscending, sortDescending) + `league.settings.pointsAbbr` + `display.rebuyActive`.
-- **20 geänderte Dateien** + `index.css` + `translations.ts`, **0 neue Tests**, **514 Tests gesamt**
+- **React.memo auf TimerDisplay**: `TimerDisplay` (re-rendert 4×/Sek via useTimer) mit `memo()` gewrappt — verhindert unnötige Re-Renders bei unrelated State-Änderungen. 9 Game-Mode-Komponenten nutzen jetzt React.memo.
+- **Suspense LoadingFallback**: Neue `LoadingFallback.tsx` Komponente mit animierten Pulse-Dots. 13 `<Suspense fallback={null}>` in 4 Dateien durch `<Suspense fallback={<LoadingFallback />}>` ersetzt — sichtbares Ladefeedback statt leerer Fläche.
+- **computeSidePots Validierung**: Guard-Clause `filter(s => s > 0)` gegen negative/null Stack-Werte. 3 neue Tests.
+- **Komponenten-Tests erweitert**: 17 neue Tests für ConfigEditor (6×), SettingsPanel (5×), PlayerPanel (4×), LoadingFallback (2×). Test-Abdeckung von 13 auf 17 Komponenten erhöht.
+- **Dependency-Updates**: Tailwind 4.2.0→4.2.1, @tailwindcss/vite 4.2.0→4.2.1, typescript-eslint 8.56.0→8.56.1, ESLint 9.39.3→9.39.4, @eslint/js 9.39.3→9.39.4.
+- **Web Vitals Tracking**: `@vercel/speed-insights` installiert und in main.tsx eingebunden. LCP/INP/CLS-Metriken im Vercel Dashboard verfügbar.
+- **Neue Datei**: `LoadingFallback.tsx`
+- **Neue Dependency**: `@vercel/speed-insights`
+- **534 Tests gesamt** (451 Logic + 83 Component)
+
+### v5.2.1 — Emerald-zu-Accent Migration, Aria-Labels, i18n-Fixes & Cleanup
+
+- **Akzentfarbe vollständig migriert**: Alle 69 verbliebenen hardkodierten `emerald-*` Tailwind-Klassen in 20 Setup/Liga/Utility-Komponenten durch CSS Custom Properties (`var(--accent-*)`) ersetzt. 3 neue CSS `@utility` Klassen (`btn-accent-gradient`, `bg-accent-700`, `bg-accent-800`) für häufige Button-Patterns mit Hover-States.
+- **Aria-Labels auf Icon-Buttons**: 25+ Icon-only Buttons (✕, ✓, ▲, ▼, ⧉, 📝, ⚙️, ✏️, 🗑️) mit `aria-label` Attributen versehen. `aria-label` auf LanguageSwitcher DE/EN-Buttons. `aria-sort` + `aria-label` auf sortierbare Spaltenköpfe in LeagueStandingsTable.
+- **Hardkodierte Strings i18n**: `"Pts"` → `t('league.settings.pointsAbbr')`, `'Rebuy ✓'` → `t('display.rebuyActive')`, `placeholder="+2 or -1"` → `t('league.correction.pointsPlaceholder')`.
+- **i18n-Cleanup**: 28 unbenutzte Translation-Keys aus DE + EN entfernt (Altlasten aus Refactorings). 6 neue Keys hinzugefügt (language.selectDE/EN, league.correction.pointsPlaceholder). README.md Test-Badge korrigiert.
+- **534 Tests gesamt** (451 Logic + 83 Component)
 
 ### v5.2.0 — Remote Control Rebuild mit PeerJS
 

@@ -14,6 +14,7 @@ import { useTranslation } from '../i18n';
 import { LeagueStandingsTable } from './LeagueStandingsTable';
 import { LeagueGameDays } from './LeagueGameDays';
 import { LeagueFinances } from './LeagueFinances';
+import { LoadingFallback } from './LoadingFallback';
 
 const GameDayEditor = lazy(() => import('./GameDayEditor').then((m) => ({ default: m.GameDayEditor })));
 const LeagueSettings = lazy(() => import('./LeagueSettings').then((m) => ({ default: m.LeagueSettings })));
@@ -354,7 +355,7 @@ export function LeagueView({ onStartTournament }: Props) {
 
       {/* Game Day Editor Modal */}
       {showGameDayEditor && selectedLeague && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingFallback />}>
           <GameDayEditor
             league={selectedLeague}
             onClose={() => setShowGameDayEditor(false)}
@@ -365,7 +366,7 @@ export function LeagueView({ onStartTournament }: Props) {
 
       {/* League Settings Modal */}
       {showSettings && selectedLeague && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingFallback />}>
           <LeagueSettings
             league={selectedLeague}
             onClose={() => setShowSettings(false)}
@@ -401,7 +402,7 @@ export function LeagueView({ onStartTournament }: Props) {
                 value={correctionPoints}
                 onChange={(e) => setCorrectionPoints(parseInt(e.target.value, 10) || 0)}
                 className="w-full bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
-                placeholder="+2 or -1"
+                placeholder={t('league.correction.pointsPlaceholder')}
               />
               <p className="text-[10px] text-gray-400 mt-0.5">{t('league.correction.hint')}</p>
             </div>

@@ -5,6 +5,7 @@ import { ThemeProvider } from './theme'
 import { LanguageProvider } from './i18n'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import App from './App.tsx'
 import { TVDisplayWindow } from './components/display'
 
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
             <>
               <App />
               <Analytics />
+              <SpeedInsights />
             </>
           )}
         </LanguageProvider>

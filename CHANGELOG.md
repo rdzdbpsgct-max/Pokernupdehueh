@@ -5,9 +5,36 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [5.3.0] – 2026-03-09
+
+### Code-Qualität, Performance & Web Vitals
+
+#### Performance
+- **React.memo auf TimerDisplay**: `TimerDisplay` (re-rendert 4×/Sek via useTimer) mit `memo()` gewrappt — verhindert unnötige Re-Renders bei unrelated State-Änderungen (Player-Updates, Settings). 9 Game-Mode-Komponenten nutzen jetzt React.memo.
+- **Suspense LoadingFallback**: Neue `LoadingFallback.tsx` Komponente mit animierten Pulse-Dots. 13 `<Suspense fallback={null}>` in 4 Dateien (App.tsx, LeagueView.tsx, PlayerPanel.tsx, LeagueStandingsTable.tsx) durch sichtbares Ladefeedback ersetzt.
+
+#### Robustheit
+- **computeSidePots Validierung**: Guard-Clause `filter(s => s > 0)` in `tournament.ts` gegen negative/null Stack-Werte. Domain-Funktion ist jetzt unabhängig von UI-Schutz robust.
+
+#### Tests
+- **17 neue Tests**: LoadingFallback (2×), ConfigEditor (6×: Level-Tabelle, Add Level/Break, Ante ein/aus, Single-Level-Schutz), SettingsPanel (5×: Toggles, Sound, Fullscreen, Accent-Picker, Background-Grid), PlayerPanel (4×: Spieler rendern, Eliminate-Button, Callback, Reinstate)
+- Test-Abdeckung von 13 auf 17 Komponenten erhöht
+
+#### Dependencies & Tooling
+- Tailwind 4.2.0→4.2.1, @tailwindcss/vite 4.2.0→4.2.1, typescript-eslint 8.56.0→8.56.1, ESLint 9.39.3→9.39.4, @eslint/js 9.39.3→9.39.4
+- `@vercel/speed-insights` installiert — LCP/INP/CLS Web Vitals im Vercel Dashboard verfügbar
+
+#### Dateien
+- **Neue Datei**: `src/components/LoadingFallback.tsx`
+- **Neue Dependency**: `@vercel/speed-insights`
+- **6 geänderte Dateien**: `TimerDisplay.tsx`, `App.tsx`, `main.tsx`, `tournament.ts`, `LeagueView.tsx`, `LeagueStandingsTable.tsx`, `PlayerPanel.tsx`
+- **534 Tests gesamt** (451 Logic + 83 Component)
+
+---
+
 ## [5.2.1] – 2026-03-09
 
-### Emerald-zu-Accent Migration, Aria-Labels & i18n-Fixes
+### Emerald-zu-Accent Migration, Aria-Labels, i18n-Fixes & Cleanup
 
 #### Akzentfarbe vollständig migriert
 - Alle 69 verbliebenen hardkodierten `emerald-*` Tailwind-Klassen in 20 Setup/Liga/Utility-Komponenten durch CSS Custom Properties (`var(--accent-*)`) ersetzt
@@ -18,13 +45,19 @@ All notable changes to the Pokern up de Hüh app.
 #### Aria-Labels auf Icon-Buttons
 - 25+ Icon-only Buttons (✕, ✓, ▲, ▼, ⧉, 📝, ⚙️, ✏️, 🗑️) mit `aria-label` Attributen für Screenreader-Zugänglichkeit versehen
 - Betroffene: LeagueSettings (6×), ConfigEditor (4×), GameDayEditor (4×), ChipEditor (2×), SidePotCalculator (2×), LeagueView (7×)
+- `aria-label` auf LanguageSwitcher DE/EN-Buttons
+- `aria-sort` + `aria-label` auf sortierbare Spaltenköpfe in LeagueStandingsTable
 
-#### Hardkodierte Strings
+#### Hardkodierte Strings & i18n-Cleanup
 - `"Pts"` → `t('league.settings.pointsAbbr')` (DE: „Pkt", EN: „Pts")
 - `'Rebuy ✓'` → `t('display.rebuyActive')`
+- `placeholder="+2 or -1"` → `t('league.correction.pointsPlaceholder')`
+- 28 unbenutzte Translation-Keys aus DE + EN entfernt (Altlasten aus Refactorings)
+- 6 neue Translation-Keys hinzugefügt (language.selectDE/EN, league.correction.pointsPlaceholder, accessibility.sortAscending/sortDescending genutzt)
+- README.md Test-Badge korrigiert (408 → 514)
 
 #### Zahlen
-- 11 neue Translation-Keys pro Sprache, 20 geänderte Dateien, 514 Tests
+- 6 geänderte Dateien, −28 / +6 Translation-Keys netto, 514 Tests
 
 ---
 

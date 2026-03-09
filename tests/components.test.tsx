@@ -16,8 +16,12 @@ import { ThemeSwitcher } from '../src/components/ThemeSwitcher';
 import { ErrorBoundary, SectionErrorBoundary } from '../src/components/ErrorBoundary';
 import { useTimer } from '../src/hooks/useTimer';
 import { useConfirmDialog } from '../src/hooks/useConfirmDialog';
-import type { TournamentConfig, TournamentResult, Level, Settings, RebuyConfig } from '../src/domain/types';
-import { defaultConfig } from '../src/domain/logic';
+import type { TournamentConfig, TournamentResult, Level, Settings, RebuyConfig, Player, PayoutConfig, AddOnConfig, BountyConfig } from '../src/domain/types';
+import { defaultConfig, defaultSettings } from '../src/domain/logic';
+import { ConfigEditor } from '../src/components/ConfigEditor';
+import { SettingsPanel } from '../src/components/SettingsPanel';
+import { LoadingFallback } from '../src/components/LoadingFallback';
+import { PlayerPanel } from '../src/components/PlayerPanel';
 
 // ---------------------------------------------------------------------------
 // Test wrapper — provides i18n + theme contexts
@@ -727,5 +731,258 @@ describe('useConfirmDialog', () => {
     expect(result.current.confirmAction).not.toBeNull();
     act(() => { fireEvent.keyDown(window, { key: 'Escape' }); });
     expect(result.current.confirmAction).toBeNull();
+  });
+});
+
+// ===================== LoadingFallback =====================
+
+describe('LoadingFallback', () => {
+  it('renders three pulse dots', () => {
+    renderWithProviders(<LoadingFallback />);
+    const dots = document.querySelectorAll('.animate-pulse');
+    expect(dots).toHaveLength(3);
+  });
+
+  it('applies custom className', () => {
+    const { container } = renderWithProviders(<LoadingFallback className="h-screen" />);
+    expect(container.firstChild).toHaveClass('h-screen');
+  });
+});
+
+// ===================== ConfigEditor =====================
+
+describe('ConfigEditor', () => {
+  const baseConfig = defaultConfig();
+
+  it('renders level rows matching config.levels count', () => {
+    renderWithProviders(
+      <ConfigEditor config={baseConfig} onChange={vi.fn()} anteEnabled={false} />
+    );
+    // Each level/break row has a type badge (Level or Pause)
+    const levelCount = baseConfig.levels.filter(l => l.type === 'level').length;
+    const breakCount = baseConfig.levels.filter(l => l.type === 'break').length;
+    // Index numbers (1, 2, 3...) are rendered for each row
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText(String(baseConfig.levels.length))).toBeInTheDocument();
+    // Total rows = levels + breaks
+    expect(levelCount + breakCount).toBe(baseConfig.levels.length);
+  });
+
+  it('calls onChange when "Add Level" button is clicked', () => {
+    const onChange = vi.fn();
+    renderWithProviders(
+      <ConfigEditor config={baseConfig} onChange={onChange} anteEnabled={false} />
+    );
+    fireEvent.click(screen.getByText(/Level/i, { selector: 'button' }));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const newConfig = onChange.mock.calls[0][0] as TournamentConfig;
+    expect(newConfig.levels.length).toBe(baseConfig.levels.length + 1);
+  });
+
+  it('calls onChange when "Add Break" button is clicked', () => {
+    const onChange = vi.fn();
+    renderWithProviders(
+      <ConfigEditor config={baseConfig} onChange={onChange} anteEnabled={false} />
+    );
+    // The add-break button text varies by language; find button containing "Pause" or "Break"
+    const addBreakBtn = screen.getAllByRole('button').find(b => b.textContent?.includes('Pause') || b.textContent?.includes('Break'));
+    expect(addBreakBtn).toBeTruthy();
+    fireEvent.click(addBreakBtn!);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const newConfig = onChange.mock.calls[0][0] as TournamentConfig;
+    expect(newConfig.levels.length).toBe(baseConfig.levels.length + 1);
+    expect(newConfig.levels[newConfig.levels.length - 1].type).toBe('break');
+  });
+
+  it('hides ante column when anteEnabled is false', () => {
+    renderWithProviders(
+      <ConfigEditor config={baseConfig} onChange={vi.fn()} anteEnabled={false} />
+    );
+    expect(screen.queryByText('Ante:')).not.toBeInTheDocument();
+  });
+
+  it('shows ante inputs when anteEnabled is true', () => {
+    renderWithProviders(
+      <ConfigEditor config={baseConfig} onChange={vi.fn()} anteEnabled={true} />
+    );
+    // At least one Ante label should be visible
+    expect(screen.getAllByText('Ante:').length).toBeGreaterThan(0);
+  });
+
+  it('prevents removing last level', () => {
+    const singleLevel: TournamentConfig = {
+      ...baseConfig,
+      levels: [baseConfig.levels[0]],
+    };
+    renderWithProviders(
+      <ConfigEditor config={singleLevel} onChange={vi.fn()} anteEnabled={false} />
+    );
+    // Delete button should be disabled when only 1 level
+    const deleteButtons = screen.getAllByRole('button').filter(b => b.textContent === '✕');
+    expect(deleteButtons.length).toBe(1);
+    expect(deleteButtons[0]).toBeDisabled();
+  });
+});
+
+// ===================== SettingsPanel =====================
+
+describe('SettingsPanel', () => {
+  const baseSettings = defaultSettings();
+
+  it('renders all setting toggles', () => {
+    renderWithProviders(
+      <SettingsPanel settings={baseSettings} onChange={vi.fn()} onToggleFullscreen={vi.fn()} />
+    );
+    // CheckBox components have role="switch"
+    const switches = screen.getAllByRole('switch');
+    expect(switches.length).toBeGreaterThanOrEqual(4); // sound, countdown, autoAdvance, largeDisplay
+  });
+
+  it('calls onChange when toggling sound', () => {
+    const onChange = vi.fn();
+    renderWithProviders(
+      <SettingsPanel settings={baseSettings} onChange={onChange} onToggleFullscreen={vi.fn()} />
+    );
+    const switches = screen.getAllByRole('switch');
+    // First switch is sound
+    fireEvent.click(switches[0]);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const updated = onChange.mock.calls[0][0] as Settings;
+    expect(updated.soundEnabled).toBe(!baseSettings.soundEnabled);
+  });
+
+  it('calls onToggleFullscreen when clicking fullscreen button', () => {
+    const onFullscreen = vi.fn();
+    renderWithProviders(
+      <SettingsPanel settings={baseSettings} onChange={vi.fn()} onToggleFullscreen={onFullscreen} />
+    );
+    // Fullscreen button contains translated text
+    const fullscreenBtn = screen.getAllByRole('button').find(b =>
+      b.textContent?.includes('Vollbild') || b.textContent?.includes('Fullscreen')
+    );
+    expect(fullscreenBtn).toBeTruthy();
+    fireEvent.click(fullscreenBtn!);
+    expect(onFullscreen).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders 6 accent color buttons', () => {
+    renderWithProviders(
+      <SettingsPanel settings={baseSettings} onChange={vi.fn()} onToggleFullscreen={vi.fn()} />
+    );
+    // Each accent option has a title attribute (Emerald, Blue, Purple, Red, Amber, Cyan)
+    expect(screen.getByTitle('Emerald')).toBeInTheDocument();
+    expect(screen.getByTitle('Blue')).toBeInTheDocument();
+    expect(screen.getByTitle('Purple')).toBeInTheDocument();
+    expect(screen.getByTitle('Red')).toBeInTheDocument();
+    expect(screen.getByTitle('Amber')).toBeInTheDocument();
+    expect(screen.getByTitle('Cyan')).toBeInTheDocument();
+  });
+
+  it('renders 9 background option buttons', () => {
+    renderWithProviders(
+      <SettingsPanel settings={baseSettings} onChange={vi.fn()} onToggleFullscreen={vi.fn()} />
+    );
+    // BG_OPTIONS has 9 entries rendered in a 3-column grid
+    const bgGrid = document.querySelector('.grid.grid-cols-3');
+    expect(bgGrid).toBeTruthy();
+    expect(bgGrid!.children.length).toBe(9);
+  });
+});
+
+// ===================== PlayerPanel =====================
+
+describe('PlayerPanel', () => {
+  function makePlayer(overrides: Partial<Player> = {}): Player {
+    return {
+      id: 'p1',
+      name: 'Alice',
+      status: 'active',
+      rebuys: 0,
+      addOn: false,
+      seatIndex: 0,
+      knockouts: 0,
+      ...overrides,
+    };
+  }
+
+  const defaultRebuyConfig: RebuyConfig = {
+    enabled: false,
+    limitType: 'levels',
+    levelLimit: 4,
+    timeLimit: 3600,
+    rebuyCost: 10,
+    rebuyChips: 20000,
+    maxRebuysPerPlayer: 0,
+    separatePot: false,
+    reEntryEnabled: false,
+    maxReEntries: 1,
+  };
+
+  const defaultAddOnConfig: AddOnConfig = { enabled: false, cost: 10, chips: 20000 };
+  const defaultBountyConfig: BountyConfig = { enabled: false, amount: 5, type: 'fixed' };
+  const defaultPayoutConfig: PayoutConfig = { type: 'percentage', entries: [{ place: 1, value: 100 }] };
+
+  function makeProps(overrides: Record<string, unknown> = {}) {
+    return {
+      players: [makePlayer({ id: 'p1', name: 'Alice', seatIndex: 0 }), makePlayer({ id: 'p2', name: 'Bob', seatIndex: 1 })],
+      dealerIndex: 0,
+      buyIn: 10,
+      payout: defaultPayoutConfig,
+      rebuyActive: false,
+      rebuyConfig: defaultRebuyConfig,
+      addOnConfig: defaultAddOnConfig,
+      addOnWindowOpen: false,
+      bountyConfig: defaultBountyConfig,
+      averageStack: 20000,
+      onUpdateRebuys: vi.fn(),
+      onUpdateAddOn: vi.fn(),
+      onEliminatePlayer: vi.fn(),
+      onReinstatePlayer: vi.fn(),
+      onAdvanceDealer: vi.fn(),
+      ...overrides,
+    };
+  }
+
+  it('renders all active player names', () => {
+    const props = makeProps();
+    renderWithProviders(<PlayerPanel {...props} />);
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+  });
+
+  it('shows eliminate buttons when more than 1 active player', () => {
+    const props = makeProps();
+    renderWithProviders(<PlayerPanel {...props} />);
+    // German default: "Aus" for eliminate
+    const eliminateButtons = screen.getAllByRole('button').filter(b =>
+      b.textContent === 'Raus' || b.textContent === 'Out'
+    );
+    expect(eliminateButtons.length).toBe(2);
+  });
+
+  it('calls onEliminatePlayer when eliminate button is clicked (no bounty)', () => {
+    const onEliminate = vi.fn();
+    const props = makeProps({ onEliminatePlayer: onEliminate });
+    renderWithProviders(<PlayerPanel {...props} />);
+    const eliminateButtons = screen.getAllByRole('button').filter(b =>
+      b.textContent === 'Raus' || b.textContent === 'Out'
+    );
+    fireEvent.click(eliminateButtons[0]);
+    expect(onEliminate).toHaveBeenCalledWith('p1', null);
+  });
+
+  it('shows reinstate button for eliminated players', () => {
+    const props = makeProps({
+      players: [
+        makePlayer({ id: 'p1', name: 'Alice', status: 'active', seatIndex: 0 }),
+        makePlayer({ id: 'p2', name: 'Bob', status: 'eliminated', seatIndex: 1, placement: 2 }),
+      ],
+    });
+    renderWithProviders(<PlayerPanel {...props} />);
+    // German: "Zurückholen" / English: "Reinstate"
+    const reinstateBtn = screen.getAllByRole('button').find(b =>
+      b.textContent?.includes('Zurück') || b.textContent?.includes('Reinstate')
+    );
+    expect(reinstateBtn).toBeTruthy();
   });
 });

@@ -55,10 +55,12 @@ export function computeRebuyPot(players: Player[], rebuyCost: number): number {
  * @returns Array of SidePot objects (Main Pot first, then Side Pots)
  */
 export function computeSidePots(stacks: number[]): SidePot[] {
-  if (stacks.length < 2) return [];
+  // Guard: filter out non-positive values (defensive — UI already prevents these)
+  const validStacks = stacks.filter(s => s > 0);
+  if (validStacks.length < 2) return [];
 
   // Sort ascending and work through unique levels
-  const sorted = [...stacks].sort((a, b) => a - b);
+  const sorted = [...validStacks].sort((a, b) => a - b);
   const pots: SidePot[] = [];
   let previousLevel = 0;
 

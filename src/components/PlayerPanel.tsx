@@ -2,6 +2,7 @@ import { useState, useMemo, lazy, Suspense, memo } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, Table, PotResult, PlayerPayout } from '../domain/types';
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, computeRebuyPot, findChipLeader, canPlayerRebuy, canReEntry, findPlayerSeat } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { LoadingFallback } from './LoadingFallback';
 
 const SidePotCalculator = lazy(() => import('./SidePotCalculator').then(m => ({ default: m.SidePotCalculator })));
 
@@ -487,7 +488,7 @@ export const PlayerPanel = memo(function PlayerPanel({
       )}
     </div>
     {showSidePot && (
-      <Suspense fallback={null}>
+      <Suspense fallback={<LoadingFallback />}>
         <SidePotCalculator onClose={() => setShowSidePot(false)} onResultChange={onSidePotResultChange} />
       </Suspense>
     )}

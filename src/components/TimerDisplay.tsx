@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, memo } from 'react';
 import type { Level, TimerState, ChipConfig, ChipDenomination, AnteMode } from '../domain/types';
 import { formatTime, getLevelLabel, getBlindsText } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -149,7 +149,7 @@ function ScrubSlider({
   );
 }
 
-export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, onScrubEnd, chipConfig, colorUpMap, cleanView, anteMode }: Props) {
+export const TimerDisplay = memo(function TimerDisplay({ timerState, levels, largeDisplay, countdownEnabled, onScrub, onScrubEnd, chipConfig, colorUpMap, cleanView, anteMode }: Props) {
   const { t } = useTranslation();
   const [scrubbing, setScrubbing] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -314,4 +314,4 @@ export function TimerDisplay({ timerState, levels, largeDisplay, countdownEnable
       )}
     </div>
   );
-}
+});

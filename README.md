@@ -9,7 +9,7 @@
 [![Version](https://img.shields.io/badge/Version-5.2.1-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-408%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-534%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -217,7 +217,7 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 - **TypeScript 5.9** — Strikte Typisierung / Strict typing
 - **Vite 7** — Build-Tool / Build tool
 - **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
-- **Vitest** — 195 Unit-Tests / Unit tests
+- **Vitest** — 534 Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
 - **Vercel** — Automatisches Deploy / Auto-deploy on push
 - **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
@@ -251,7 +251,7 @@ App: `http://localhost:5173/`
 
 ```bash
 npm run lint        # ESLint
-npm run test        # 195 Unit-Tests
+npm run test        # 534 Tests
 npm run build       # Production-Build → ./dist
 ```
 
@@ -315,7 +315,7 @@ public/
   audio/de/             # 181 ElevenLabs MP3 Audiodateien (Deutsch, Stimme: Ava)
   audio/en/             # 181 ElevenLabs MP3 Audiodateien (Englisch)
 tests/
-  logic.test.ts         # 195 Unit-Tests
+  logic.test.ts         # 534 Tests
 ```
 
 ## Architektur / Architecture

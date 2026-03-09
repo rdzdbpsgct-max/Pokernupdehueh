@@ -68,6 +68,7 @@ import { useTheme } from './theme';
 import type { RemoteCommand } from './domain/remote';
 import { useRemoteControl } from './hooks/useRemoteControl';
 import { SectionErrorBoundary } from './components/ErrorBoundary';
+import { LoadingFallback } from './components/LoadingFallback';
 
 // Game-mode components (lazy — only needed after tournament starts)
 const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
@@ -998,7 +999,7 @@ function App() {
       <main className="flex-1 flex">
         {mode === 'league' ? (
           /* League Mode */
-          <SectionErrorBoundary><Suspense fallback={null}>
+          <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
             <LeagueView
               onStartTournament={(leagueId) => {
                 setConfig(prev => ({ ...prev, leagueId }));
@@ -1020,7 +1021,7 @@ function App() {
           />
         ) : tournamentFinished && winner ? (
           /* Tournament Finished */
-          <SectionErrorBoundary><Suspense fallback={null}>
+          <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
             <TournamentFinished
               players={config.players}
               winner={winner}
@@ -1035,7 +1036,7 @@ function App() {
           </Suspense></SectionErrorBoundary>
         ) : (
           /* Game Mode */
-          <SectionErrorBoundary><Suspense fallback={null}>
+          <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {/* Player Panel (LEFT) */}
             {showPlayerPanel && config.players.length > 0 && (
@@ -1211,7 +1212,7 @@ function App() {
 
       {/* Seating Overlay (multi-table start) */}
       {showSeatingOverlay && mode === 'game' && config.tables && (
-        <SectionErrorBoundary><Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <SeatingOverlay
             tables={config.tables}
             players={config.players}
@@ -1222,7 +1223,7 @@ function App() {
 
       {/* Remote Control Modal */}
       {showRemoteControl && mode === 'game' && (
-        <SectionErrorBoundary><Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <RemoteHostModal
             peerId={remoteHostRef.current?.peerId ?? ''}
             status={remoteHostStatus}
@@ -1233,7 +1234,7 @@ function App() {
 
       {/* Call the Clock Modal */}
       {showCallTheClock && mode === 'game' && (
-        <SectionErrorBoundary><Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <CallTheClock
             durationSeconds={settings.callTheClockSeconds}
             soundEnabled={settings.soundEnabled}
@@ -1273,14 +1274,14 @@ function App() {
 
       {/* Shared Result Modal (from QR code) */}
       {sharedResult && (
-        <SectionErrorBoundary><Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <SharedResultView result={sharedResult} onClose={() => setSharedResult(null)} />
         </Suspense></SectionErrorBoundary>
       )}
 
       {/* Shared League Standings Modal (from QR code) */}
       {sharedLeague && (
-        <SectionErrorBoundary><Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <SharedLeagueView
             leagueName={sharedLeague.leagueName}
             standings={sharedLeague.standings}
@@ -1291,7 +1292,7 @@ function App() {
 
       {/* Remote Controller (from QR code #remote= hash) */}
       {isControllerMode && controllerPeerId && (
-        <SectionErrorBoundary><Suspense fallback={null}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <RemoteControllerView
             hostPeerId={controllerPeerId}
             onClose={() => window.close()}

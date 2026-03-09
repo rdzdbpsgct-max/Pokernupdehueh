@@ -7,6 +7,7 @@ export function LanguageSwitcher() {
       <button
         onClick={() => setLanguage('de')}
         title="Deutsch"
+        aria-label={t('language.selectDE')}
         className={`px-2 py-1 text-xs font-medium transition-colors ${
           language === 'de'
             ? 'text-white'
@@ -19,6 +20,7 @@ export function LanguageSwitcher() {
       <button
         onClick={() => setLanguage('en')}
         title="English"
+        aria-label={t('language.selectEN')}
         className={`px-2 py-1 text-xs font-medium transition-colors ${
           language === 'en'
             ? 'text-white'

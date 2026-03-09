@@ -3846,6 +3846,22 @@ describe('computeSidePots', () => {
     expect(pots[0]).toEqual({ amount: 600, eligiblePlayers: 3, label: 'Main Pot' });
     expect(pots[1]).toEqual({ amount: 300, eligiblePlayers: 1, label: 'Side Pot 1' });
   });
+
+  it('filters out negative stack values', () => {
+    const pots = computeSidePots([-100, 500, 1000]);
+    expect(pots).toHaveLength(2);
+    expect(pots[0]).toEqual({ amount: 1000, eligiblePlayers: 2, label: 'Main Pot' });
+    expect(pots[1]).toEqual({ amount: 500, eligiblePlayers: 1, label: 'Side Pot 1' });
+  });
+
+  it('filters out zero stack values', () => {
+    const pots = computeSidePots([0, 0, 500]);
+    expect(pots).toEqual([]);
+  });
+
+  it('returns empty when all stacks are negative', () => {
+    expect(computeSidePots([-100, -200])).toEqual([]);
+  });
 });
 
 // ============================================================================

@@ -8,7 +8,6 @@ const de = {
   'app.tournamentName': 'Turnier-Name',
   'app.tournamentNamePlaceholder': 'z.B. Freitagspoker',
   'app.players': 'Spieler',
-  'app.buyInAndChips': 'Buy-In & Startchips',
   'app.buyIn': 'Buy-In',
   'app.startingChips': 'Startchips',
   'app.blindStructure': 'Blind-Struktur',
@@ -150,7 +149,6 @@ const de = {
   'remote.connected': 'Verbunden',
   'remote.canClose': 'Du kannst dieses Fenster schlie\u00DFen \u2014 die Verbindung bleibt bestehen.',
   'remote.connecting': 'Verbinde\u2026',
-  'remote.connectionLost': 'Verbindung verloren',
   'remote.reconnecting': 'Verbinde erneut\u2026',
   'remote.reconnectFailed': 'Verbindung fehlgeschlagen',
   'remote.retry': 'Erneut versuchen',
@@ -193,7 +191,6 @@ const de = {
   'playerManager.shuffleConfirmBtn': 'Jetzt mischen',
   'playerManager.setDealer': 'Als Dealer setzen',
   'playerManager.dealer': 'Dealer',
-  'playerManager.seat': 'Platz {n}',
   'playerManager.dragTooltip': 'Ziehen zum Sortieren',
 
   // --- Payout Editor ---
@@ -265,12 +262,7 @@ const de = {
   'chipEditor.preset5Desc': 'Weiß, Rot, Blau, Grün, Schwarz',
   'chipEditor.preset6': '6 Farben',
   'chipEditor.preset6Desc': 'Weiß, Rot, Blau, Grün, Schwarz, Lila',
-  'chipEditor.value': 'Wert',
   'chipEditor.addDenomination': '+ Chip hinzufügen',
-  'chipEditor.colorUpPreview': 'Color-Up Vorschau',
-  'chipEditor.colorUpAtLevel': 'Level {level}: {chips} entfernen',
-  'chipEditor.colorUpAtBreak': 'Pause nach Level {level}: {chips} entfernen',
-  'chipEditor.noColorUps': 'Keine Color-Ups nötig',
   'chipEditor.description': 'Definiere die Chip-Farben und -Werte für das Turnier.',
   'chipEditor.duplicateColor': 'Achtung: Mehrere Chips mit gleicher Farbe!',
   'chipEditor.colorUpEnabled': 'Color-Up deaktivieren',
@@ -278,9 +270,6 @@ const de = {
   'chipEditor.colorUpSchedule': 'Color-Up Plan',
   'chipEditor.generateSuggestion': '↻ Vorschlag generieren',
   'chipEditor.addColorUp': '+ Color-Up hinzufügen',
-  'chipEditor.removeEntry': 'Entfernen',
-  'chipEditor.selectLevel': 'Level wählen',
-  'chipEditor.selectChip': 'Chip wählen',
   'chipEditor.noSchedule': 'Kein Color-Up Plan. Klicke "Vorschlag generieren" um automatisch einen Plan zu erstellen.',
   'chipEditor.levelLabel': 'Level {n}',
   'chipEditor.breakLabel': 'Pause nach Lvl {n}',
@@ -310,7 +299,6 @@ const de = {
   'finished.paidPlaces': 'Bezahlte Plätze',
   'finished.addOn': 'Add-On',
   'finished.addOns': 'Add-Ons',
-  'finished.paidIn': 'Eingezahlt',
   'finished.bountyPaid': 'Bounty gezahlt',
   'finished.bountyEarned': 'Bounty erhalten',
   'finished.balance': 'Bilanz',
@@ -401,7 +389,6 @@ const de = {
   'display.exit': 'TV-Modus beenden (T)',
   'display.playersRemaining': 'Spieler',
   'display.nextLevel': 'Nächstes',
-  'display.blind': 'Blinds',
   'display.ante': 'Ante',
   'display.break': 'Pause',
   'display.activate': 'TV-Fenster öffnen (T)',
@@ -426,7 +413,6 @@ const de = {
   'display.bountyPool': 'Bounty Pool',
   'display.payoutPlace': 'Platz {n}',
   'display.chipLeaderBadge': 'CL',
-  'display.eliminated': 'Ausgeschieden',
 
   // --- Tournament History ---
   'app.history': 'Historie',
@@ -440,8 +426,6 @@ const de = {
   'history.players': 'Spieler',
   'history.duration': 'Dauer',
   'history.levels': 'Levels',
-  'history.date': 'Datum',
-  'history.standings': 'Platzierungen',
   'history.close': 'Schließen',
   'history.balance': 'Bilanz',
   'history.statsTab': 'Spieler-Statistik',
@@ -461,14 +445,12 @@ const de = {
   'finished.textCopied': 'Kopiert!',
   'finished.downloadCSV': 'CSV herunterladen',
   'finished.print': 'Ergebnis drucken',
-  'finished.exportOptions': 'Teilen',
   'finished.qrApp': 'App installieren',
 
   // --- Shared Result ---
   'shared.title': 'Geteiltes Turnierergebnis',
   'shared.leagueTitle': 'Geteilte Liga-Tabelle',
   'shared.close': 'Schließen',
-  'shared.invalidData': 'Ungültige Turnierdaten im QR-Code.',
 
   // --- Section Summaries ---
   'app.tournamentFormat': 'Rebuy / Add-On / Bounty',
@@ -496,6 +478,11 @@ const de = {
 
   // --- Language Switcher ---
   'language.switcherTitle': 'Sprache / Language',
+  'language.selectDE': 'Sprache auf Deutsch umschalten',
+  'language.selectEN': 'Sprache auf Englisch umschalten',
+
+  // --- League Correction ---
+  'league.correction.pointsPlaceholder': '+2 oder -1',
 
   // --- Units ---
   'unit.eur': 'EUR',
@@ -601,25 +588,20 @@ const de = {
   // --- Multi-Table ---
   'multiTable.title': 'Multi-Table',
   'multiTable.tables': 'Tische',
-  'multiTable.addTable': 'Tisch hinzufügen',
   'multiTable.seats': 'Plätze',
   'multiTable.distribute': 'Spieler verteilen',
   'multiTable.balance': 'Tische ausgleichen',
   'multiTable.tableName': 'Tisch {n}',
   'multiTable.playerCount': '{n} Spieler',
-  'multiTable.moveAnnouncement': '{player} wechselt zu {table}',
   'multiTable.finalTable': 'Final Table!',
   'multiTable.tableCount': '{n} Tische',
-  'multiTable.removeTable': 'Tisch entfernen',
   'multiTable.dissolveThreshold': 'Auflöse-Schwelle',
   'multiTable.autoBalance': 'Automatisch ausgleichen',
   'multiTable.dissolved': 'Aufgelöst',
   'multiTable.seat': 'Platz {n}',
   'multiTable.seatShort': 'S{n}',
   'multiTable.emptySeat': 'Frei',
-  'multiTable.dealerAt': 'Dealer: Platz {n}',
   'multiTable.moveLog': 'Letzte Wechsel',
-  'multiTable.moveDetail': '{player}: {from} Platz {fromSeat} → {to} Platz {toSeat}',
   'multiTable.reasonBalance': 'Ausgleich',
   'multiTable.reasonDissolution': 'Tischauflösung',
   'multiTable.reasonFinalTable': 'Final Table',
@@ -639,7 +621,6 @@ const de = {
 
   // --- League View (full-page mode) ---
   'league.view.title': 'Liga-Modus',
-  'league.view.selectLeague': 'Liga auswählen',
   'league.view.createLeague': 'Neue Liga',
   'league.view.createFirst': 'Erste Liga erstellen',
   'league.view.noLeagues': 'Noch keine Ligen erstellt. Erstelle deine erste Liga!',
@@ -662,7 +643,6 @@ const de = {
   'league.standings.payout': 'Auszahlung',
   'league.standings.balance': 'Bilanz',
   'league.standings.participation': 'Teilnahme',
-  'league.standings.corrections': 'Korrekturen',
   'league.standings.noData': 'Noch keine Spieltage gespielt.',
   'league.standings.pointSystem': 'Punktesystem',
   'league.standings.copyText': 'Text kopieren',
@@ -672,10 +652,8 @@ const de = {
   'league.gameDays.startFirst': 'Ersten Spieltag starten',
   'league.gameDays.noGameDays': 'Noch keine Spieltage gespielt.',
   'league.gameDays.participants': 'Spieler',
-  'league.gameDays.winner': 'Sieger',
   'league.gameDays.prizePool': 'Prizepool',
   'league.gameDays.delete': 'Löschen',
-  'league.finances.title': 'Finanzübersicht',
   'league.finances.totalBuyIns': 'Gesamte Buy-Ins',
   'league.finances.totalPayouts': 'Gesamte Auszahlungen',
   'league.finances.cashBalance': 'Kassenstand',
@@ -763,7 +741,6 @@ const de = {
   'multiTable.notDistributed': 'Spieler wurden noch nicht verteilt. Bei Turnierstart erfolgt die Verteilung automatisch.',
   'multiTable.lockSeat': 'Sitz sperren',
   'multiTable.unlockSeat': 'Sitz entsperren',
-  'multiTable.lockedSeat': 'Gesperrt',
 
   // --- Presets ---
   'preset.title': 'Schnellstart',
@@ -842,7 +819,6 @@ const de = {
   'sidePot.warnAllEqual': 'Alle Beträge gleich — kein Side Pot nötig.',
   'sidePot.warnAllFolded': 'Alle Spieler haben gefoldet — kein Spieler ist gewinnberechtigt.',
   'sidePot.warnPotNoEligible': '{pot}: Kein Spieler gewinnberechtigt (alle gefoldet).',
-  'sidePot.total': 'Gesamt',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -855,7 +831,6 @@ const en: Record<TranslationKey, string> = {
   'app.tournamentName': 'Tournament Name',
   'app.tournamentNamePlaceholder': 'e.g. Friday Poker',
   'app.players': 'Players',
-  'app.buyInAndChips': 'Buy-In & Starting Chips',
   'app.buyIn': 'Buy-In',
   'app.startingChips': 'Starting Chips',
   'app.blindStructure': 'Blind Structure',
@@ -997,7 +972,6 @@ const en: Record<TranslationKey, string> = {
   'remote.connected': 'Connected',
   'remote.canClose': 'You can close this window \u2014 the connection stays active.',
   'remote.connecting': 'Connecting\u2026',
-  'remote.connectionLost': 'Connection lost',
   'remote.reconnecting': 'Reconnecting\u2026',
   'remote.reconnectFailed': 'Connection failed',
   'remote.retry': 'Retry',
@@ -1040,7 +1014,6 @@ const en: Record<TranslationKey, string> = {
   'playerManager.shuffleConfirmBtn': 'Shuffle now',
   'playerManager.setDealer': 'Set as Dealer',
   'playerManager.dealer': 'Dealer',
-  'playerManager.seat': 'Seat {n}',
   'playerManager.dragTooltip': 'Drag to reorder',
 
   // --- Payout Editor ---
@@ -1112,12 +1085,7 @@ const en: Record<TranslationKey, string> = {
   'chipEditor.preset5Desc': 'White, Red, Blue, Green, Black',
   'chipEditor.preset6': '6 Colors',
   'chipEditor.preset6Desc': 'White, Red, Blue, Green, Black, Purple',
-  'chipEditor.value': 'Value',
   'chipEditor.addDenomination': '+ Add chip',
-  'chipEditor.colorUpPreview': 'Color-Up Preview',
-  'chipEditor.colorUpAtLevel': 'Level {level}: remove {chips}',
-  'chipEditor.colorUpAtBreak': 'Break after Level {level}: remove {chips}',
-  'chipEditor.noColorUps': 'No color-ups needed',
   'chipEditor.description': 'Define the chip colors and values for the tournament.',
   'chipEditor.duplicateColor': 'Warning: Multiple chips with the same color!',
   'chipEditor.colorUpEnabled': 'Disable Color-Up',
@@ -1125,9 +1093,6 @@ const en: Record<TranslationKey, string> = {
   'chipEditor.colorUpSchedule': 'Color-Up Schedule',
   'chipEditor.generateSuggestion': '↻ Generate Suggestion',
   'chipEditor.addColorUp': '+ Add Color-Up',
-  'chipEditor.removeEntry': 'Remove',
-  'chipEditor.selectLevel': 'Select level',
-  'chipEditor.selectChip': 'Select chip',
   'chipEditor.noSchedule': 'No color-up schedule. Click "Generate Suggestion" to auto-create a plan.',
   'chipEditor.levelLabel': 'Level {n}',
   'chipEditor.breakLabel': 'Break after Lvl {n}',
@@ -1157,7 +1122,6 @@ const en: Record<TranslationKey, string> = {
   'finished.paidPlaces': 'Paid Places',
   'finished.addOn': 'Add-On',
   'finished.addOns': 'Add-Ons',
-  'finished.paidIn': 'Paid in',
   'finished.bountyPaid': 'Bounty paid',
   'finished.bountyEarned': 'Bounty earned',
   'finished.balance': 'Balance',
@@ -1248,7 +1212,6 @@ const en: Record<TranslationKey, string> = {
   'display.exit': 'Exit TV Mode (T)',
   'display.playersRemaining': 'Players',
   'display.nextLevel': 'Next',
-  'display.blind': 'Blinds',
   'display.ante': 'Ante',
   'display.break': 'Break',
   'display.activate': 'Open TV Window (T)',
@@ -1273,7 +1236,6 @@ const en: Record<TranslationKey, string> = {
   'display.bountyPool': 'Bounty Pool',
   'display.payoutPlace': 'Place {n}',
   'display.chipLeaderBadge': 'CL',
-  'display.eliminated': 'Eliminated',
 
   // --- Tournament History ---
   'app.history': 'History',
@@ -1287,8 +1249,6 @@ const en: Record<TranslationKey, string> = {
   'history.players': 'Players',
   'history.duration': 'Duration',
   'history.levels': 'Levels',
-  'history.date': 'Date',
-  'history.standings': 'Standings',
   'history.close': 'Close',
   'history.balance': 'Balance',
   'history.statsTab': 'Player Statistics',
@@ -1308,14 +1268,12 @@ const en: Record<TranslationKey, string> = {
   'finished.textCopied': 'Copied!',
   'finished.downloadCSV': 'Download CSV',
   'finished.print': 'Print Results',
-  'finished.exportOptions': 'Share',
   'finished.qrApp': 'Install App',
 
   // --- Shared Result ---
   'shared.title': 'Shared Tournament Result',
   'shared.leagueTitle': 'Shared League Standings',
   'shared.close': 'Close',
-  'shared.invalidData': 'Invalid tournament data in QR code.',
 
   // --- Section Summaries ---
   'app.tournamentFormat': 'Rebuy / Add-On / Bounty',
@@ -1343,6 +1301,11 @@ const en: Record<TranslationKey, string> = {
 
   // --- Language Switcher ---
   'language.switcherTitle': 'Language / Sprache',
+  'language.selectDE': 'Switch language to German',
+  'language.selectEN': 'Switch language to English',
+
+  // --- League Correction ---
+  'league.correction.pointsPlaceholder': '+2 or -1',
 
   // --- Units ---
   'unit.eur': 'EUR',
@@ -1445,25 +1408,20 @@ const en: Record<TranslationKey, string> = {
   // --- Multi-Table ---
   'multiTable.title': 'Multi-Table',
   'multiTable.tables': 'Tables',
-  'multiTable.addTable': 'Add Table',
   'multiTable.seats': 'Seats',
   'multiTable.distribute': 'Distribute Players',
   'multiTable.balance': 'Balance Tables',
   'multiTable.tableName': 'Table {n}',
   'multiTable.playerCount': '{n} players',
-  'multiTable.moveAnnouncement': '{player} moves to {table}',
   'multiTable.finalTable': 'Final Table!',
   'multiTable.tableCount': '{n} Tables',
-  'multiTable.removeTable': 'Remove Table',
   'multiTable.dissolveThreshold': 'Dissolve Threshold',
   'multiTable.autoBalance': 'Auto Balance',
   'multiTable.dissolved': 'Dissolved',
   'multiTable.seat': 'Seat {n}',
   'multiTable.seatShort': 'S{n}',
   'multiTable.emptySeat': 'Empty',
-  'multiTable.dealerAt': 'Dealer: Seat {n}',
   'multiTable.moveLog': 'Recent Moves',
-  'multiTable.moveDetail': '{player}: {from} Seat {fromSeat} → {to} Seat {toSeat}',
   'multiTable.reasonBalance': 'Balance',
   'multiTable.reasonDissolution': 'Dissolution',
   'multiTable.reasonFinalTable': 'Final Table',
@@ -1483,7 +1441,6 @@ const en: Record<TranslationKey, string> = {
 
   // --- League View (full-page mode) ---
   'league.view.title': 'League Mode',
-  'league.view.selectLeague': 'Select league',
   'league.view.createLeague': 'New League',
   'league.view.createFirst': 'Create First League',
   'league.view.noLeagues': 'No leagues created yet. Create your first league!',
@@ -1506,7 +1463,6 @@ const en: Record<TranslationKey, string> = {
   'league.standings.payout': 'Payout',
   'league.standings.balance': 'Balance',
   'league.standings.participation': 'Attendance',
-  'league.standings.corrections': 'Corrections',
   'league.standings.noData': 'No game days played yet.',
   'league.standings.pointSystem': 'Point System',
   'league.standings.copyText': 'Copy Text',
@@ -1516,10 +1472,8 @@ const en: Record<TranslationKey, string> = {
   'league.gameDays.startFirst': 'Start First Game Day',
   'league.gameDays.noGameDays': 'No game days played yet.',
   'league.gameDays.participants': 'players',
-  'league.gameDays.winner': 'Winner',
   'league.gameDays.prizePool': 'Prize Pool',
   'league.gameDays.delete': 'Delete',
-  'league.finances.title': 'Financial Overview',
   'league.finances.totalBuyIns': 'Total Buy-Ins',
   'league.finances.totalPayouts': 'Total Payouts',
   'league.finances.cashBalance': 'Cash Balance',
@@ -1607,7 +1561,6 @@ const en: Record<TranslationKey, string> = {
   'multiTable.notDistributed': 'Players not distributed yet. Distribution happens automatically at tournament start.',
   'multiTable.lockSeat': 'Lock seat',
   'multiTable.unlockSeat': 'Unlock seat',
-  'multiTable.lockedSeat': 'Locked',
 
   // --- Presets ---
   'preset.title': 'Quick Start',
@@ -1686,7 +1639,6 @@ const en: Record<TranslationKey, string> = {
   'sidePot.warnAllEqual': 'All amounts equal — no side pot needed.',
   'sidePot.warnAllFolded': 'All players folded — no player eligible to win.',
   'sidePot.warnPotNoEligible': '{pot}: No player eligible to win (all folded).',
-  'sidePot.total': 'Total',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };
