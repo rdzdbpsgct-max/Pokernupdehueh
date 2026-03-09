@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table, ExtendedLeagueStanding } from '../../domain/types';
 import { formatTime, getLevelLabel, getBlindsText, computePrizePool, computeAverageStackInBB, computeRebuyPot, isRebuyActive } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
@@ -100,15 +100,20 @@ export function DisplayMode({
 }: Props) {
   const { t } = useTranslation();
 
-  // Build available secondary screens in order
-  const secondaryScreens: SecondaryScreen[] = (() => {
+  // Build available secondary screens in order (memoized to avoid stale closures)
+  const secondaryScreens = useMemo<SecondaryScreen[]>(() => {
     const screens: SecondaryScreen[] = ['players', 'stats', 'payout', 'schedule'];
     if (chipConfig?.enabled) screens.push('chips');
     if (players.length > 0) screens.push('seating');
     if (leagueStandings && leagueStandings.length > 0) screens.push('league');
     if (sidePotData && sidePotData.pots.length > 0) screens.push('sidepot');
     return screens;
-  })();
+  }, [chipConfig?.enabled, players.length, leagueStandings, sidePotData]);
+
+  const screensRef = useRef(secondaryScreens);
+  useEffect(() => {
+    screensRef.current = secondaryScreens;
+  }, [secondaryScreens]);
 
   const [activeSecondary, setActiveSecondary] = useState<SecondaryScreen>('players');
 
@@ -117,13 +122,13 @@ export function DisplayMode({
     if (secondaryScreens.length <= 1) return;
     const id = setInterval(() => {
       setActiveSecondary((prev) => {
-        const idx = secondaryScreens.indexOf(prev);
-        return secondaryScreens[(idx + 1) % secondaryScreens.length];
+        const screens = screensRef.current;
+        const idx = screens.indexOf(prev);
+        return screens[(idx + 1) % screens.length];
       });
     }, ROTATION_INTERVAL);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chipConfig?.enabled]);
+  }, [secondaryScreens]);
 
   // Keyboard: Arrow keys for manual secondary navigation, T/Escape to exit
   const handleKeyDown = useCallback(
@@ -131,22 +136,23 @@ export function DisplayMode({
       if (e.code === 'ArrowRight' || e.code === 'ArrowDown') {
         e.preventDefault();
         setActiveSecondary((prev) => {
-          const idx = secondaryScreens.indexOf(prev);
-          return secondaryScreens[(idx + 1) % secondaryScreens.length];
+          const screens = screensRef.current;
+          const idx = screens.indexOf(prev);
+          return screens[(idx + 1) % screens.length];
         });
       } else if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') {
         e.preventDefault();
         setActiveSecondary((prev) => {
-          const idx = secondaryScreens.indexOf(prev);
-          return secondaryScreens[(idx - 1 + secondaryScreens.length) % secondaryScreens.length];
+          const screens = screensRef.current;
+          const idx = screens.indexOf(prev);
+          return screens[(idx - 1 + screens.length) % screens.length];
         });
       } else if (e.code === 'KeyT' || e.code === 'Escape') {
         e.preventDefault();
         onExit();
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onExit, chipConfig?.enabled],
+    [onExit],
   );
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Level, TournamentConfig } from '../domain/types';
 import { generateId, validateConfig, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -24,12 +24,12 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
   const [globalBreakMinutes, setGlobalBreakMinutes] = useState(firstBreakMinutes);
 
   // Sync global inputs when levels change externally (e.g. preset switch)
-  const [prevLevels, setPrevLevels] = useState(config.levels);
-  if (config.levels !== prevLevels) {
-    setPrevLevels(config.levels);
+  const levelsRef = config.levels;
+  useEffect(() => {
     setGlobalMinutes(firstLevelMinutes);
     setGlobalBreakMinutes(firstBreakMinutes);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [levelsRef]);
 
   const applyGlobalDuration = () => {
     const seconds = Math.max(60, globalMinutes * 60);

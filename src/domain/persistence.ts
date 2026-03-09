@@ -361,14 +361,17 @@ export function loadCheckpoint(): TournamentCheckpoint | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed.version !== 1) return null;
-    const levels = parsed.config?.levels;
-    if (!Array.isArray(levels) || levels.length === 0) return null;
+    // Validate config through parseConfigObject for safety
+    const config = parsed.config ? parseConfigObject(parsed.config) : null;
+    if (!config) return null;
+    const timer = parsed.timer;
+    if (!timer || typeof timer.currentLevelIndex !== 'number' || typeof timer.remainingSeconds !== 'number') return null;
     // Clamp to valid ranges
-    parsed.timer.currentLevelIndex = Math.max(0, Math.min(
-      parsed.timer.currentLevelIndex, levels.length - 1,
+    timer.currentLevelIndex = Math.max(0, Math.min(
+      timer.currentLevelIndex, config.levels.length - 1,
     ));
-    parsed.timer.remainingSeconds = Math.max(0, parsed.timer.remainingSeconds);
-    return parsed as TournamentCheckpoint;
+    timer.remainingSeconds = Math.max(0, timer.remainingSeconds);
+    return { ...parsed, config, timer } as TournamentCheckpoint;
   } catch {
     return null;
   }

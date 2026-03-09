@@ -17,19 +17,16 @@ export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onCl
   const lastBeepRef = useRef(-1);
   const closeFiredRef = useRef(false);
 
-  // Drift-free countdown using wall-clock
+  // Drift-free countdown using wall-clock (250ms tick — sufficient for whole-second display)
   useEffect(() => {
     startRef.current = Date.now();
     if (voiceEnabled) announceCallTheClock(durationSeconds, t);
     const tick = () => {
       const elapsed = (Date.now() - startRef.current) / 1000;
-      const r = Math.max(0, durationSeconds - elapsed);
-      setRemaining(r);
-      if (r <= 0) return;
-      rafId = requestAnimationFrame(tick);
+      setRemaining(Math.max(0, durationSeconds - elapsed));
     };
-    let rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
   }, [durationSeconds, voiceEnabled, t]);
 
   // Tension beeps in last 10 seconds
@@ -75,6 +72,9 @@ export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onCl
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('callTheClock.title')}
     >
       <div
         className="relative w-full max-w-md mx-4 p-8 rounded-2xl bg-gray-900 border border-gray-700/40 shadow-2xl animate-scale-in text-center"

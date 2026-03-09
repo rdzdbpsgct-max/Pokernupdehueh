@@ -65,10 +65,10 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
     <div className="space-y-3">
       <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('settings.title')}</h3>
       <div className="space-y-2">
-        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('soundEnabled')}>
+        <label className="flex items-center justify-between cursor-pointer">
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.sound')}</span>
           <CheckBox checked={settings.soundEnabled} onChange={() => toggle('soundEnabled')} />
-        </div>
+        </label>
         {settings.soundEnabled && (
           <div className="flex items-center gap-3 pl-1">
             <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">{t('settings.volume')}</span>
@@ -84,18 +84,18 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
             <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums w-8 text-right">{settings.volume}%</span>
           </div>
         )}
-        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('countdownEnabled')}>
+        <label className="flex items-center justify-between cursor-pointer">
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.countdown')}</span>
           <CheckBox checked={settings.countdownEnabled} onChange={() => toggle('countdownEnabled')} />
-        </div>
-        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('autoAdvance')}>
+        </label>
+        <label className="flex items-center justify-between cursor-pointer">
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.autoAdvance')}</span>
           <CheckBox checked={settings.autoAdvance} onChange={() => toggle('autoAdvance')} />
-        </div>
-        <div className="flex items-center justify-between cursor-pointer" onClick={() => toggle('largeDisplay')}>
+        </label>
+        <label className="flex items-center justify-between cursor-pointer">
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.largeDisplay')}</span>
           <CheckBox checked={settings.largeDisplay} onChange={() => toggle('largeDisplay')} />
-        </div>
+        </label>
         {/* Call the Clock duration */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.callTheClock')}</span>

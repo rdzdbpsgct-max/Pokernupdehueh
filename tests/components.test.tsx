@@ -42,7 +42,7 @@ function renderWithProviders(ui: ReactNode) {
 describe('NumberStepper', () => {
   it('renders value and +/- buttons', () => {
     const onChange = vi.fn();
-    render(<NumberStepper value={10} onChange={onChange} min={0} max={100} />);
+    renderWithProviders(<NumberStepper value={10} onChange={onChange} min={0} max={100} />);
     const input = screen.getByRole('spinbutton');
     expect(input).toHaveValue(10);
     expect(screen.getByText('+')).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('NumberStepper', () => {
 
   it('increments on + click', () => {
     const onChange = vi.fn();
-    render(<NumberStepper value={5} onChange={onChange} min={0} max={10} step={1} />);
+    renderWithProviders(<NumberStepper value={5} onChange={onChange} min={0} max={10} step={1} />);
     fireEvent.pointerDown(screen.getByText('+'));
     fireEvent.pointerUp(screen.getByText('+'));
     expect(onChange).toHaveBeenCalledWith(6);
@@ -59,7 +59,7 @@ describe('NumberStepper', () => {
 
   it('decrements on − click', () => {
     const onChange = vi.fn();
-    render(<NumberStepper value={5} onChange={onChange} min={0} max={10} step={1} />);
+    renderWithProviders(<NumberStepper value={5} onChange={onChange} min={0} max={10} step={1} />);
     fireEvent.pointerDown(screen.getByText('−'));
     fireEvent.pointerUp(screen.getByText('−'));
     expect(onChange).toHaveBeenCalledWith(4);
@@ -67,7 +67,7 @@ describe('NumberStepper', () => {
 
   it('respects min boundary', () => {
     const onChange = vi.fn();
-    render(<NumberStepper value={0} onChange={onChange} min={0} max={10} step={1} />);
+    renderWithProviders(<NumberStepper value={0} onChange={onChange} min={0} max={10} step={1} />);
     fireEvent.pointerDown(screen.getByText('−'));
     fireEvent.pointerUp(screen.getByText('−'));
     expect(onChange).toHaveBeenCalledWith(0);
@@ -75,7 +75,7 @@ describe('NumberStepper', () => {
 
   it('respects max boundary', () => {
     const onChange = vi.fn();
-    render(<NumberStepper value={10} onChange={onChange} min={0} max={10} step={1} />);
+    renderWithProviders(<NumberStepper value={10} onChange={onChange} min={0} max={10} step={1} />);
     fireEvent.pointerDown(screen.getByText('+'));
     fireEvent.pointerUp(screen.getByText('+'));
     expect(onChange).toHaveBeenCalledWith(10);
@@ -83,7 +83,7 @@ describe('NumberStepper', () => {
 
   it('uses custom step', () => {
     const onChange = vi.fn();
-    render(<NumberStepper value={10} onChange={onChange} min={0} max={100} step={5} />);
+    renderWithProviders(<NumberStepper value={10} onChange={onChange} min={0} max={100} step={5} />);
     fireEvent.pointerDown(screen.getByText('+'));
     fireEvent.pointerUp(screen.getByText('+'));
     expect(onChange).toHaveBeenCalledWith(15);

@@ -814,6 +814,18 @@ const de = {
   'voice.callTheClock': 'Call the Clock! {seconds} Sekunden.',
   'voice.callTheClockExpired': 'Zeit abgelaufen!',
   'voice.lateRegistrationClosed': 'Die Late Registration ist geschlossen.',
+
+  // --- Accessibility ---
+  'accessibility.decrease': 'Verringern',
+  'accessibility.increase': 'Erhöhen',
+
+  // --- Side Pot warnings (domain) ---
+  'sidePot.warnZeroPlayers': '{n} Spieler mit 0 Einsatz werden ignoriert.',
+  'sidePot.warnSinglePlayer': 'Nur 1 Spieler mit Einsatz — keine Pot-Berechnung möglich.',
+  'sidePot.warnAllEqual': 'Alle Beträge gleich — kein Side Pot nötig.',
+  'sidePot.warnAllFolded': 'Alle Spieler haben gefoldet — kein Spieler ist gewinnberechtigt.',
+  'sidePot.warnPotNoEligible': '{pot}: Kein Spieler gewinnberechtigt (alle gefoldet).',
+  'sidePot.total': 'Gesamt',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -1629,6 +1641,18 @@ const en: Record<TranslationKey, string> = {
   'voice.callTheClock': 'Call the Clock! {seconds} seconds.',
   'voice.callTheClockExpired': 'Time is up!',
   'voice.lateRegistrationClosed': 'Late registration is now closed.',
+
+  // --- Accessibility ---
+  'accessibility.decrease': 'Decrease',
+  'accessibility.increase': 'Increase',
+
+  // --- Side Pot warnings (domain) ---
+  'sidePot.warnZeroPlayers': '{n} player(s) with 0 investment ignored.',
+  'sidePot.warnSinglePlayer': 'Only 1 player with investment — no pot calculation possible.',
+  'sidePot.warnAllEqual': 'All amounts equal — no side pot needed.',
+  'sidePot.warnAllFolded': 'All players folded — no player eligible to win.',
+  'sidePot.warnPotNoEligible': '{pot}: No player eligible to win (all folded).',
+  'sidePot.total': 'Total',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

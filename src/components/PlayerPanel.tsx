@@ -280,12 +280,11 @@ export function PlayerPanel({
                 )}
                 {multiTableActive && (() => {
                   const info = findPlayerSeat(tables!, player.id);
-                  if (!info) return null;
-                  return (
+                  return info ? (
                     <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono shrink-0">
                       {t('multiTable.seatShort', { n: info.seat.seatNumber })}
                     </span>
-                  );
+                  ) : null;
                 })()}
                 {chipLeaderId === player.id && (
                   <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-bold shrink-0 ring-2 ring-amber-400/30" title={t('playerPanel.chipLeader')}>C</span>
@@ -326,14 +325,15 @@ export function PlayerPanel({
               <div className="flex items-center gap-1.5 mt-1">
                 {/* Rebuy controls (only during active rebuy phase) */}
                 {rebuyActive && (
-                  <div className="flex items-center gap-1" title="Rebuys">
+                  <div className="flex items-center gap-1" title={t('app.rebuy')}>
                     <span className="text-[10px] text-gray-400 dark:text-gray-500">RB</span>
                     <button
                       onClick={() =>
                         onUpdateRebuys(player.id, Math.max(0, player.rebuys - 1))
                       }
                       disabled={player.rebuys <= 0}
-                      className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      aria-label={t('accessibility.decrease')}
                     >
                       -
                     </button>
@@ -345,8 +345,9 @@ export function PlayerPanel({
                         onUpdateRebuys(player.id, player.rebuys + 1)
                       }
                       disabled={!canPlayerRebuy(player, rebuyConfig)}
-                      className="w-7 h-7 rounded-lg text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="w-8 h-8 rounded-lg text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       style={{ backgroundColor: 'var(--accent-700)' }}
+                      aria-label={t('accessibility.increase')}
                     >
                       +
                     </button>
@@ -363,7 +364,7 @@ export function PlayerPanel({
                         : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400'
                     }`}
                     style={player.addOn ? { backgroundColor: 'color-mix(in srgb, var(--accent-500) 20%, transparent)', color: 'var(--accent-500)' } : undefined}
-                    title="Add-On"
+                    title={t('app.addOn')}
                   >
                     {player.addOn ? '✓ AO' : 'AO'}
                   </button>

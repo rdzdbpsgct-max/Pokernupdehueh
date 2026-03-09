@@ -15,6 +15,7 @@ import type {
   PlayerPayout,
   SidePotPayoutResult,
 } from './types';
+import { t as moduleT } from '../i18n/translations';
 
 // ---------------------------------------------------------------------------
 // Prize Pool & Payouts
@@ -102,12 +103,12 @@ export function calculateSidePots(players: PlayerPotInput[]): SidePotCalculation
   const contributing = players.filter((p) => p.invested > 0);
   const zeroPlayers = players.filter((p) => p.invested <= 0);
   if (zeroPlayers.length > 0) {
-    warnings.push(`${zeroPlayers.length} Spieler mit 0 Einsatz werden ignoriert.`);
+    warnings.push(moduleT('sidePot.warnZeroPlayers', { n: zeroPlayers.length }));
   }
 
   if (contributing.length < 2) {
     if (contributing.length === 1) {
-      warnings.push('Nur 1 Spieler mit Einsatz — keine Pot-Berechnung möglich.');
+      warnings.push(moduleT('sidePot.warnSinglePlayer'));
     }
     return { pots: [], total: 0, warnings };
   }
@@ -162,18 +163,19 @@ export function calculateSidePots(players: PlayerPotInput[]): SidePotCalculation
   // Add helpful warnings
   const allEqual = uniqueLevels.length === 1;
   if (allEqual && pots.length === 1) {
-    warnings.push('Alle Beträge gleich — kein Side Pot nötig.');
+    warnings.push(moduleT('sidePot.warnAllEqual'));
   }
 
   const allFolded = contributing.every((p) => p.status === 'folded');
   if (allFolded) {
-    warnings.push('Alle Spieler haben gefoldet — kein Spieler ist gewinnberechtigt.');
+    warnings.push(moduleT('sidePot.warnAllFolded'));
   }
 
   // Check for pots with zero eligible players
   for (const pot of pots) {
     if (pot.eligiblePlayerIds.length === 0) {
-      warnings.push(`${pot.type === 'main' ? 'Main Pot' : `Side Pot ${pot.index}`}: Kein Spieler gewinnberechtigt (alle gefoldet).`);
+      const potLabel = pot.type === 'main' ? moduleT('sidePot.mainPot') : moduleT('sidePot.sidePot', { n: pot.index });
+      warnings.push(moduleT('sidePot.warnPotNoEligible', { pot: potLabel }));
     }
   }
 

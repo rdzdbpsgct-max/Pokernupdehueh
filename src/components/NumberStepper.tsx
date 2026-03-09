@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from '../i18n';
 
 interface Props {
   value: number;
@@ -19,6 +20,7 @@ export function NumberStepper({
   snap,
   inputClassName = 'w-20',
 }: Props) {
+  const { t } = useTranslation();
   const [localValue, setLocalValue] = useState(String(value));
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,8 +90,8 @@ export function NumberStepper({
         onPointerLeave={stopHold}
         onPointerCancel={stopHold}
         onContextMenu={(e) => e.preventDefault()}
-        tabIndex={-1}
-        aria-label="Decrease"
+        tabIndex={0}
+        aria-label={t('accessibility.decrease')}
       >
         −
       </button>
@@ -116,8 +118,8 @@ export function NumberStepper({
         onPointerLeave={stopHold}
         onPointerCancel={stopHold}
         onContextMenu={(e) => e.preventDefault()}
-        tabIndex={-1}
-        aria-label="Increase"
+        tabIndex={0}
+        aria-label={t('accessibility.increase')}
       >
         +
       </button>
