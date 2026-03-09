@@ -1,35 +1,21 @@
 import type { RegisteredPlayer } from './types';
+import { getCached, setCached, setCachedItem, deleteCachedItem } from './storage';
 
 // ---------------------------------------------------------------------------
-// Persistent Player Database
+// Persistent Player Database (backed by IndexedDB cache layer)
 // ---------------------------------------------------------------------------
 
-const PLAYERS_KEY = 'poker-timer-players';
-
-function isValidRegisteredPlayer(item: unknown): item is RegisteredPlayer {
-  if (!item || typeof item !== 'object') return false;
-  const r = item as Record<string, unknown>;
-  return typeof r.id === 'string' && typeof r.name === 'string' && typeof r.createdAt === 'string';
-}
-
+/** Load all registered players from storage cache. */
 export function loadPlayerDatabase(): RegisteredPlayer[] {
-  try {
-    const raw = localStorage.getItem(PLAYERS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidRegisteredPlayer);
-  } catch {
-    return [];
-  }
+  return getCached('players');
 }
 
+/** Replace the entire player database in storage. */
 export function savePlayerDatabase(players: RegisteredPlayer[]): void {
-  try {
-    localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
-  } catch { /* private browsing or quota exceeded */ }
+  setCached('players', players);
 }
 
+/** Add or update a registered player by name (case-insensitive dedup). */
 export function addRegisteredPlayer(name: string): RegisteredPlayer {
   const db = loadPlayerDatabase();
   const normalized = name.trim();
@@ -37,7 +23,7 @@ export function addRegisteredPlayer(name: string): RegisteredPlayer {
   const existing = db.find((p) => p.name.toLowerCase() === normalized.toLowerCase());
   if (existing) {
     existing.lastPlayedAt = new Date().toISOString();
-    savePlayerDatabase(db);
+    setCached('players', db);
     return existing;
   }
   const player: RegisteredPlayer = {
@@ -46,14 +32,13 @@ export function addRegisteredPlayer(name: string): RegisteredPlayer {
     createdAt: new Date().toISOString(),
     lastPlayedAt: new Date().toISOString(),
   };
-  db.push(player);
-  savePlayerDatabase(db);
+  setCachedItem('players', player);
   return player;
 }
 
+/** Delete a registered player by id. */
 export function deleteRegisteredPlayer(id: string): void {
-  const db = loadPlayerDatabase().filter((p) => p.id !== id);
-  savePlayerDatabase(db);
+  deleteCachedItem('players', id);
 }
 
 /**

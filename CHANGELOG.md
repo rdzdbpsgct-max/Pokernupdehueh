@@ -5,6 +5,40 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [6.0.0] – 2026-03-09
+
+### IndexedDB-Migration — Cache-First Storage-Architektur
+
+Großes Architektur-Upgrade: Alle persistenten Daten (Turnierhistorie, Ligen, Spieltage, Templates, Spielerdatenbank, Konfiguration, Checkpoint) werden von localStorage (5MB-Limit) nach IndexedDB (~50MB+) migriert. Einfache Einstellungen (Theme, Language, Accent, Background, Wizard) bleiben in localStorage.
+
+**Architektur: Cache-First Pattern**
+- In-Memory-Cache wird beim App-Start aus IndexedDB befüllt (~50ms)
+- Alle Reads bleiben synchron (aus Cache) — **kein API-Change** für 56+ Consumer-Stellen
+- Writes aktualisieren Cache synchron + persistieren async (fire-and-forget) nach IndexedDB
+- Einziger Async-Punkt: `initStorage()` in `main.tsx` vor React-Mount
+
+**Migration**
+- Automatische einmalige Migration von localStorage → IndexedDB beim ersten App-Start
+- Migrierte Keys werden aus localStorage gelöscht
+- `poker-timer-migrated` Flag verhindert doppelte Migration
+- Items ohne gültige String-`id` werden bei Migration gefiltert
+
+**Fallback**
+- Bei fehlendem IndexedDB (Private Browsing Safari <15): automatischer Fallback auf localStorage
+- App funktioniert identisch, nur ohne erhöhtes Speicher-Limit
+
+**Neues Modul**: `src/domain/storage.ts` (~300 Zeilen) — IndexedDB-Wrapper, In-Memory-Cache, Migration
+- Exports: `initStorage()`, `resetStorage()`, `isStorageReady()`, `getCached()`, `setCached()`, `setCachedItem()`, `deleteCachedItem()`
+- 8 IndexedDB-Stores: config, settings, checkpoint (Singletons) + templates, history, players, leagues, gameDays (Collections mit keyPath: `id`)
+
+**Refactored**: 6 Persistence-Module (`configPersistence.ts`, `templatePersistence.ts`, `historyPersistence.ts`, `playerDatabase.ts`, `leaguePersistence.ts`, `league.ts`) — alle localStorage-Aufrufe durch Cache-API ersetzt
+**Neue Dependency**: `idb` (~2KB gzip) — Promise-Wrapper für IndexedDB-API
+**Neue Dev-Dependency**: `fake-indexeddb` — IndexedDB-Polyfill für Tests
+**14 neue Tests**: Storage-Layer (initStorage, Migration, Cache-Roundtrip, Persistence, setCachedItem Upsert, deleteCachedItem, Fallback)
+**598 Tests gesamt** (503 Logic + 95 Component)
+
+---
+
 ## [5.9.0] – 2026-03-09
 
 ### Vollständiges Code-Audit — 52 Maßnahmen in 8 Sprints (v5.4.0–v5.9.0)

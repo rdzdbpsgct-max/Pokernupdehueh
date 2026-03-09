@@ -8,12 +8,7 @@ import type {
   Season,
 } from './types';
 import { csvSafe } from './tournament';
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const GAMEDAYS_KEY = 'poker-timer-gamedays';
+import { getCached, setCachedItem, deleteCachedItem } from './storage';
 
 // ---------------------------------------------------------------------------
 // Player Name Normalization
@@ -24,55 +19,33 @@ export function normalizePlayerName(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// GameDay CRUD (localStorage)
+// GameDay CRUD (backed by IndexedDB cache layer)
 // ---------------------------------------------------------------------------
 
-function isValidGameDay(item: unknown): item is GameDay {
-  if (!item || typeof item !== 'object') return false;
-  const r = item as Record<string, unknown>;
-  return typeof r.id === 'string' && typeof r.leagueId === 'string' && typeof r.date === 'string' && Array.isArray(r.participants);
-}
-
+/** Load all game days from storage cache. */
 export function loadGameDays(): GameDay[] {
-  try {
-    const raw = localStorage.getItem(GAMEDAYS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidGameDay);
-  } catch {
-    return [];
-  }
+  return getCached('gameDays');
 }
 
+/** Load game days for a specific league. */
 export function loadGameDaysForLeague(leagueId: string): GameDay[] {
-  return loadGameDays().filter((gd) => gd.leagueId === leagueId);
+  return getCached('gameDays').filter((gd) => gd.leagueId === leagueId);
 }
 
+/** Load game days for a specific league season. */
 export function loadGameDaysForSeason(leagueId: string, seasonId: string): GameDay[] {
-  return loadGameDays().filter((gd) => gd.leagueId === leagueId && gd.seasonId === seasonId);
+  return getCached('gameDays').filter((gd) => gd.leagueId === leagueId && gd.seasonId === seasonId);
 }
 
 /** Upsert a game day: update existing by id, or append if new. */
 export function saveGameDay(gameDay: GameDay): GameDay {
-  const gameDays = loadGameDays();
-  const idx = gameDays.findIndex((gd) => gd.id === gameDay.id);
-  if (idx >= 0) {
-    gameDays[idx] = gameDay;
-  } else {
-    gameDays.push(gameDay);
-  }
-  try {
-    localStorage.setItem(GAMEDAYS_KEY, JSON.stringify(gameDays));
-  } catch { /* private browsing or quota exceeded */ }
+  setCachedItem('gameDays', gameDay);
   return gameDay;
 }
 
+/** Delete a game day by id. */
 export function deleteGameDay(id: string): void {
-  const gameDays = loadGameDays().filter((gd) => gd.id !== id);
-  try {
-    localStorage.setItem(GAMEDAYS_KEY, JSON.stringify(gameDays));
-  } catch { /* ignore */ }
+  deleteCachedItem('gameDays', id);
 }
 
 // ---------------------------------------------------------------------------

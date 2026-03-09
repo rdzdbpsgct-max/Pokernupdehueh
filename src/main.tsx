@@ -8,25 +8,32 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import App from './App.tsx'
 import { TVDisplayWindow } from './components/display'
+import { initStorage } from './domain/storage'
 
 const isDisplayWindow = window.location.hash === '#display';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <ThemeProvider>
-        <LanguageProvider>
-          {isDisplayWindow ? (
-            <TVDisplayWindow />
-          ) : (
-            <>
-              <App />
-              <Analytics />
-              <SpeedInsights />
-            </>
-          )}
-        </LanguageProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  </StrictMode>,
-)
+function renderApp() {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <LanguageProvider>
+            {isDisplayWindow ? (
+              <TVDisplayWindow />
+            ) : (
+              <>
+                <App />
+                <Analytics />
+                <SpeedInsights />
+              </>
+            )}
+          </LanguageProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+    </StrictMode>,
+  )
+}
+
+// Initialize IndexedDB storage before mounting React.
+// Typically completes in <50ms. Falls back to localStorage if unavailable.
+initStorage().then(renderApp).catch(renderApp)

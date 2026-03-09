@@ -1,8 +1,9 @@
 import type { TournamentConfig } from './types';
 import { parseConfigObject } from './configPersistence';
+import { getCached, setCachedItem, deleteCachedItem } from './storage';
 
 // ---------------------------------------------------------------------------
-// Tournament Templates
+// Tournament Templates (backed by IndexedDB cache layer)
 // ---------------------------------------------------------------------------
 
 export interface TournamentTemplate {
@@ -12,59 +13,26 @@ export interface TournamentTemplate {
   config: TournamentConfig;
 }
 
-const TEMPLATES_KEY = 'poker-timer-templates';
-
+/** Load all tournament templates from storage cache. */
 export function loadTemplates(): TournamentTemplate[] {
-  const raw = localStorage.getItem(TEMPLATES_KEY);
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (t: unknown) => {
-        if (t === null || typeof t !== 'object') return false;
-        const rec = t as Record<string, unknown>;
-        if (typeof rec.id !== 'string' || typeof rec.name !== 'string') return false;
-        // Validate nested config if present
-        if (rec.config !== undefined && typeof rec.config === 'object' && rec.config !== null) {
-          const validated = parseConfigObject(rec.config as Record<string, unknown>);
-          if (!validated) {
-            console.warn(`[persistence] Template "${rec.name}" has invalid config, skipping`);
-            return false;
-          }
-        }
-        return true;
-      },
-    ) as TournamentTemplate[];
-  } catch {
-    return [];
-  }
+  return getCached('templates');
 }
 
+/** Save a new tournament template. Returns the created template. */
 export function saveTemplate(name: string, config: TournamentConfig): TournamentTemplate {
-  const templates = loadTemplates();
   const template: TournamentTemplate = {
     id: `tmpl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     name,
     createdAt: new Date().toISOString(),
     config,
   };
-  templates.push(template);
-  try {
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
-  } catch {
-    // localStorage unavailable
-  }
+  setCachedItem('templates', template);
   return template;
 }
 
+/** Delete a tournament template by id. */
 export function deleteTemplate(id: string): void {
-  const templates = loadTemplates().filter((t) => t.id !== id);
-  try {
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
-  } catch {
-    // localStorage unavailable
-  }
+  deleteCachedItem('templates', id);
 }
 
 /**

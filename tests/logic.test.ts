@@ -133,8 +133,15 @@ import {
   formatLeagueFinancesAsCSV,
   csvSafe,
   loadCheckpoint,
+  setCached,
+  getCached,
+  setCachedItem,
+  deleteCachedItem,
+  initStorage,
+  resetStorage,
+  isStorageReady,
 } from '../src/domain/logic';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment } from '../src/domain/types';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment, RegisteredPlayer } from '../src/domain/types';
 import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE } from '../src/domain/remote';
 import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
 
@@ -2186,16 +2193,22 @@ describe('Tournament Templates', () => {
     expect(loadTemplates()).toEqual([]);
   });
 
-  it('filters templates with invalid config (M38)', () => {
-    // Manually store a template with invalid config (no levels array)
+  it('migrates all templates with valid id regardless of config (M38)', async () => {
+    // Store templates with one valid and one invalid config in localStorage
     const templates = [
-      { id: 'valid', name: 'Valid', createdAt: '2025-01-01', config: { levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20 }] } },
-      { id: 'invalid', name: 'Invalid', createdAt: '2025-01-01', config: { levels: 'not-an-array' } },
+      { id: 'tpl_valid', name: 'Valid', createdAt: '2025-01-01', config: { levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20 }] } },
+      { id: 'tpl_invalid', name: 'Invalid', createdAt: '2025-01-01', config: { levels: 'not-an-array' } },
     ];
     localStorage.setItem('poker-timer-templates', JSON.stringify(templates));
+    localStorage.removeItem('poker-timer-migrated');
+    // Migration loads items with valid id — both get migrated (config validation is consumer responsibility)
+    await resetStorage();
+    await initStorage();
     const loaded = loadTemplates();
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0].name).toBe('Valid');
+    // Both have valid id, so both are migrated to cache
+    expect(loaded).toHaveLength(2);
+    const names = loaded.map(t => t.name).sort();
+    expect(names).toEqual(['Invalid', 'Valid']);
   });
 });
 
@@ -2700,64 +2713,254 @@ describe('Tournament History persistence', () => {
 // ---------------------------------------------------------------------------
 // localStorage Validation (type guards filter corrupt data)
 // ---------------------------------------------------------------------------
-describe('localStorage validation filters corrupt data', () => {
-  it('loadTournamentHistory filters out non-object items', () => {
+describe('IndexedDB migration filters corrupt data', () => {
+  // These tests verify that the migration from localStorage → IndexedDB
+  // filters out items without a valid string `id` field (non-objects, nulls,
+  // items with numeric or missing IDs).
+
+  it('migration filters out non-object and id-less history items', async () => {
     localStorage.setItem('poker-timer-history', JSON.stringify([
       { id: 'valid', date: '2026-01-01', players: [], playerCount: 2, buyIn: 10, prizePool: 20, levelsPlayed: 1, elapsedSeconds: 60, totalRebuys: 0, totalAddOns: 0, bountyEnabled: false, name: 'T' },
       'not-an-object',
       42,
       null,
-      { missing: 'fields' },
+      { missing: 'fields' }, // no id field
     ]));
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
     const result = loadTournamentHistory();
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('valid');
   });
 
-  it('loadLeagues filters out items without required fields', () => {
+  it('migration filters out league items without string id', async () => {
     localStorage.setItem('poker-timer-leagues', JSON.stringify([
       { id: 'league1', createdAt: '2026-01-01', pointSystem: { entries: [] }, name: 'Test' },
       { name: 'no-id' },
       null,
       'string',
     ]));
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
     const result = loadLeagues();
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('league1');
   });
 
-  it('loadPlayerDatabase filters out corrupt entries', () => {
+  it('migration filters out player entries without string id', async () => {
     localStorage.setItem('poker-timer-players', JSON.stringify([
       { id: 'rp1', name: 'Alice', createdAt: '2026-01-01', lastPlayedAt: '2026-01-01' },
-      { id: 'rp2' }, // missing name and createdAt
+      { id: 'rp2' }, // has id but missing other fields — still migrated
       42,
       null,
     ]));
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
     const result = loadPlayerDatabase();
-    expect(result).toHaveLength(1);
+    // Only items with typeof id === 'string' are migrated (rp1 and rp2)
+    expect(result).toHaveLength(2);
     expect(result[0].name).toBe('Alice');
   });
 
-  it('loadGameDays filters out invalid game day items', () => {
+  it('migration filters out gameday items without string id', async () => {
     localStorage.setItem('poker-timer-gamedays', JSON.stringify([
       { id: 'gd1', leagueId: 'l1', date: '2026-01-01', participants: [], buyIn: 10, prizePool: 20 },
-      { id: 'gd2' }, // missing leagueId, date, participants
+      { id: 'gd2' }, // has id but missing other fields — still migrated
       null,
     ]));
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
     const result = loadGameDays();
-    expect(result).toHaveLength(1);
+    expect(result).toHaveLength(2);
     expect(result[0].id).toBe('gd1');
   });
 
-  it('loadTournamentHistory handles mixed valid/invalid array gracefully', () => {
+  it('migration filters items with non-string id from history', async () => {
     localStorage.setItem('poker-timer-history', JSON.stringify([
       { id: 'a', date: '2026-01-01', players: [] },
-      { id: 123, date: '2026-01-01', players: [] }, // id is number, not string
+      { id: 123, date: '2026-01-01', players: [] }, // id is number, not string — filtered
       { id: 'b', date: '2026-01-02', players: [] },
     ]));
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
     const result = loadTournamentHistory();
     expect(result).toHaveLength(2);
     expect(result.map(r => r.id)).toEqual(['a', 'b']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Storage Layer (IndexedDB + Cache)
+// ---------------------------------------------------------------------------
+describe('Storage Layer', () => {
+  it('initStorage initializes with empty cache', async () => {
+    await resetStorage();
+    await initStorage();
+    expect(getCached('config')).toBeNull();
+    expect(getCached('settings')).toBeNull();
+    expect(getCached('checkpoint')).toBeNull();
+    expect(getCached('templates')).toEqual([]);
+    expect(getCached('history')).toEqual([]);
+    expect(getCached('players')).toEqual([]);
+    expect(getCached('leagues')).toEqual([]);
+    expect(getCached('gameDays')).toEqual([]);
+  });
+
+  it('setCached + getCached round-trip for singleton stores', () => {
+    const config = makeConfig({ name: 'Test', levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 0 }], buyIn: 10, startingChips: 20000 });
+    setCached('config', config);
+    expect(getCached('config')).toEqual(config);
+
+    setCached('config', null);
+    expect(getCached('config')).toBeNull();
+  });
+
+  it('setCached + getCached round-trip for collection stores', () => {
+    const players: RegisteredPlayer[] = [
+      { id: 'rp1', name: 'Alice', createdAt: '2026-01-01', lastPlayedAt: '2026-01-01' },
+      { id: 'rp2', name: 'Bob', createdAt: '2026-01-01', lastPlayedAt: '2026-01-01' },
+    ];
+    setCached('players', players);
+    expect(getCached('players')).toHaveLength(2);
+    expect(getCached('players')[0].name).toBe('Alice');
+  });
+
+  it('setCachedItem upserts by id', () => {
+    const league1: League = { id: 'l1', name: 'League 1', pointSystem: defaultPointSystem(), createdAt: '2026-01-01' };
+    const league2: League = { id: 'l2', name: 'League 2', pointSystem: defaultPointSystem(), createdAt: '2026-01-01' };
+    setCachedItem('leagues', league1);
+    setCachedItem('leagues', league2);
+    expect(getCached('leagues')).toHaveLength(2);
+
+    // Upsert existing
+    setCachedItem('leagues', { ...league1, name: 'Updated League 1' });
+    expect(getCached('leagues')).toHaveLength(2);
+    expect(getCached('leagues').find(l => l.id === 'l1')!.name).toBe('Updated League 1');
+  });
+
+  it('deleteCachedItem removes by id', () => {
+    const l1: League = { id: 'l1', name: 'A', pointSystem: defaultPointSystem(), createdAt: '2026-01-01' };
+    const l2: League = { id: 'l2', name: 'B', pointSystem: defaultPointSystem(), createdAt: '2026-01-01' };
+    setCachedItem('leagues', l1);
+    setCachedItem('leagues', l2);
+    expect(getCached('leagues')).toHaveLength(2);
+
+    deleteCachedItem('leagues', 'l1');
+    expect(getCached('leagues')).toHaveLength(1);
+    expect(getCached('leagues')[0].id).toBe('l2');
+  });
+
+  it('deleteCachedItem is no-op for non-existent id', () => {
+    const l1: League = { id: 'l1', name: 'A', pointSystem: defaultPointSystem(), createdAt: '2026-01-01' };
+    setCachedItem('leagues', l1);
+    deleteCachedItem('leagues', 'nonexistent');
+    expect(getCached('leagues')).toHaveLength(1);
+  });
+
+  it('migration copies localStorage data to cache', async () => {
+    const settings = { soundEnabled: true, countdownEnabled: true, autoAdvance: false, largeDisplay: true, voiceEnabled: false, volume: 80, callTheClockSeconds: 30 };
+    localStorage.setItem('poker-timer-settings', JSON.stringify(settings));
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
+    const loaded = getCached('settings');
+    expect(loaded).not.toBeNull();
+    expect(loaded!.volume).toBe(80);
+  });
+
+  it('migration sets migrated flag', async () => {
+    localStorage.setItem('poker-timer-settings', JSON.stringify({ soundEnabled: true }));
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
+    expect(localStorage.getItem('poker-timer-migrated')).toBe('true');
+  });
+
+  it('migration removes migrated keys from localStorage', async () => {
+    localStorage.setItem('poker-timer-history', JSON.stringify([{ id: 'h1', players: [] }]));
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
+    expect(localStorage.getItem('poker-timer-history')).toBeNull();
+  });
+
+  it('migration does not remove non-migrated localStorage keys', async () => {
+    localStorage.setItem('poker-timer-theme', 'dark');
+    localStorage.setItem('poker-timer-language', 'en');
+    localStorage.setItem('poker-timer-wizard-completed', 'true');
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
+    expect(localStorage.getItem('poker-timer-theme')).toBe('dark');
+    expect(localStorage.getItem('poker-timer-language')).toBe('en');
+    expect(localStorage.getItem('poker-timer-wizard-completed')).toBe('true');
+  });
+
+  it('migration skips when already migrated', async () => {
+    localStorage.setItem('poker-timer-migrated', 'true');
+    localStorage.setItem('poker-timer-history', JSON.stringify([{ id: 'h1', players: [] }]));
+    await resetStorage();
+    await initStorage();
+    // Data was NOT migrated because flag was already set
+    expect(getCached('history')).toEqual([]);
+    // localStorage key still present (not removed since migration was skipped)
+    expect(localStorage.getItem('poker-timer-history')).not.toBeNull();
+  });
+
+  it('data persists across initStorage calls via IndexedDB', async () => {
+    localStorage.removeItem('poker-timer-migrated');
+    await resetStorage();
+    await initStorage();
+    // Write data through cache
+    const league: League = { id: 'l1', name: 'Persistent', pointSystem: defaultPointSystem(), createdAt: '2026-01-01' };
+    setCachedItem('leagues', league);
+    // Wait for async persist to IndexedDB
+    await new Promise(r => setTimeout(r, 50));
+    // Reset cache and re-init (simulates app restart)
+    await resetStorage();
+    await initStorage();
+    const leagues = getCached('leagues');
+    expect(leagues).toHaveLength(1);
+    expect(leagues[0].name).toBe('Persistent');
+  });
+
+  it('MAX_HISTORY limit is enforced via saveTournamentResult', () => {
+    // Create 201 results
+    for (let i = 0; i < 201; i++) {
+      saveTournamentResult({
+        id: `r${i}`,
+        name: `T${i}`,
+        date: '2026-01-01',
+        playerCount: 2,
+        buyIn: 10,
+        prizePool: 20,
+        players: [
+          { name: 'A', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 10 },
+          { name: 'B', place: 2, payout: 0, rebuys: 0, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: -10 },
+        ],
+        bountyEnabled: false,
+        bountyAmount: 0,
+        rebuyEnabled: false,
+        totalRebuys: 0,
+        addOnEnabled: false,
+        totalAddOns: 0,
+        elapsedSeconds: 600,
+        levelsPlayed: 3,
+      });
+    }
+    expect(getCached('history').length).toBeLessThanOrEqual(200);
+  });
+
+  it('isStorageReady returns true after init', async () => {
+    await resetStorage();
+    expect(isStorageReady()).toBe(false);
+    await initStorage();
+    expect(isStorageReady()).toBe(true);
   });
 });
 
@@ -3116,8 +3319,8 @@ describe('Player Database', () => {
   });
 
   it('importPlayersFromHistory imports from tournament history', () => {
-    // Manually store history without going through saveTournamentResult
-    // (which auto-syncs players), to test importPlayersFromHistory in isolation
+    // Store history via cache (without going through saveTournamentResult
+    // which auto-syncs players), to test importPlayersFromHistory in isolation
     const result = {
       id: 'test-1',
       name: 'Test Tournament',
@@ -3139,7 +3342,7 @@ describe('Player Database', () => {
       elapsedSeconds: 3600,
       levelsPlayed: 8,
     };
-    localStorage.setItem('poker-timer-history', JSON.stringify([result]));
+    setCached('history', [result as TournamentResult]);
 
     // Add Alice to DB first — should not be duplicated
     addRegisteredPlayer('Alice');

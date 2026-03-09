@@ -1,53 +1,37 @@
 import type { TournamentResult } from './types';
 import { loadPlayerDatabase, savePlayerDatabase, syncPlayersToDatabase } from './playerDatabase';
+import { getCached, setCached, deleteCachedItem } from './storage';
 
 // ---------------------------------------------------------------------------
-// Tournament History (persistent results)
+// Tournament History (backed by IndexedDB cache layer)
 // ---------------------------------------------------------------------------
 
-const HISTORY_KEY = 'poker-timer-history';
 export const MAX_HISTORY = 200;
 
+/** Save a tournament result to history (prepend, trim to MAX_HISTORY). */
 export function saveTournamentResult(result: TournamentResult): void {
-  try {
-    const history = loadTournamentHistory();
-    history.unshift(result);
-    if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  } catch { /* private browsing or quota exceeded */ }
+  const history = [...getCached('history')];
+  history.unshift(result);
+  if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+  setCached('history', history);
 
   // Auto-save player names to persistent database
   syncPlayersToDatabase(result.players.map((p) => p.name));
 }
 
-function isValidTournamentResult(item: unknown): item is TournamentResult {
-  if (!item || typeof item !== 'object') return false;
-  const r = item as Record<string, unknown>;
-  return typeof r.id === 'string' && typeof r.date === 'string' && Array.isArray(r.players);
-}
-
+/** Load all tournament history from storage cache. */
 export function loadTournamentHistory(): TournamentResult[] {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidTournamentResult);
-  } catch {
-    return [];
-  }
+  return getCached('history');
 }
 
+/** Delete a single tournament result by id. */
 export function deleteTournamentResult(id: string): void {
-  try {
-    const history = loadTournamentHistory();
-    const filtered = history.filter((r) => r.id !== id);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
-  } catch { /* ignore */ }
+  deleteCachedItem('history', id);
 }
 
+/** Clear all tournament history. */
 export function clearTournamentHistory(): void {
-  try { localStorage.removeItem(HISTORY_KEY); } catch { /* ignore */ }
+  setCached('history', []);
 }
 
 /**

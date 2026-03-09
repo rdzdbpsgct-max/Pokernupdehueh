@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
+Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 5.9.0
+**Version**: 6.0.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (584 tests, single run)
+npm run test         # Vitest run (598 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -108,6 +108,7 @@ src/
 │   ├── chips.ts                 # Chip denominations, color-up, compatibility checks
 │   ├── validation.ts            # Config validation, rebuy/late-reg checks
 │   ├── tournament.ts            # Results, payouts, stats, CSV/text export, league standings, mystery bounty
+│   ├── storage.ts               # Cache-First IndexedDB storage layer, migration, in-memory cache
 │   ├── persistence.ts           # Barrel re-export from 5 focused sub-modules (config, templates, history, players, leagues)
 │   ├── configPersistence.ts     # Default configs, config parsing, presets, config/settings/checkpoint persistence, wizard
 │   ├── templatePersistence.ts   # Tournament template CRUD, JSON file export/import
@@ -159,7 +160,7 @@ public/
 - **useTimer** hook manages timer state with drift-free wall-clock computation
 - **Props drilling** for passing state and callbacks to child components
 - **React Context** for i18n (language selection) and theme (dark/light mode)
-- **localStorage keys**: `poker-timer-config`, `poker-timer-settings`, `poker-timer-language`, `poker-timer-templates`, `poker-timer-checkpoint`, `poker-timer-theme`, `poker-timer-history`, `poker-timer-players`, `poker-timer-leagues`, `poker-timer-gamedays`, `poker-timer-wizard-completed`
+- **Storage**: Cache-First IndexedDB architecture (see Storage Architecture below). Simple values remain in localStorage: `poker-timer-theme`, `poker-timer-language`, `poker-timer-accent`, `poker-timer-bg`, `poker-timer-wizard-completed`, `poker-timer-migrated`
 
 ### Component Conventions
 - Functional components with hooks only (no class components)
@@ -171,10 +172,19 @@ public/
 ### Domain Logic Separation
 - `src/domain/` contains pure business logic with no React dependencies
 - `src/domain/types.ts` — all shared types (`Level`, `TournamentConfig`, `Player`, `Settings`, `TimerState`, `League`, `PointSystem`, `LeagueStanding`, etc.)
-- `src/domain/logic.ts` — barrel re-export file; actual logic split into 10 focused modules:
-  - `helpers.ts` (ID generators, spinner rounding), `format.ts` (time/level formatting), `timer.ts` (level navigation, elapsed time), `blinds.ts` (blind generation, ante calculation), `players.ts` (player management, stacks, bubble), `chips.ts` (chip denominations, color-up), `validation.ts` (config validation, rebuy/late-reg checks), `tournament.ts` (results, payouts, stats, export, league standings, mystery bounty), `persistence.ts` (localStorage CRUD, config parsing, templates, player database, league management, wizard), `tables.ts` (multi-table management, balancing, final table merge)
+- `src/domain/logic.ts` — barrel re-export file; actual logic split into 11 focused modules:
+  - `storage.ts` (IndexedDB cache layer, migration), `helpers.ts` (ID generators, spinner rounding), `format.ts` (time/level formatting), `timer.ts` (level navigation, elapsed time), `blinds.ts` (blind generation, ante calculation), `players.ts` (player management, stacks, bubble), `chips.ts` (chip denominations, color-up), `validation.ts` (config validation, rebuy/late-reg checks), `tournament.ts` (results, payouts, stats, export, league standings, mystery bounty), `persistence.ts` (config parsing, templates, player database, league management, wizard), `tables.ts` (multi-table management, balancing, final table merge)
 - All imports use `from '../domain/logic'` (barrel) — no direct module imports needed
-- Tests cover domain logic exclusively — UI tests are not currently present
+
+### Storage Architecture (v6.0.0)
+- **Cache-First**: In-memory cache populated from IndexedDB on app start (~50ms)
+- **Reads**: Synchronous from cache — `getCached('history')`, `getCached('config')`, etc.
+- **Writes**: Synchronous cache update + async fire-and-forget IndexedDB persist — `setCached()`, `setCachedItem()`, `deleteCachedItem()`
+- **Init**: `initStorage()` in `main.tsx` before React mount — only async point
+- **Migration**: On first run, copies 8 localStorage keys → IndexedDB, sets `poker-timer-migrated` flag, deletes migrated keys
+- **Fallback**: If IndexedDB unavailable → localStorage-only mode (same API, no code changes)
+- **IndexedDB schema** (`poker-timer-db`, v1): 3 singleton stores (config, settings, checkpoint) + 5 collection stores (templates, history, players, leagues, gameDays — keyPath: `id`)
+- **localStorage retains**: `poker-timer-theme`, `poker-timer-language`, `poker-timer-accent`, `poker-timer-bg`, `poker-timer-wizard-completed`, `poker-timer-migrated`
 
 ### i18n
 - Two languages: German (DE, default) and English (EN)
@@ -275,7 +285,7 @@ public/
 
 ## Testing
 
-- Tests live in `tests/logic.test.ts` (451 tests) and `tests/components.test.tsx` (83 tests) — 534 total
+- Tests live in `tests/logic.test.ts` (503 tests) and `tests/components.test.tsx` (95 tests) — 598 total
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
@@ -310,6 +320,18 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.0.0 — IndexedDB-Migration: Cache-First Storage-Architektur
+
+- **IndexedDB als primärer Speicher**: Alle persistenten Daten (config, settings, checkpoint, templates, history, players, leagues, gameDays) von localStorage nach IndexedDB migriert. Speicher-Limit von ~5MB auf ~50MB+ erhöht.
+- **Cache-First Pattern**: In-Memory-Cache mit synchronen Reads, async IndexedDB-Writes. Kein API-Change für 56+ Consumer-Stellen. Einziger Async-Punkt: `initStorage()` vor React-Mount.
+- **Automatische Migration**: Einmalige Migration von localStorage → IndexedDB beim ersten App-Start. Items ohne gültige String-`id` werden gefiltert. Migrierte Keys werden aus localStorage gelöscht.
+- **Graceful Fallback**: Bei fehlendem IndexedDB → automatischer Fallback auf localStorage. App funktioniert identisch.
+- **Neues Modul**: `src/domain/storage.ts` (~300 Zeilen) — IndexedDB-Wrapper, In-Memory-Cache, Migration, Exports: `initStorage()`, `resetStorage()`, `isStorageReady()`, `getCached()`, `setCached()`, `setCachedItem()`, `deleteCachedItem()`
+- **6 Persistence-Module refactored**: configPersistence.ts, templatePersistence.ts, historyPersistence.ts, playerDatabase.ts, leaguePersistence.ts, league.ts — alle localStorage-Aufrufe durch Cache-API ersetzt
+- **main.tsx**: Async `initStorage()` vor React-Mount mit Fallback
+- **Neue Dependency**: `idb` (~2KB gzip), **Neue Dev-Dependency**: `fake-indexeddb`
+- **14 neue Tests**, **598 Tests gesamt** (503 Logic + 95 Component)
 
 ### v5.3.0 — Code-Qualität, Performance & Web Vitals
 

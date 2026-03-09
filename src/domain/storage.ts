@@ -1,0 +1,404 @@
+// ---------------------------------------------------------------------------
+// storage.ts — Cache-First IndexedDB Storage Layer
+// ---------------------------------------------------------------------------
+//
+// Architecture: In-memory cache with async IndexedDB persistence.
+// - initStorage() loads everything into cache on app start (async, ~50ms)
+// - All reads are synchronous (from cache)
+// - All writes update cache synchronously + fire-and-forget async persist
+// - Migration: On first run, copies localStorage data → IndexedDB
+// - Fallback: If IndexedDB unavailable, uses localStorage directly
+// ---------------------------------------------------------------------------
+
+import { openDB, type IDBPDatabase } from 'idb';
+import type {
+  TournamentConfig,
+  Settings,
+  TournamentCheckpoint,
+  TournamentResult,
+  RegisteredPlayer,
+  League,
+  GameDay,
+} from './types';
+import type { TournamentTemplate } from './templatePersistence';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/** Stores that hold a single value (key-value pattern). */
+type SingletonStore = 'config' | 'settings' | 'checkpoint';
+
+/** Stores that hold arrays of items with an `id` field. */
+type CollectionStore = 'templates' | 'history' | 'players' | 'leagues' | 'gameDays';
+
+/** All store names. */
+export type StoreKey = SingletonStore | CollectionStore;
+
+/** Map from store name to its value type. */
+interface StoreTypeMap {
+  config: TournamentConfig | null;
+  settings: Settings | null;
+  checkpoint: TournamentCheckpoint | null;
+  templates: TournamentTemplate[];
+  history: TournamentResult[];
+  players: RegisteredPlayer[];
+  leagues: League[];
+  gameDays: GameDay[];
+}
+
+/** Item types for collection stores (all have `id: string`). */
+interface CollectionItemMap {
+  templates: TournamentTemplate;
+  history: TournamentResult;
+  players: RegisteredPlayer;
+  leagues: League;
+  gameDays: GameDay;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const DB_NAME = 'poker-timer-db';
+const DB_VERSION = 1;
+const MIGRATED_KEY = 'poker-timer-migrated';
+
+/** localStorage keys that should be migrated to IndexedDB. */
+const MIGRATION_MAP: Record<string, StoreKey> = {
+  'poker-timer-config': 'config',
+  'poker-timer-settings': 'settings',
+  'poker-timer-checkpoint': 'checkpoint',
+  'poker-timer-templates': 'templates',
+  'poker-timer-history': 'history',
+  'poker-timer-players': 'players',
+  'poker-timer-leagues': 'leagues',
+  'poker-timer-gamedays': 'gameDays',
+};
+
+/** Singleton stores use a fixed key. */
+const SINGLETON_KEY = 'current';
+
+/** Collection store names (for type narrowing). */
+const COLLECTION_STORES: ReadonlySet<string> = new Set([
+  'templates', 'history', 'players', 'leagues', 'gameDays',
+]);
+
+// ---------------------------------------------------------------------------
+// In-Memory Cache
+// ---------------------------------------------------------------------------
+
+const cache: StoreTypeMap = {
+  config: null,
+  settings: null,
+  checkpoint: null,
+  templates: [],
+  history: [],
+  players: [],
+  leagues: [],
+  gameDays: [],
+};
+
+let ready = false;
+let db: IDBPDatabase | null = null;
+let useLocalStorageFallback = false;
+
+// ---------------------------------------------------------------------------
+// Initialization
+// ---------------------------------------------------------------------------
+
+/**
+ * Initialize the storage layer. Must be called once before React mounts.
+ * - Opens IndexedDB and creates stores if needed
+ * - Migrates data from localStorage on first run
+ * - Loads all data into the in-memory cache
+ *
+ * If IndexedDB is not available, falls back to localStorage-only mode.
+ */
+export async function initStorage(): Promise<void> {
+  // Already initialized (e.g. called multiple times in tests)
+  if (ready) return;
+
+  try {
+    if (typeof indexedDB === 'undefined') throw new Error('IndexedDB not available');
+
+    db = await openDB(DB_NAME, DB_VERSION, {
+      upgrade(database) {
+        // Singleton stores (key-value)
+        for (const store of ['config', 'settings', 'checkpoint'] as const) {
+          if (!database.objectStoreNames.contains(store)) {
+            database.createObjectStore(store);
+          }
+        }
+        // Collection stores (keyPath: 'id')
+        for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays'] as const) {
+          if (!database.objectStoreNames.contains(store)) {
+            database.createObjectStore(store, { keyPath: 'id' });
+          }
+        }
+      },
+    });
+
+    // Migrate from localStorage if not done yet
+    await migrateFromLocalStorage();
+
+    // Load all data into cache
+    await loadAllIntoCache();
+
+    ready = true;
+  } catch {
+    // IndexedDB unavailable — fall back to localStorage
+    console.warn('[storage] IndexedDB unavailable, using localStorage fallback');
+    useLocalStorageFallback = true;
+    loadAllFromLocalStorage();
+    ready = true;
+  }
+}
+
+/**
+ * Reset storage state. Used in tests to ensure clean state between test runs.
+ * Closes the IndexedDB connection so the database can be deleted cleanly.
+ */
+export async function resetStorage(): Promise<void> {
+  if (db) {
+    db.close();
+  }
+  ready = false;
+  db = null;
+  useLocalStorageFallback = false;
+  cache.config = null;
+  cache.settings = null;
+  cache.checkpoint = null;
+  cache.templates = [];
+  cache.history = [];
+  cache.players = [];
+  cache.leagues = [];
+  cache.gameDays = [];
+}
+
+/** Whether the storage layer has been initialized. */
+export function isStorageReady(): boolean {
+  return ready;
+}
+
+// ---------------------------------------------------------------------------
+// Cache Getters (synchronous)
+// ---------------------------------------------------------------------------
+
+/** Get the cached value for a store. Synchronous — reads from in-memory cache. */
+export function getCached<K extends StoreKey>(store: K): StoreTypeMap[K] {
+  return cache[store] as StoreTypeMap[K];
+}
+
+// ---------------------------------------------------------------------------
+// Cache Setters (synchronous cache + async persist)
+// ---------------------------------------------------------------------------
+
+/**
+ * Type-safe helper to set a cache value by store key.
+ * Avoids TS2352 with interface → Record<string, unknown> in strict mode.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function setCacheValue(store: string, value: any): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (cache as any)[store] = value;
+}
+
+/** Set the entire value for a store. Updates cache synchronously, persists async. */
+export function setCached<K extends StoreKey>(store: K, value: StoreTypeMap[K]): void {
+  setCacheValue(store, value);
+  persistStore(store);
+}
+
+/**
+ * Upsert an item in a collection store. Updates cache synchronously, persists async.
+ * If an item with the same `id` exists, it is replaced; otherwise the item is appended.
+ */
+export function setCachedItem<K extends CollectionStore>(store: K, item: CollectionItemMap[K]): void {
+  const arr = cache[store] as Array<{ id: string }>;
+  const idx = arr.findIndex((existing) => existing.id === (item as { id: string }).id);
+  if (idx >= 0) {
+    arr[idx] = item as { id: string };
+  } else {
+    arr.push(item as { id: string });
+  }
+  persistStore(store);
+}
+
+/**
+ * Delete an item from a collection store by id. Updates cache synchronously, persists async.
+ */
+export function deleteCachedItem<K extends CollectionStore>(store: K, id: string): void {
+  const arr = cache[store] as Array<{ id: string }>;
+  const idx = arr.findIndex((item) => item.id === id);
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+    persistStore(store);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Async Persistence (fire-and-forget)
+// ---------------------------------------------------------------------------
+
+function persistStore(store: StoreKey): void {
+  if (useLocalStorageFallback) {
+    persistToLocalStorage(store);
+    return;
+  }
+  if (!db) return;
+  persistToIndexedDB(store).catch((err) => {
+    console.warn(`[storage] Failed to persist "${store}" to IndexedDB:`, err);
+    // Fallback: also write to localStorage as safety net
+    persistToLocalStorage(store);
+  });
+}
+
+async function persistToIndexedDB(store: StoreKey): Promise<void> {
+  if (!db) return;
+
+  if (COLLECTION_STORES.has(store)) {
+    // For collections: clear store and put all items
+    const tx = db.transaction(store, 'readwrite');
+    await tx.store.clear();
+    const items = cache[store] as Array<{ id: string }>;
+    for (const item of items) {
+      await tx.store.put(item);
+    }
+    await tx.done;
+  } else {
+    // For singletons: put the value at the fixed key
+    const value = cache[store as SingletonStore];
+    if (value === null) {
+      await db.delete(store, SINGLETON_KEY);
+    } else {
+      await db.put(store, value, SINGLETON_KEY);
+    }
+  }
+}
+
+function persistToLocalStorage(store: StoreKey): void {
+  const lsKey = localStorageKeyForStore(store);
+  if (!lsKey) return;
+  try {
+    const value = cache[store];
+    if (value === null) {
+      localStorage.removeItem(lsKey);
+    } else {
+      localStorage.setItem(lsKey, JSON.stringify(value));
+    }
+  } catch { /* quota exceeded or private browsing */ }
+}
+
+function localStorageKeyForStore(store: StoreKey): string | null {
+  for (const [lsKey, storeName] of Object.entries(MIGRATION_MAP)) {
+    if (storeName === store) return lsKey;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Migration: localStorage → IndexedDB
+// ---------------------------------------------------------------------------
+
+async function migrateFromLocalStorage(): Promise<void> {
+  if (!db) return;
+
+  try {
+    if (localStorage.getItem(MIGRATED_KEY) === 'true') return;
+  } catch {
+    return; // localStorage not available
+  }
+
+  try {
+    for (const [lsKey, store] of Object.entries(MIGRATION_MAP)) {
+      const raw = localStorage.getItem(lsKey);
+      if (!raw) continue;
+
+      try {
+        const parsed = JSON.parse(raw);
+
+        if (COLLECTION_STORES.has(store)) {
+          // Collection: write each item
+          if (Array.isArray(parsed)) {
+            const tx = db.transaction(store, 'readwrite');
+            for (const item of parsed) {
+              if (item && typeof item === 'object' && typeof item.id === 'string') {
+                await tx.store.put(item);
+              }
+            }
+            await tx.done;
+          }
+        } else {
+          // Singleton: write at fixed key
+          if (parsed !== null && typeof parsed === 'object') {
+            await db.put(store, parsed, SINGLETON_KEY);
+          }
+        }
+
+        // Remove migrated key from localStorage
+        localStorage.removeItem(lsKey);
+      } catch {
+        console.warn(`[storage] Failed to migrate "${lsKey}", skipping`);
+      }
+    }
+
+    localStorage.setItem(MIGRATED_KEY, 'true');
+  } catch {
+    console.warn('[storage] Migration from localStorage failed');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Load from IndexedDB into Cache
+// ---------------------------------------------------------------------------
+
+async function loadAllIntoCache(): Promise<void> {
+  if (!db) return;
+
+  // Singleton stores
+  for (const store of ['config', 'settings', 'checkpoint'] as const) {
+    try {
+      const value = await db.get(store, SINGLETON_KEY);
+      setCacheValue(store, value ?? null);
+    } catch {
+      setCacheValue(store, null);
+    }
+  }
+
+  // Collection stores
+  for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays'] as const) {
+    try {
+      const items = await db.getAll(store);
+      setCacheValue(store, items ?? []);
+    } catch {
+      setCacheValue(store, []);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Load from localStorage (fallback mode)
+// ---------------------------------------------------------------------------
+
+function loadAllFromLocalStorage(): void {
+  for (const [lsKey, store] of Object.entries(MIGRATION_MAP)) {
+    try {
+      const raw = localStorage.getItem(lsKey);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+
+      if (COLLECTION_STORES.has(store)) {
+        if (Array.isArray(parsed)) {
+          setCacheValue(store, parsed);
+        }
+      } else {
+        if (parsed !== null && typeof parsed === 'object') {
+          setCacheValue(store, parsed);
+        }
+      }
+    } catch {
+      // Skip corrupt data
+    }
+  }
+}

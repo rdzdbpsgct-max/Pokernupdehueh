@@ -298,90 +298,70 @@ function migrateTable(raw: Record<string, unknown>): Table {
 }
 
 // ---------------------------------------------------------------------------
-// Config Persistence
+// Config Persistence (backed by IndexedDB cache layer)
 // ---------------------------------------------------------------------------
 
-const CONFIG_KEY = 'poker-timer-config';
-const SETTINGS_KEY = 'poker-timer-settings';
+import { getCached, setCached } from './storage';
 
-/** Persist tournament config to localStorage. */
+/** Persist tournament config to storage. */
 export function saveConfig(config: TournamentConfig): void {
-  try {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-  } catch {
-    // localStorage unavailable (e.g. private browsing, quota exceeded)
-  }
+  setCached('config', config);
 }
 
-/** Load tournament config from localStorage. Returns null if absent or corrupted. */
+/** Load tournament config from storage. Returns null if absent. */
 export function loadConfig(): TournamentConfig | null {
-  const raw = localStorage.getItem(CONFIG_KEY);
-  if (!raw) return null;
-  try {
-    return parseConfigObject(JSON.parse(raw));
-  } catch {
-    return null;
-  }
+  return getCached('config');
 }
 
-/** Persist application settings to localStorage. */
+/** Persist application settings to storage. */
 export function saveSettings(settings: Settings): void {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  } catch {
-    // localStorage unavailable (e.g. private browsing, quota exceeded)
-  }
+  setCached('settings', settings);
 }
 
+/** Load application settings from storage. Returns null if absent. */
 export function loadSettings(): Settings | null {
-  const raw = localStorage.getItem(SETTINGS_KEY);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    return { ...defaultSettings(), ...parsed } as Settings;
-  } catch {
-    return null;
-  }
+  return getCached('settings');
 }
 
 // ---------------------------------------------------------------------------
-// Tournament Checkpoint (auto-save / restore)
+// Tournament Checkpoint (auto-save / restore, backed by IndexedDB cache)
 // ---------------------------------------------------------------------------
 
-const CHECKPOINT_KEY = 'poker-timer-checkpoint';
-
+/** Save tournament checkpoint to storage. */
 export function saveCheckpoint(checkpoint: TournamentCheckpoint): void {
-  try {
-    localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(checkpoint));
-  } catch { /* private browsing or quota exceeded */ }
+  setCached('checkpoint', checkpoint);
 }
 
+/**
+ * Load tournament checkpoint from storage. Returns null if absent or invalid.
+ * Validates and normalizes the checkpoint data for safety.
+ */
 export function loadCheckpoint(): TournamentCheckpoint | null {
+  const parsed = getCached('checkpoint');
+  if (!parsed) return null;
   try {
-    const raw = localStorage.getItem(CHECKPOINT_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed.version !== 1) return null;
-    // Validate config through parseConfigObject for safety
-    const config = parsed.config ? parseConfigObject(parsed.config) : null;
+    const raw = parsed as unknown as Record<string, unknown>;
+    if (raw.version !== 1) return null;
+    const config = raw.config ? parseConfigObject(raw.config as Record<string, unknown>) : null;
     if (!config) return null;
     // Guard: empty levels array would cause downstream crashes (index -1)
     if (config.levels.length === 0) return null;
-    const timer = parsed.timer;
+    const timer = raw.timer as Record<string, unknown> | undefined;
     if (!timer || typeof timer.currentLevelIndex !== 'number' || typeof timer.remainingSeconds !== 'number') return null;
     // Clamp to valid ranges
     timer.currentLevelIndex = Math.max(0, Math.min(
-      timer.currentLevelIndex, config.levels.length - 1,
+      timer.currentLevelIndex as number, config.levels.length - 1,
     ));
-    timer.remainingSeconds = Math.max(0, timer.remainingSeconds);
-    return { ...parsed, config, timer } as TournamentCheckpoint;
+    timer.remainingSeconds = Math.max(0, timer.remainingSeconds as number);
+    return { ...raw, config, timer } as TournamentCheckpoint;
   } catch {
     return null;
   }
 }
 
+/** Clear tournament checkpoint from storage. */
 export function clearCheckpoint(): void {
-  try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
+  setCached('checkpoint', null);
 }
 
 // ---------------------------------------------------------------------------

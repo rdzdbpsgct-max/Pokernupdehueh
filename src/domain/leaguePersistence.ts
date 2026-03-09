@@ -8,13 +8,13 @@ import type {
 import { parseConfigObject } from './configPersistence';
 import { loadTournamentHistory, saveTournamentResult } from './historyPersistence';
 import { loadGameDaysForLeague, saveGameDay } from './league';
+import { getCached, setCachedItem, deleteCachedItem } from './storage';
 
 // ---------------------------------------------------------------------------
-// Leagues
+// Leagues (backed by IndexedDB cache layer)
 // ---------------------------------------------------------------------------
 
-const LEAGUES_KEY = 'poker-timer-leagues';
-
+/** Return the default point system for new leagues. */
 export function defaultPointSystem(): PointSystem {
   return {
     entries: [
@@ -29,44 +29,20 @@ export function defaultPointSystem(): PointSystem {
   };
 }
 
-function isValidLeague(item: unknown): item is League {
-  if (!item || typeof item !== 'object') return false;
-  const r = item as Record<string, unknown>;
-  return typeof r.id === 'string' && typeof r.createdAt === 'string' && r.pointSystem != null;
-}
-
+/** Load all leagues from storage cache. */
 export function loadLeagues(): League[] {
-  try {
-    const raw = localStorage.getItem(LEAGUES_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidLeague);
-  } catch {
-    return [];
-  }
+  return getCached('leagues');
 }
 
 /** Upsert a league: update existing by id, or append if new. */
 export function saveLeague(league: League): League {
-  const leagues = loadLeagues();
-  const idx = leagues.findIndex((l) => l.id === league.id);
-  if (idx >= 0) {
-    leagues[idx] = league;
-  } else {
-    leagues.push(league);
-  }
-  try {
-    localStorage.setItem(LEAGUES_KEY, JSON.stringify(leagues));
-  } catch { /* private browsing or quota exceeded */ }
+  setCachedItem('leagues', league);
   return league;
 }
 
+/** Delete a league by id. */
 export function deleteLeague(id: string): void {
-  const leagues = loadLeagues().filter((l) => l.id !== id);
-  try {
-    localStorage.setItem(LEAGUES_KEY, JSON.stringify(leagues));
-  } catch { /* ignore */ }
+  deleteCachedItem('leagues', id);
 }
 
 /**
@@ -92,6 +68,7 @@ export interface LeagueExport {
   exportedAt: string;
 }
 
+/** Export a league and all its data as a JSON string. */
 export function exportLeagueToJSON(league: League): string {
   const history = loadTournamentHistory();
   const results = history.filter((r) => r.leagueId === league.id);
@@ -106,6 +83,7 @@ export function exportLeagueToJSON(league: League): string {
   return JSON.stringify(payload, null, 2);
 }
 
+/** Parse a JSON string into a LeagueExport, or null if invalid. */
 export function parseLeagueFile(json: string): LeagueExport | null {
   try {
     const parsed = JSON.parse(json);
@@ -129,6 +107,7 @@ export function parseLeagueFile(json: string): LeagueExport | null {
   }
 }
 
+/** Import a league from exported data. Generates new IDs to avoid collisions. */
 export function importLeague(data: LeagueExport): League {
   // Generate new ID to avoid collisions
   const newLeagueId = `league_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
