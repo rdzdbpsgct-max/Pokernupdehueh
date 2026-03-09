@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (598 tests, single run)
+npm run test         # Vitest run (943 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -143,9 +143,18 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-├── logic.test.ts                # 451 unit tests for domain logic + PeerJS remote control
-├── components.test.tsx          # 83 UI component tests (NumberStepper, CollapsibleSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, CollapsibleSubSection, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog, LoadingFallback, ConfigEditor, SettingsPanel, PlayerPanel)
-└── setup.ts                     # Test setup: jest-dom matchers, matchMedia mock
+├── logic.test.ts                # 527 unit tests for domain logic + PeerJS remote control
+├── components.test.tsx          # 95 UI component tests (NumberStepper, CollapsibleSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, CollapsibleSubSection, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog, LoadingFallback, ConfigEditor, SettingsPanel, PlayerPanel)
+├── edge-cases.test.ts           # 88 edge case tests (timer, blinds, players, multi-table, format, tournament, validation, helpers)
+├── sound-speech.test.ts         # 54 sound effects + speech announcement tests
+├── tournamentActions.test.tsx   # 31 useTournamentActions hook tests
+├── hooks.test.tsx               # 26 useKeyboardShortcuts + useGameEvents tests
+├── i18n.test.ts                 # 24 i18n key parity, parameters, placeholder consistency, quality
+├── persistence.test.ts          # 24 config/settings/checkpoint save/load round-trips
+├── controls.test.tsx            # 22 Controls component tests (buttons, callbacks, ARIA)
+├── display-channel.test.ts      # 12 BroadcastChannel serialization + communication tests
+├── toast.test.ts                # 6 toast notification system tests
+└── setup.ts                     # Test setup: jest-dom matchers, matchMedia mock, fake-indexeddb
 
 public/
 ├── favicon.svg                  # Spade symbol favicon
@@ -280,15 +289,18 @@ public/
 - **Druckbare Ergebnisse**: Tournament results printable from TournamentFinished screen via PrintView.
 - **Remote Control (PeerJS)**: Smartphone remote control via PeerJS (WebRTC data channel with cloud-brokered signaling). One-scan flow: host generates peer ID (`PKR-XXXXX`), QR code contains app URL with `#remote=` hash, phone scans → opens app → auto-connects. `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + touch-optimized fullscreen controller UI (play/pause/next/prev/dealer/sound/call-the-clock). `useRemoteControl` hook manages state. Auto-reconnect (3 attempts, exponential backoff). Wake Lock on controller. Keepalive pings every 10s. Lazy-loaded ~9KB chunk.
 - **App.tsx Refactoring**: Extracted `useKeyboardShortcuts` (72 lines) and `useTournamentActions` (317 lines) hooks. App.tsx reduced from ~1543 to ~1300 lines.
-- **UI Integration Tests**: 66 component tests via `@testing-library/react` in `tests/components.test.tsx` covering 13 components/hooks (NumberStepper, CollapsibleSection, CollapsibleSubSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog).
+- **UI Integration Tests**: 95 component tests via `@testing-library/react` in `tests/components.test.tsx` covering 17 components/hooks (NumberStepper, CollapsibleSection, CollapsibleSubSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog, LoadingFallback, ConfigEditor, SettingsPanel, PlayerPanel).
 - **Offline-first**: Core functionality works offline. PeerJS signaling server required only for Remote Control pairing
 
 ## Testing
 
-- Tests live in `tests/logic.test.ts` (503 tests) and `tests/components.test.tsx` (95 tests) — 598 total
+- **943 tests** across 12 test files + 1 setup file
+- Core files: `logic.test.ts` (503), `components.test.tsx` (95), `edge-cases.test.ts` (88), `sound-speech.test.ts` (54), `hooks.test.tsx` (41), `integration.test.ts` (35), `tournamentActions.test.tsx` (34), `i18n.test.ts` (24), `persistence.test.ts` (24), `toast.test.ts` (18), `display-channel.test.ts` (12), `controls.test.tsx` (15)
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
+- All domain module functions (225+) have test coverage
+- Integration tests cover cross-module flows: checkpoint round-trip, timer lifecycle, config backward compat, tournament flow
 - No snapshot tests, no E2E tests currently
 
 ## Development Workflow
@@ -332,6 +344,21 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **main.tsx**: Async `initStorage()` vor React-Mount mit Fallback
 - **Neue Dependency**: `idb` (~2KB gzip), **Neue Dev-Dependency**: `fake-indexeddb`
 - **14 neue Tests**, **598 Tests gesamt** (503 Logic + 95 Component)
+
+### Test-Suite Erweiterung — 943 Tests
+
+- **345 neue Tests** in 9 neuen Dateien, alle Domain-Module 100% abgedeckt
+- **edge-cases.test.ts** (88 Tests): Timer, Blinds, Player, Multi-Table, Format, Tournament, Validation, Helpers
+- **sound-speech.test.ts** (54 Tests): Sound-Effekte, alle 35 announce*-Funktionen, Graceful Degradation
+- **hooks.test.tsx** (41 Tests): useKeyboardShortcuts, useGameEvents, useVoiceAnnouncements
+- **integration.test.ts** (35 Tests): Cross-Module-Flows (Checkpoint Round-Trip, Timer-Lifecycle, Config-Backward-Compat, Full Tournament Flow, Language Switching)
+- **tournamentActions.test.tsx** (34 Tests): useTournamentActions Hook (10 Callbacks inkl. eliminatePlayer Chain)
+- **i18n.test.ts** (24 Tests): Key-Paritaet, Placeholder-Konsistenz, Value-Qualitaet, t()-Edge-Cases
+- **persistence.test.ts** (24 Tests): Config/Settings/Checkpoint Round-Trips, parseConfigObject Backward-Compat
+- **toast.test.ts** (18 Tests): Toast-System Module-Level State
+- **controls.test.tsx** (15 Tests): Controls-Komponente, ARIA, Last Hand, Hand-for-Hand, Clean View
+- **display-channel.test.ts** (12 Tests): BroadcastChannel Serialization, Communication
+- **943 Tests gesamt** (12 Dateien)
 
 ### v5.3.0 — Code-Qualität, Performance & Web Vitals
 

@@ -141,7 +141,16 @@ import {
   resetStorage,
   isStorageReady,
 } from '../src/domain/logic';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment, RegisteredPlayer } from '../src/domain/types';
+import {
+  applyChipPreset,
+  chipPresets,
+  getRemovedDenomIds,
+  getNextColorUpLevel,
+  generateColorUpSuggestion,
+  scheduleToColorUpMap,
+  CHIP_COLORS,
+} from '../src/domain/chips';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment, RegisteredPlayer, ChipDenomination } from '../src/domain/types';
 import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE } from '../src/domain/remote';
 import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
 
@@ -6284,5 +6293,251 @@ describe('League Module', () => {
       expect(restored!.size).toBe(original.size);
       expect(restored!.get(5)![0].value).toBe(50);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Chip Functions — previously untested exports
+// ---------------------------------------------------------------------------
+
+describe('applyChipPreset', () => {
+  it('creates a ChipConfig from a 4-color preset', () => {
+    const config = applyChipPreset(chipPresets[0]);
+    expect(config.enabled).toBe(true);
+    expect(config.colorUpEnabled).toBe(true);
+    expect(config.denominations).toHaveLength(4);
+    expect(config.colorUpSchedule).toEqual([]);
+    // Each denomination should have a unique generated ID
+    const ids = new Set(config.denominations.map((d) => d.id));
+    expect(ids.size).toBe(4);
+  });
+
+  it('creates a ChipConfig from a 5-color preset', () => {
+    const config = applyChipPreset(chipPresets[1]);
+    expect(config.denominations).toHaveLength(5);
+    expect(config.denominations[0].value).toBe(25);
+    expect(config.denominations[4].value).toBe(1000);
+  });
+
+  it('creates a ChipConfig from a 6-color preset', () => {
+    const config = applyChipPreset(chipPresets[2]);
+    expect(config.denominations).toHaveLength(6);
+    expect(config.denominations[5].value).toBe(5000);
+  });
+});
+
+describe('CHIP_COLORS constant', () => {
+  it('has 20 color entries', () => {
+    expect(CHIP_COLORS).toHaveLength(20);
+  });
+
+  it('every entry has hex, de, en fields', () => {
+    for (const color of CHIP_COLORS) {
+      expect(color.hex).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(color.de.length).toBeGreaterThan(0);
+      expect(color.en.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('has no duplicate hex values', () => {
+    const hexSet = new Set(CHIP_COLORS.map((c) => c.hex));
+    expect(hexSet.size).toBe(CHIP_COLORS.length);
+  });
+});
+
+describe('getRemovedDenomIds', () => {
+  const makeDenom = (id: string, value: number): ChipDenomination => ({
+    id, value, color: '#fff', label: 'Test',
+  });
+
+  it('returns empty set when no color-ups before current level', () => {
+    const map = new Map<number, ChipDenomination[]>();
+    map.set(10, [makeDenom('a', 25)]);
+    const removed = getRemovedDenomIds(map, 5);
+    expect(removed.size).toBe(0);
+  });
+
+  it('returns denoms removed at or before current level', () => {
+    const map = new Map<number, ChipDenomination[]>();
+    map.set(3, [makeDenom('a', 25)]);
+    map.set(7, [makeDenom('b', 50)]);
+    const removed = getRemovedDenomIds(map, 5);
+    expect(removed.has('a')).toBe(true);
+    expect(removed.has('b')).toBe(false);
+  });
+
+  it('includes denoms removed exactly at current level', () => {
+    const map = new Map<number, ChipDenomination[]>();
+    map.set(5, [makeDenom('x', 100)]);
+    const removed = getRemovedDenomIds(map, 5);
+    expect(removed.has('x')).toBe(true);
+  });
+
+  it('accumulates denoms from multiple earlier levels', () => {
+    const map = new Map<number, ChipDenomination[]>();
+    map.set(1, [makeDenom('a', 25)]);
+    map.set(3, [makeDenom('b', 50)]);
+    map.set(5, [makeDenom('c', 100)]);
+    const removed = getRemovedDenomIds(map, 10);
+    expect(removed.size).toBe(3);
+  });
+});
+
+describe('getNextColorUpLevel', () => {
+  const makeDenom = (id: string, value: number): ChipDenomination => ({
+    id, value, color: '#fff', label: 'Test',
+  });
+
+  it('returns null when map is empty', () => {
+    const map = new Map<number, ChipDenomination[]>();
+    expect(getNextColorUpLevel(map, 0)).toBeNull();
+  });
+
+  it('returns the next color-up level after current', () => {
+    const map = new Map<number, ChipDenomination[]>();
+    map.set(3, [makeDenom('a', 25)]);
+    map.set(7, [makeDenom('b', 50)]);
+    expect(getNextColorUpLevel(map, 0)).toBe(3);
+    expect(getNextColorUpLevel(map, 3)).toBe(7);
+    expect(getNextColorUpLevel(map, 7)).toBeNull();
+  });
+
+  it('returns null when all color-ups are in the past', () => {
+    const map = new Map<number, ChipDenomination[]>();
+    map.set(2, [makeDenom('a', 25)]);
+    expect(getNextColorUpLevel(map, 5)).toBeNull();
+  });
+});
+
+describe('generateColorUpSuggestion', () => {
+  it('returns empty array for single denomination', () => {
+    const denoms: ChipDenomination[] = [{ id: 'a', value: 100, color: '#fff', label: 'W' }];
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 100, bigBlind: 200 },
+    ];
+    expect(generateColorUpSuggestion(levels, denoms)).toEqual([]);
+  });
+
+  it('returns color-up entries sorted by levelIndex', () => {
+    const denoms: ChipDenomination[] = [
+      { id: 'w', value: 25, color: '#fff', label: 'White' },
+      { id: 'r', value: 100, color: '#f00', label: 'Red' },
+      { id: 'b', value: 500, color: '#000', label: 'Black' },
+    ];
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 },
+      { id: '2', type: 'level', durationSeconds: 600, smallBlind: 50, bigBlind: 100 },
+      { id: 'br', type: 'break', durationSeconds: 300 },
+      { id: '3', type: 'level', durationSeconds: 600, smallBlind: 100, bigBlind: 200 },
+      { id: 'br2', type: 'break', durationSeconds: 300 },
+      { id: '4', type: 'level', durationSeconds: 600, smallBlind: 500, bigBlind: 1000 },
+    ];
+    const suggestions = generateColorUpSuggestion(levels, denoms);
+    // Should suggest removing white chips at some point
+    expect(suggestions.length).toBeGreaterThanOrEqual(1);
+    // Should be sorted by levelIndex
+    for (let i = 1; i < suggestions.length; i++) {
+      expect(suggestions[i].levelIndex).toBeGreaterThanOrEqual(suggestions[i - 1].levelIndex);
+    }
+  });
+});
+
+describe('scheduleToColorUpMap', () => {
+  it('converts a schedule array to a Map', () => {
+    const denoms: ChipDenomination[] = [
+      { id: 'w', value: 25, color: '#fff', label: 'White' },
+      { id: 'r', value: 100, color: '#f00', label: 'Red' },
+    ];
+    const schedule = [
+      { levelIndex: 3, denomId: 'w' },
+      { levelIndex: 7, denomId: 'r' },
+    ];
+    const map = scheduleToColorUpMap(schedule, denoms);
+    expect(map.size).toBe(2);
+    expect(map.get(3)![0].value).toBe(25);
+    expect(map.get(7)![0].value).toBe(100);
+  });
+
+  it('filters out entries with non-existent denomination IDs', () => {
+    const denoms: ChipDenomination[] = [
+      { id: 'w', value: 25, color: '#fff', label: 'White' },
+    ];
+    const schedule = [
+      { levelIndex: 3, denomId: 'w' },
+      { levelIndex: 5, denomId: 'nonexistent' },
+    ];
+    const map = scheduleToColorUpMap(schedule, denoms);
+    expect(map.size).toBe(1);
+    expect(map.has(5)).toBe(false);
+  });
+
+  it('groups multiple denoms at the same level', () => {
+    const denoms: ChipDenomination[] = [
+      { id: 'w', value: 25, color: '#fff', label: 'White' },
+      { id: 'r', value: 50, color: '#f00', label: 'Red' },
+    ];
+    const schedule = [
+      { levelIndex: 5, denomId: 'w' },
+      { levelIndex: 5, denomId: 'r' },
+    ];
+    const map = scheduleToColorUpMap(schedule, denoms);
+    expect(map.size).toBe(1);
+    expect(map.get(5)!).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Mystery Bounty Edge Cases
+// ---------------------------------------------------------------------------
+
+describe('drawMysteryBounty edge cases', () => {
+  it('returns amount: 0 for empty pool', () => {
+    const result = drawMysteryBounty([]);
+    expect(result.amount).toBe(0);
+    expect(result.remainingPool).toEqual([]);
+  });
+
+  it('draws the only value from a single-item pool', () => {
+    const result = drawMysteryBounty([500]);
+    expect(result.amount).toBe(500);
+    expect(result.remainingPool).toEqual([]);
+  });
+
+  it('reduces pool by exactly one item', () => {
+    const pool = [100, 200, 300, 400, 500];
+    const result = drawMysteryBounty(pool);
+    expect(result.remainingPool).toHaveLength(4);
+    expect(pool.reduce((a, b) => a + b, 0)).toBe(
+      result.amount + result.remainingPool.reduce((a, b) => a + b, 0)
+    );
+  });
+
+  it('draws from a pool with duplicate values', () => {
+    const pool = [100, 100, 100];
+    const result = drawMysteryBounty(pool);
+    expect(result.amount).toBe(100);
+    expect(result.remainingPool).toHaveLength(2);
+  });
+
+  it('successive draws exhaust the pool completely', () => {
+    let pool = [50, 100, 200];
+    const drawn: number[] = [];
+    while (pool.length > 0) {
+      const result = drawMysteryBounty(pool);
+      drawn.push(result.amount);
+      pool = result.remainingPool;
+    }
+    expect(drawn).toHaveLength(3);
+    expect(drawn.sort((a, b) => a - b)).toEqual([50, 100, 200]);
+    // Final draw from empty pool
+    const final = drawMysteryBounty(pool);
+    expect(final.amount).toBe(0);
+  });
+
+  it('does not mutate the original pool array', () => {
+    const pool = [100, 200, 300];
+    const copy = [...pool];
+    drawMysteryBounty(pool);
+    expect(pool).toEqual(copy);
   });
 });
