@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { calculateSidePots, resolvePotWinners, generateId } from '../domain/logic';
 import type { PlayerPotInput, PlayerPotStatus, PotResult, PotWinnerAssignment, PlayerPayout, SidePotPayoutResult } from '../domain/types';
 import { useTranslation } from '../i18n';
@@ -225,7 +226,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
     return map;
   }, [players]);
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div
         className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl shadow-black/20 border border-gray-200 dark:border-gray-700/40 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in"
@@ -536,6 +537,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
