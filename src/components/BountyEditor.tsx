@@ -57,7 +57,7 @@ export function BountyEditor({ bounty, onChange }: Props) {
         onClick={toggle}
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           bounty.enabled
-            ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+            ? 'bg-accent-700 text-white'
             : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
       >
@@ -66,7 +66,7 @@ export function BountyEditor({ bounty, onChange }: Props) {
 
       {/* Settings (only when enabled) */}
       {bounty.enabled && (
-        <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+        <div className="space-y-3 pl-2 border-l-2" style={{ borderColor: 'var(--accent-700)' }}>
           {/* Type toggle: Fixed / Mystery */}
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-700 dark:text-gray-300">{t('bountyEditor.type')}</label>
@@ -75,7 +75,7 @@ export function BountyEditor({ bounty, onChange }: Props) {
                 onClick={() => setType('fixed')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                   bounty.type === 'fixed'
-                    ? 'bg-emerald-700 text-white'
+                    ? 'bg-accent-700 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
@@ -85,7 +85,7 @@ export function BountyEditor({ bounty, onChange }: Props) {
                 onClick={() => setType('mystery')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                   bounty.type === 'mystery'
-                    ? 'bg-emerald-700 text-white'
+                    ? 'bg-accent-700 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >

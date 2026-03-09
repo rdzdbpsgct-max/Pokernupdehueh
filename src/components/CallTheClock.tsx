@@ -98,9 +98,9 @@ export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onCl
         <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden mb-6">
           <div
             className={`h-full rounded-full transition-all duration-200 ${
-              isUrgent ? 'bg-red-500' : 'bg-emerald-500'
+              isUrgent ? 'bg-red-500' : ''
             }`}
-            style={{ width: `${Math.max(0, progress * 100)}%` }}
+            style={{ width: `${Math.max(0, progress * 100)}%`, ...(!isUrgent ? { backgroundColor: 'var(--accent-500)' } : {}) }}
           />
         </div>
 

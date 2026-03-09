@@ -5,6 +5,29 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [5.2.1] – 2026-03-09
+
+### Emerald-zu-Accent Migration, Aria-Labels & i18n-Fixes
+
+#### Akzentfarbe vollständig migriert
+- Alle 69 verbliebenen hardkodierten `emerald-*` Tailwind-Klassen in 20 Setup/Liga/Utility-Komponenten durch CSS Custom Properties (`var(--accent-*)`) ersetzt
+- 3 neue CSS `@utility` Klassen: `btn-accent-gradient`, `bg-accent-700`, `bg-accent-800` für häufige Button-Patterns mit Hover-States
+- Patterns: Inline-Styles, `color-mix()` für Transparenz-Varianten, Tailwind Arbitrary Values (`hover:border-[var(--accent-600)]`)
+- Betroffene Dateien: BountyEditor, RebuyEditor, AddOnEditor, ChipEditor, PayoutEditor, TemplateManager, BlindGenerator, SetupWizard, LeagueManager, TournamentFinished, TournamentHistory, SharedResultView, BubbleIndicator, CallTheClock, SeatingOverlay, ErrorBoundary, ConfigEditor, SetupPage, PlayerManager, LeagueSettings
+
+#### Aria-Labels auf Icon-Buttons
+- 25+ Icon-only Buttons (✕, ✓, ▲, ▼, ⧉, 📝, ⚙️, ✏️, 🗑️) mit `aria-label` Attributen für Screenreader-Zugänglichkeit versehen
+- Betroffene: LeagueSettings (6×), ConfigEditor (4×), GameDayEditor (4×), ChipEditor (2×), SidePotCalculator (2×), LeagueView (7×)
+
+#### Hardkodierte Strings
+- `"Pts"` → `t('league.settings.pointsAbbr')` (DE: „Pkt", EN: „Pts")
+- `'Rebuy ✓'` → `t('display.rebuyActive')`
+
+#### Zahlen
+- 11 neue Translation-Keys pro Sprache, 20 geänderte Dateien, 514 Tests
+
+---
+
 ## [5.2.0] – 2026-03-08
 
 ### Remote Control Rebuild mit PeerJS

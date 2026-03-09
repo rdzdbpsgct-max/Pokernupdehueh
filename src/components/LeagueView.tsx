@@ -200,6 +200,7 @@ export function LeagueView({ onStartTournament }: Props) {
                     onClick={() => setShowGameDayEditor(true)}
                     className="px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs transition-colors"
                     title={t('league.editor.manual')}
+                    aria-label={t('league.editor.manual')}
                   >
                     📝
                   </button>
@@ -207,6 +208,7 @@ export function LeagueView({ onStartTournament }: Props) {
                     onClick={() => setShowSettings(true)}
                     className="px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm transition-colors"
                     title={t('league.settings.title')}
+                    aria-label={t('league.settings.title')}
                   >
                     ⚙️
                   </button>
@@ -220,14 +222,15 @@ export function LeagueView({ onStartTournament }: Props) {
                         className="bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg px-2 py-1 text-sm w-32 focus:ring-2 focus:outline-none"
                         autoFocus
                       />
-                      <button onClick={() => handleRenameLeague(selectedLeague.id)} className="text-xs px-2 py-1 rounded" style={{ color: 'var(--accent-600)' }}>✓</button>
-                      <button onClick={() => setEditingName(null)} className="text-xs text-gray-400 px-2 py-1 rounded">✗</button>
+                      <button onClick={() => handleRenameLeague(selectedLeague.id)} className="text-xs px-2 py-1 rounded" style={{ color: 'var(--accent-600)' }} aria-label={t('accessibility.confirm')}>✓</button>
+                      <button onClick={() => setEditingName(null)} className="text-xs text-gray-400 px-2 py-1 rounded" aria-label={t('accessibility.cancel')}>✗</button>
                     </div>
                   ) : (
                     <button
                       onClick={() => { setEditingName(selectedLeague.id); setEditNameValue(selectedLeague.name); }}
                       className="px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm transition-colors"
                       title={t('league.view.editName')}
+                      aria-label={t('league.view.editName')}
                     >
                       ✏️
                     </button>
@@ -242,6 +245,7 @@ export function LeagueView({ onStartTournament }: Props) {
                       onClick={() => setConfirmDeleteId(selectedLeague.id)}
                       className="px-2 py-1.5 text-gray-400 hover:text-red-500 text-sm transition-colors"
                       title={t('league.view.deleteLeague')}
+                      aria-label={t('accessibility.delete')}
                     >
                       🗑️
                     </button>
@@ -266,7 +270,7 @@ export function LeagueView({ onStartTournament }: Props) {
                   >
                     {t('league.view.create')}
                   </button>
-                  <button onClick={() => setIsCreating(false)} className="text-gray-400 text-sm">✗</button>
+                  <button onClick={() => setIsCreating(false)} className="text-gray-400 text-sm" aria-label={t('accessibility.cancel')}>✗</button>
                 </div>
               ) : (
                 <button

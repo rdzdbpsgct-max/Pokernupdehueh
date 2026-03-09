@@ -255,9 +255,9 @@ export function SetupPage({
                     leagueId: prev.leagueId,
                   }));
                 }}
-                className="flex-1 min-w-[120px] px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-gray-200 dark:border-gray-700/40 hover:border-emerald-400 dark:hover:border-emerald-700/60 rounded-xl text-left transition-all duration-200 group"
+                className="flex-1 min-w-[120px] px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-[color-mix(in_srgb,var(--accent-500)_8%,transparent)] border border-gray-200 dark:border-gray-700/40 hover:border-[var(--accent-400)] rounded-xl text-left transition-all duration-200 group"
               >
-                <span className="block text-sm font-medium text-gray-800 dark:text-gray-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">{t(preset.nameKey as Parameters<typeof t>[0])}</span>
+                <span className="block text-sm font-medium text-gray-800 dark:text-gray-100 group-hover:text-[var(--accent-600)]">{t(preset.nameKey as Parameters<typeof t>[0])}</span>
                 <span className="block text-xs text-gray-400 dark:text-gray-500">{t(preset.descKey as Parameters<typeof t>[0])}</span>
               </button>
             ))}
@@ -461,7 +461,8 @@ export function SetupPage({
                           ...prev,
                           multiTable: { ...defaultMultiTableConfig(), ...prev.multiTable, autoBalanceOnElimination: e.target.checked },
                         }))}
-                        className="w-4 h-4 accent-emerald-600 rounded"
+                        className="w-4 h-4 rounded"
+                        style={{ accentColor: 'var(--accent-600)' }}
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-300">{t('multiTable.autoBalance')}</span>
                     </label>

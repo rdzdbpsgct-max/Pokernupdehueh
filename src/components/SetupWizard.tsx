@@ -93,12 +93,14 @@ export function SetupWizard({ onComplete, onSkip }: Props) {
             <div
               key={s}
               className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                i === stepIndex
-                  ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
-                  : i < stepIndex
-                  ? 'bg-emerald-500/40'
-                  : 'bg-gray-300 dark:bg-gray-600'
+                i > stepIndex ? 'bg-gray-300 dark:bg-gray-600' : ''
               }`}
+              style={i === stepIndex
+                ? { backgroundColor: 'var(--accent-500)', boxShadow: '0 0 6px color-mix(in srgb, var(--accent-500) 50%, transparent)' }
+                : i < stepIndex
+                ? { backgroundColor: 'color-mix(in srgb, var(--accent-500) 40%, transparent)' }
+                : undefined
+              }
             />
           ))}
         </div>
@@ -177,16 +179,17 @@ export function SetupWizard({ onComplete, onSkip }: Props) {
                       onClick={() => setSpeed(s.key)}
                       className={`flex items-center justify-between px-5 py-4 rounded-xl text-left transition-all duration-200 ${
                         isSelected
-                          ? 'bg-emerald-700/30 border-2 border-emerald-500/60 text-gray-900 dark:text-white shadow-lg shadow-emerald-900/20'
+                          ? 'border-2 text-gray-900 dark:text-white shadow-lg'
                           : 'bg-gray-100 dark:bg-gray-800/60 border-2 border-gray-200 dark:border-gray-700/40 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600/70'
                       }`}
+                      style={isSelected ? { backgroundColor: 'color-mix(in srgb, var(--accent-700) 30%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-500) 60%, transparent)', boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--accent-900) 20%, transparent)' } : undefined}
                     >
                       <div>
                         <span className="text-lg font-semibold">{s.label}</span>
                         <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{s.desc}</span>
                       </div>
                       {estimate && (
-                        <span className={`text-sm font-medium ${isSelected ? 'text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                        <span className={`text-sm font-medium ${isSelected ? '' : 'text-gray-400 dark:text-gray-500'}`} style={isSelected ? { color: 'var(--accent-400)' } : undefined}>
                           {formatDuration(estimate.totalSeconds)}
                         </span>
                       )}
@@ -253,14 +256,14 @@ export function SetupWizard({ onComplete, onSkip }: Props) {
             {isLast ? (
               <button
                 onClick={handleComplete}
-                className="px-6 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg text-sm font-bold transition-all duration-200 shadow-md shadow-emerald-900/30 active:scale-[0.97]"
+                className="px-6 py-2 btn-accent-gradient text-white rounded-lg text-sm font-bold transition-all duration-200 active:scale-[0.97]"
               >
                 {t('wizard.start')}
               </button>
             ) : (
               <button
                 onClick={goNext}
-                className="px-6 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-emerald-900/30 active:scale-[0.97]"
+                className="px-6 py-2 btn-accent-gradient text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97]"
               >
                 {t('wizard.next')}
               </button>

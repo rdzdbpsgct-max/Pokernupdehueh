@@ -64,7 +64,7 @@ export function SeatingOverlay({ tables, players, onDismiss }: Props) {
                   className="rounded-xl border border-gray-200 dark:border-gray-700/40 bg-gray-50/80 dark:bg-gray-800/60 px-3 py-2"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-sm font-bold" style={{ color: 'var(--accent-500)' }}>
                       {tbl.name}
                     </span>
                     <span className="text-xs text-gray-500">
@@ -104,7 +104,7 @@ export function SeatingOverlay({ tables, players, onDismiss }: Props) {
         <div className="px-6 pb-5 pt-2">
           <button
             onClick={onDismiss}
-            className="w-full px-6 py-3 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl text-base font-bold transition-all duration-200 shadow-lg shadow-emerald-900/30 active:scale-[0.97]"
+            className="w-full px-6 py-3 btn-accent-gradient text-white rounded-xl text-base font-bold transition-all duration-200 active:scale-[0.97]"
           >
             {t('seating.start')}
           </button>

@@ -65,7 +65,7 @@ export function SharedResultView({ result, onClose }: Props) {
                   </span>
                 </div>
                 {player.payout > 0 && (
-                  <span className="text-emerald-500 dark:text-emerald-400 text-sm font-bold shrink-0 ml-3">
+                  <span className="text-sm font-bold shrink-0 ml-3" style={{ color: 'var(--accent-500)' }}>
                     {player.payout.toFixed(2)} {t('unit.eur')}
                   </span>
                 )}

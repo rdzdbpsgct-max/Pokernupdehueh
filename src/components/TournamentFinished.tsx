@@ -137,7 +137,7 @@ export function TournamentFinished({
           <div className="text-7xl animate-bounce">
             &#127942;
           </div>
-          <p className="text-emerald-400 text-lg font-medium tracking-wide">
+          <p className="text-lg font-medium tracking-wide" style={{ color: 'var(--accent-400)' }}>
             {t('finished.congratulations')}
           </p>
           <p className="text-4xl font-bold text-gray-900 dark:text-white">
@@ -211,7 +211,7 @@ export function TournamentFinished({
                         </span>
                       </div>
                       {isPaid && amount != null && (
-                        <span className="text-emerald-400 text-sm font-bold shrink-0 ml-3">
+                        <span className="text-sm font-bold shrink-0 ml-3" style={{ color: 'var(--accent-400)' }}>
                           {amount.toFixed(2)} {t('unit.eur')}
                         </span>
                       )}
@@ -255,10 +255,10 @@ export function TournamentFinished({
                         {/* Divider + Balance */}
                         <div className="border-t border-gray-300 dark:border-gray-700/50 pt-0.5 mt-0.5">
                           <div className="flex justify-between text-xs font-semibold">
-                            <span className={netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}>
+                            <span className={netBalance < 0 ? 'text-red-400' : netBalance === 0 ? 'text-gray-400 dark:text-gray-500' : ''} style={netBalance > 0 ? { color: 'var(--accent-400)' } : undefined}>
                               {t('finished.balance')}
                             </span>
-                            <span className={netBalance > 0 ? 'text-emerald-400' : netBalance < 0 ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}>
+                            <span className={netBalance < 0 ? 'text-red-400' : netBalance === 0 ? 'text-gray-400 dark:text-gray-500' : ''} style={netBalance > 0 ? { color: 'var(--accent-400)' } : undefined}>
                               {netBalance >= 0 ? '+' : ''}{netBalance.toFixed(2)} {t('unit.eur')}
                             </span>
                           </div>
@@ -385,7 +385,7 @@ export function TournamentFinished({
           <button
             onClick={captureScreenshot}
             disabled={capturing}
-            className="w-full px-6 py-3 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl text-lg font-medium transition-all duration-200 shadow-lg shadow-emerald-900/30 active:scale-[0.98] disabled:opacity-50"
+            className="w-full px-6 py-3 btn-accent-gradient text-white rounded-xl text-lg font-medium transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
             title={t('finished.shareResults')}
           >
             {capturing ? t('finished.capturing') : t('finished.shareResults')}

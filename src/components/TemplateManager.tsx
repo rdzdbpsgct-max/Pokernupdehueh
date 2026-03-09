@@ -185,7 +185,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
             <button
               onClick={handleSave}
               disabled={!newName.trim()}
-              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
+              className="px-4 py-2 bg-accent-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
             >
               {t('templates.save')}
             </button>
@@ -247,7 +247,8 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
                 </div>
                 <button
                   onClick={() => handleLoad(tmpl)}
-                  className="px-3 py-1.5 bg-emerald-600 dark:bg-emerald-700/50 hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white dark:text-emerald-200 rounded text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 rounded text-xs font-medium transition-colors text-white"
+                  style={{ backgroundColor: 'var(--accent-600)' }}
                 >
                   {t('templates.load')}
                 </button>
@@ -299,7 +300,7 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
                 </button>
                 <button
                   onClick={handleJsonImport}
-                  className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 bg-accent-700 text-white rounded text-xs font-medium transition-colors"
                 >
                   {t('templates.jsonImport')}
                 </button>

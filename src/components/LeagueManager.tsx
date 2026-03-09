@@ -174,7 +174,7 @@ export function LeagueManager({ onClose, currentConfig }: Props) {
           <div className="flex items-center gap-2">
             <button
               onClick={createLeague}
-              className="px-3 py-1.5 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-emerald-900/20 active:scale-[0.97]"
+              className="px-3 py-1.5 btn-accent-gradient text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97]"
             >
               + {t('league.newLeague')}
             </button>
@@ -200,7 +200,7 @@ export function LeagueManager({ onClose, currentConfig }: Props) {
           </div>
         )}
         {importSuccess && (
-          <div className="mx-5 mt-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700/40 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs">
+          <div className="mx-5 mt-2 px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 8%, transparent)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'color-mix(in srgb, var(--accent-500) 30%, transparent)', color: 'var(--accent-600)' }}>
             {t('league.importSuccess')}
           </div>
         )}
@@ -301,7 +301,7 @@ function LeagueEntry({
           <div className="flex items-center gap-3 mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             <span>{league.pointSystem.entries.length} {t('league.points')}</span>
             {league.defaultConfig && (
-              <span className="text-xs text-emerald-500 dark:text-emerald-600">{t('league.hasConfig')}</span>
+              <span className="text-xs" style={{ color: 'var(--accent-500)' }}>{t('league.hasConfig')}</span>
             )}
           </div>
         </div>
@@ -406,7 +406,8 @@ function LeagueEntry({
             {onSaveConfig && (
               <button
                 onClick={onSaveConfig}
-                className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-medium transition-colors border border-emerald-200 dark:border-emerald-800/40"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', color: 'var(--accent-600)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'color-mix(in srgb, var(--accent-500) 20%, transparent)' }}
               >
                 {savedConfig ? t('league.configSaved') : t('league.saveConfig')}
               </button>
@@ -474,7 +475,7 @@ function LeagueLeaderboard({ standings }: { standings: LeagueStanding[] }) {
 
   const MEDAL = ['\u{1F3C6}', '\u{1F948}', '\u{1F949}'];
 
-  const thClass = 'py-1.5 pr-2 text-center cursor-pointer hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors select-none';
+  const thClass = 'py-1.5 pr-2 text-center cursor-pointer hover:text-[var(--accent-500)] transition-colors select-none';
   const arrow = (col: SortColumn) => sortCol === col ? (sortAsc ? ' \u25B2' : ' \u25BC') : '';
 
   return (
@@ -497,8 +498,9 @@ function LeagueLeaderboard({ standings }: { standings: LeagueStanding[] }) {
             <tr
               key={s.name}
               className={`border-t border-gray-200/60 dark:border-gray-700/30 ${
-                i < 3 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                i < 3 ? 'font-medium' : 'text-gray-700 dark:text-gray-300'
               }`}
+              style={i < 3 ? { color: 'var(--accent-500)' } : undefined}
             >
               <td className="py-1.5 pr-2 tabular-nums">{MEDAL[i] ?? i + 1}</td>
               <td className="py-1.5 pr-2 font-medium">{s.name}</td>

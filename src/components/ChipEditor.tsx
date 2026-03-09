@@ -104,7 +104,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
         onClick={toggle}
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           chips.enabled
-            ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+            ? 'bg-accent-700 text-white'
             : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
       >
@@ -112,7 +112,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
       </button>
 
       {chips.enabled && (
-        <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+        <div className="space-y-3 pl-2 border-l-2" style={{ borderColor: 'var(--accent-700)' }}>
           <p className="text-xs text-gray-400 dark:text-gray-500">{t('chipEditor.description')}</p>
 
           {/* Preset buttons */}
@@ -126,7 +126,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                   key={p.key}
                   onClick={() => emitChange(applyChipPreset(p))}
                   className="flex flex-col items-start px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
-                             border border-gray-300 dark:border-gray-700 hover:border-emerald-600 rounded-lg
+                             border border-gray-300 dark:border-gray-700 hover:border-[var(--accent-600)] rounded-lg
                              transition-colors text-left"
                 >
                   <span className="text-gray-900 dark:text-white font-medium text-xs">
@@ -189,6 +189,7 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                     onClick={() => removeDenomination(denom.id)}
                     className="px-2 py-1 rounded bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300
                                text-xs font-medium transition-colors"
+                    aria-label={t('accessibility.remove')}
                   >
                     ✕
                   </button>
@@ -213,12 +214,15 @@ export function ChipEditor({ chips, onChange, levels }: Props) {
                           }}
                           className={`w-7 h-7 rounded-full border-2 transition-colors relative ${
                             denom.color === c.hex
-                              ? 'border-emerald-400 ring-1 ring-emerald-400'
+                              ? ''
                               : isUsedByOther
                                 ? 'border-amber-500/50 opacity-50'
                                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-500 dark:hover:border-gray-400'
                           }`}
-                          style={{ backgroundColor: c.hex }}
+                          style={{
+                            backgroundColor: c.hex,
+                            ...(denom.color === c.hex ? { borderColor: 'var(--accent-400)', boxShadow: '0 0 0 1px var(--accent-400)' } : {}),
+                          }}
                           title={language === 'de' ? c.de : c.en}
                         />
                       );
@@ -389,6 +393,7 @@ function ColorUpScheduleEditor({
                     <button
                       onClick={() => handleRemoveEntry(entryIdx)}
                       className="px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs transition-colors"
+                      aria-label={t('accessibility.remove')}
                     >
                       ✕
                     </button>

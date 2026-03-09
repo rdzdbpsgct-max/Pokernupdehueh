@@ -97,6 +97,30 @@
   will-change: transform;
 }
 
+/* === Accent Color Utilities === */
+
+@utility btn-accent-gradient {
+  background: linear-gradient(to bottom, var(--accent-600), var(--accent-700));
+  box-shadow: 0 4px 6px -1px var(--accent-900);
+  &:hover {
+    background: linear-gradient(to bottom, var(--accent-500), var(--accent-600));
+  }
+}
+
+@utility bg-accent-700 {
+  background-color: var(--accent-700);
+  &:hover {
+    background-color: var(--accent-600);
+  }
+}
+
+@utility bg-accent-800 {
+  background-color: color-mix(in srgb, var(--accent-700) 80%, black);
+  &:hover {
+    background-color: var(--accent-700);
+  }
+}
+
 /* === Theme Variables === */
 
 :root {

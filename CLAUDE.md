@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 5.2.0
+**Version**: 5.2.1
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -130,7 +130,7 @@ src/
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
     ├── languageContextValue.ts  # Context value type
-    ├── translations.ts          # DE/EN translation strings (~850+ keys)
+    ├── translations.ts          # DE/EN translation strings (~870+ keys)
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
@@ -179,7 +179,7 @@ public/
 - **Dark/Light mode**: `@custom-variant dark (&:is(.dark *))` in `index.css`; class-based via `.dark` on `<html>`; every component uses `dark:` variants (e.g., `bg-gray-100/80 dark:bg-gray-800/40`)
 - Light theme: `#f9fafb` body, `#111827` text. Dark theme: `#0a0a0f` body with subtle emerald radial-gradient, `#e5e7eb` text
 - CSS custom properties: `--timer-glow-color` / `--timer-glow-color-strong` for theme-aware animation colors
-- Color palette: emerald (active/success), amber (breaks/warnings), red (danger/elimination)
+- Color palette: accent color (active/success, user-selectable), amber (breaks/warnings), red (danger/elimination)
 - Glassmorphism: `backdrop-blur-sm`, soft shadows (`shadow-lg shadow-gray-300/30 dark:shadow-black/20`), semi-transparent backgrounds
 - Buttons: `bg-gradient-to-b` for tactile feel, `active:scale-[0.97]` feedback, `shadow-lg` depth
 - Animations: `animate-fade-in` (content), `animate-timer-glow` (running timer), `animate-countdown-pulse`, `animate-scale-in` (modals), `animate-bubble-pulse`/`animate-itm-flash`/`animate-addon-pulse`
@@ -232,7 +232,7 @@ public/
 - **Cross-device compatibility**: Safe area insets (notch/gesture-bar), `100dvh` viewport height, `inputmode="numeric"` on all number inputs, webkit fullscreen prefix, localStorage try-catch for private browsing, tablet breakpoint (`md:` at 768px), touch targets ≥32px
 - **Progressive disclosure in setup**: `CollapsibleSection` card component wraps each setup section; essential sections (Tournament Basics, Players, Blinds) open by default, optional sections (Chips, Payout, Rebuy/Add-On/Bounty) collapsed with summary text; `CollapsibleSubSection` for nested collapsibles inside cards (BlindGenerator, Level Table); Tournament Name + Buy-In merged into "Turnier-Grundlagen" card; Rebuy/Add-On/Bounty grouped into one card; Summary badges visible as subtitles even on open sections
 - **Tournament checkpoint**: Auto-save game state to localStorage on every action in game mode; on restart, offer to resume with timer always paused (timestamps invalid after reload)
-- **Accessibility**: ARIA roles/labels on timer, controls, modals, collapsible sections; auto-focus and Escape-to-close on dialogs
+- **Accessibility**: ARIA roles/labels on timer, controls, modals, collapsible sections; `aria-label` on all icon-only buttons (✕, ✓, ▲, ▼, emoji buttons); auto-focus and Escape-to-close on dialogs; `useDialogA11y` hook for consistent dialog behavior; `prefers-reduced-motion` respected
 - **Premium UI**: Glassmorphism (`backdrop-blur-sm`, soft shadows), gradient buttons (`bg-gradient-to-b`), custom animations (9 `@keyframes` in `index.css`), tactile feedback (`active:scale-[0.97]`), timer glow (`animate-timer-glow`), dual body gradient, focus glow on all inputs, custom scrub slider matching progress bar, card hover glow, table row hover states
 - **Clock display**: Real-time clock in game mode header, updated every 30 seconds via `setInterval`
 - **Last Hand**: Toggle button (L key) + amber banner via `BubbleIndicator`, voice announcement via `announceLastHand()` (distinguishes before-break vs end-of-level), auto-reset on level change
@@ -254,7 +254,7 @@ public/
 - **Tournament Presets**: 3 built-in tournament profiles ("Quick Cash Game", "Standard Home Game", "Deep Stack Tournament") for instant start. `getBuiltInPresets()` in persistence.ts. Preset buttons on SetupPage.
 - **Side-Pot Calculator**: `computeSidePots()` in tournament.ts calculates main/side pots from all-in stacks. `SidePotCalculator.tsx` modal with player stack input and result table. Accessible from PlayerPanel header.
 - **Ticker Banner**: Scrolling info bar at bottom of TV Display Mode. Shows rotating tournament info (next level, avg stack, player count, prizepool). Pure CSS animation (`animate-ticker-scroll`).
-- **Custom Accent Color**: 6 selectable accent colors (emerald, blue, purple, red, amber, cyan). CSS custom properties (`--accent-500/600/400/700/900/ring/glow/glow-strong`). Picker in SettingsPanel. `AccentColor` type in types.ts. Game-mode components migrated from hardcoded `emerald-*` classes to `var(--accent-*)` inline styles using `color-mix()` for semi-transparent variants.
+- **Custom Accent Color**: 6 selectable accent colors (emerald, blue, purple, red, amber, cyan). CSS custom properties (`--accent-500/600/400/700/900/ring/glow/glow-strong`). Picker in SettingsPanel. `AccentColor` type in types.ts. All components fully migrated from hardcoded `emerald-*` classes to `var(--accent-*)` — via inline styles, `color-mix()` for semi-transparent variants, 3 CSS `@utility` classes (`btn-accent-gradient`, `bg-accent-700`, `bg-accent-800`) for common button patterns, and Tailwind arbitrary values (`hover:border-[var(--accent-600)]`) for hover states.
 - **Background Patterns**: 9 selectable CSS gradient backgrounds (none, felt-green, felt-blue, felt-red, casino, dark-wood, abstract, midnight, sunset). `--bg-pattern` CSS custom property. Picker in SettingsPanel. `BackgroundImage` type in types.ts.
 - **Blinds by End Time**: `generateBlindsByEndTime()` in blinds.ts generates blind structure targeting a specific tournament duration. Tab in BlindGenerator with time picker + live preview.
 - **Re-Entry Mode**: Players can re-enter after elimination (new ID, same person). `reEnterPlayer()` in players.ts. `reEntryEnabled/maxReEntries` in RebuyConfig. Re-entry button on eliminated players. Auto-seat at smallest table.
@@ -267,7 +267,7 @@ public/
 
 ## Testing
 
-- Tests live in `tests/logic.test.ts` (443 tests) and `tests/components.test.tsx` (66 tests) — 509 total
+- Tests live in `tests/logic.test.ts` (448 tests) and `tests/components.test.tsx` (66 tests) — 514 total
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
@@ -302,6 +302,14 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v5.2.1 — Emerald-zu-Accent Migration, Aria-Labels & i18n-Fixes
+
+- **Akzentfarbe vollständig migriert**: Alle 69 verbliebenen hardkodierten `emerald-*` Tailwind-Klassen in 20 Setup/Liga/Utility-Komponenten durch CSS Custom Properties (`var(--accent-*)`) ersetzt. 3 neue CSS `@utility` Klassen (`btn-accent-gradient`, `bg-accent-700`, `bg-accent-800`) für häufige Button-Patterns mit Hover-States. Betroffene Dateien: BountyEditor, RebuyEditor, AddOnEditor, ChipEditor, PayoutEditor, TemplateManager, BlindGenerator, SetupWizard, LeagueManager, TournamentFinished, TournamentHistory, SharedResultView, BubbleIndicator, CallTheClock, SeatingOverlay, ErrorBoundary, ConfigEditor, SetupPage, PlayerManager, LeagueSettings.
+- **Aria-Labels auf Icon-Buttons**: 25+ Icon-only Buttons (✕, ✓, ▲, ▼, ⧉, 📝, ⚙️, ✏️, 🗑️) mit `aria-label` Attributen versehen für Screenreader-Zugänglichkeit. Betroffene: LeagueSettings (6×), ConfigEditor (4×), GameDayEditor (4×), ChipEditor (2×), SidePotCalculator (2×), LeagueView (7×).
+- **Hardkodierte Strings i18n**: `"Pts"` → `t('league.settings.pointsAbbr')` (DE: „Pkt", EN: „Pts"), `'Rebuy ✓'` → `t('display.rebuyActive')`.
+- **11 neue Translation-Keys** (pro Sprache): 9× `accessibility.*` (close, remove, delete, moveUp, moveDown, confirm, cancel, sortAscending, sortDescending) + `league.settings.pointsAbbr` + `display.rebuyActive`.
+- **20 geänderte Dateien** + `index.css` + `translations.ts`, **0 neue Tests**, **514 Tests gesamt**
 
 ### v5.2.0 — Remote Control Rebuild mit PeerJS
 

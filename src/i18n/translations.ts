@@ -822,6 +822,19 @@ const de = {
   // --- Accessibility ---
   'accessibility.decrease': 'Verringern',
   'accessibility.increase': 'Erhöhen',
+  'accessibility.close': 'Schließen',
+  'accessibility.remove': 'Entfernen',
+  'accessibility.delete': 'Löschen',
+  'accessibility.moveUp': 'Nach oben',
+  'accessibility.moveDown': 'Nach unten',
+  'accessibility.confirm': 'Bestätigen',
+  'accessibility.cancel': 'Abbrechen',
+  'accessibility.sortAscending': 'Aufsteigend sortieren',
+  'accessibility.sortDescending': 'Absteigend sortieren',
+
+  // --- Misc ---
+  'league.settings.pointsAbbr': 'Pkt',
+  'display.rebuyActive': 'Rebuy ✓',
 
   // --- Side Pot warnings (domain) ---
   'sidePot.warnZeroPlayers': '{n} Spieler mit 0 Einsatz werden ignoriert.',
@@ -1653,6 +1666,19 @@ const en: Record<TranslationKey, string> = {
   // --- Accessibility ---
   'accessibility.decrease': 'Decrease',
   'accessibility.increase': 'Increase',
+  'accessibility.close': 'Close',
+  'accessibility.remove': 'Remove',
+  'accessibility.delete': 'Delete',
+  'accessibility.moveUp': 'Move up',
+  'accessibility.moveDown': 'Move down',
+  'accessibility.confirm': 'Confirm',
+  'accessibility.cancel': 'Cancel',
+  'accessibility.sortAscending': 'Sort ascending',
+  'accessibility.sortDescending': 'Sort descending',
+
+  // --- Misc ---
+  'league.settings.pointsAbbr': 'Pts',
+  'display.rebuyActive': 'Rebuy ✓',
 
   // --- Side Pot warnings (domain) ---
   'sidePot.warnZeroPlayers': '{n} player(s) with 0 investment ignored.',

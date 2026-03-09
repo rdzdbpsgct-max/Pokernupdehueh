@@ -45,7 +45,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
         onClick={toggle}
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           rebuy.enabled
-            ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+            ? 'bg-accent-700 text-white'
             : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
       >
@@ -54,7 +54,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
 
       {/* Settings (only when enabled) */}
       {rebuy.enabled && (
-        <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+        <div className="space-y-3 pl-2 border-l-2" style={{ borderColor: 'var(--accent-700)' }}>
           {/* Rebuy cost & chips */}
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
@@ -89,7 +89,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               onClick={() => setLimitType('levels')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 rebuy.limitType === 'levels'
-                  ? 'bg-emerald-700 text-white'
+                  ? 'bg-accent-700 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
@@ -99,7 +99,7 @@ export function RebuyEditor({ rebuy, onChange, buyIn, startingChips }: Props) {
               onClick={() => setLimitType('time')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 rebuy.limitType === 'time'
-                  ? 'bg-emerald-700 text-white'
+                  ? 'bg-accent-700 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >

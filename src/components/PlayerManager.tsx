@@ -139,9 +139,10 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
                 draggedIndex === i ? 'opacity-40' : ''
               } ${
                 dragOverIndex === i && draggedIndex !== null
-                  ? 'border-t-2 border-emerald-500'
+                  ? 'border-t-2'
                   : 'border-t-2 border-transparent'
               }`}
+              style={dragOverIndex === i && draggedIndex !== null ? { borderTopColor: 'var(--accent-500)' } : undefined}
             >
               {/* Drag handle */}
               <span className="cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-400 text-sm select-none" title={t('playerManager.dragTooltip')}>
@@ -216,7 +217,8 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
       {players.length >= 2 && !showShuffleConfirm && (
         <button
           onClick={() => setShowShuffleConfirm(true)}
-          className="px-4 py-2 bg-emerald-600 dark:bg-emerald-800/80 hover:bg-emerald-500 dark:hover:bg-emerald-700 text-white dark:text-emerald-200 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-500 dark:border-emerald-700/30"
+          className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-all duration-200"
+          style={{ backgroundColor: 'var(--accent-600)' }}
         >
           🔀 {t('playerManager.shuffle')}
         </button>
@@ -238,7 +240,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
             </button>
             <button
               onClick={() => { handleShuffle(); setShowShuffleConfirm(false); }}
-              className="flex-1 px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors"
+              className="flex-1 px-2 py-1.5 bg-accent-700 text-white rounded-lg text-xs font-medium transition-colors"
             >
               🔀 {t('playerManager.shuffleConfirmBtn')}
             </button>

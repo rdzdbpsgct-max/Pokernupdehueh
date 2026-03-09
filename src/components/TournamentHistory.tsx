@@ -88,9 +88,10 @@ export function TournamentHistory({ onClose }: Props) {
             onClick={() => setTab('history')}
             className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               tab === 'history'
-                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                ? ''
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
+            style={tab === 'history' ? { borderColor: 'var(--accent-500)', color: 'var(--accent-500)' } : undefined}
           >
             {t('history.title')}
           </button>
@@ -98,9 +99,10 @@ export function TournamentHistory({ onClose }: Props) {
             onClick={() => setTab('stats')}
             className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               tab === 'stats'
-                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                ? ''
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
+            style={tab === 'stats' ? { borderColor: 'var(--accent-500)', color: 'var(--accent-500)' } : undefined}
           >
             {t('history.statsTab')}
           </button>
@@ -207,7 +209,7 @@ function HistoryEntry({
           <div className="flex items-center gap-3 mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             {winner && (
               <span>
-                {t('history.winner')}: <span className="text-emerald-600 dark:text-emerald-400 font-medium">{winner.name}</span>
+                {t('history.winner')}: <span className="font-medium" style={{ color: 'var(--accent-500)' }}>{winner.name}</span>
               </span>
             )}
             <span>{result.playerCount} {t('history.players')}</span>
@@ -245,8 +247,9 @@ function HistoryEntry({
                   <tr
                     key={i}
                     className={`border-t border-gray-200/60 dark:border-gray-700/30 ${
-                      p.place === 1 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                      p.place === 1 ? 'font-medium' : 'text-gray-700 dark:text-gray-300'
                     }`}
+                    style={p.place === 1 ? { color: 'var(--accent-500)' } : undefined}
                   >
                     <td className="py-1.5 pr-2 tabular-nums">{p.place}</td>
                     <td className="py-1.5 pr-2">{p.name}</td>
@@ -259,12 +262,12 @@ function HistoryEntry({
                       </td>
                     )}
                     <td className={`py-1.5 text-right tabular-nums font-medium ${
-                      p.netBalance > 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : p.netBalance < 0
+                      p.netBalance < 0
                         ? 'text-red-500 dark:text-red-400'
-                        : 'text-gray-500'
-                    }`}>
+                        : p.netBalance === 0
+                        ? 'text-gray-500'
+                        : ''
+                    }`} style={p.netBalance > 0 ? { color: 'var(--accent-500)' } : undefined}>
                       {p.netBalance > 0 ? '+' : ''}{p.netBalance.toFixed(2)} €
                     </td>
                   </tr>
@@ -338,12 +341,12 @@ function StatsTable({ stats }: { stats: PlayerStat[] }) {
               <td className="py-2 pr-2 text-right tabular-nums">{s.totalPayout.toFixed(2)} €</td>
               <td className="py-2 pr-2 text-right tabular-nums">{s.totalCost.toFixed(2)} €</td>
               <td className={`py-2 pr-2 text-right tabular-nums font-medium ${
-                s.netBalance > 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : s.netBalance < 0
+                s.netBalance < 0
                   ? 'text-red-500 dark:text-red-400'
-                  : 'text-gray-500'
-              }`}>
+                  : s.netBalance === 0
+                  ? 'text-gray-500'
+                  : ''
+              }`} style={s.netBalance > 0 ? { color: 'var(--accent-500)' } : undefined}>
                 {s.netBalance > 0 ? '+' : ''}{s.netBalance.toFixed(2)} €
               </td>
               <td className="py-2 pr-2 text-center tabular-nums">{s.avgPlace}</td>

@@ -78,9 +78,10 @@ export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCou
             onClick={() => setMode('speed')}
             className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
               mode === 'speed'
-                ? 'bg-emerald-700/40 text-gray-900 dark:text-white'
+                ? 'text-gray-900 dark:text-white'
                 : 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/60'
             }`}
+            style={mode === 'speed' ? { backgroundColor: 'color-mix(in srgb, var(--accent-700) 40%, transparent)' } : undefined}
           >
             {t('blindGenerator.modeSpeed')}
           </button>
@@ -88,9 +89,10 @@ export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCou
             onClick={() => setMode('endTime')}
             className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
               mode === 'endTime'
-                ? 'bg-emerald-700/40 text-gray-900 dark:text-white'
+                ? 'text-gray-900 dark:text-white'
                 : 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/60'
             }`}
+            style={mode === 'endTime' ? { backgroundColor: 'color-mix(in srgb, var(--accent-700) 40%, transparent)' } : undefined}
           >
             {t('blindGenerator.modeEndTime')}
           </button>
@@ -109,14 +111,15 @@ export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCou
                     onClick={() => setSelectedSpeed(speed.key)}
                     className={`flex flex-col items-start px-3 py-2 rounded-lg text-left transition-colors flex-1 min-w-[100px] ${
                       isSelected
-                        ? 'bg-emerald-700/40 border border-emerald-500/60 text-gray-900 dark:text-white shadow-md shadow-emerald-900/20'
+                        ? 'border text-gray-900 dark:text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/40 hover:border-gray-300 dark:hover:border-gray-600/70 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/80'
                     }`}
+                    style={isSelected ? { backgroundColor: 'color-mix(in srgb, var(--accent-700) 40%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-500) 60%, transparent)', boxShadow: '0 4px 6px -1px color-mix(in srgb, var(--accent-900) 20%, transparent)' } : undefined}
                   >
                     <span className="text-sm font-medium">{speed.label}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{speed.desc}</span>
                     {estimate && (
-                      <span className={`text-xs mt-1 ${isSelected ? 'text-emerald-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                      <span className={`text-xs mt-1 ${isSelected ? '' : 'text-gray-400 dark:text-gray-500'}`} style={isSelected ? { color: 'var(--accent-400)' } : undefined}>
                         {formatDuration(estimate.totalSeconds)}
                       </span>
                     )}
@@ -144,7 +147,7 @@ export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCou
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                 <span>{t('blindGenerator.estimatedResult')}</span>
-                <span className="text-emerald-400 font-medium">{formatDuration(endTimeEstimate)}</span>
+                <span className="font-medium" style={{ color: 'var(--accent-400)' }}>{formatDuration(endTimeEstimate)}</span>
               </div>
             </div>
           </>
@@ -207,7 +210,7 @@ export function BlindGenerator({ startingChips, anteEnabled, anteMode, playerCou
         {/* Apply button */}
         <button
           onClick={() => onApply(preview)}
-          className="w-full px-4 py-2 bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-md shadow-emerald-900/20 active:scale-[0.98]"
+          className="w-full px-4 py-2 btn-accent-gradient text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.98]"
         >
           {t('blindGenerator.apply')}
         </button>

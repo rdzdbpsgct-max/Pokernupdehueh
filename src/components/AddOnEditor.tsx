@@ -51,7 +51,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
         onClick={toggle}
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           addOn.enabled
-            ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
+            ? 'bg-accent-700 text-white'
             : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
       >
@@ -73,7 +73,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
             </button>
             <button
               onClick={handleEnableRebuy}
-              className="flex-1 px-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors"
+              className="flex-1 px-2 py-1.5 bg-accent-700 text-white rounded-lg text-xs font-medium transition-colors"
             >
               {t('addOnEditor.enableRebuy')}
             </button>
@@ -83,7 +83,7 @@ export function AddOnEditor({ addOn, onChange, buyIn, startingChips, rebuyEnable
 
       {/* Settings (only when enabled) */}
       {addOn.enabled && (
-        <div className="space-y-3 pl-2 border-l-2 border-emerald-800">
+        <div className="space-y-3 pl-2 border-l-2" style={{ borderColor: 'var(--accent-700)' }}>
           <p className="text-xs text-gray-400 dark:text-gray-500">{t('addOnEditor.description')}</p>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">

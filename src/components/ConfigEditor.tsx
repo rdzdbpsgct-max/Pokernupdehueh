@@ -124,7 +124,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
           <span className="text-gray-400 dark:text-gray-500 text-xs">{t('config.min')}</span>
           <button
             onClick={applyGlobalDuration}
-            className="px-3 py-1 bg-emerald-800 hover:bg-emerald-700 text-emerald-200 rounded text-xs font-medium transition-colors"
+            className="px-3 py-1 bg-accent-800 text-white rounded text-xs font-medium transition-colors"
           >
             {t('config.apply')}
           </button>
@@ -167,8 +167,9 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               className={`text-xs px-2 py-0.5 rounded ${
                 level.type === 'break'
                   ? 'bg-amber-800 text-amber-200'
-                  : 'bg-emerald-800 text-emerald-200'
+                  : 'text-white'
               }`}
+              style={level.type !== 'break' ? { backgroundColor: 'color-mix(in srgb, var(--accent-700) 80%, black)' } : undefined}
             >
               {level.type === 'break' ? t('config.break') : t('config.level')}
             </span>
@@ -246,6 +247,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 disabled={i === 0}
                 className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 text-xs"
                 title={t('config.moveUp')}
+                aria-label={t('accessibility.moveUp')}
               >
                 ▲
               </button>
@@ -254,6 +256,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 disabled={i === config.levels.length - 1}
                 className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 text-xs"
                 title={t('config.moveDown')}
+                aria-label={t('accessibility.moveDown')}
               >
                 ▼
               </button>
@@ -261,6 +264,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 onClick={() => duplicateLevel(i)}
                 className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-400 text-xs"
                 title={t('config.duplicate')}
+                aria-label={t('config.duplicate')}
               >
                 ⧉
               </button>
@@ -269,6 +273,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                 disabled={config.levels.length <= 1}
                 className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-400 disabled:opacity-30 text-xs"
                 title={t('config.delete')}
+                aria-label={t('accessibility.delete')}
               >
                 ✕
               </button>
@@ -281,7 +286,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
       <div className="flex gap-2">
         <button
           onClick={addLevel}
-          className="px-4 py-2 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-200 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-700/30"
+          className="px-4 py-2 bg-accent-800 text-white rounded-lg text-sm font-medium transition-all duration-200"
         >
           {t('config.addLevel')}
         </button>

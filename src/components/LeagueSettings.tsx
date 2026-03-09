@@ -95,7 +95,7 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700/40">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('league.settings.title')}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl transition-colors">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl transition-colors" aria-label={t('accessibility.close')}>✕</button>
         </div>
 
         <div className="p-5 space-y-5">
@@ -113,7 +113,7 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
                     className="w-12 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded px-1.5 py-0.5 text-center text-sm focus:ring-2 focus:outline-none"
                     min={0}
                   />
-                  <span className="text-gray-400 dark:text-gray-500 text-xs">Pts</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs">{t('league.settings.pointsAbbr')}</span>
                 </div>
               ))}
             </div>
@@ -132,6 +132,7 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
                     onClick={() => handleMoveCriterion(idx, 'up')}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xs px-1"
                     disabled={idx === 0}
+                    aria-label={t('accessibility.moveUp')}
                   >
                     ▲
                   </button>
@@ -139,12 +140,14 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
                     onClick={() => handleMoveCriterion(idx, 'down')}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xs px-1"
                     disabled={idx === criteria.length - 1}
+                    aria-label={t('accessibility.moveDown')}
                   >
                     ▼
                   </button>
                   <button
                     onClick={() => handleToggleCriterion(c)}
                     className="text-red-400 hover:text-red-600 text-xs px-1"
+                    aria-label={t('accessibility.remove')}
                   >
                     ✕
                   </button>
@@ -179,7 +182,7 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
                       name="activeSeason"
                       checked={activeSeasonId === s.id}
                       onChange={() => setActiveSeasonId(s.id)}
-                      className="accent-emerald-600"
+                      style={{ accentColor: 'var(--accent-600)' }}
                     />
                     <span className="flex-1 text-sm text-gray-900 dark:text-white">
                       {s.name}
@@ -224,8 +227,8 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
                   className="flex-1 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
                   autoFocus
                 />
-                <button onClick={handleCreateSeason} className="text-sm px-2 py-1" style={{ color: 'var(--accent-600)' }}>✓</button>
-                <button onClick={() => setIsAddingSeason(false)} className="text-sm text-gray-400 px-2 py-1">✕</button>
+                <button onClick={handleCreateSeason} className="text-sm px-2 py-1" style={{ color: 'var(--accent-600)' }} aria-label={t('accessibility.confirm')}>✓</button>
+                <button onClick={() => setIsAddingSeason(false)} className="text-sm text-gray-400 px-2 py-1" aria-label={t('accessibility.cancel')}>✕</button>
               </div>
             ) : (
               <button

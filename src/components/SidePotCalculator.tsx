@@ -253,6 +253,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label={t('accessibility.close')}
           >
             ✕
           </button>
@@ -325,6 +326,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
                   onClick={() => handleRemovePlayer(player.id)}
                   className="w-7 h-7 shrink-0 flex items-center justify-center text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors text-sm"
                   title={t('sidePot.removePlayer')}
+                  aria-label={t('accessibility.remove')}
                 >
                   ✕
                 </button>

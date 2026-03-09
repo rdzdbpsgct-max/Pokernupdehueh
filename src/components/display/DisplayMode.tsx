@@ -184,7 +184,7 @@ export function DisplayMode({
       }
     }
     if (rebuy.enabled && isRebuyActive(rebuy, timerState.currentLevelIndex, levels, tournamentElapsed)) {
-      items.push('Rebuy ✓');
+      items.push(t('display.rebuyActive'));
     }
     return items;
   }, [activePlayerCount, totalPlayerCount, players, buyIn, rebuy, addOn, levels, timerState.currentLevelIndex, averageStack, tournamentElapsed, t]);
