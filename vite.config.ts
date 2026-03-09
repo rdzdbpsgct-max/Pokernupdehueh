@@ -19,8 +19,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Pokern up de Hüh - Tournament Timer',
-        short_name: 'Poker Timer',
+        name: '7Mountain Poker - Tournament Timer',
+        short_name: '7Mountain Poker',
         description: 'Poker tournament timer for home games',
         theme_color: '#111827',
         background_color: '#111827',

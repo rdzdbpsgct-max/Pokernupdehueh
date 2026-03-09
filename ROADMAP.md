@@ -1,4 +1,4 @@
-# Roadmap — Pokern up de Hüh
+# Roadmap — 7Mountain Poker
 
 Implementierungsplan zur schrittweisen Weiterentwicklung der App.
 Basierend auf Markt- und Gap-Analyse (Stand: März 2026).

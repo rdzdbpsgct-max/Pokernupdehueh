@@ -1,14 +1,14 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/%F0%9F%83%8F%20Pokern-up%20de%20H%C3%BCh-1a1a2e?style=for-the-badge&labelColor=065f46&color=1a1a2e" alt="Pokern up de Hüh" height="40" />
+<img src="https://img.shields.io/badge/%F0%9F%83%8F%207Mountain%20Poker-1a1a2e?style=for-the-badge&labelColor=065f46&color=1a1a2e" alt="7Mountain Poker" height="40" />
 
-# Pokern up de Hüh
+# 7Mountain Poker
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
 [![Version](https://img.shields.io/badge/Version-6.0.0-blue?style=flat-square)](#)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
-[![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://pokernupdehueh.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/7MountainPoker/)
+[![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://7mountainpoker.vercel.app/)
 [![Tests](https://img.shields.io/badge/Tests-598%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
@@ -234,8 +234,8 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ### Installation
 
 ```bash
-git clone https://github.com/rdzdbpsgct-max/Pokernupdehueh.git
-cd Pokernupdehueh
+git clone https://github.com/rdzdbpsgct-max/7MountainPoker.git
+cd 7MountainPoker
 npm install
 ```
 
@@ -335,9 +335,9 @@ tests/
 
 <div align="center">
 
-> **Live-Demo / Live Demo:** [pokernupdehueh.vercel.app](https://pokernupdehueh.vercel.app/) · [rdzdbpsgct-max.github.io/Pokernupdehueh](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)
+> **Live-Demo / Live Demo:** [7mountainpoker.vercel.app](https://7mountainpoker.vercel.app/) · [rdzdbpsgct-max.github.io/7MountainPoker](https://rdzdbpsgct-max.github.io/7MountainPoker/)
 
-**[Vercel](https://pokernupdehueh.vercel.app/)** · **[GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/)** · **[Issues](https://github.com/rdzdbpsgct-max/Pokernupdehueh/issues)**
+**[Vercel](https://7mountainpoker.vercel.app/)** · **[GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/)** · **[Issues](https://github.com/rdzdbpsgct-max/7MountainPoker/issues)**
 
 Gebaut mit React, TypeScript und viel Liebe zum Pokern.
 Built with React, TypeScript and a love for poker.

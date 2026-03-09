@@ -44,7 +44,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_BASE_PATH: /Pokernupdehueh/
+          VITE_BASE_PATH: /7MountainPoker/
 
       - name: Bundle size check
         run: |

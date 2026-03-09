@@ -1,7 +1,7 @@
 # Changelog
 
-Alle wichtigen Änderungen an der Pokern up de Hüh App.
-All notable changes to the Pokern up de Hüh app.
+Alle wichtigen Änderungen an der 7Mountain Poker App.
+All notable changes to the 7Mountain Poker app.
 
 ---
 
@@ -422,7 +422,7 @@ Basierend auf einem umfassenden Code-Audit wurden **50 Maßnahmen** in 8 Sprints
 ### QR-Code Vereinfachung
 
 - **Ergebnis-QR-Code entfernt**: Der dynamische QR-Code für Turnierergebnisse wurde entfernt — nur noch der statische App-QR-Code bleibt.
-- **App-QR-Code auf der Setupseite**: Der App-QR-Code (pokernupdehueh.vercel.app) wird jetzt auch auf der Setupseite unterhalb des Start-Buttons angezeigt, nicht nur auf dem Ergebnis-Screen.
+- **App-QR-Code auf der Setupseite**: Der App-QR-Code (7mountainpoker.vercel.app) wird jetzt auch auf der Setupseite unterhalb des Start-Buttons angezeigt, nicht nur auf dem Ergebnis-Screen.
 - **Code-Cleanup**: `encodeResultForQR()` und `QR_BASE_URL` aus `logic.ts` entfernt (nicht mehr benötigt). `decodeResultFromQR()` bleibt für bestehende `#r=`-Links erhalten. 2 Translation-Keys entfernt (`finished.qrCodes`, `finished.qrResult`). 1 Test entfernt, 1 Test von Round-Trip auf standalone Decode umgeschrieben — **232 Tests gesamt**
 
 ---
@@ -455,7 +455,7 @@ Basierend auf einem umfassenden Code-Audit wurden **50 Maßnahmen** in 8 Sprints
 
 ### QR-Codes auf dem Ergebnis-Screen
 
-- **QR-Code App-URL**: Statischer QR-Code auf dem Turnierergebnis-Screen verlinkt zur App (pokernupdehueh.vercel.app). Andere Spieler können die App direkt installieren — scannen und los.
+- **QR-Code App-URL**: Statischer QR-Code auf dem Turnierergebnis-Screen verlinkt zur App (7mountainpoker.vercel.app). Andere Spieler können die App direkt installieren — scannen und los.
 - **QR-Code Turnierergebnis**: Dynamischer QR-Code kodiert das komplette Turnierergebnis kompakt in einem URL-Hash (`#r=`). Empfänger scannen den Code und sehen Standings, Prizepool und Turnier-Info direkt in der App.
 - **SharedResultView**: Neues read-only Modal (`SharedResultView.tsx`, ~120 Zeilen) zeigt geteilte Turnierergebnisse mit Standings-Tabelle und Turnier-Zusammenfassung. Wird automatisch beim Öffnen der App mit `#r=` Hash angezeigt, Hash wird danach bereinigt.
 - **Kompakte Kodierung**: `encodeResultForQR()` / `decodeResultFromQR()` in `logic.ts` — Pipe-delimited Header (Name, Datum, Spieler, BuyIn, Prizepool, Bounty, Rebuys, AddOns, Minuten, Levels) + Semicolon-delimited Players (Name:Platz:Payout:Rebuys:AddOn:KOs). 8-Spieler-Turnier in ~375 Bytes URL-encoded.
@@ -579,11 +579,11 @@ Basierend auf einem umfassenden Code-Audit wurden **50 Maßnahmen** in 8 Sprints
 
 ### Dual Deployment: GitHub Pages + Vercel
 
-- **Vercel-Deployment** — App jetzt zusätzlich über Vercel erreichbar: [pokernupdehueh.vercel.app](https://pokernupdehueh.vercel.app/). Automatisches Deploy bei Push auf `main`. Edge Network für schnellere Ladezeiten weltweit. Preview-Deployments bei Branches.
-- **Vercel deployment** — App now also available via Vercel: [pokernupdehueh.vercel.app](https://pokernupdehueh.vercel.app/). Auto-deploy on push to `main`. Edge network for faster load times worldwide. Preview deployments on branches.
+- **Vercel-Deployment** — App jetzt zusätzlich über Vercel erreichbar: [7mountainpoker.vercel.app](https://7mountainpoker.vercel.app/). Automatisches Deploy bei Push auf `main`. Edge Network für schnellere Ladezeiten weltweit. Preview-Deployments bei Branches.
+- **Vercel deployment** — App now also available via Vercel: [7mountainpoker.vercel.app](https://7mountainpoker.vercel.app/). Auto-deploy on push to `main`. Edge network for faster load times worldwide. Preview deployments on branches.
 
-- **Dynamischer Base-Pfad** — `vite.config.ts` nutzt `VITE_BASE_PATH` Umgebungsvariable statt hardcodiertem `/Pokernupdehueh/`. Default: `/` (Vercel). GitHub Actions setzt `/Pokernupdehueh/` für GitHub Pages. `index.html` enthält keine hardcodierten Pfade mehr — Vite ergänzt den Base-Pfad beim Build automatisch.
-- **Dynamic base path** — `vite.config.ts` uses `VITE_BASE_PATH` environment variable instead of hardcoded `/Pokernupdehueh/`. Default: `/` (Vercel). GitHub Actions sets `/Pokernupdehueh/` for GitHub Pages. `index.html` no longer contains hardcoded paths — Vite prepends the base path during build automatically.
+- **Dynamischer Base-Pfad** — `vite.config.ts` nutzt `VITE_BASE_PATH` Umgebungsvariable statt hardcodiertem `/7MountainPoker/`. Default: `/` (Vercel). GitHub Actions setzt `/7MountainPoker/` für GitHub Pages. `index.html` enthält keine hardcodierten Pfade mehr — Vite ergänzt den Base-Pfad beim Build automatisch.
+- **Dynamic base path** — `vite.config.ts` uses `VITE_BASE_PATH` environment variable instead of hardcoded `/7MountainPoker/`. Default: `/` (Vercel). GitHub Actions sets `/7MountainPoker/` for GitHub Pages. `index.html` no longer contains hardcoded paths — Vite prepends the base path during build automatically.
 
 - **PWA-Pfade dynamisch** — `start_url` und `scope` im PWA-Manifest nutzen dieselbe Base-Variable. PWA funktioniert auf beiden Plattformen korrekt.
 - **Dynamic PWA paths** — `start_url` and `scope` in PWA manifest use the same base variable. PWA works correctly on both platforms.
