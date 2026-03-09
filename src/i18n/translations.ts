@@ -44,6 +44,12 @@ const de = {
   'confirm.exitTournament.title': 'Turnier beenden?',
   'confirm.exitTournament.message': 'Wenn du zum Setup zurückkehrst, wird das laufende Turnier beendet und der Timer zurückgesetzt.',
   'confirm.exitTournament.confirm': 'Turnier beenden',
+  'confirm.presetOverwrite.title': 'Preset anwenden?',
+  'confirm.presetOverwrite.message': 'Die aktuelle Konfiguration (Blindstruktur, Buy-In, Rebuy etc.) wird mit dem Preset überschrieben.',
+  'confirm.presetOverwrite.confirm': 'Preset anwenden',
+  'confirm.deleteLeague.title': 'Liga löschen?',
+  'confirm.deleteLeague.message': 'Die Liga und alle zugehörigen Spieltage werden unwiderruflich gelöscht.',
+  'confirm.deleteLeague.confirm': 'Liga löschen',
 
   // --- Timer ---
   'timer.next': 'Nächstes:',
@@ -118,6 +124,7 @@ const de = {
   'config.delete': 'Löschen',
   'config.addLevel': '+ Level',
   'config.addBreak': '+ Pause',
+  'config.emptyLevels': 'Noch keine Levels vorhanden. Nutze den Generator oben oder füge manuell Levels hinzu.',
   'config.label': 'Label:',
 
   // --- Settings ---
@@ -320,6 +327,7 @@ const de = {
   'logic.minOnePayoutPlace': 'Mindestens ein Auszahlungsplatz erforderlich',
   'logic.maxPayoutPlaces': 'Maximal {max} Auszahlungsplätze möglich (Anzahl Spieler: {max})',
   'logic.valueMustNotBeNegative': 'Platz {place}: Wert darf nicht negativ sein',
+  'logic.duplicatePlaces': 'Platz {place} ist doppelt vergeben',
   'logic.percentMustBe100': 'Prozente müssen 100% ergeben (aktuell: {sum}%)',
 
   // --- Blind Generator ---
@@ -416,8 +424,10 @@ const de = {
 
   // --- Tournament History ---
   'app.history': 'Historie',
+  'app.loading': 'Wird geladen…',
   'history.title': 'Turnier-Historie',
   'history.noEntries': 'Noch keine Turniere gespeichert.',
+  'history.capacityWarning': 'Speicher fast voll: {n} von {max} Einträgen belegt. Älteste Einträge werden bei neuen Turnieren automatisch entfernt.',
   'history.clearAll': 'Alle löschen',
   'history.clearConfirm': 'Alle Turnier-Einträge unwiderruflich löschen?',
   'history.delete': 'Löschen',
@@ -646,6 +656,7 @@ const de = {
   'league.standings.noData': 'Noch keine Spieltage gespielt.',
   'league.standings.pointSystem': 'Punktesystem',
   'league.standings.copyText': 'Text kopieren',
+  'league.standings.textCopied': 'Text kopiert!',
   'league.standings.downloadCSV': 'CSV',
   'league.gameDays.title': 'Spieltage',
   'league.gameDays.startNew': 'Neuen Spieltag starten',
@@ -867,6 +878,12 @@ const en: Record<TranslationKey, string> = {
   'confirm.exitTournament.title': 'End tournament?',
   'confirm.exitTournament.message': 'Returning to setup will end the running tournament and reset the timer.',
   'confirm.exitTournament.confirm': 'End Tournament',
+  'confirm.presetOverwrite.title': 'Apply preset?',
+  'confirm.presetOverwrite.message': 'The current configuration (blind structure, buy-in, rebuy, etc.) will be overwritten with the preset.',
+  'confirm.presetOverwrite.confirm': 'Apply Preset',
+  'confirm.deleteLeague.title': 'Delete league?',
+  'confirm.deleteLeague.message': 'The league and all associated game days will be permanently deleted.',
+  'confirm.deleteLeague.confirm': 'Delete League',
 
   // --- Timer ---
   'timer.next': 'Next:',
@@ -941,6 +958,7 @@ const en: Record<TranslationKey, string> = {
   'config.delete': 'Delete',
   'config.addLevel': '+ Level',
   'config.addBreak': '+ Break',
+  'config.emptyLevels': 'No levels yet. Use the generator above or add levels manually.',
   'config.label': 'Label:',
 
   // --- Settings ---
@@ -1143,6 +1161,7 @@ const en: Record<TranslationKey, string> = {
   'logic.minOnePayoutPlace': 'At least one payout place required',
   'logic.maxPayoutPlaces': 'Maximum {max} payout places allowed (players: {max})',
   'logic.valueMustNotBeNegative': 'Place {place}: Value must not be negative',
+  'logic.duplicatePlaces': 'Place {place} is assigned more than once',
   'logic.percentMustBe100': 'Percentages must add up to 100% (currently: {sum}%)',
 
   // --- Blind Generator ---
@@ -1239,8 +1258,10 @@ const en: Record<TranslationKey, string> = {
 
   // --- Tournament History ---
   'app.history': 'History',
+  'app.loading': 'Loading…',
   'history.title': 'Tournament History',
   'history.noEntries': 'No tournaments recorded yet.',
+  'history.capacityWarning': 'Storage nearly full: {n} of {max} entries used. Oldest entries will be automatically removed when new tournaments are saved.',
   'history.clearAll': 'Clear All',
   'history.clearConfirm': 'Delete all tournament records permanently?',
   'history.delete': 'Delete',
@@ -1466,6 +1487,7 @@ const en: Record<TranslationKey, string> = {
   'league.standings.noData': 'No game days played yet.',
   'league.standings.pointSystem': 'Point System',
   'league.standings.copyText': 'Copy Text',
+  'league.standings.textCopied': 'Text copied!',
   'league.standings.downloadCSV': 'CSV',
   'league.gameDays.title': 'Game Days',
   'league.gameDays.startNew': 'Start New Game Day',

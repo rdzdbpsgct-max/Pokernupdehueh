@@ -8,6 +8,7 @@ import {
   formatResultAsCSV,
   formatElapsedTime,
   computePlayerStats,
+  MAX_HISTORY,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { useDialogA11y } from '../hooks/useDialogA11y';
@@ -91,7 +92,7 @@ export function TournamentHistory({ onClose }: Props) {
                 ? ''
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
-            style={tab === 'history' ? { borderColor: 'var(--accent-500)', color: 'var(--accent-500)' } : undefined}
+            style={tab === 'history' ? { borderColor: 'var(--accent-500)', color: 'var(--accent-text)' } : undefined}
           >
             {t('history.title')}
           </button>
@@ -102,11 +103,18 @@ export function TournamentHistory({ onClose }: Props) {
                 ? ''
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
-            style={tab === 'stats' ? { borderColor: 'var(--accent-500)', color: 'var(--accent-500)' } : undefined}
+            style={tab === 'stats' ? { borderColor: 'var(--accent-500)', color: 'var(--accent-text)' } : undefined}
           >
             {t('history.statsTab')}
           </button>
         </div>
+
+        {/* History capacity warning */}
+        {history.length >= MAX_HISTORY * 0.9 && (
+          <div className="mx-5 mt-3 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 rounded-lg text-xs text-amber-700 dark:text-amber-400">
+            {t('history.capacityWarning', { n: history.length, max: MAX_HISTORY })}
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
@@ -209,7 +217,7 @@ function HistoryEntry({
           <div className="flex items-center gap-3 mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             {winner && (
               <span>
-                {t('history.winner')}: <span className="font-medium" style={{ color: 'var(--accent-500)' }}>{winner.name}</span>
+                {t('history.winner')}: <span className="font-medium" style={{ color: 'var(--accent-text)' }}>{winner.name}</span>
               </span>
             )}
             <span>{result.playerCount} {t('history.players')}</span>
@@ -249,7 +257,7 @@ function HistoryEntry({
                     className={`border-t border-gray-200/60 dark:border-gray-700/30 ${
                       p.place === 1 ? 'font-medium' : 'text-gray-700 dark:text-gray-300'
                     }`}
-                    style={p.place === 1 ? { color: 'var(--accent-500)' } : undefined}
+                    style={p.place === 1 ? { color: 'var(--accent-text)' } : undefined}
                   >
                     <td className="py-1.5 pr-2 tabular-nums">{p.place}</td>
                     <td className="py-1.5 pr-2">{p.name}</td>
@@ -267,7 +275,7 @@ function HistoryEntry({
                         : p.netBalance === 0
                         ? 'text-gray-500'
                         : ''
-                    }`} style={p.netBalance > 0 ? { color: 'var(--accent-500)' } : undefined}>
+                    }`} style={p.netBalance > 0 ? { color: 'var(--accent-text)' } : undefined}>
                       {p.netBalance > 0 ? '+' : ''}{p.netBalance.toFixed(2)} €
                     </td>
                   </tr>
@@ -346,7 +354,7 @@ function StatsTable({ stats }: { stats: PlayerStat[] }) {
                   : s.netBalance === 0
                   ? 'text-gray-500'
                   : ''
-              }`} style={s.netBalance > 0 ? { color: 'var(--accent-500)' } : undefined}>
+              }`} style={s.netBalance > 0 ? { color: 'var(--accent-text)' } : undefined}>
                 {s.netBalance > 0 ? '+' : ''}{s.netBalance.toFixed(2)} €
               </td>
               <td className="py-2 pr-2 text-center tabular-nums">{s.avgPlace}</td>

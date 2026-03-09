@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { playBeep } from '../domain/sounds';
 import { announceCallTheClock, announceCallTheClockExpired } from '../domain/speech';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface Props {
   durationSeconds: number;
@@ -12,6 +13,7 @@ interface Props {
 
 export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onClose }: Props) {
   const { t } = useTranslation();
+  const dialogRef = useDialogA11y(onClose);
   const [remaining, setRemaining] = useState(durationSeconds);
   const startRef = useRef(0);
   const lastBeepRef = useRef(-1);
@@ -51,17 +53,14 @@ export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onCl
     }
   }, [remaining, soundEnabled, voiceEnabled, t, onClose]);
 
-  // Close on Escape
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.code === 'Escape' || e.code === 'KeyC') {
-      onClose();
-    }
-  }, [onClose]);
-
+  // Close on C key (Escape handled by useDialogA11y)
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'KeyC') onClose();
+    };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  }, [onClose]);
 
   const displaySeconds = Math.ceil(remaining);
   const progress = remaining / durationSeconds;
@@ -77,6 +76,7 @@ export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onCl
       aria-label={t('callTheClock.title')}
     >
       <div
+        ref={dialogRef}
         className="relative w-full max-w-md mx-4 p-8 rounded-2xl bg-gray-900 border border-gray-700/40 shadow-2xl animate-scale-in text-center"
         onClick={(e) => e.stopPropagation()}
       >

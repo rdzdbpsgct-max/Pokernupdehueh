@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { League, TiebreakerCriterion, Season } from '../domain/types';
 import { saveLeague, createSeason } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface Props {
   league: League;
@@ -13,6 +14,7 @@ const ALL_CRITERIA: TiebreakerCriterion[] = ['avgPlace', 'wins', 'cashes', 'head
 
 export function LeagueSettings({ league, onClose, onSaved }: Props) {
   const { t } = useTranslation();
+  const dialogRef = useDialogA11y(onClose);
   const [criteria, setCriteria] = useState<TiebreakerCriterion[]>(
     () => league.tiebreaker?.criteria ?? ['avgPlace', 'wins'],
   );
@@ -91,10 +93,10 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="league-settings-title" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700/40">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('league.settings.title')}</h2>
+          <h2 id="league-settings-title" className="text-lg font-bold text-gray-900 dark:text-white">{t('league.settings.title')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl transition-colors" aria-label={t('accessibility.close')}>✕</button>
         </div>
 
@@ -227,7 +229,7 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
                   className="flex-1 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
                   autoFocus
                 />
-                <button onClick={handleCreateSeason} className="text-sm px-2 py-1" style={{ color: 'var(--accent-600)' }} aria-label={t('accessibility.confirm')}>✓</button>
+                <button onClick={handleCreateSeason} className="text-sm px-2 py-1" style={{ color: 'var(--accent-text)' }} aria-label={t('accessibility.confirm')}>✓</button>
                 <button onClick={() => setIsAddingSeason(false)} className="text-sm text-gray-400 px-2 py-1" aria-label={t('accessibility.cancel')}>✕</button>
               </div>
             ) : (

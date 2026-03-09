@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in localStorage.
 
-**Version**: 5.3.0
+**Version**: 5.9.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/Pokernupdehueh/) and [Vercel](https://pokernupdehueh.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (534 tests, single run)
+npm run test         # Vitest run (584 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -95,6 +95,7 @@ src/
 │   ├── SharedLeagueView.tsx      # Shared league standings from QR code
 │   ├── SharedResultView.tsx     # Read-only modal for QR-shared tournament results
 │   ├── TournamentHistory.tsx    # Tournament history modal with standings, player stats, export
+│   ├── Toast.tsx                # Lightweight toast notification system (portal-based, auto-dismiss)
 │   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
@@ -107,9 +108,15 @@ src/
 │   ├── chips.ts                 # Chip denominations, color-up, compatibility checks
 │   ├── validation.ts            # Config validation, rebuy/late-reg checks
 │   ├── tournament.ts            # Results, payouts, stats, CSV/text export, league standings, mystery bounty
-│   ├── persistence.ts           # localStorage CRUD, config parsing, templates, player database, league management, wizard
+│   ├── persistence.ts           # Barrel re-export from 5 focused sub-modules (config, templates, history, players, leagues)
+│   ├── configPersistence.ts     # Default configs, config parsing, presets, config/settings/checkpoint persistence, wizard
+│   ├── templatePersistence.ts   # Tournament template CRUD, JSON file export/import
+│   ├── historyPersistence.ts    # Tournament history CRUD, player import from history
+│   ├── playerDatabase.ts        # Persistent player name database CRUD, sync from tournaments
+│   ├── leaguePersistence.ts     # League CRUD, league config extraction, league JSON export/import
 │   ├── league.ts                 # League domain logic — game days, standings, finances, tiebreaker, QR
 │   ├── tables.ts                # Multi-table management: seat-level CRUD, distribution, balancing, dissolution, final table merge, per-table dealer
+│   ├── toast.ts                  # Toast notification context and hook (useToast)
 │   ├── displayChannel.ts         # BroadcastChannel communication for TV display window
 │   ├── remote.ts                # PeerJS-based remote control (host + controller, signaling via PeerJS Cloud)
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)

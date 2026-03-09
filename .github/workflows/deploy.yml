@@ -52,10 +52,13 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           ls -lh dist/assets/*.js | awk '{print $5, $9}' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          MAIN_SIZE=$(stat -c%s dist/assets/index-*.js 2>/dev/null || stat -f%z dist/assets/index-*.js 2>/dev/null)
-          MAX_SIZE=700000
-          if [ "$MAIN_SIZE" -gt "$MAX_SIZE" ]; then
-            echo "::warning::Main bundle exceeds ${MAX_SIZE} bytes (actual: ${MAIN_SIZE} bytes)"
+          MAIN_BUNDLE=$(ls dist/assets/index-*.js 2>/dev/null | head -1)
+          if [ -n "$MAIN_BUNDLE" ]; then
+            MAIN_SIZE=$(wc -c < "$MAIN_BUNDLE" | tr -d ' ')
+            MAX_SIZE=700000
+            if [ "$MAIN_SIZE" -gt "$MAX_SIZE" ]; then
+              echo "::warning::Main bundle exceeds ${MAX_SIZE} bytes (actual: ${MAIN_SIZE} bytes)"
+            fi
           fi
 
       - name: Setup Pages

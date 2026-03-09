@@ -37,6 +37,7 @@ interface Props {
   onRestoreCheckpoint: () => void;
   onDismissCheckpoint: () => void;
   onSwitchToGame: () => void;
+  onConfirm: (title: string, message: string, confirmLabel: string, onConfirm: () => void) => void;
   startErrors: string[];
   theme: 'light' | 'dark';
 }
@@ -48,6 +49,7 @@ export function SetupPage({
   onRestoreCheckpoint,
   onDismissCheckpoint,
   onSwitchToGame,
+  onConfirm,
   startErrors,
   theme,
 }: Props) {
@@ -246,14 +248,21 @@ export function SetupPage({
               <button
                 key={preset.id}
                 onClick={() => {
-                  setConfig((prev) => ({
-                    ...prev,
-                    ...preset.config,
-                    players: prev.players,
-                    dealerIndex: prev.dealerIndex,
-                    tables: prev.tables,
-                    leagueId: prev.leagueId,
-                  }));
+                  onConfirm(
+                    t('confirm.presetOverwrite.title'),
+                    t('confirm.presetOverwrite.message'),
+                    t('confirm.presetOverwrite.confirm'),
+                    () => {
+                      setConfig((prev) => ({
+                        ...prev,
+                        ...preset.config,
+                        players: prev.players,
+                        dealerIndex: prev.dealerIndex,
+                        tables: prev.tables,
+                        leagueId: prev.leagueId,
+                      }));
+                    },
+                  );
                 }}
                 className="flex-1 min-w-[120px] px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-[color-mix(in_srgb,var(--accent-500)_8%,transparent)] border border-gray-200 dark:border-gray-700/40 hover:border-[var(--accent-400)] rounded-xl text-left transition-all duration-200 group"
               >
@@ -735,7 +744,7 @@ export function SetupPage({
             </div>
           ) : (
             <div className="rounded-lg p-3 border" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', borderColor: 'var(--accent-600)' }}>
-              <p className="text-sm" style={{ color: 'var(--accent-500)' }}>{t('app.allReady')}</p>
+              <p className="text-sm" style={{ color: 'var(--accent-text)' }}>{t('app.allReady')}</p>
             </div>
           )}
         </div>
@@ -745,6 +754,7 @@ export function SetupPage({
           <button
             onClick={onSwitchToGame}
             disabled={startErrors.length > 0}
+            title={startErrors.length > 0 ? startErrors.join(' · ') : undefined}
             className="w-full px-6 py-3 text-white rounded-xl text-lg font-bold transition-all duration-200 active:scale-[0.98] active:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             style={{ background: 'linear-gradient(to bottom, var(--accent-600), var(--accent-700))', boxShadow: `0 10px 15px -3px var(--accent-900)` }}
           >

@@ -3,16 +3,19 @@
 // ---------------------------------------------------------------------------
 
 let idCounter = 0;
+/** Generates a unique level ID using timestamp and incrementing counter. */
 export function generateId(): string {
   return `lvl_${Date.now()}_${idCounter++}`;
 }
 
 let playerIdCounter = 0;
+/** Generates a unique player ID using timestamp and incrementing counter. */
 export function generatePlayerId(): string {
   return `player_${Date.now()}_${playerIdCounter++}`;
 }
 
 let chipIdCounter = 0;
+/** Generates a unique chip denomination ID using timestamp and incrementing counter. */
 export function generateChipId(): string {
   return `chip_${Date.now()}_${chipIdCounter++}`;
 }

@@ -200,7 +200,7 @@ export function LeagueManager({ onClose, currentConfig }: Props) {
           </div>
         )}
         {importSuccess && (
-          <div className="mx-5 mt-2 px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 8%, transparent)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'color-mix(in srgb, var(--accent-500) 30%, transparent)', color: 'var(--accent-600)' }}>
+          <div className="mx-5 mt-2 px-3 py-2 rounded-lg text-xs" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 8%, transparent)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'color-mix(in srgb, var(--accent-500) 30%, transparent)', color: 'var(--accent-text)' }}>
             {t('league.importSuccess')}
           </div>
         )}
@@ -301,7 +301,7 @@ function LeagueEntry({
           <div className="flex items-center gap-3 mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             <span>{league.pointSystem.entries.length} {t('league.points')}</span>
             {league.defaultConfig && (
-              <span className="text-xs" style={{ color: 'var(--accent-500)' }}>{t('league.hasConfig')}</span>
+              <span className="text-xs" style={{ color: 'var(--accent-text)' }}>{t('league.hasConfig')}</span>
             )}
           </div>
         </div>
@@ -407,7 +407,7 @@ function LeagueEntry({
               <button
                 onClick={onSaveConfig}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', color: 'var(--accent-600)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'color-mix(in srgb, var(--accent-500) 20%, transparent)' }}
+                style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', color: 'var(--accent-text)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'color-mix(in srgb, var(--accent-500) 20%, transparent)' }}
               >
                 {savedConfig ? t('league.configSaved') : t('league.saveConfig')}
               </button>
@@ -500,7 +500,7 @@ function LeagueLeaderboard({ standings }: { standings: LeagueStanding[] }) {
               className={`border-t border-gray-200/60 dark:border-gray-700/30 ${
                 i < 3 ? 'font-medium' : 'text-gray-700 dark:text-gray-300'
               }`}
-              style={i < 3 ? { color: 'var(--accent-500)' } : undefined}
+              style={i < 3 ? { color: 'var(--accent-text)' } : undefined}
             >
               <td className="py-1.5 pr-2 tabular-nums">{MEDAL[i] ?? i + 1}</td>
               <td className="py-1.5 pr-2 font-medium">{s.name}</td>

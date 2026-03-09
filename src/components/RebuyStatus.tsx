@@ -26,10 +26,10 @@ export const RebuyStatus = memo(function RebuyStatus({ active, rebuy, currentPla
 
     return (
       <div className="px-4 py-2 rounded-xl text-center backdrop-blur-sm shadow-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-500) 30%, transparent)' }}>
-        <span className="text-sm font-medium" style={{ color: 'var(--accent-500)' }}>
+        <span className="text-sm font-medium" style={{ color: 'var(--accent-text)' }}>
           {t('rebuyStatus.active')}
         </span>
-        <span className="text-xs ml-2" style={{ color: 'var(--accent-600)' }}>({detail})</span>
+        <span className="text-xs ml-2" style={{ color: 'var(--accent-text)' }}>({detail})</span>
       </div>
     );
   }

@@ -169,7 +169,7 @@ export function LeaguePlayerDetail({ playerName, gameDays, onClose }: Props) {
                     {stats.pointsHistory.map((ph) => (
                       <tr key={ph.gameDayId} className="border-b border-gray-100 dark:border-gray-800/30 last:border-b-0">
                         <td className="px-3 py-1.5 text-gray-600 dark:text-gray-300">{new Date(ph.date).toLocaleDateString()}</td>
-                        <td className="px-3 py-1.5 text-right font-medium" style={{ color: 'var(--accent-600)' }}>{ph.points}</td>
+                        <td className="px-3 py-1.5 text-right font-medium" style={{ color: 'var(--accent-text)' }}>{ph.points}</td>
                         <td className="px-3 py-1.5 text-right font-bold text-gray-900 dark:text-white">{ph.cumulative}</td>
                       </tr>
                     ))}

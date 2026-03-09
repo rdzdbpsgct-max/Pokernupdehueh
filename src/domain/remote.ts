@@ -5,12 +5,14 @@
  * - Host (TV/main display): creates PeerJS peer, shows QR code with short URL
  * - Controller (smartphone): scans QR → opens app → connects via PeerJS → sends commands
  * - Data channel: bidirectional JSON messages over WebRTC (brokered by PeerJS Cloud)
+ * - Security: HMAC-SHA256 authentication on all commands, rate-limiting, message-size caps
  *
  * Signaling flow:
- * 1. Host creates Peer with generated ID (PKR-XXXXX)
- * 2. QR code contains app URL with #remote=PKR-XXXXX hash
+ * 1. Host creates Peer with generated ID (PKR-XXXXX) and a 16-byte random secret
+ * 2. QR code contains app URL with #remote=PKR-XXXXX&s=BASE64SECRET hash
  * 3. Phone scans QR → opens app → auto-connects to host peer
- * 4. Bidirectional data channel established
+ * 4. Controller signs every command with HMAC-SHA256(secret, payload)
+ * 5. Host verifies HMAC — rejects unsigned or tampered messages
  *
  * One QR scan — no second scan or paste required.
  */
@@ -39,21 +41,126 @@ export function generatePeerId(): string {
 }
 
 // ---------------------------------------------------------------------------
+// HMAC-SHA256 authentication (M31)
+// ---------------------------------------------------------------------------
+
+const SECRET_BYTES = 16;
+/** Max age for a signed message timestamp (30 seconds) */
+const MAX_MESSAGE_AGE_MS = 30_000;
+
+/** Generate a 16-byte random secret, returned as URL-safe base64 */
+export function generateSecret(): string {
+  const bytes = new Uint8Array(SECRET_BYTES);
+  crypto.getRandomValues(bytes);
+  // Convert to base64 (URL-safe: replace + → -, / → _)
+  const b64 = btoa(String.fromCharCode(...bytes));
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** Import a base64 secret into a CryptoKey for HMAC operations */
+async function importHmacKey(secretB64: string): Promise<CryptoKey> {
+  // Reverse URL-safe base64
+  const b64 = secretB64.replace(/-/g, '+').replace(/_/g, '/');
+  const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  return crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+}
+
+/** Sign a payload string with HMAC-SHA256, returning hex digest */
+export async function signMessage(key: CryptoKey, payload: string): Promise<string> {
+  const encoded = new TextEncoder().encode(payload);
+  const sig = await crypto.subtle.sign('HMAC', key, encoded);
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Verify an HMAC-SHA256 signature against a payload */
+export async function verifyMessage(key: CryptoKey, payload: string, signature: string): Promise<boolean> {
+  const sigBytes = new Uint8Array(signature.match(/.{2}/g)?.map((h) => parseInt(h, 16)) ?? []);
+  const encoded = new TextEncoder().encode(payload);
+  return crypto.subtle.verify('HMAC', key, sigBytes, encoded);
+}
+
+/** Build the canonical payload string for HMAC: "type:action:timestamp" */
+export function buildHmacPayload(action: string, ts: number): string {
+  return `command:${action}:${ts}`;
+}
+
+// ---------------------------------------------------------------------------
+// Rate limiting (M32)
+// ---------------------------------------------------------------------------
+
+/** Max message size in bytes */
+export const MAX_MESSAGE_SIZE = 1024;
+/** Max commands per second */
+const MAX_COMMANDS_PER_SECOND = 10;
+
+/** Sliding-window rate limiter */
+export class RateLimiter {
+  private timestamps: number[] = [];
+  private windowMs: number;
+  private maxCount: number;
+
+  constructor(maxPerSecond: number = MAX_COMMANDS_PER_SECOND) {
+    this.windowMs = 1000;
+    this.maxCount = maxPerSecond;
+  }
+
+  /** Returns true if the request is allowed, false if throttled */
+  allow(): boolean {
+    const now = Date.now();
+    // Evict timestamps older than the window
+    this.timestamps = this.timestamps.filter((t) => now - t < this.windowMs);
+    if (this.timestamps.length >= this.maxCount) {
+      return false;
+    }
+    this.timestamps.push(now);
+    return true;
+  }
+
+  /** Reset the limiter */
+  reset(): void {
+    this.timestamps = [];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // URL helpers
 // ---------------------------------------------------------------------------
 
-/** Build a scannable app URL with the peer ID as hash parameter */
-export function buildRemoteUrl(peerId: string): string {
+/** Build a scannable app URL with the peer ID and secret as hash parameters */
+export function buildRemoteUrl(peerId: string, secret?: string): string {
   const base = import.meta.env.BASE_URL || '/';
-  return `${window.location.origin}${base}#remote=${peerId}`;
+  const hash = secret ? `#remote=${peerId}&s=${secret}` : `#remote=${peerId}`;
+  return `${window.location.origin}${base}${hash}`;
 }
 
-/** Extract peer ID from URL hash, e.g. "#remote=PKR-X7K3M" → "PKR-X7K3M" */
-export function parseRemoteHash(hash: string): string | null {
+/** Parse result from URL hash */
+export interface RemoteHashResult {
+  peerId: string;
+  secret: string | null;
+}
+
+/** Extract peer ID and optional secret from URL hash */
+export function parseRemoteHash(hash: string): RemoteHashResult | null {
   if (!hash.startsWith('#remote=')) return null;
-  const id = hash.slice('#remote='.length).trim();
+  const rest = hash.slice('#remote='.length).trim();
+
+  // Check for secret parameter: PKR-XXXXX&s=SECRET
+  const ampIdx = rest.indexOf('&s=');
+  let idPart: string;
+  let secret: string | null = null;
+
+  if (ampIdx !== -1) {
+    idPart = rest.slice(0, ampIdx);
+    secret = rest.slice(ampIdx + 3); // after "&s="
+    if (!secret) secret = null;
+  } else {
+    idPart = rest;
+  }
+
   // Validate format: PKR- followed by 5 alphanumeric chars
-  if (/^PKR-[A-Z2-9]{5}$/.test(id)) return id;
+  if (/^PKR-[A-Z2-9]{5}$/.test(idPart)) {
+    return { peerId: idPart, secret };
+  }
   return null;
 }
 
@@ -75,6 +182,10 @@ export interface RemoteCommand {
     | 'advanceDealer'
     | 'toggleSound';
   payload?: Record<string, unknown>;
+  /** HMAC-SHA256 signature (hex) — required when secret is configured */
+  hmac?: string;
+  /** Timestamp (ms since epoch) — used for HMAC replay protection */
+  ts?: number;
 }
 
 /** State updates sent from Host → Controller */
@@ -129,15 +240,24 @@ export class RemoteHost {
   private keepaliveInterval: ReturnType<typeof setInterval> | null = null;
   private _status: HostStatus = 'initializing';
   private _peerId: string;
+  private _secret: string;
+  private hmacKey: CryptoKey | null = null;
+  private rateLimiter = new RateLimiter();
 
   constructor(callbacks: RemoteHostCallbacks) {
     this.callbacks = callbacks;
     this._peerId = generatePeerId();
+    this._secret = generateSecret();
+    this.initHmacKey();
     this.init();
   }
 
   get peerId(): string {
     return this._peerId;
+  }
+
+  get secret(): string {
+    return this._secret;
   }
 
   get status(): HostStatus {
@@ -146,6 +266,14 @@ export class RemoteHost {
 
   get connected(): boolean {
     return this._status === 'connected';
+  }
+
+  private async initHmacKey(): Promise<void> {
+    try {
+      this.hmacKey = await importHmacKey(this._secret);
+    } catch {
+      console.warn('[remote] Failed to init HMAC key');
+    }
   }
 
   private setStatus(status: HostStatus): void {
@@ -200,19 +328,11 @@ export class RemoteHost {
     conn.on('open', () => {
       this.setStatus('connected');
       this.startKeepalive();
+      this.rateLimiter.reset();
     });
 
     conn.on('data', (raw) => {
-      try {
-        const msg = (typeof raw === 'string' ? JSON.parse(raw) : raw) as RemoteMessage;
-        if (msg.type === 'command' && VALID_COMMAND_ACTIONS.has(msg.action)) {
-          this.callbacks.onCommand(msg);
-        } else if (msg.type === 'pong') {
-          // Keepalive response
-        }
-      } catch {
-        // Invalid message
-      }
+      this.handleIncoming(raw);
     });
 
     conn.on('close', () => {
@@ -231,6 +351,64 @@ export class RemoteHost {
         this.setStatus('ready');
       }
     });
+  }
+
+  private handleIncoming(raw: unknown): void {
+    try {
+      const str = typeof raw === 'string' ? raw : JSON.stringify(raw);
+
+      // M32: Message-size check (max 1KB)
+      if (str.length > MAX_MESSAGE_SIZE) {
+        console.warn(`[remote] Message rejected: size ${str.length} exceeds ${MAX_MESSAGE_SIZE}`);
+        return;
+      }
+
+      const msg = (typeof raw === 'string' ? JSON.parse(raw) : raw) as RemoteMessage;
+
+      if (msg.type === 'pong') {
+        // Keepalive response — no auth needed
+        return;
+      }
+
+      if (msg.type === 'command' && VALID_COMMAND_ACTIONS.has(msg.action)) {
+        // M32: Rate-limit commands
+        if (!this.rateLimiter.allow()) {
+          console.warn('[remote] Command throttled (rate limit exceeded)');
+          return;
+        }
+
+        // M31: HMAC verification (async)
+        this.verifyAndDispatch(msg);
+      }
+    } catch {
+      // Invalid message
+    }
+  }
+
+  private async verifyAndDispatch(msg: RemoteCommand): Promise<void> {
+    // If HMAC key is available, require valid signature
+    if (this.hmacKey) {
+      if (!msg.hmac || msg.ts == null) {
+        console.warn('[remote] Command rejected: missing HMAC or timestamp');
+        return;
+      }
+
+      // Check timestamp freshness (prevent replay attacks)
+      const age = Math.abs(Date.now() - msg.ts);
+      if (age > MAX_MESSAGE_AGE_MS) {
+        console.warn(`[remote] Command rejected: timestamp too old (${age}ms)`);
+        return;
+      }
+
+      const payload = buildHmacPayload(msg.action, msg.ts);
+      const valid = await verifyMessage(this.hmacKey, payload, msg.hmac);
+      if (!valid) {
+        console.warn('[remote] Command rejected: invalid HMAC signature');
+        return;
+      }
+    }
+
+    this.callbacks.onCommand(msg);
   }
 
   private startKeepalive(): void {
@@ -297,10 +475,18 @@ export class RemoteController {
   private maxReconnectAttempts = 3;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private destroyed = false;
+  private secret: string | null;
+  private hmacKey: CryptoKey | null = null;
 
-  constructor(hostPeerId: string, callbacks: RemoteControllerCallbacks) {
+  constructor(hostPeerId: string, callbacks: RemoteControllerCallbacks, secret?: string | null) {
     this.callbacks = callbacks;
     this.hostPeerId = hostPeerId;
+    this.secret = secret ?? null;
+    if (this.secret) {
+      importHmacKey(this.secret)
+        .then((key) => { this.hmacKey = key; })
+        .catch(() => { console.warn('[remote] Failed to init controller HMAC key'); });
+    }
     this.connect();
   }
 
@@ -323,7 +509,16 @@ export class RemoteController {
     try {
       this.peer = new Peer();
 
+      // 10s timeout: if 'open' never fires → set error status
+      const openTimeout = setTimeout(() => {
+        if (this.destroyed || this._status === 'connected') return;
+        console.warn('[remote] Peer connection timeout after 10s');
+        this.setStatus('error');
+        this.callbacks.onError?.('Connection timeout');
+      }, 10_000);
+
       this.peer.on('open', () => {
+        clearTimeout(openTimeout);
         if (this.destroyed || !this.peer) return;
         // Connect to host
         const conn = this.peer.connect(this.hostPeerId, { reliable: true });
@@ -332,6 +527,7 @@ export class RemoteController {
       });
 
       this.peer.on('error', (err) => {
+        clearTimeout(openTimeout);
         if (this.destroyed) return;
         if (err.type === 'peer-unavailable') {
           // Host not found — try reconnect
@@ -427,11 +623,22 @@ export class RemoteController {
     this.connect();
   }
 
-  /** Send command to host */
-  sendCommand(action: RemoteCommand['action'], payload?: Record<string, unknown>): void {
+  /** Send command to host (signed with HMAC if secret is configured) */
+  async sendCommand(action: RemoteCommand['action'], payload?: Record<string, unknown>): Promise<void> {
     if (!this.conn?.open) return;
     try {
-      this.conn.send(JSON.stringify({ type: 'command', action, payload } satisfies RemoteCommand));
+      const msg: RemoteCommand = { type: 'command', action, payload };
+
+      // Sign with HMAC if key is available
+      if (this.hmacKey) {
+        const ts = Date.now();
+        const hmacPayload = buildHmacPayload(action, ts);
+        const hmac = await signMessage(this.hmacKey, hmacPayload);
+        msg.ts = ts;
+        msg.hmac = hmac;
+      }
+
+      this.conn.send(JSON.stringify(msg));
     } catch {
       // Connection lost
     }

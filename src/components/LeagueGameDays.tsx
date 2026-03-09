@@ -144,7 +144,7 @@ export function LeagueGameDays({ gameDays, onStartGameDay, onRefresh, onManualEn
                                 {p.name}
                                 {p.isGuest && <span className="ml-1 text-xs text-gray-400">(G)</span>}
                               </td>
-                              <td className="px-3 py-1.5" style={{ color: 'var(--accent-600)' }}>{p.points}</td>
+                              <td className="px-3 py-1.5" style={{ color: 'var(--accent-text)' }}>{p.points}</td>
                               <td className="px-3 py-1.5 text-gray-600 dark:text-gray-300">{p.payout.toFixed(0)} €</td>
                               <td className={`px-3 py-1.5 font-medium ${p.netBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                 {p.netBalance >= 0 ? '+' : ''}{p.netBalance.toFixed(0)} €

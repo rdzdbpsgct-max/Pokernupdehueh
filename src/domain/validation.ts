@@ -52,6 +52,15 @@ export function validatePayoutConfig(payout: PayoutConfig, maxPlaces?: number, t
     errors.push(t('logic.maxPayoutPlaces', { max: maxPlaces }));
   }
 
+  // Check for duplicate places
+  const places = new Set<number>();
+  for (const entry of payout.entries) {
+    if (places.has(entry.place)) {
+      errors.push(t('logic.duplicatePlaces', { place: entry.place }));
+    }
+    places.add(entry.place);
+  }
+
   payout.entries.forEach((entry) => {
     if (entry.value < 0) {
       errors.push(t('logic.valueMustNotBeNegative', { place: entry.place }));

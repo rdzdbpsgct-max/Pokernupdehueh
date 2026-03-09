@@ -59,6 +59,7 @@ import { SetupPage } from './components/SetupPage';
 import { SetupWizard } from './components/SetupWizard';
 import { PrintView } from './components/PrintView';
 import { TemplateManager } from './components/TemplateManager';
+import { ToastContainer } from './components/Toast';
 import { TournamentHistory } from './components/TournamentHistory';
 import { LeagueManager } from './components/LeagueManager';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -592,6 +593,14 @@ function App() {
     }
   }, [mode, tournamentFinished, config, tournamentElapsed, currentPlayLevel]);
 
+  // Warn before navigating away during active tournament
+  useEffect(() => {
+    if (mode !== 'game' || tournamentFinished) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [mode, tournamentFinished]);
+
   const winner = useMemo(() => {
     if (!tournamentFinished) return null;
     return config.players.find((p) => p.status === 'active') ?? null;
@@ -697,6 +706,7 @@ function App() {
     setShowRemoteModal: setShowRemoteControl,
     isControllerMode,
     controllerPeerId,
+    controllerSecret,
     startHost: startRemoteHost,
   } = useRemoteControl({
     onCommand: handleRemoteCommand,
@@ -1016,6 +1026,7 @@ function App() {
             onRestoreCheckpoint={restoreFromCheckpoint}
             onDismissCheckpoint={dismissCheckpoint}
             onSwitchToGame={switchToGame}
+            onConfirm={confirmBeforeAction}
             startErrors={startErrors}
             theme={theme}
           />
@@ -1226,6 +1237,7 @@ function App() {
         <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <RemoteHostModal
             peerId={remoteHostRef.current?.peerId ?? ''}
+            secret={remoteHostRef.current?.secret}
             status={remoteHostStatus}
             onClose={() => setShowRemoteControl(false)}
           />
@@ -1295,6 +1307,7 @@ function App() {
         <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <RemoteControllerView
             hostPeerId={controllerPeerId}
+            secret={controllerSecret}
             onClose={() => window.close()}
           />
         </Suspense></SectionErrorBoundary>
@@ -1324,6 +1337,7 @@ function App() {
         </div>
       )}
       <Analytics />
+      <ToastContainer />
     </div>
     </>
   );

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { calculateSidePots, resolvePotWinners, generateId } from '../domain/logic';
 import type { PlayerPotInput, PlayerPotStatus, PotResult, PotWinnerAssignment, PlayerPayout, SidePotPayoutResult } from '../domain/types';
 import { useTranslation } from '../i18n';
+import { showToast } from '../domain/toast';
 import { useDialogA11y } from '../hooks/useDialogA11y';
 import { NumberStepper } from './NumberStepper';
 
@@ -40,7 +41,6 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
     createPlayer(t('sidePot.playerDefault', { n: 2 }), 500, 'all-in'),
   ]);
   const [showInfo, setShowInfo] = useState(false);
-  const [copyFeedback, setCopyFeedback] = useState(false);
   const lastAddedRef = useRef<string | null>(null);
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
@@ -102,14 +102,14 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
       createPlayer(t('sidePot.playerDefault', { n: 1 })),
       createPlayer(t('sidePot.playerDefault', { n: 2 }), 500, 'all-in'),
     ]);
-    setCopyFeedback(false);
+
     setWinnerSelections(new Map());
     setShowPayout(false);
   }, [t]);
 
   const handleLoadExample = useCallback(() => {
     setPlayers(EXAMPLE_DATA.map((p) => ({ ...p, id: generateId() })));
-    setCopyFeedback(false);
+
     setWinnerSelections(new Map());
     setShowPayout(false);
   }, []);
@@ -216,8 +216,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
     }
     try {
       await navigator.clipboard.writeText(lines.join('\n'));
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 2000);
+      showToast(t('sidePot.copied'));
     } catch { /* clipboard unavailable */ }
   }, [result, players, validWinnerSelections, payoutResult, t]);
 
@@ -384,7 +383,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
                 className="px-2 py-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                 title={t('sidePot.copyResult')}
               >
-                {copyFeedback ? '✓' : '📋'} {copyFeedback ? t('sidePot.copied') : t('sidePot.copyResult')}
+                {String.fromCodePoint(0x1F4CB)} {t('sidePot.copyResult')}
               </button>
             </div>
 
@@ -406,7 +405,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
                       {pot.type === 'main' ? t('sidePot.mainPot') : t('sidePot.sidePot', { n: pot.index })}
                       {isSplit && <span className="ml-1.5 text-[10px] font-normal px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded">Split</span>}
                     </span>
-                    <span className="text-sm font-bold font-mono tabular-nums" style={{ color: 'var(--accent-500)' }}>
+                    <span className="text-sm font-bold font-mono tabular-nums" style={{ color: 'var(--accent-text)' }}>
                       {pot.amount.toLocaleString()}
                     </span>
                   </div>

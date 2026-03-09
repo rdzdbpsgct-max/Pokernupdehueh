@@ -5,6 +5,8 @@ import { formatLeagueStandingsAsText, formatLeagueStandingsAsCSV, encodeLeagueSt
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
 import { LoadingFallback } from './LoadingFallback';
+import { SectionErrorBoundary } from './ErrorBoundary';
+import { showToast } from '../domain/toast';
 
 const LeaguePlayerDetail = lazy(() => import('./LeaguePlayerDetail').then(m => ({ default: m.LeaguePlayerDetail })));
 
@@ -24,7 +26,6 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
   const { resolved: theme } = useTheme();
   const [sortKey, setSortKey] = useState<SortKey>('rank');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
-  const [copied, setCopied] = useState(false);
   const [showPointSystem, setShowPointSystem] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
@@ -66,10 +67,9 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
     const text = formatLeagueStandingsAsText(league, standings);
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      showToast(t('league.standings.textCopied'));
     } catch { /* ignore */ }
-  }, [league, standings]);
+  }, [league, standings, t]);
 
   const handleDownloadCSV = useCallback(() => {
     const csv = formatLeagueStandingsAsCSV(standings);
@@ -96,9 +96,12 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
     <th
       key={k}
       onClick={() => handleSort(k)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort(k); } }}
+      tabIndex={0}
+      role="columnheader button"
       aria-sort={sortKey === k ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
       aria-label={`${label} — ${sortKey === k && sortDir === 'asc' ? t('accessibility.sortDescending') : t('accessibility.sortAscending')}`}
-      className={`px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none ${className ?? ''}`}
+      className={`px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-ring)] rounded ${className ?? ''}`}
     >
       {label}
       {sortKey === k && (
@@ -139,7 +142,7 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
               onClick={handleCopyText}
               className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700/60 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded transition-colors"
             >
-              {copied ? '✓' : t('league.standings.copyText')}
+              {t('league.standings.copyText')}
             </button>
             <button
               onClick={handleDownloadCSV}
@@ -151,6 +154,7 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
               onClick={handlePrint}
               className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700/60 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded transition-colors"
               title={t('league.standings.print')}
+              aria-label={t('league.standings.print')}
             >
               🖨️
             </button>
@@ -159,6 +163,7 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
                 onClick={() => setShowQR(!showQR)}
                 className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700/60 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded transition-colors"
                 title={t('league.standings.qrCode')}
+                aria-label={t('league.standings.qrCode')}
               >
                 QR
               </button>
@@ -247,7 +252,7 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
                         </span>
                       )}
                     </td>
-                    <td className="px-2 py-2 font-bold" style={{ color: 'var(--accent-600)' }}>
+                    <td className="px-2 py-2 font-bold" style={{ color: 'var(--accent-text)' }}>
                       {s.points}
                     </td>
                     <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.tournaments}</td>
@@ -271,13 +276,13 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
       </div>
       {/* Player Detail Modal */}
       {selectedPlayer && (
-        <Suspense fallback={<LoadingFallback />}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <LeaguePlayerDetail
             playerName={selectedPlayer}
             gameDays={gameDays}
             onClose={() => setSelectedPlayer(null)}
           />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
     </div>
   );

@@ -1,0 +1,423 @@
+import type {
+  TournamentConfig,
+  TournamentCheckpoint,
+  Settings,
+  Player,
+  Level,
+  RebuyConfig,
+  AddOnConfig,
+  BountyConfig,
+  ChipConfig,
+  PayoutConfig,
+  LateRegistrationConfig,
+  Table,
+  Seat,
+  MultiTableConfig,
+} from './types';
+import { generateBlindStructure } from './blinds';
+import { defaultChipConfig } from './chips';
+import { defaultPayoutConfig } from './tournament';
+import { defaultLateRegistrationConfig } from './validation';
+import { defaultMultiTableConfig } from './tables';
+
+// ---------------------------------------------------------------------------
+// Default Configs
+// ---------------------------------------------------------------------------
+
+/** Create a default rebuy configuration with given buy-in and chip values. */
+export function defaultRebuyConfig(buyIn = 10, startingChips = 20000): RebuyConfig {
+  return {
+    enabled: false,
+    limitType: 'levels',
+    levelLimit: 4,
+    timeLimit: 3600,
+    rebuyCost: buyIn,
+    rebuyChips: startingChips,
+  };
+}
+
+/** Create a default add-on configuration with given buy-in and chip values. */
+export function defaultAddOnConfig(buyIn = 10, startingChips = 20000): AddOnConfig {
+  return {
+    enabled: false,
+    cost: buyIn,
+    chips: startingChips,
+  };
+}
+
+/** Create a default bounty configuration (disabled, fixed type). */
+export function defaultBountyConfig(): BountyConfig {
+  return { enabled: false, amount: 5, type: 'fixed' };
+}
+
+/** Create default application settings (sound, voice, auto-advance all enabled). */
+export function defaultSettings(): Settings {
+  return {
+    soundEnabled: true,
+    countdownEnabled: true,
+    autoAdvance: true,
+    largeDisplay: true,
+    voiceEnabled: true,
+    volume: 100,
+    callTheClockSeconds: 30,
+  };
+}
+
+/**
+ * Create a default tournament config with a generated "normal" blind structure.
+ */
+export function defaultConfig(): TournamentConfig {
+  const buyIn = 10;
+  const startingChips = 20000;
+  return {
+    name: '',
+    anteEnabled: false,
+    anteMode: 'standard',
+    levels: generateBlindStructure({ startingChips, speed: 'normal', anteEnabled: false }),
+    players: [] as Player[],
+    dealerIndex: 0,
+    payout: defaultPayoutConfig(),
+    rebuy: defaultRebuyConfig(buyIn, startingChips),
+    addOn: defaultAddOnConfig(buyIn, startingChips),
+    bounty: defaultBountyConfig(),
+    chips: defaultChipConfig(),
+    buyIn,
+    startingChips,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tournament Presets (Quick Start)
+// ---------------------------------------------------------------------------
+
+export interface TournamentPreset {
+  id: string;
+  nameKey: string;
+  descKey: string;
+  config: Partial<TournamentConfig>;
+}
+
+/**
+ * Return 3 built-in tournament presets for quick start.
+ * Each provides a complete tournament config (minus per-tournament fields).
+ */
+export function getBuiltInPresets(): TournamentPreset[] {
+  return [
+    {
+      id: 'turbo',
+      nameKey: 'preset.turbo',
+      descKey: 'preset.turboDesc',
+      config: {
+        name: '',
+        buyIn: 5,
+        startingChips: 10000,
+        anteEnabled: false,
+        anteMode: 'standard',
+        levels: generateBlindStructure({ startingChips: 10000, speed: 'fast', anteEnabled: false }),
+        payout: defaultPayoutConfig(),
+        rebuy: defaultRebuyConfig(5, 10000),
+        addOn: defaultAddOnConfig(5, 10000),
+        bounty: defaultBountyConfig(),
+        chips: defaultChipConfig(),
+      },
+    },
+    {
+      id: 'standard',
+      nameKey: 'preset.standard',
+      descKey: 'preset.standardDesc',
+      config: {
+        name: '',
+        buyIn: 10,
+        startingChips: 20000,
+        anteEnabled: false,
+        anteMode: 'standard',
+        levels: generateBlindStructure({ startingChips: 20000, speed: 'normal', anteEnabled: false }),
+        payout: defaultPayoutConfig(),
+        rebuy: { ...defaultRebuyConfig(10, 20000), enabled: true },
+        addOn: defaultAddOnConfig(10, 20000),
+        bounty: defaultBountyConfig(),
+        chips: defaultChipConfig(),
+      },
+    },
+    {
+      id: 'deepstack',
+      nameKey: 'preset.deepStack',
+      descKey: 'preset.deepStackDesc',
+      config: {
+        name: '',
+        buyIn: 20,
+        startingChips: 40000,
+        anteEnabled: true,
+        anteMode: 'standard',
+        levels: generateBlindStructure({ startingChips: 40000, speed: 'slow', anteEnabled: true }),
+        payout: defaultPayoutConfig(),
+        rebuy: { ...defaultRebuyConfig(20, 40000), enabled: true },
+        addOn: defaultAddOnConfig(20, 40000),
+        bounty: defaultBountyConfig(),
+        chips: defaultChipConfig(),
+      },
+    },
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Config Parsing
+// ---------------------------------------------------------------------------
+
+/** Shared parser: normalizes a raw parsed object into a TournamentConfig. */
+export function parseConfigObject(parsed: Record<string, unknown>): TournamentConfig | null {
+  if (!parsed || !Array.isArray(parsed.levels)) return null;
+  const buyIn = typeof parsed.buyIn === 'number' ? parsed.buyIn : 10;
+  const startingChips = typeof parsed.startingChips === 'number' ? parsed.startingChips : 20000;
+  const rebuyRaw = parsed.rebuy as Record<string, unknown> | undefined;
+  const rebuy: RebuyConfig = rebuyRaw
+    ? {
+        ...defaultRebuyConfig(buyIn, startingChips),
+        ...(rebuyRaw as Partial<RebuyConfig>),
+        rebuyCost: typeof rebuyRaw.rebuyCost === 'number' ? rebuyRaw.rebuyCost : buyIn,
+        rebuyChips: typeof rebuyRaw.rebuyChips === 'number' ? rebuyRaw.rebuyChips : startingChips,
+      }
+    : defaultRebuyConfig(buyIn, startingChips);
+  const addOnRaw = parsed.addOn as Record<string, unknown> | undefined;
+  const addOn: AddOnConfig = addOnRaw
+    ? {
+        ...defaultAddOnConfig(buyIn, startingChips),
+        ...(addOnRaw as Partial<AddOnConfig>),
+        cost: typeof addOnRaw.cost === 'number' ? addOnRaw.cost : buyIn,
+        chips: typeof addOnRaw.chips === 'number' ? addOnRaw.chips : startingChips,
+      }
+    : defaultAddOnConfig(buyIn, startingChips);
+  // Validate individual level objects — filter out malformed entries
+  const rawLevels = parsed.levels as Record<string, unknown>[];
+  const validatedLevels = rawLevels.filter((l) =>
+    l &&
+    typeof l === 'object' &&
+    typeof l.id === 'string' &&
+    typeof l.durationSeconds === 'number' &&
+    l.durationSeconds > 0 &&
+    (l.type === 'level' || l.type === 'break'),
+  ) as unknown as Level[];
+
+  return {
+    name: typeof parsed.name === 'string' ? parsed.name : 'Tournament',
+    levels: validatedLevels,
+    anteEnabled: (parsed.anteEnabled as boolean) ?? false,
+    anteMode: (parsed.anteMode === 'bigBlindAnte' ? 'bigBlindAnte' : 'standard'),
+    players: Array.isArray(parsed.players)
+      ? ((parsed.players as Record<string, unknown>[]).map((p) => ({
+          ...p,
+          rebuys: typeof p.rebuys === 'number' ? p.rebuys : 0,
+          addOn: typeof p.addOn === 'boolean' ? p.addOn : false,
+          status: p.status === 'eliminated' ? 'eliminated' : 'active',
+          placement: typeof p.placement === 'number' ? p.placement : null,
+          eliminatedBy: typeof p.eliminatedBy === 'string' ? p.eliminatedBy : null,
+          knockouts: typeof p.knockouts === 'number' ? p.knockouts : 0,
+          chips: typeof p.chips === 'number' ? p.chips : undefined,
+        })) as Player[])
+      : ([] as Player[]),
+    dealerIndex: typeof parsed.dealerIndex === 'number' ? parsed.dealerIndex : 0,
+    payout: (parsed.payout as PayoutConfig) ?? defaultPayoutConfig(),
+    rebuy,
+    addOn,
+    bounty: parsed.bounty
+      ? {
+          ...defaultBountyConfig(),
+          ...(parsed.bounty as Partial<BountyConfig>),
+          type: (parsed.bounty as Record<string, unknown>).type === 'mystery' ? 'mystery' : 'fixed',
+          mysteryPool: Array.isArray((parsed.bounty as Record<string, unknown>).mysteryPool)
+            ? (parsed.bounty as BountyConfig).mysteryPool
+            : undefined,
+        }
+      : defaultBountyConfig(),
+    chips: parsed.chips
+      ? {
+          ...defaultChipConfig(),
+          ...(parsed.chips as ChipConfig),
+          colorUpEnabled: typeof (parsed.chips as Record<string, unknown>).colorUpEnabled === 'boolean'
+            ? (parsed.chips as ChipConfig).colorUpEnabled
+            : true,
+          colorUpSchedule: Array.isArray((parsed.chips as Record<string, unknown>).colorUpSchedule)
+            ? (parsed.chips as ChipConfig).colorUpSchedule
+            : [],
+        }
+      : defaultChipConfig(),
+    buyIn,
+    startingChips,
+    lateRegistration: parsed.lateRegistration
+      ? { ...defaultLateRegistrationConfig(), ...(parsed.lateRegistration as Partial<LateRegistrationConfig>) }
+      : undefined,
+    leagueId: typeof parsed.leagueId === 'string' ? parsed.leagueId : undefined,
+    multiTable: parsed.multiTable
+      ? { ...defaultMultiTableConfig(), ...(parsed.multiTable as Partial<MultiTableConfig>) }
+      : undefined,
+    tables: Array.isArray(parsed.tables)
+      ? (parsed.tables as Record<string, unknown>[])
+          .filter((t) => t && typeof t.id === 'string' && typeof t.name === 'string')
+          .map((t) => migrateTable(t))
+      : undefined,
+  };
+}
+
+/**
+ * Migrate a table from old format (playerIds: string[], seats: number)
+ * to new format (seats: Seat[], maxSeats: number, status, dealerSeat).
+ */
+function migrateTable(raw: Record<string, unknown>): Table {
+  // New format: seats is an array of Seat objects
+  if (
+    Array.isArray(raw.seats) &&
+    raw.seats.length > 0 &&
+    typeof (raw.seats[0] as Record<string, unknown>)?.seatNumber === 'number'
+  ) {
+    return {
+      id: raw.id as string,
+      name: raw.name as string,
+      maxSeats: typeof raw.maxSeats === 'number' ? raw.maxSeats : (raw.seats as Seat[]).length,
+      seats: raw.seats as Seat[],
+      status: raw.status === 'dissolved' ? 'dissolved' : 'active',
+      dealerSeat: typeof raw.dealerSeat === 'number' ? raw.dealerSeat : null,
+    };
+  }
+
+  // Old format: seats is a number, playerIds is a string array
+  const maxSeats = typeof raw.seats === 'number' ? raw.seats : 10;
+  const playerIds = Array.isArray(raw.playerIds) ? raw.playerIds as string[] : [];
+  const seats: Seat[] = Array.from({ length: maxSeats }, (_, i) => ({
+    seatNumber: i + 1,
+    playerId: playerIds[i] ?? null,
+  }));
+
+  return {
+    id: raw.id as string,
+    name: raw.name as string,
+    maxSeats,
+    seats,
+    status: 'active',
+    dealerSeat: null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Config Persistence
+// ---------------------------------------------------------------------------
+
+const CONFIG_KEY = 'poker-timer-config';
+const SETTINGS_KEY = 'poker-timer-settings';
+
+/** Persist tournament config to localStorage. */
+export function saveConfig(config: TournamentConfig): void {
+  try {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  } catch {
+    // localStorage unavailable (e.g. private browsing, quota exceeded)
+  }
+}
+
+/** Load tournament config from localStorage. Returns null if absent or corrupted. */
+export function loadConfig(): TournamentConfig | null {
+  const raw = localStorage.getItem(CONFIG_KEY);
+  if (!raw) return null;
+  try {
+    return parseConfigObject(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+/** Persist application settings to localStorage. */
+export function saveSettings(settings: Settings): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // localStorage unavailable (e.g. private browsing, quota exceeded)
+  }
+}
+
+export function loadSettings(): Settings | null {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return { ...defaultSettings(), ...parsed } as Settings;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament Checkpoint (auto-save / restore)
+// ---------------------------------------------------------------------------
+
+const CHECKPOINT_KEY = 'poker-timer-checkpoint';
+
+export function saveCheckpoint(checkpoint: TournamentCheckpoint): void {
+  try {
+    localStorage.setItem(CHECKPOINT_KEY, JSON.stringify(checkpoint));
+  } catch { /* private browsing or quota exceeded */ }
+}
+
+export function loadCheckpoint(): TournamentCheckpoint | null {
+  try {
+    const raw = localStorage.getItem(CHECKPOINT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.version !== 1) return null;
+    // Validate config through parseConfigObject for safety
+    const config = parsed.config ? parseConfigObject(parsed.config) : null;
+    if (!config) return null;
+    // Guard: empty levels array would cause downstream crashes (index -1)
+    if (config.levels.length === 0) return null;
+    const timer = parsed.timer;
+    if (!timer || typeof timer.currentLevelIndex !== 'number' || typeof timer.remainingSeconds !== 'number') return null;
+    // Clamp to valid ranges
+    timer.currentLevelIndex = Math.max(0, Math.min(
+      timer.currentLevelIndex, config.levels.length - 1,
+    ));
+    timer.remainingSeconds = Math.max(0, timer.remainingSeconds);
+    return { ...parsed, config, timer } as TournamentCheckpoint;
+  } catch {
+    return null;
+  }
+}
+
+export function clearCheckpoint(): void {
+  try { localStorage.removeItem(CHECKPOINT_KEY); } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
+// Config JSON Import / Export
+// ---------------------------------------------------------------------------
+
+export function exportConfigJSON(config: TournamentConfig): string {
+  return JSON.stringify(config, null, 2);
+}
+
+export function importConfigJSON(json: string): TournamentConfig | null {
+  try {
+    const parsed = JSON.parse(json);
+    if (!parsed || typeof parsed.name !== 'string') return null;
+    return parseConfigObject(parsed);
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Setup Wizard
+// ---------------------------------------------------------------------------
+
+export const WIZARD_KEY = 'poker-timer-wizard-completed';
+
+export function isWizardCompleted(): boolean {
+  try {
+    return localStorage.getItem(WIZARD_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function markWizardCompleted(): void {
+  try {
+    localStorage.setItem(WIZARD_KEY, 'true');
+  } catch { /* private browsing */ }
+}

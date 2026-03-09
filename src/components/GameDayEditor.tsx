@@ -344,7 +344,7 @@ export function GameDayEditor({ league, editingGameDay, onClose, onSaved }: Prop
                             min={0}
                           />
                         </td>
-                        <td className="px-2 py-1.5 font-bold text-center" style={{ color: 'var(--accent-600)' }}>{pts}</td>
+                        <td className="px-2 py-1.5 font-bold text-center" style={{ color: 'var(--accent-text)' }}>{pts}</td>
                         <td className="px-2 py-1.5 text-center">
                           <input
                             type="checkbox"

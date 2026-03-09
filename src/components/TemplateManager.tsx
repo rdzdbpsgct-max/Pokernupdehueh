@@ -1,8 +1,9 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { TournamentConfig } from '../domain/types';
 import type { TournamentTemplate } from '../domain/logic';
 import { loadTemplates, saveTemplate, deleteTemplate, exportTemplateToJSON, parseTemplateFile, exportConfigJSON, importConfigJSON } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 import { ChevronIcon } from './ChevronIcon';
 
 // Minimal type for File System Access API (Chromium only)
@@ -25,7 +26,7 @@ interface Props {
 
 export function TemplateManager({ config, onLoad, onClose }: Props) {
   const { t } = useTranslation();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useDialogA11y(onClose);
   const [templates, setTemplates] = useState<TournamentTemplate[]>(() => loadTemplates());
   const [newName, setNewName] = useState(config.name || '');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -33,19 +34,6 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
   const [showJson, setShowJson] = useState(false);
   const [jsonText, setJsonText] = useState('');
   const [jsonError, setJsonError] = useState('');
-
-  // Auto-focus first focusable element & close on Escape
-  useEffect(() => {
-    const el = dialogRef.current;
-    if (!el) return;
-    const focusable = el.querySelector<HTMLElement>('button, input, [tabindex]');
-    focusable?.focus();
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
 
   // Detect native save picker support (Chromium only)
   const hasNativeSavePicker = useMemo(() => {

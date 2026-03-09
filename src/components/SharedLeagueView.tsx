@@ -77,7 +77,7 @@ export function SharedLeagueView({ leagueName, standings, onClose }: Props) {
                 <span className="flex-1 text-sm text-gray-900 dark:text-white font-medium truncate">
                   {s.name}
                 </span>
-                <span className="w-14 text-right text-sm font-bold" style={{ color: 'var(--accent-600)' }}>
+                <span className="w-14 text-right text-sm font-bold" style={{ color: 'var(--accent-text)' }}>
                   {s.points}
                 </span>
                 <span className="w-10 text-right text-sm text-gray-600 dark:text-gray-300">

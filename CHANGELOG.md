@@ -5,6 +5,88 @@ All notable changes to the Pokern up de Hüh app.
 
 ---
 
+## [5.9.0] – 2026-03-09
+
+### Vollständiges Code-Audit — 52 Maßnahmen in 8 Sprints (v5.4.0–v5.9.0)
+
+Basierend auf einem umfassenden Code-Audit wurden **50 Maßnahmen** in 8 Sprints umgesetzt: 16 Bug-Fixes, 8 UX-Verbesserungen, 6 Security-Fixes, 8 A11y-Verbesserungen, 7 Test-Erweiterungen, 4 Architektur-Verbesserungen und 3 DX-Optimierungen.
+
+#### Bug-Fixes (Sprint 1+2)
+- **tables.ts Guards**: `mergeToFinalTable`, `dissolveTable`, `distributePlayersToTables` geben jetzt `unseated`/`skipped` Spieler zurück statt sie stillschweigend zu droppen (M01-M03)
+- **loadCheckpoint Empty-Guard**: Leeres levels-Array → `null` statt App-Crash (M04)
+- **timer.ts Guards**: `resetCurrentLevel` und `previousLevel` mit leerem levels-Array → kein Crash (M05)
+- **Placement-Kollision Fix**: Aktive Re-Entry-Spieler erhalten fortlaufende Plätze statt alle Platz 1 (M06)
+- **Rebuy-Cost Berechnung**: `rebuyCost` Feld in TournamentResult, korrekte Liga-Finanzberechnung (M07)
+- **Speech Queue Timeout**: 30s Timeout pro Queue-Item verhindert eingefrorene Ansagen (M08)
+- **Negative Payouts Guard**: `Math.max(0, prizePool)` verhindert negative Auszahlungen (M09)
+- **Re-Entry Duplikat Fix**: Deduplizierung nach originalPlayerId in Ergebnissen (M10)
+- **Duplicate Place Check**: Payout mit doppeltem Platz wird erkannt (M11)
+- **Blind Structure Guard**: Mindestens 1 Level garantiert bei extremer Chip-Skalierung (M12)
+- **QR Delimiter Fix**: URL-Encoding für Liga-Namen und Spielernamen mit Sonderzeichen (M13, M39)
+- **Tiebreaker Pre-Sort**: Interne Vorsortierung in `applyTiebreaker()` (M14)
+- **Remote Connection Timeout**: 10s Timeout statt endlosem "Connecting..." (M15)
+- **Sounds Error Logging**: `console.warn('[audio] ...')` statt stiller catch-Blöcke (M16)
+- **balanceTables Deep-Copy**: Arbeitet auf Kopie, Original unverändert bei Early-Exit (M37, M52)
+- **Template-Validierung**: `parseConfigObject()` auf Template-Load, invalide Templates gefiltert (M38)
+
+#### Touch-Targets & Mobile (Sprint 3)
+- **ConfigEditor**: Move/Delete/Apply-Buttons auf ≥32px Touch-Target (M17)
+- **PlayerPanel**: Eliminate/Reinstate/Re-Entry/Add-On-Buttons vergrößert (M18)
+- **SettingsPanel**: Accent-Circles von 28px auf 36px (M19)
+- **LeagueView**: Icon-Buttons mit erhöhtem Padding (M20)
+
+#### Accessibility (Sprint 4)
+- **ARIA-Labels**: 25+ Icon-only Buttons mit `aria-label` versehen (M24)
+- **Focus-Management**: `useDialogA11y` Hook erweitert mit Focus-Trap und Focus-Return (M25)
+- **Farb-Kontrast**: Accent-Farben auf Light-Mode ≥4.5:1 Kontrast-Ratio (M26)
+- **LoadingFallback A11y**: `role="status"` + `aria-label` (M27)
+- **Keyboard-Navigation**: Sortierbare Header mit `role="button"` + `tabIndex` + `onKeyDown` (M50)
+
+#### UX-Verbesserungen (Sprint 5)
+- **Preset-Overwrite Confirmation**: Confirm-Dialog vor Quick-Preset-Apply (M21)
+- **League-Delete Confirmation**: Confirm-Dialog vor Liga-Löschung (M22)
+- **Empty States**: Kontextuelle "Keine Daten"-Meldungen in ConfigEditor, MultiTablePanel, LeagueStandingsTable (M23)
+- **beforeunload Warning**: Browser-Warnung bei ungespeicherten Setup-Änderungen (M30)
+- **Form Validation Feedback**: Tooltip auf disabled Start-Button erklärt fehlende Voraussetzungen (M48)
+- **Toast-Notification-System**: Portal-basiertes Toast mit Auto-Dismiss (3s), ersetzt inline ✓-Feedback (M49)
+- **History-Truncation Warning**: Banner bei >180 von 200 Einträgen (M51)
+
+#### Remote Control Security (Sprint 6)
+- **HMAC-SHA256 Signierung**: Shared Secret bei QR-Scan, signierte Messages (M31)
+- **Rate-Limiting**: Max 10 Commands/Sek, 1KB Message-Size-Limit (M32)
+
+#### Test-Ausbau (Sprint 7)
+- **50 neue Tests**: Edge-Case-Tests (M36), Remote Security Tests (M34), ESLint Security Plugin (M40)
+- **CI Bundle-Check Fix**: Plattform-unabhängiger Size-Report (M41)
+- **Husky Pre-Commit Hook**: Lint + Type-Check vor jedem Commit (M46)
+
+#### DX & Architektur (Sprint 8)
+- **JSDoc**: Alle ~100 exportierten Funktionen in domain/ mit JSDoc-Kommentaren (M43)
+- **Chunk Error Boundaries**: Fehlgeschlagener Lazy-Load zeigt Retry-Button statt App-Crash (M45)
+- **persistence.ts Split**: 856 Zeilen → 5 fokussierte Module + Barrel (M47):
+  - `configPersistence.ts` — Default-Configs, Config-Parsing, Presets, Checkpoint, Wizard
+  - `templatePersistence.ts` — Template CRUD, JSON Export/Import
+  - `historyPersistence.ts` — Tournament-History CRUD, Player-Import
+  - `playerDatabase.ts` — Spieler-Datenbank CRUD, Sync
+  - `leaguePersistence.ts` — Liga CRUD, Export/Import
+
+#### Neue Dateien
+- `src/components/Toast.tsx` — Toast-Notification-System
+- `src/domain/toast.ts` — Toast-Context und useToast Hook
+- `src/domain/configPersistence.ts` — Config-Persistence (aus persistence.ts extrahiert)
+- `src/domain/templatePersistence.ts` — Template-Persistence (aus persistence.ts extrahiert)
+- `src/domain/historyPersistence.ts` — History-Persistence (aus persistence.ts extrahiert)
+- `src/domain/playerDatabase.ts` — Player-Database (aus persistence.ts extrahiert)
+- `src/domain/leaguePersistence.ts` — League-Persistence (aus persistence.ts extrahiert)
+- `.husky/pre-commit` — Pre-Commit Hook (lint + tsc)
+
+#### Statistiken
+- **49 geänderte Dateien**, ~1500 Insertions, ~1050 Deletions
+- **584 Tests gesamt** (489 Logic + 95 Component) — +50 neue Tests
+- **22 neue Translation-Keys** (11 DE + 11 EN)
+
+---
+
 ## [5.3.0] – 2026-03-09
 
 ### Code-Qualität, Performance & Web Vitals

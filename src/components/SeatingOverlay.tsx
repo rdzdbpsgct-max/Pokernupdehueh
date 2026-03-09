@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
 import type { Player, Table } from '../domain/types';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface Props {
   tables: Table[];
@@ -10,22 +10,7 @@ interface Props {
 
 export function SeatingOverlay({ tables, players, onDismiss }: Props) {
   const { t } = useTranslation();
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onDismiss();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onDismiss]);
-
-  useEffect(() => {
-    const el = dialogRef.current;
-    if (!el) return;
-    const btn = el.querySelector<HTMLElement>('button');
-    btn?.focus();
-  }, []);
+  const dialogRef = useDialogA11y(onDismiss);
 
   const activeTables = tables.filter((tbl) => tbl.status === 'active');
 
@@ -64,7 +49,7 @@ export function SeatingOverlay({ tables, players, onDismiss }: Props) {
                   className="rounded-xl border border-gray-200 dark:border-gray-700/40 bg-gray-50/80 dark:bg-gray-800/60 px-3 py-2"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold" style={{ color: 'var(--accent-500)' }}>
+                    <span className="text-sm font-bold" style={{ color: 'var(--accent-text)' }}>
                       {tbl.name}
                     </span>
                     <span className="text-xs text-gray-500">

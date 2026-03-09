@@ -5,6 +5,7 @@ import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
 import { ChevronIcon } from './ChevronIcon';
 import { QRCodeSVG } from 'qrcode.react';
+import { showToast } from '../domain/toast';
 
 interface Props {
   players: Player[];
@@ -33,17 +34,15 @@ export function TournamentFinished({
   const { resolved: theme } = useTheme();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const [copied, setCopied] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleCopyText = useCallback(async () => {
     if (!tournamentResult) return;
     try {
       await navigator.clipboard.writeText(formatResultAsText(tournamentResult, language === 'de' ? 'de-DE' : 'en-US'));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      showToast(t('finished.textCopied'));
     } catch { /* clipboard not available */ }
-  }, [tournamentResult, language]);
+  }, [tournamentResult, language, t]);
 
   const handleDownloadCSV = useCallback(() => {
     if (!tournamentResult) return;
@@ -396,7 +395,7 @@ export function TournamentFinished({
               className="flex-1 px-4 py-2.5 bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-all duration-200 border border-gray-200 dark:border-gray-700/40 active:scale-[0.97]"
               title={t('finished.copyText')}
             >
-              {copied ? t('finished.textCopied') : t('finished.copyText')}
+              {t('finished.copyText')}
             </button>
             <button
               onClick={handleDownloadCSV}

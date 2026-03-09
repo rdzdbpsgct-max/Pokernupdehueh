@@ -15,6 +15,7 @@ import { LeagueStandingsTable } from './LeagueStandingsTable';
 import { LeagueGameDays } from './LeagueGameDays';
 import { LeagueFinances } from './LeagueFinances';
 import { LoadingFallback } from './LoadingFallback';
+import { SectionErrorBoundary } from './ErrorBoundary';
 
 const GameDayEditor = lazy(() => import('./GameDayEditor').then((m) => ({ default: m.GameDayEditor })));
 const LeagueSettings = lazy(() => import('./LeagueSettings').then((m) => ({ default: m.LeagueSettings })));
@@ -199,7 +200,7 @@ export function LeagueView({ onStartTournament }: Props) {
                   </button>
                   <button
                     onClick={() => setShowGameDayEditor(true)}
-                    className="px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs transition-colors"
+                    className="px-3 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs transition-colors"
                     title={t('league.editor.manual')}
                     aria-label={t('league.editor.manual')}
                   >
@@ -207,7 +208,7 @@ export function LeagueView({ onStartTournament }: Props) {
                   </button>
                   <button
                     onClick={() => setShowSettings(true)}
-                    className="px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm transition-colors"
+                    className="px-3 py-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm transition-colors"
                     title={t('league.settings.title')}
                     aria-label={t('league.settings.title')}
                   >
@@ -223,13 +224,13 @@ export function LeagueView({ onStartTournament }: Props) {
                         className="bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg px-2 py-1 text-sm w-32 focus:ring-2 focus:outline-none"
                         autoFocus
                       />
-                      <button onClick={() => handleRenameLeague(selectedLeague.id)} className="text-xs px-2 py-1 rounded" style={{ color: 'var(--accent-600)' }} aria-label={t('accessibility.confirm')}>✓</button>
-                      <button onClick={() => setEditingName(null)} className="text-xs text-gray-400 px-2 py-1 rounded" aria-label={t('accessibility.cancel')}>✗</button>
+                      <button onClick={() => handleRenameLeague(selectedLeague.id)} className="text-xs px-3 py-1.5 rounded" style={{ color: 'var(--accent-text)' }} aria-label={t('accessibility.confirm')}>✓</button>
+                      <button onClick={() => setEditingName(null)} className="text-xs text-gray-400 px-3 py-1.5 rounded" aria-label={t('accessibility.cancel')}>✗</button>
                     </div>
                   ) : (
                     <button
                       onClick={() => { setEditingName(selectedLeague.id); setEditNameValue(selectedLeague.name); }}
-                      className="px-2 py-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm transition-colors"
+                      className="px-3 py-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm transition-colors"
                       title={t('league.view.editName')}
                       aria-label={t('league.view.editName')}
                     >
@@ -238,13 +239,13 @@ export function LeagueView({ onStartTournament }: Props) {
                   )}
                   {confirmDeleteId === selectedLeague.id ? (
                     <div className="flex items-center gap-1">
-                      <button onClick={() => handleDeleteLeague(selectedLeague.id)} className="text-xs px-2 py-1 text-red-600 dark:text-red-400 font-medium">{t('league.view.confirmDelete')}</button>
-                      <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-2 py-1 text-gray-400">{t('league.view.cancel')}</button>
+                      <button onClick={() => handleDeleteLeague(selectedLeague.id)} className="text-xs px-3 py-1.5 text-red-600 dark:text-red-400 font-medium">{t('league.view.confirmDelete')}</button>
+                      <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-3 py-1.5 text-gray-400">{t('league.view.cancel')}</button>
                     </div>
                   ) : (
                     <button
                       onClick={() => setConfirmDeleteId(selectedLeague.id)}
-                      className="px-2 py-1.5 text-gray-400 hover:text-red-500 text-sm transition-colors"
+                      className="px-3 py-2 text-gray-400 hover:text-red-500 text-sm transition-colors"
                       title={t('league.view.deleteLeague')}
                       aria-label={t('accessibility.delete')}
                     >
@@ -271,7 +272,7 @@ export function LeagueView({ onStartTournament }: Props) {
                   >
                     {t('league.view.create')}
                   </button>
-                  <button onClick={() => setIsCreating(false)} className="text-gray-400 text-sm" aria-label={t('accessibility.cancel')}>✗</button>
+                  <button onClick={() => setIsCreating(false)} className="text-gray-400 text-sm px-2 py-1" aria-label={t('accessibility.cancel')}>✗</button>
                 </div>
               ) : (
                 <button
@@ -355,24 +356,24 @@ export function LeagueView({ onStartTournament }: Props) {
 
       {/* Game Day Editor Modal */}
       {showGameDayEditor && selectedLeague && (
-        <Suspense fallback={<LoadingFallback />}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <GameDayEditor
             league={selectedLeague}
             onClose={() => setShowGameDayEditor(false)}
             onSaved={() => { setShowGameDayEditor(false); refreshData(); }}
           />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* League Settings Modal */}
       {showSettings && selectedLeague && (
-        <Suspense fallback={<LoadingFallback />}>
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <LeagueSettings
             league={selectedLeague}
             onClose={() => setShowSettings(false)}
             onSaved={() => { setShowSettings(false); refreshData(); }}
           />
-        </Suspense>
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Correction Modal (Step 17) */}

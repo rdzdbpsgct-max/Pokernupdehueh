@@ -19,6 +19,8 @@ interface UseRemoteControlReturn {
   isControllerMode: boolean;
   /** The host peer ID to connect to (only set in controller mode) */
   controllerPeerId: string | null;
+  /** The HMAC secret for controller mode (only set when present in URL) */
+  controllerSecret: string | null;
   /** Start hosting (create RemoteHost if not already running) */
   startHost: () => void;
 }
@@ -48,17 +50,19 @@ export function useRemoteControl({ onCommand, enabled }: UseRemoteControlOptions
   const hostStatus = useMemo(() => enabled ? hostStatusRaw : null, [enabled, hostStatusRaw]);
 
   // Detect controller mode from URL hash (only once on mount)
-  const [controllerPeerId] = useState<string | null>(() => {
+  const [controllerInfo] = useState<{ peerId: string; secret: string | null } | null>(() => {
     const hash = window.location.hash;
-    const peerId = parseRemoteHash(hash);
-    if (peerId) {
+    const result = parseRemoteHash(hash);
+    if (result) {
       // Clear hash from URL
       history.replaceState(null, '', window.location.pathname + window.location.search);
-      return peerId;
+      return result;
     }
     return null;
   });
 
+  const controllerPeerId = controllerInfo?.peerId ?? null;
+  const controllerSecret = controllerInfo?.secret ?? null;
   const isControllerMode = controllerPeerId !== null;
 
   // Start hosting — creates RemoteHost if not already active
@@ -93,6 +97,7 @@ export function useRemoteControl({ onCommand, enabled }: UseRemoteControlOptions
     setShowRemoteModal,
     isControllerMode,
     controllerPeerId,
+    controllerSecret,
     startHost,
   };
 }

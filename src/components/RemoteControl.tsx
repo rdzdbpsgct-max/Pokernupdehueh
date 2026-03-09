@@ -14,17 +14,19 @@ import { formatTime } from '../domain/logic';
 interface HostProps {
   /** Peer ID of the running host */
   peerId: string;
+  /** HMAC secret for authentication */
+  secret?: string;
   /** Current host connection status */
   status: HostStatus | null;
   onClose: () => void;
 }
 
-export function RemoteHostModal({ peerId, status, onClose }: HostProps) {
+export function RemoteHostModal({ peerId, secret, status, onClose }: HostProps) {
   const { t } = useTranslation();
   const dialogRef = useDialogA11y(onClose);
   const { resolved } = useTheme();
 
-  const qrUrl = peerId ? buildRemoteUrl(peerId) : '';
+  const qrUrl = peerId ? buildRemoteUrl(peerId, secret) : '';
 
   const qrFg = resolved === 'dark' ? '#e5e7eb' : '#111827';
   const qrBg = resolved === 'dark' ? '#1f2937' : '#ffffff';
@@ -75,7 +77,7 @@ export function RemoteHostModal({ peerId, status, onClose }: HostProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-center gap-2 py-2">
                   <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--accent-500)' }} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--accent-500)' }}>
+                  <span className="text-sm font-medium" style={{ color: 'var(--accent-text)' }}>
                     {t('remote.connected')}
                   </span>
                 </div>
@@ -110,10 +112,12 @@ export function RemoteHostModal({ peerId, status, onClose }: HostProps) {
 
 interface ControllerProps {
   hostPeerId: string;
+  /** HMAC secret for command authentication */
+  secret?: string | null;
   onClose: () => void;
 }
 
-export function RemoteControllerView({ hostPeerId, onClose }: ControllerProps) {
+export function RemoteControllerView({ hostPeerId, secret, onClose }: ControllerProps) {
   const { t } = useTranslation();
   const [status, setStatus] = useState<ControllerStatus>('connecting');
   const [state, setState] = useState<RemoteState['data'] | null>(null);
@@ -123,7 +127,7 @@ export function RemoteControllerView({ hostPeerId, onClose }: ControllerProps) {
     const ctrl = new RemoteController(hostPeerId, {
       onState: (s) => setState(s),
       onStatusChange: (s) => setStatus(s),
-    });
+    }, secret);
     controllerRef.current = ctrl;
 
     // Request Wake Lock to keep screen on
@@ -266,6 +270,7 @@ export function RemoteControllerView({ hostPeerId, onClose }: ControllerProps) {
               onClick={() => sendCmd('prev')}
               className="aspect-square flex items-center justify-center bg-gray-800 border border-gray-700/60 rounded-xl text-2xl active:scale-95 transition-transform"
               title={t('remote.prev')}
+              aria-label={t('remote.prev')}
             >
               {String.fromCodePoint(0x23EE)}
             </button>
@@ -274,6 +279,7 @@ export function RemoteControllerView({ hostPeerId, onClose }: ControllerProps) {
               className="aspect-square flex items-center justify-center text-white rounded-xl text-3xl active:scale-95 transition-transform shadow-lg"
               style={{ backgroundColor: 'var(--accent-600)', boxShadow: '0 10px 15px -3px var(--accent-900)' }}
               title={state?.timerStatus === 'running' ? t('remote.pause') : t('remote.play')}
+              aria-label={state?.timerStatus === 'running' ? t('remote.pause') : t('remote.play')}
             >
               {state?.timerStatus === 'running' ? String.fromCodePoint(0x23F8) : String.fromCodePoint(0x25B6, 0xFE0F)}
             </button>
@@ -281,6 +287,7 @@ export function RemoteControllerView({ hostPeerId, onClose }: ControllerProps) {
               onClick={() => sendCmd('next')}
               className="aspect-square flex items-center justify-center bg-gray-800 border border-gray-700/60 rounded-xl text-2xl active:scale-95 transition-transform"
               title={t('remote.next')}
+              aria-label={t('remote.next')}
             >
               {String.fromCodePoint(0x23ED)}
             </button>

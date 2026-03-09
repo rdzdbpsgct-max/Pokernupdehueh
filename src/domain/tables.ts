@@ -146,6 +146,12 @@ export function distributePlayersToTables(playerIds: string[], tables: Table[]):
     if (tableIdx > playerIds.length * activeUpdated.length) break;
   }
 
+  // Warn if some players could not be seated (all seats full or locked)
+  if (playerIdx < playerIds.length) {
+    const skipped = playerIds.slice(playerIdx);
+    console.warn(`[tables] distributePlayersToTables: ${skipped.length} player(s) could not be seated (all seats full or locked):`, skipped);
+  }
+
   return updated;
 }
 
@@ -309,6 +315,10 @@ export function balanceTables(tables: Table[], players: Player[]): { tables: Tab
     });
   }
 
+  if (maxIterations <= 0) {
+    console.warn('[tables] balanceTables: reached 50-iteration limit, tables may not be fully balanced');
+  }
+
   return { tables: updated, moves };
 }
 
@@ -356,15 +366,16 @@ export function dissolveTable(
   tables: Table[],
   players: Player[],
   tableId: string,
-): { tables: Table[]; moves: TableMove[] } {
+): { tables: Table[]; moves: TableMove[]; skipped: string[] } {
   const moves: TableMove[] = [];
+  const skipped: string[] = [];
   const updated = tables.map(t => ({
     ...t,
     seats: t.seats.map(s => ({ ...s })),
   }));
 
   const dissolvedTable = updated.find(t => t.id === tableId);
-  if (!dissolvedTable) return { tables: updated, moves };
+  if (!dissolvedTable) return { tables: updated, moves, skipped };
 
   const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
   const playerMap = new Map(players.map(p => [p.id, p]));
@@ -376,14 +387,19 @@ export function dissolveTable(
 
   // Get remaining active tables (excluding the one being dissolved)
   const remainingTables = updated.filter(t => t.status === 'active' && t.id !== tableId);
-  if (remainingTables.length === 0) return { tables: updated, moves };
+  if (remainingTables.length === 0) return { tables: updated, moves, skipped };
 
   // Round-robin distribute players to remaining tables
   for (let i = 0; i < playersToMove.length; i++) {
     const { playerId, seatNumber: fromSeat } = playersToMove[i];
     const targetTable = remainingTables[i % remainingTables.length];
     const targetSeatNum = findLowestAvailableSeat(targetTable);
-    if (targetSeatNum === null) continue; // table full, skip
+    if (targetSeatNum === null) {
+      // No seat available — track skipped player
+      skipped.push(playerId);
+      console.warn(`[tables] dissolveTable: player ${playerId} could not be seated (all target tables full)`);
+      continue;
+    }
 
     // Seat at target
     const seatIdx = targetTable.seats.findIndex(s => s.seatNumber === targetSeatNum);
@@ -409,7 +425,7 @@ export function dissolveTable(
   dissolvedTable.seats = dissolvedTable.seats.map(s => ({ ...s, playerId: null }));
   dissolvedTable.dealerSeat = null;
 
-  return { tables: updated, moves };
+  return { tables: updated, moves, skipped };
 }
 
 // ---------------------------------------------------------------------------
@@ -435,15 +451,16 @@ export function shouldMergeToFinalTable(tables: Table[], players: Player[]): boo
 export function mergeToFinalTable(
   tables: Table[],
   players: Player[],
-): { tables: Table[]; moves: TableMove[] } {
+): { tables: Table[]; moves: TableMove[]; unseated: string[] } {
   const moves: TableMove[] = [];
+  const unseated: string[] = [];
   const updated = tables.map(t => ({
     ...t,
     seats: t.seats.map(s => ({ ...s })),
   }));
 
   const activeTables = updated.filter(t => t.status === 'active');
-  if (activeTables.length <= 1) return { tables: updated, moves };
+  if (activeTables.length <= 1) return { tables: updated, moves, unseated };
 
   const finalTable = activeTables[0];
   const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
@@ -470,7 +487,12 @@ export function mergeToFinalTable(
   // Seat at final table sequentially
   let seatIdx = 0;
   for (const { playerId, fromTable, fromSeat } of allPlayers) {
-    if (seatIdx >= finalTable.seats.length) break;
+    if (seatIdx >= finalTable.seats.length) {
+      // No more seats — track unseated player
+      unseated.push(playerId);
+      console.warn(`[tables] mergeToFinalTable: player ${playerId} could not be seated at Final Table (capacity exceeded)`);
+      continue;
+    }
     finalTable.seats[seatIdx] = { ...finalTable.seats[seatIdx], playerId };
 
     // Only create move if player was NOT already at the final table
@@ -499,7 +521,7 @@ export function mergeToFinalTable(
     table.dealerSeat = null;
   }
 
-  return { tables: updated, moves };
+  return { tables: updated, moves, unseated };
 }
 
 // ---------------------------------------------------------------------------

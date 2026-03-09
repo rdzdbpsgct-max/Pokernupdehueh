@@ -129,7 +129,7 @@ export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, o
             <button
               key={opt.value}
               onClick={() => setAccentColor(opt.value)}
-              className={`w-7 h-7 rounded-full transition-all duration-200 ${
+              className={`w-9 h-9 rounded-full transition-all duration-200 ${
                 accentColor === opt.value
                   ? 'ring-2 scale-110'
                   : 'opacity-60 hover:opacity-100 hover:scale-105'

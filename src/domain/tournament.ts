@@ -21,14 +21,17 @@ import { t as moduleT } from '../i18n/translations';
 // Prize Pool & Payouts
 // ---------------------------------------------------------------------------
 
+/** Sum all rebuys across all players. */
 export function computeTotalRebuys(players: Player[]): number {
   return players.reduce((sum, p) => sum + p.rebuys, 0);
 }
 
+/** Count how many players have taken an add-on. */
 export function computeTotalAddOns(players: Player[]): number {
   return players.filter((p) => p.addOn).length;
 }
 
+/** Calculate the total prize pool from buy-ins, rebuys, and add-ons. Excludes rebuys when a separate rebuy pot is configured. */
 export function computePrizePool(
   players: Player[], buyIn: number,
   rebuyCost?: number, addOnCost?: number,
@@ -42,6 +45,7 @@ export function computePrizePool(
   return (players.length * buyIn) + rebuyTotal + (totalAddOns * costPerAddOn);
 }
 
+/** Calculate the separate rebuy pot total (rebuys x cost per rebuy). */
 export function computeRebuyPot(players: Player[], rebuyCost: number): number {
   return computeTotalRebuys(players) * rebuyCost;
 }
@@ -279,15 +283,17 @@ export function resolvePotWinners(
   return { payouts, oddChips, total };
 }
 
+/** Calculate payout amounts per place from a payout config and prize pool. Supports both percent and fixed modes. */
 export function computePayouts(
   payout: PayoutConfig,
   prizePool: number,
 ): { place: number; amount: number }[] {
+  const safePrizePool = Math.max(0, prizePool);
   return payout.entries.map((entry) => ({
     place: entry.place,
     amount:
       payout.mode === 'percent'
-        ? Math.round((entry.value / 100) * prizePool * 100) / 100
+        ? Math.round((entry.value / 100) * safePrizePool * 100) / 100
         : entry.value,
   }));
 }
@@ -296,6 +302,7 @@ export function computePayouts(
 // Payout defaults
 // ---------------------------------------------------------------------------
 
+/** Return the default payout config: 50/30/20 percent split for 3 places. */
 export function defaultPayoutConfig(): PayoutConfig {
   return {
     mode: 'percent',
@@ -307,6 +314,7 @@ export function defaultPayoutConfig(): PayoutConfig {
   };
 }
 
+/** Return a sensible default payout structure scaled to the number of players (1-5 paid places). */
 export function defaultPayoutForPlayerCount(playerCount: number): PayoutConfig {
   let entries: { place: number; value: number }[];
 
@@ -352,6 +360,7 @@ export function defaultPayoutForPlayerCount(playerCount: number): PayoutConfig {
 // Build Tournament Result
 // ---------------------------------------------------------------------------
 
+/** Build a complete TournamentResult from the current config, aggregating re-entries and computing payouts. */
 export function buildTournamentResult(
   config: TournamentConfig,
   elapsedSeconds: number,
@@ -385,7 +394,8 @@ export function buildTournamentResult(
       return best;
     });
     const isActive = group.some((p) => p.status === 'active');
-    const bestPlace = isActive ? 1 : (bestInstance.placement ?? 999);
+    // Active players get sequential places later in the sorted map — use 0 as sentinel
+    const bestPlace = isActive ? 0 : (bestInstance.placement ?? 999);
     aggregated.push({
       name: bestInstance.name,
       bestPlace,
@@ -400,11 +410,13 @@ export function buildTournamentResult(
   const sorted = [...aggregated].sort((a, b) => {
     if (a.isActive && !b.isActive) return -1;
     if (b.isActive && !a.isActive) return 1;
+    if (a.isActive && b.isActive) return 0; // both active → preserve order
     return a.bestPlace - b.bestPlace;
   });
 
   const players: PlayerResult[] = sorted.map((p, i) => {
-    const place = p.isActive ? 1 : (p.bestPlace !== 999 ? p.bestPlace : i + 1);
+    // Active players get sequential places (1, 2, 3...) based on sorted position
+    const place = p.isActive ? (i + 1) : (p.bestPlace !== 999 ? p.bestPlace : i + 1);
     const payout = payoutMap.get(place) ?? 0;
     const totalCost = p.totalBuyIns * config.buyIn
       + p.totalRebuys * (config.rebuy.enabled ? config.rebuy.rebuyCost : config.buyIn)
@@ -439,6 +451,8 @@ export function buildTournamentResult(
     elapsedSeconds,
     levelsPlayed,
     leagueId: config.leagueId,
+    rebuyCost: config.rebuy.enabled ? config.rebuy.rebuyCost : config.buyIn,
+    addOnCost: config.addOn.enabled ? config.addOn.cost : config.buyIn,
     rebuyPot: config.rebuy.separatePot
       ? computeRebuyPot(config.players, config.rebuy.enabled ? config.rebuy.rebuyCost : config.buyIn)
       : undefined,
@@ -451,6 +465,7 @@ export function buildTournamentResult(
 
 const PLACE_EMOJI = ['\u{1F3C6}', '\u{1F948}', '\u{1F949}'];
 
+/** Format a tournament result as a WhatsApp-friendly text string with emoji placements. */
 export function formatResultAsText(result: TournamentResult, locale: string = 'de-DE'): string {
   const isEn = locale.startsWith('en');
   const lines: string[] = [];
@@ -642,7 +657,17 @@ export function decodeResultFromQR(encoded: string): TournamentResult | null {
     if (!name || [playerCount, buyIn, prizePool, bountyAmount, totalRebuys, totalAddOns, elapsedMinutes, levelsPlayed].some(isNaN)) return null;
 
     const players: PlayerResult[] = playersRaw.split(';').filter(Boolean).map(entry => {
-      const [pName, place, payout, rebuys, addOn, knockouts] = entry.split(':');
+      // Split with limit — name may contain ':' so grab known trailing fields from the right
+      const parts = entry.split(':');
+      // Expect at least 6 parts: name, place, payout, rebuys, addOn, knockouts
+      // If name contains ':', it will produce extra parts at the front
+      if (parts.length < 6) return null;
+      const knockouts = parts.pop()!;
+      const addOn = parts.pop()!;
+      const rebuys = parts.pop()!;
+      const payout = parts.pop()!;
+      const place = parts.pop()!;
+      const pName = parts.join(':'); // remaining parts = player name (may contain ':')
       const placeNum = Number(place);
       const payoutNum = Number(payout) || 0;
       const rebuyCount = Number(rebuys) || 0;

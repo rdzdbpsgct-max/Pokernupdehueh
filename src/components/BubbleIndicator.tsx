@@ -40,7 +40,7 @@ export const BubbleIndicator = memo(function BubbleIndicator({ isBubble, showItm
 
       {showItmFlash && (
         <div className="w-full max-w-xl px-4 py-3 border-2 rounded-xl text-center animate-itm-flash backdrop-blur-sm" role="status" aria-live="polite" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 8%, transparent)', borderColor: 'var(--accent-500)' }}>
-          <p className="text-lg font-bold" style={{ color: 'var(--accent-600)' }}>
+          <p className="text-lg font-bold" style={{ color: 'var(--accent-text)' }}>
             💰 {t('bubble.inTheMoney')} 💰
           </p>
         </div>

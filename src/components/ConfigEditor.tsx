@@ -124,7 +124,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
           <span className="text-gray-400 dark:text-gray-500 text-xs">{t('config.min')}</span>
           <button
             onClick={applyGlobalDuration}
-            className="px-3 py-1 bg-accent-800 text-white rounded text-xs font-medium transition-colors"
+            className="px-3 py-1.5 bg-accent-800 text-white rounded text-xs font-medium transition-colors"
           >
             {t('config.apply')}
           </button>
@@ -141,7 +141,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
           <span className="text-gray-400 dark:text-gray-500 text-xs">{t('config.min')}</span>
           <button
             onClick={applyGlobalBreakDuration}
-            className="px-3 py-1 bg-amber-800 hover:bg-amber-700 text-amber-200 rounded text-xs font-medium transition-colors"
+            className="px-3 py-1.5 bg-amber-800 hover:bg-amber-700 text-amber-200 rounded text-xs font-medium transition-colors"
           >
             {t('config.apply')}
           </button>
@@ -150,6 +150,11 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
 
       {/* Levels */}
       <div className="space-y-2">
+        {config.levels.length === 0 && (
+          <div className="px-4 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
+            {t('config.emptyLevels')}
+          </div>
+        )}
         {config.levels.map((level, i) => (
           <div
             key={level.id}
@@ -245,7 +250,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               <button
                 onClick={() => moveLevel(i, -1)}
                 disabled={i === 0}
-                className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 text-xs"
+                className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 text-xs"
                 title={t('config.moveUp')}
                 aria-label={t('accessibility.moveUp')}
               >
@@ -254,7 +259,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               <button
                 onClick={() => moveLevel(i, 1)}
                 disabled={i === config.levels.length - 1}
-                className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 text-xs"
+                className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 text-xs"
                 title={t('config.moveDown')}
                 aria-label={t('accessibility.moveDown')}
               >
@@ -262,7 +267,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               </button>
               <button
                 onClick={() => duplicateLevel(i)}
-                className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-400 text-xs"
+                className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-400 text-xs"
                 title={t('config.duplicate')}
                 aria-label={t('config.duplicate')}
               >
@@ -271,7 +276,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
               <button
                 onClick={() => removeLevel(i)}
                 disabled={config.levels.length <= 1}
-                className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-400 disabled:opacity-30 text-xs"
+                className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-400 disabled:opacity-30 text-xs"
                 title={t('config.delete')}
                 aria-label={t('accessibility.delete')}
               >

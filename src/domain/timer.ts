@@ -4,6 +4,7 @@ import type { Level, TimerState } from './types';
 // Drift-free remaining computation
 // ---------------------------------------------------------------------------
 
+/** Computes remaining seconds using wall-clock timestamps for drift-free timing. */
 export function computeRemaining(
   startedAt: number,
   remainingAtStart: number,
@@ -17,6 +18,7 @@ export function computeRemaining(
 // Level navigation
 // ---------------------------------------------------------------------------
 
+/** Advances to the next level and resets the timer. Returns stopped state if no more levels. */
 export function advanceLevel(
   state: TimerState,
   levels: Level[],
@@ -40,10 +42,14 @@ export function advanceLevel(
   };
 }
 
+/** Moves back to the previous level and resets the timer. Clamps to the first level. */
 export function previousLevel(
   state: TimerState,
   levels: Level[],
 ): TimerState {
+  if (levels.length === 0) {
+    return { ...state, remainingSeconds: 0, status: 'stopped', startedAt: null, remainingAtStart: null };
+  }
   const prevIndex = Math.max(0, state.currentLevelIndex - 1);
   return {
     currentLevelIndex: prevIndex,
@@ -54,19 +60,26 @@ export function previousLevel(
   };
 }
 
+/** Resets the current level's timer back to its full duration without changing the level index. */
 export function resetCurrentLevel(
   state: TimerState,
   levels: Level[],
 ): TimerState {
+  if (levels.length === 0) {
+    return { ...state, remainingSeconds: 0, status: 'stopped', startedAt: null, remainingAtStart: null };
+  }
+  const clampedIndex = Math.min(state.currentLevelIndex, levels.length - 1);
   return {
     ...state,
-    remainingSeconds: levels[state.currentLevelIndex].durationSeconds,
+    currentLevelIndex: clampedIndex,
+    remainingSeconds: levels[clampedIndex].durationSeconds,
     status: 'stopped',
     startedAt: null,
     remainingAtStart: null,
   };
 }
 
+/** Returns a fresh TimerState starting at level 0 with the timer stopped. */
 export function restartTournament(levels: Level[]): TimerState {
   return {
     currentLevelIndex: 0,
@@ -81,6 +94,7 @@ export function restartTournament(levels: Level[]): TimerState {
 // Elapsed / Estimated remaining
 // ---------------------------------------------------------------------------
 
+/** Computes total elapsed tournament time in seconds by summing completed levels plus current level progress. */
 export function computeTournamentElapsedSeconds(
   levels: Level[],
   currentLevelIndex: number,

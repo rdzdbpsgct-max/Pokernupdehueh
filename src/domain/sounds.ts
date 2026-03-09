@@ -56,8 +56,8 @@ export function playBeep(frequency: number, durationMs: number): void {
     gain.gain.value = 0.3 * masterVolume;
     osc.start();
     osc.stop(ctx.currentTime + durationMs / 1000);
-  } catch {
-    // audio not available
+  } catch (err) {
+    console.warn('[audio] playBeep failed:', err);
   }
 }
 
@@ -75,7 +75,8 @@ export function playVictorySound(): Promise<void> {
     playNote(ctx, 784, t + 0.85, 0.2, 0.25, 'triangle');  // G5
     playNote(ctx, 1047, t + 1.10, 0.6, 0.3, 'triangle');  // C6 (lang)
     return new Promise(resolve => setTimeout(resolve, 1700));
-  } catch {
+  } catch (err) {
+    console.warn('[audio] playVictorySound failed:', err);
     return Promise.resolve();
   }
 }
@@ -90,7 +91,8 @@ export function playBubbleSound(): Promise<void> {
     playNote(ctx, 440, t + 0.70, 0.2, 0.2, 'sawtooth');   // A4
     playNote(ctx, 554, t + 0.95, 0.5, 0.3, 'sawtooth');   // C#5 (held)
     return new Promise(resolve => setTimeout(resolve, 1450));
-  } catch {
+  } catch (err) {
+    console.warn('[audio] playBubbleSound failed:', err);
     return Promise.resolve();
   }
 }
@@ -104,7 +106,8 @@ export function playInTheMoneySound(): Promise<void> {
     playNote(ctx, 659, t + 0.15, 0.15, 0.2, 'triangle');  // E5
     playNote(ctx, 784, t + 0.30, 0.4, 0.25, 'triangle');  // G5 (held)
     return new Promise(resolve => setTimeout(resolve, 700));
-  } catch {
+  } catch (err) {
+    console.warn('[audio] playInTheMoneySound failed:', err);
     return Promise.resolve();
   }
 }

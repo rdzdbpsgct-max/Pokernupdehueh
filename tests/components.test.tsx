@@ -16,12 +16,53 @@ import { ThemeSwitcher } from '../src/components/ThemeSwitcher';
 import { ErrorBoundary, SectionErrorBoundary } from '../src/components/ErrorBoundary';
 import { useTimer } from '../src/hooks/useTimer';
 import { useConfirmDialog } from '../src/hooks/useConfirmDialog';
-import type { TournamentConfig, TournamentResult, Level, Settings, RebuyConfig, Player, PayoutConfig, AddOnConfig, BountyConfig } from '../src/domain/types';
+import { useVoiceAnnouncements } from '../src/hooks/useVoiceAnnouncements';
+import type { TournamentConfig, TournamentResult, Level, Settings, RebuyConfig, Player, PayoutConfig, AddOnConfig, BountyConfig, ChipDenomination, TimerState } from '../src/domain/types';
 import { defaultConfig, defaultSettings } from '../src/domain/logic';
 import { ConfigEditor } from '../src/components/ConfigEditor';
 import { SettingsPanel } from '../src/components/SettingsPanel';
 import { LoadingFallback } from '../src/components/LoadingFallback';
 import { PlayerPanel } from '../src/components/PlayerPanel';
+
+// Mock the speech module for useVoiceAnnouncements tests
+vi.mock('../src/domain/speech', () => ({
+  initSpeech: vi.fn(),
+  setSpeechVolume: vi.fn(),
+  setSpeechLanguage: vi.fn(),
+  cancelSpeech: vi.fn(),
+  announceLevelChange: vi.fn(),
+  announceBreakStart: vi.fn(),
+  announceBreakWarning: vi.fn(),
+  announceBreakOver: vi.fn(),
+  announceAddOn: vi.fn(),
+  announceRebuyEnded: vi.fn(),
+  announceColorUp: vi.fn(),
+  announceColorUpWarning: vi.fn(),
+  announceBounty: vi.fn(),
+  announceElimination: vi.fn(),
+  announceRebuyAvailable: vi.fn(),
+  announceFiveMinutes: vi.fn(),
+  announceThreeRemaining: vi.fn(),
+  announcePlayersRemaining: vi.fn(),
+  announceHeadsUp: vi.fn(),
+  announceTimerPaused: vi.fn(),
+  announceTimerResumed: vi.fn(),
+  announceTournamentStart: vi.fn(),
+  announceCountdown: vi.fn(() => false),
+  announceLastHand: vi.fn(),
+  announceHandForHand: vi.fn(),
+  announceMysteryBounty: vi.fn(),
+  announceCallTheClock: vi.fn(),
+  announceCallTheClockExpired: vi.fn(),
+  announceLateRegistrationClosed: vi.fn(),
+  announceTableMove: vi.fn(),
+  announceTableDissolution: vi.fn(),
+  announceFinalTable: vi.fn(),
+  announceWinner: vi.fn(),
+  announceTournamentWinner: vi.fn(),
+  announceBubble: vi.fn(),
+  announceInTheMoney: vi.fn(),
+}));
 
 // ---------------------------------------------------------------------------
 // Test wrapper — provides i18n + theme contexts
@@ -361,7 +402,7 @@ describe('CallTheClock', () => {
     renderWithProviders(
       <CallTheClock durationSeconds={60} soundEnabled={false} voiceEnabled={false} onClose={onClose} />,
     );
-    fireEvent.keyDown(window, { code: 'Escape' });
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -679,6 +720,29 @@ describe('SectionErrorBoundary', () => {
     expect(screen.getByText('Failed to load this section.')).toBeInTheDocument();
     expect(screen.getByText('Retry')).toBeInTheDocument();
   });
+
+  it('recovers when Retry is clicked and child no longer throws', () => {
+    let shouldThrow = true;
+    function MaybeThrow() {
+      if (shouldThrow) throw new Error('Chunk load error');
+      return <div data-testid="recovered">Loaded!</div>;
+    }
+    render(
+      <SectionErrorBoundary>
+        <MaybeThrow />
+      </SectionErrorBoundary>,
+    );
+    // Should show error fallback
+    expect(screen.getByText('Retry')).toBeInTheDocument();
+
+    // Fix the error and click Retry
+    shouldThrow = false;
+    fireEvent.click(screen.getByText('Retry'));
+
+    // Should now render the child successfully
+    expect(screen.getByTestId('recovered')).toBeInTheDocument();
+    expect(screen.queryByText('Retry')).not.toBeInTheDocument();
+  });
 });
 
 // ===================== useConfirmDialog Hook =====================
@@ -984,5 +1048,219 @@ describe('PlayerPanel', () => {
       b.textContent?.includes('Zurück') || b.textContent?.includes('Reinstate')
     );
     expect(reinstateBtn).toBeTruthy();
+  });
+});
+
+// ===================== useVoiceAnnouncements (M33) =====================
+
+describe('useVoiceAnnouncements', () => {
+  // Import mocked speech functions
+  let speech: Record<string, ReturnType<typeof vi.fn>>;
+  beforeEach(async () => {
+    speech = await import('../src/domain/speech') as unknown as Record<string, ReturnType<typeof vi.fn>>;
+    // Reset all mocks
+    Object.values(speech).forEach((fn) => { if (typeof fn === 'function' && fn.mockClear) fn.mockClear(); });
+  });
+
+  const makeLevel = (overrides?: Partial<Level>): Level => ({
+    type: 'level',
+    durationSeconds: 900,
+    smallBlind: 100,
+    bigBlind: 200,
+    ante: 0,
+    ...overrides,
+  });
+
+  const makeBreak = (durationSeconds = 600, label?: string): Level => ({
+    type: 'break',
+    durationSeconds,
+    label,
+  });
+
+  const makeTimerState = (overrides?: Partial<TimerState>): TimerState => ({
+    currentLevelIndex: 0,
+    remainingSeconds: 900,
+    status: 'running',
+    elapsedMs: 0,
+    startedAt: null,
+    ...overrides,
+  });
+
+  const makeDefaultParams = (overrides?: Record<string, unknown>) => ({
+    mode: 'game' as const,
+    settings: { ...defaultSettings(), voiceEnabled: true },
+    config: {
+      ...defaultConfig(),
+      levels: [
+        makeLevel({ smallBlind: 25, bigBlind: 50 }),
+        makeBreak(600),
+        makeLevel({ smallBlind: 50, bigBlind: 100 }),
+      ],
+    },
+    timerState: makeTimerState(),
+    colorUpMap: new Map<number, ChipDenomination[]>(),
+    activePlayerCount: 8,
+    paidPlaces: 3,
+    bubbleActive: false,
+    inTheMoney: false,
+    addOnWindowOpen: false,
+    rebuyActive: false,
+    tournamentFinished: false,
+    onLevelChange: vi.fn(),
+    t: ((key: string) => key) as unknown as (key: import('../src/i18n/translations').TranslationKey, params?: Record<string, string | number>) => string,
+    ...overrides,
+  });
+
+  it('does not announce when voice is disabled', () => {
+    const params = makeDefaultParams({
+      settings: { ...defaultSettings(), voiceEnabled: false },
+      timerState: makeTimerState({ currentLevelIndex: 1 }),
+    });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    // Change level index
+    rerender({ ...params, timerState: makeTimerState({ currentLevelIndex: 2 }) });
+
+    expect(speech.announceLevelChange).not.toHaveBeenCalled();
+    expect(speech.announceBreakStart).not.toHaveBeenCalled();
+  });
+
+  it('does not announce when not in game mode', () => {
+    const params = makeDefaultParams({
+      mode: 'setup' as const,
+      timerState: makeTimerState({ currentLevelIndex: 0 }),
+    });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    rerender({ ...params, timerState: makeTimerState({ currentLevelIndex: 2 }) });
+    expect(speech.announceLevelChange).not.toHaveBeenCalled();
+  });
+
+  it('announces level change when currentLevelIndex changes to a play level', () => {
+    const params = makeDefaultParams({ timerState: makeTimerState({ currentLevelIndex: 0 }) });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    // Advance to level index 2 (third entry = second play level)
+    rerender({ ...params, timerState: makeTimerState({ currentLevelIndex: 2 }) });
+
+    expect(speech.announceLevelChange).toHaveBeenCalled();
+    expect(params.onLevelChange).toHaveBeenCalled();
+  });
+
+  it('announces break start when transitioning to a break level', () => {
+    const params = makeDefaultParams({ timerState: makeTimerState({ currentLevelIndex: 0 }) });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    // Advance to level index 1 (break)
+    rerender({ ...params, timerState: makeTimerState({ currentLevelIndex: 1 }) });
+
+    expect(speech.announceBreakStart).toHaveBeenCalled();
+    expect(params.onLevelChange).toHaveBeenCalled();
+  });
+
+  it('announces break warning at 30 seconds remaining during break', () => {
+    const params = makeDefaultParams({
+      timerState: makeTimerState({ currentLevelIndex: 1, remainingSeconds: 60 }),
+    });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    // Timer ticks down to 30 seconds
+    rerender({ ...params, timerState: makeTimerState({ currentLevelIndex: 1, remainingSeconds: 29 }) });
+
+    expect(speech.announceBreakWarning).toHaveBeenCalled();
+  });
+
+  it('announces five-minute warning for play levels longer than 5 min', () => {
+    const params = makeDefaultParams({
+      timerState: makeTimerState({ currentLevelIndex: 0, remainingSeconds: 400 }),
+    });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    // Timer ticks down to 300 seconds
+    rerender({ ...params, timerState: makeTimerState({ currentLevelIndex: 0, remainingSeconds: 299 }) });
+
+    expect(speech.announceFiveMinutes).toHaveBeenCalled();
+  });
+
+  it('announces heads-up when 2 players remain', () => {
+    const params = makeDefaultParams({ activePlayerCount: 3 });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    rerender({ ...params, activePlayerCount: 2 });
+    expect(speech.announceHeadsUp).toHaveBeenCalled();
+  });
+
+  it('announces 3 remaining', () => {
+    const params = makeDefaultParams({ activePlayerCount: 4 });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    rerender({ ...params, activePlayerCount: 3 });
+    expect(speech.announceThreeRemaining).toHaveBeenCalled();
+  });
+
+  it('announces timer paused/resumed', () => {
+    const params = makeDefaultParams({
+      timerState: makeTimerState({ status: 'running' }),
+    });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    // Pause
+    rerender({ ...params, timerState: makeTimerState({ status: 'paused' }) });
+    expect(speech.announceTimerPaused).toHaveBeenCalled();
+
+    // Resume
+    rerender({ ...params, timerState: makeTimerState({ status: 'running' }) });
+    expect(speech.announceTimerResumed).toHaveBeenCalled();
+  });
+
+  it('announces rebuy ended + add-on when addOnWindowOpen becomes true', () => {
+    const params = makeDefaultParams({ addOnWindowOpen: false });
+    const { rerender } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    rerender({ ...params, addOnWindowOpen: true });
+
+    expect(speech.announceRebuyEnded).toHaveBeenCalled();
+    expect(speech.announceAddOn).toHaveBeenCalled();
+  });
+
+  it('reset function clears warning refs', () => {
+    const params = makeDefaultParams();
+    const { result } = renderHook(
+      (p) => useVoiceAnnouncements(p),
+      { initialProps: params },
+    );
+
+    // reset should not throw
+    expect(() => result.current.reset()).not.toThrow();
   });
 });

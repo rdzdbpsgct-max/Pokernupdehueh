@@ -1,10 +1,13 @@
+import { useTranslation } from '../i18n';
+
 interface Props {
   className?: string;
 }
 
 export function LoadingFallback({ className = '' }: Props) {
+  const { t } = useTranslation();
   return (
-    <div className={`flex items-center justify-center py-8 ${className}`}>
+    <div className={`flex items-center justify-center py-8 ${className}`} role="status" aria-label={t('app.loading')}>
       <div className="flex gap-1.5">
         {[0, 150, 300].map(delay => (
           <div

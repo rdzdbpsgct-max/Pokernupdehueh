@@ -195,6 +195,10 @@ export interface TournamentResult {
   elapsedSeconds: number;
   levelsPlayed: number;
   leagueId?: string;
+  /** Cost per rebuy in EUR (fallback: buyIn for old results) */
+  rebuyCost?: number;
+  /** Cost per add-on in EUR (fallback: buyIn for old results) */
+  addOnCost?: number;
   /** Separate rebuy pot amount (only set when RebuyConfig.separatePot is true) */
   rebuyPot?: number;
 }

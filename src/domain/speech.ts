@@ -116,13 +116,17 @@ function processQueue(): void {
   isSpeaking = true;
 
   if (next.mode === 'audio') {
-    playAudioSequence(next.files)
+    // Wrap playAudioSequence in a 30s timeout to prevent permanent queue stall
+    const audioTimeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('[speech] Audio playback timeout after 30s')), 30_000)
+    );
+    Promise.race([playAudioSequence(next.files), audioTimeout])
       .then(() => {
         isSpeaking = false;
         processQueue();
       })
       .catch((err) => {
-        // MP3 failed — try Web Speech API fallback
+        // MP3 failed or timed out — try Web Speech API fallback
         console.error('[speech] MP3 playback failed, falling back to Web Speech API:', err, 'files:', next.files);
         if (next.fallbackText) {
           speakUtterance(next.fallbackText, next.fallbackOptions, () => {

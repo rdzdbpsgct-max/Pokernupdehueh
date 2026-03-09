@@ -3,6 +3,7 @@ import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, Tabl
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, computeRebuyPot, findChipLeader, canPlayerRebuy, canReEntry, findPlayerSeat } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { LoadingFallback } from './LoadingFallback';
+import { SectionErrorBoundary } from './ErrorBoundary';
 
 const SidePotCalculator = lazy(() => import('./SidePotCalculator').then(m => ({ default: m.SidePotCalculator })));
 
@@ -117,10 +118,10 @@ export const PlayerPanel = memo(function PlayerPanel({
       <div>
         <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('playerPanel.prizePool')}</h3>
         <div className="mt-1 px-3 py-2 rounded-xl shadow-md" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--accent-500) 30%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-500) 30%, transparent)' }}>
-          <p className="text-lg font-bold" style={{ color: 'var(--accent-500)' }}>
+          <p className="text-lg font-bold" style={{ color: 'var(--accent-text)' }}>
             {prizePool.toFixed(2)} {t('unit.eur')}
           </p>
-          <p className="text-xs" style={{ color: 'var(--accent-600)' }}>
+          <p className="text-xs" style={{ color: 'var(--accent-text)' }}>
             {players.length} &times; {buyIn} {t('unit.eur')}
             {totalRebuys > 0 && !rebuyConfig.separatePot && (
               <> + {totalRebuys} Rebuy{totalRebuys > 1 ? 's' : ''} &times; {rebuyConfig.rebuyCost} {t('unit.eur')}</>
@@ -198,14 +199,14 @@ export const PlayerPanel = memo(function PlayerPanel({
             {!hasAnyStacks ? (
               <button
                 onClick={onInitStacks}
-                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+                className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
               >
                 {t('playerPanel.initStacks')}
               </button>
             ) : (
               <button
                 onClick={onClearStacks}
-                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+                className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
               >
                 {t('playerPanel.clearStacks')}
               </button>
@@ -224,8 +225,8 @@ export const PlayerPanel = memo(function PlayerPanel({
             {lateRegOpen && onAddLatePlayer && (
               <button
                 onClick={onAddLatePlayer}
-                className="px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)', color: 'var(--accent-500)', border: '1px solid color-mix(in srgb, var(--accent-500) 30%, transparent)' }}
+                className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)', color: 'var(--accent-text)', border: '1px solid color-mix(in srgb, var(--accent-500) 30%, transparent)' }}
               >
                 + {t('lateReg.addPlayer')}
               </button>
@@ -233,7 +234,7 @@ export const PlayerPanel = memo(function PlayerPanel({
             {onToggleDealerBadges && (
               <button
                 onClick={onToggleDealerBadges}
-                className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors border ${
+                className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors border ${
                   showDealerBadges
                     ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700/40'
                     : 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700/40'
@@ -245,14 +246,14 @@ export const PlayerPanel = memo(function PlayerPanel({
             {showDealerBadges && activePlayers.length > 1 && (
               <button
                 onClick={onAdvanceDealer}
-                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+                className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
               >
                 {t('playerPanel.advanceDealer')}
               </button>
             )}
             <button
               onClick={() => setShowSidePot(true)}
-              className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+              className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
             >
               {t('sidePot.title')}
             </button>
@@ -296,7 +297,7 @@ export const PlayerPanel = memo(function PlayerPanel({
                   </span>
                 )}
                 {!rebuyActive && player.rebuys > 0 && (
-                  <span className="inline-block rounded-full px-1.5 text-xs font-medium shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)', color: 'var(--accent-500)' }}>
+                  <span className="inline-block rounded-full px-1.5 text-xs font-medium shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)', color: 'var(--accent-text)' }}>
                     {player.rebuys} RB
                   </span>
                 )}
@@ -359,12 +360,12 @@ export const PlayerPanel = memo(function PlayerPanel({
                 {addOnWindowOpen && (
                   <button
                     onClick={() => onUpdateAddOn(player.id, !player.addOn)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       player.addOn
                         ? ''
                         : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400'
                     }`}
-                    style={player.addOn ? { backgroundColor: 'color-mix(in srgb, var(--accent-500) 20%, transparent)', color: 'var(--accent-500)' } : undefined}
+                    style={player.addOn ? { backgroundColor: 'color-mix(in srgb, var(--accent-500) 20%, transparent)', color: 'var(--accent-text)' } : undefined}
                     title={t('app.addOn')}
                   >
                     {player.addOn ? '✓ AO' : 'AO'}
@@ -377,7 +378,7 @@ export const PlayerPanel = memo(function PlayerPanel({
                 {activePlayers.length > 1 && (
                   <button
                     onClick={() => handleEliminate(player.id)}
-                    className="px-2.5 py-1 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs font-medium transition-all duration-200 border border-red-300 dark:border-red-800/30 hover:border-red-400 dark:hover:border-red-700/50"
+                    className="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 text-xs font-medium transition-all duration-200 border border-red-300 dark:border-red-800/30 hover:border-red-400 dark:hover:border-red-700/50"
                     title={t('playerPanel.eliminateTooltip')}
                   >
                     {t('playerPanel.eliminate')}
@@ -488,9 +489,9 @@ export const PlayerPanel = memo(function PlayerPanel({
       )}
     </div>
     {showSidePot && (
-      <Suspense fallback={<LoadingFallback />}>
+      <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
         <SidePotCalculator onClose={() => setShowSidePot(false)} onResultChange={onSidePotResultChange} />
-      </Suspense>
+      </Suspense></SectionErrorBoundary>
     )}
     </>
   );

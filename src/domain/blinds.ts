@@ -178,6 +178,20 @@ export function generateBlindStructure(params: GenerateBlindParams): Level[] {
     lastBB = bb;
   }
 
+  // Guard: ensure at least 1 play level even after rounding collapse
+  if (playLevels.length === 0) {
+    const fallbackBB = round(cfg.levelDurationSeconds > 0 ? 100 * scale : 100);
+    const fallbackSB = round(fallbackBB / 2);
+    playLevels.push({
+      id: generateId(),
+      type: 'level',
+      durationSeconds: cfg.levelDurationSeconds,
+      smallBlind: fallbackSB > 0 ? fallbackSB : 1,
+      bigBlind: fallbackBB > fallbackSB ? fallbackBB : (fallbackSB > 0 ? fallbackSB * 2 : 2),
+      ante: 0,
+    });
+  }
+
   // Insert breaks every N play levels
   const levels: Level[] = [];
   let playCount = 0;

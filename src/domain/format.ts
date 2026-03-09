@@ -5,6 +5,7 @@ import { t as moduleT } from '../i18n/translations';
 // Format
 // ---------------------------------------------------------------------------
 
+/** Formats seconds as `MM:SS`, clamped to zero. */
 export function formatTime(totalSeconds: number): string {
   const clamped = Math.max(0, Math.floor(totalSeconds));
   const m = Math.floor(clamped / 60);
@@ -12,6 +13,7 @@ export function formatTime(totalSeconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/** Formats seconds as `H:MM:SS` for elapsed tournament time display. */
 export function formatElapsedTime(totalSeconds: number): string {
   const clamped = Math.max(0, Math.floor(totalSeconds));
   const h = Math.floor(clamped / 3600);
@@ -24,6 +26,7 @@ export function formatElapsedTime(totalSeconds: number): string {
 // Level label helpers
 // ---------------------------------------------------------------------------
 
+/** Returns the display label for a level — break name or sequential play-level number (e.g. "Level 3"). */
 export function getLevelLabel(level: Level, index: number, levels: Level[], t = moduleT): string {
   if (level.type === 'break') {
     return level.label || t('logic.defaultBreakLabel');
@@ -32,6 +35,7 @@ export function getLevelLabel(level: Level, index: number, levels: Level[], t = 
   return t('logic.levelN', { n: playLevels.length });
 }
 
+/** Returns formatted blinds string like "100 / 200 - Ante 25". Returns empty string for breaks. */
 export function getBlindsText(level: Level, t = moduleT): string {
   if (level.type === 'break') return '';
   const parts = [`${level.smallBlind ?? 0} / ${level.bigBlind ?? 0}`];

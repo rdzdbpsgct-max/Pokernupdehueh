@@ -132,9 +132,10 @@ import {
   decodeLeagueStandingsFromQR,
   formatLeagueFinancesAsCSV,
   csvSafe,
+  loadCheckpoint,
 } from '../src/domain/logic';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment } from '../src/domain/types';
-import { generatePeerId, buildRemoteUrl, parseRemoteHash } from '../src/domain/remote';
+import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE } from '../src/domain/remote';
 import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
 
 // Helper to create a full TournamentConfig for tests
@@ -311,6 +312,37 @@ describe('resetCurrentLevel', () => {
     expect(reset.remainingSeconds).toBe(600);
     expect(reset.status).toBe('stopped');
     expect(reset.startedAt).toBeNull();
+  });
+});
+
+describe('resetCurrentLevel with empty levels', () => {
+  it('returns stopped state with 0 remaining when levels empty', () => {
+    const state: TimerState = {
+      currentLevelIndex: 0,
+      remainingSeconds: 100,
+      status: 'running',
+      startedAt: 1000,
+      remainingAtStart: 600,
+    };
+    const reset = resetCurrentLevel(state, []);
+    expect(reset.remainingSeconds).toBe(0);
+    expect(reset.status).toBe('stopped');
+    expect(reset.startedAt).toBeNull();
+  });
+});
+
+describe('previousLevel with empty levels', () => {
+  it('returns stopped state with 0 remaining when levels empty', () => {
+    const state: TimerState = {
+      currentLevelIndex: 0,
+      remainingSeconds: 100,
+      status: 'running',
+      startedAt: 1000,
+      remainingAtStart: 600,
+    };
+    const result = previousLevel(state, []);
+    expect(result.remainingSeconds).toBe(0);
+    expect(result.status).toBe('stopped');
   });
 });
 
@@ -575,6 +607,33 @@ describe('validatePayoutConfig', () => {
       ],
     };
     expect(validatePayoutConfig(payout)).toEqual([]);
+  });
+
+  it('catches duplicate places (M11)', () => {
+    const payout: PayoutConfig = {
+      mode: 'percent',
+      entries: [
+        { place: 1, value: 50 },
+        { place: 1, value: 30 },
+        { place: 2, value: 20 },
+      ],
+    };
+    const errors = validatePayoutConfig(payout);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.some(e => e.includes('1'))).toBe(true);
+  });
+
+  it('accepts sequential places without duplicate error (M11)', () => {
+    const payout: PayoutConfig = {
+      mode: 'percent',
+      entries: [
+        { place: 1, value: 50 },
+        { place: 2, value: 30 },
+        { place: 3, value: 20 },
+      ],
+    };
+    const errors = validatePayoutConfig(payout);
+    expect(errors).toEqual([]);
   });
 });
 
@@ -959,6 +1018,15 @@ describe('computePayouts', () => {
   it('handles empty entries', () => {
     const payout: PayoutConfig = { mode: 'percent', entries: [] };
     expect(computePayouts(payout, 100)).toEqual([]);
+  });
+
+  it('clamps negative prize pool to zero (M09)', () => {
+    const payout: PayoutConfig = {
+      mode: 'percent',
+      entries: [{ place: 1, value: 100 }],
+    };
+    const result = computePayouts(payout, -50);
+    expect(result[0].amount).toBe(0);
   });
 });
 
@@ -1582,6 +1650,16 @@ describe('generateBlindStructure', () => {
     expect(playLevels[4].smallBlind).toBe(200);
     expect(playLevels[4].bigBlind).toBe(400);
   });
+
+  it('always generates at least 1 play level even with extreme rounding (M12)', () => {
+    // Very small starting chips where rounding could collapse all BBs
+    const levels = generateBlindStructure({ startingChips: 1, speed: 'fast', anteEnabled: false });
+    const playLevels = levels.filter((l) => l.type === 'level');
+    expect(playLevels.length).toBeGreaterThanOrEqual(1);
+    expect(playLevels[0].smallBlind).toBeDefined();
+    expect(playLevels[0].bigBlind).toBeDefined();
+    expect(playLevels[0].bigBlind!).toBeGreaterThan(playLevels[0].smallBlind!);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -2007,6 +2085,34 @@ describe('isInTheMoney', () => {
 
 // ─── Tournament Templates ─────────────────────────────────────────
 
+describe('loadCheckpoint', () => {
+  let storage: Record<string, string>;
+
+  beforeEach(() => {
+    storage = {};
+    const mockStorage = {
+      getItem: (key: string) => storage[key] ?? null,
+      setItem: (key: string, value: string) => { storage[key] = value; },
+      removeItem: (key: string) => { delete storage[key]; },
+      clear: () => { storage = {}; },
+    };
+    vi.stubGlobal('localStorage', mockStorage);
+  });
+
+  it('returns null when config has empty levels array', () => {
+    const checkpoint = {
+      version: 1,
+      config: { levels: [], buyIn: 10, startingChips: 1000 },
+      timer: { currentLevelIndex: 0, remainingSeconds: 600, status: 'stopped', startedAt: null, remainingAtStart: null },
+      settings: {},
+      players: [],
+    };
+    storage['poker-timer-checkpoint'] = JSON.stringify(checkpoint);
+    const result = loadCheckpoint();
+    expect(result).toBeNull();
+  });
+});
+
 describe('Tournament Templates', () => {
   let storage: Record<string, string>;
 
@@ -2078,6 +2184,18 @@ describe('Tournament Templates', () => {
   it('handles corrupt localStorage data gracefully', () => {
     localStorage.setItem('poker-timer-templates', 'not valid json!!!');
     expect(loadTemplates()).toEqual([]);
+  });
+
+  it('filters templates with invalid config (M38)', () => {
+    // Manually store a template with invalid config (no levels array)
+    const templates = [
+      { id: 'valid', name: 'Valid', createdAt: '2025-01-01', config: { levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 10, bigBlind: 20 }] } },
+      { id: 'invalid', name: 'Invalid', createdAt: '2025-01-01', config: { levels: 'not-an-array' } },
+    ];
+    localStorage.setItem('poker-timer-templates', JSON.stringify(templates));
+    const loaded = loadTemplates();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].name).toBe('Valid');
   });
 });
 
@@ -2419,6 +2537,75 @@ describe('buildTournamentResult', () => {
     expect(result.players[0].netBalance).toBe(20);
     // Bob: payout=0, cost=10+10=20, net=-20
     expect(result.players[1].netBalance).toBe(-20);
+  });
+  it('assigns sequential places to multiple active players (M06)', () => {
+    const config = makeConfig({
+      name: 'Multi Active',
+      levels,
+      buyIn: 10,
+      players: [
+        makePlayer({ id: '1', name: 'Alice', status: 'active' }),
+        makePlayer({ id: '2', name: 'Bob', status: 'active' }),
+        makePlayer({ id: '3', name: 'Carol', status: 'eliminated', placement: 3 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 60 }, { place: 2, value: 30 }, { place: 3, value: 10 }] },
+    });
+    const result = buildTournamentResult(config, 600, 1);
+    // Active players should get places 1 and 2 (not both 1)
+    const activePlayers = result.players.filter(p => p.place <= 2);
+    expect(activePlayers).toHaveLength(2);
+    expect(result.players[0].place).toBe(1);
+    expect(result.players[1].place).toBe(2);
+    expect(result.players[2].place).toBe(3);
+    // No duplicate places
+    const places = result.players.map(p => p.place);
+    expect(new Set(places).size).toBe(places.length);
+  });
+
+  it('assigns sequential places to active re-entry instances (M06)', () => {
+    const config = makeConfig({
+      name: 'Re-Entry Active',
+      levels,
+      buyIn: 10,
+      players: [
+        makePlayer({ id: '1', name: 'Alice', status: 'active' }),
+        makePlayer({ id: '2', name: 'Bob-original', status: 'active', originalPlayerId: 'bob-orig' }),
+        makePlayer({ id: '3', name: 'Bob-reentry', status: 'active', originalPlayerId: 'bob-orig' }),
+        makePlayer({ id: '4', name: 'Carol', status: 'eliminated', placement: 4 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 60 }, { place: 2, value: 30 }, { place: 3, value: 10 }] },
+    });
+    const result = buildTournamentResult(config, 600, 1);
+    // Bob's re-entry group should be aggregated into one entry (active)
+    // Result: Alice (active), Bob (active, aggregated), Carol (eliminated)
+    expect(result.players).toHaveLength(3);
+    // Active players should get places 1 and 2
+    const activeResults = result.players.filter(p => p.place <= 2);
+    expect(activeResults).toHaveLength(2);
+    expect(result.players[0].place).toBe(1);
+    expect(result.players[1].place).toBe(2);
+    expect(result.players[2].place).toBe(4); // Carol's original placement
+    // No duplicate places
+    const places = result.players.map(p => p.place);
+    expect(new Set(places).size).toBe(places.length);
+  });
+
+  it('single active player still gets place 1 (M06)', () => {
+    const config = makeConfig({
+      name: 'Single Winner',
+      levels,
+      buyIn: 10,
+      players: [
+        makePlayer({ id: '1', name: 'Alice', status: 'active' }),
+        makePlayer({ id: '2', name: 'Bob', status: 'eliminated', placement: 2 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
+    });
+    const result = buildTournamentResult(config, 600, 1);
+    expect(result.players[0].name).toBe('Alice');
+    expect(result.players[0].place).toBe(1);
+    expect(result.players[1].name).toBe('Bob');
+    expect(result.players[1].place).toBe(2);
   });
 });
 
@@ -3540,6 +3727,80 @@ describe('Multi-Table', () => {
     expect(result.moves.every(m => m.reason === 'final-table')).toBe(true);
   });
 
+  // --- Guard clauses: unseated / skipped tracking ---
+
+  it('mergeToFinalTable returns unseated players when final table too small', () => {
+    // 4 active players but final table only has 2 seats
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 2, ['p1', 'p2']),
+      mkTable('t2', 'T2', 2, ['p3', 'p4']),
+    ];
+    const players = mkPlayers(4);
+    const result = mergeToFinalTable(tables, players);
+    // 2 seated, 2 unseated
+    expect(result.unseated.length).toBe(2);
+    const finalTable = result.tables.find(t => t.status === 'active');
+    expect(finalTable!.seats.filter(s => s.playerId !== null).length).toBe(2);
+  });
+
+  it('mergeToFinalTable returns empty unseated when all fit', () => {
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 9, ['p1', 'p2']),
+      mkTable('t2', 'T2', 9, ['p3', 'p4']),
+    ];
+    const players = mkPlayers(4);
+    const result = mergeToFinalTable(tables, players);
+    expect(result.unseated).toEqual([]);
+  });
+
+  it('dissolveTable returns skipped players when target tables full', () => {
+    // T1 has 3 seats, all occupied. T2 has 2 players to dissolve. No room at T1.
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 3, ['p1', 'p2', 'p3']),
+      mkTable('t2', 'T2', 3, ['p4', 'p5']),
+    ];
+    const players = mkPlayers(5);
+    const result = dissolveTable(tables, players, 't2');
+    // T1 is full (3/3), so both p4 and p5 should be skipped
+    expect(result.skipped.length).toBe(2);
+    expect(result.skipped).toContain('p4');
+    expect(result.skipped).toContain('p5');
+  });
+
+  it('dissolveTable returns empty skipped when all placed', () => {
+    const tables: Table[] = [
+      mkTable('t1', 'T1', 10, ['p1', 'p2', 'p3']),
+      mkTable('t2', 'T2', 10, ['p4', 'p5']),
+    ];
+    const players = mkPlayers(5);
+    const result = dissolveTable(tables, players, 't2');
+    expect(result.skipped).toEqual([]);
+    expect(result.moves.length).toBe(2);
+  });
+
+  it('distributePlayersToTables warns when players cannot be seated', () => {
+    // 5 players, 2 tables with 2 seats each = 4 seats max
+    const tables: Table[] = [createTable('T1', 2), createTable('T2', 2)];
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = distributePlayersToTables(['p1', 'p2', 'p3', 'p4', 'p5'], tables);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('1 player(s) could not be seated'),
+      expect.any(Array),
+    );
+    // 4 of 5 should be seated
+    const seated = result.flatMap(t => t.seats.filter(s => s.playerId !== null));
+    expect(seated.length).toBe(4);
+    warnSpy.mockRestore();
+  });
+
+  it('distributePlayersToTables seats all when capacity sufficient', () => {
+    const tables: Table[] = [createTable('T1', 5), createTable('T2', 5)];
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    distributePlayersToTables(['p1', 'p2', 'p3', 'p4'], tables);
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
   // --- Dealer ---
 
   it('advanceTableDealer skips empty seats', () => {
@@ -4419,12 +4680,22 @@ describe('buildRemoteUrl', () => {
     expect(url).toContain('#remote=PKR-ABC23');
     expect(url).toContain(window.location.origin);
   });
+
+  it('includes secret in URL when provided', () => {
+    const url = buildRemoteUrl('PKR-ABC23', 'testSecret');
+    expect(url).toContain('#remote=PKR-ABC23&s=testSecret');
+  });
 });
 
 describe('parseRemoteHash', () => {
   it('extracts peer ID from valid hash', () => {
-    expect(parseRemoteHash('#remote=PKR-ABC23')).toBe('PKR-ABC23');
-    expect(parseRemoteHash('#remote=PKR-ZZZZZ')).toBe('PKR-ZZZZZ');
+    expect(parseRemoteHash('#remote=PKR-ABC23')).toEqual({ peerId: 'PKR-ABC23', secret: null });
+    expect(parseRemoteHash('#remote=PKR-ZZZZZ')).toEqual({ peerId: 'PKR-ZZZZZ', secret: null });
+  });
+
+  it('extracts peer ID and secret from hash with &s= parameter', () => {
+    const result = parseRemoteHash('#remote=PKR-ABC23&s=dGVzdHNlY3JldA');
+    expect(result).toEqual({ peerId: 'PKR-ABC23', secret: 'dGVzdHNlY3JldA' });
   });
 
   it('returns null for invalid or empty hashes', () => {
@@ -4435,6 +4706,11 @@ describe('parseRemoteHash', () => {
     expect(parseRemoteHash('#rc=someOldSDP')).toBeNull();
     // Contains forbidden characters
     expect(parseRemoteHash('#remote=PKR-IO012')).toBeNull();
+  });
+
+  it('returns null secret when &s= is empty', () => {
+    const result = parseRemoteHash('#remote=PKR-ABC23&s=');
+    expect(result).toEqual({ peerId: 'PKR-ABC23', secret: null });
   });
 });
 
@@ -4581,6 +4857,42 @@ describe('League Module', () => {
       expect(gd.participants[1].points).toBe(0);
       expect(gd.participants[2].points).toBe(0);
     });
+
+    it('uses rebuyCost from result instead of buyIn for rebuy cost calculation (M07)', () => {
+      const league = makeLeague();
+      const result = makeTournamentResult({
+        buyIn: 10,
+        rebuyEnabled: true,
+        rebuyCost: 5,   // rebuy costs less than buy-in
+        addOnEnabled: true,
+        addOnCost: 3,   // add-on costs less than buy-in
+        players: [
+          { name: 'Alice', place: 1, payout: 30, rebuys: 2, addOn: true, knockouts: 0, bountyEarned: 0, netBalance: 0 },
+          { name: 'Bob', place: 2, payout: 0, rebuys: 1, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 0 },
+        ],
+      });
+      const gd = createGameDayFromResult(result, league);
+      // Alice: buyIn=10 + 2*5=10 + addOn=3 = 23 total cost, net = 30 + 0 - 23 = 7
+      expect(gd.participants[0].netBalance).toBe(7);
+      // Bob: buyIn=10 + 1*5=5 + 0 = 15 total cost, net = 0 + 0 - 15 = -15
+      expect(gd.participants[1].netBalance).toBe(-15);
+    });
+
+    it('falls back to buyIn when rebuyCost is undefined (backward compat, M07)', () => {
+      const league = makeLeague();
+      // Old tournament result without rebuyCost field
+      const result = makeTournamentResult({
+        buyIn: 10,
+        rebuyEnabled: true,
+        // rebuyCost: undefined (old format)
+        players: [
+          { name: 'Alice', place: 1, payout: 20, rebuys: 1, addOn: false, knockouts: 0, bountyEarned: 0, netBalance: 0 },
+        ],
+      });
+      const gd = createGameDayFromResult(result, league);
+      // Alice: buyIn=10 + 1*10=10 = 20 total cost (uses buyIn as fallback), net = 20 - 20 = 0
+      expect(gd.participants[0].netBalance).toBe(0);
+    });
   });
 
   // --- computeExtendedStandings ---
@@ -4713,6 +5025,18 @@ describe('League Module', () => {
       // wins tie (both 1), so fall through to avgPlace
       applyTiebreaker(standings, [], { criteria: ['wins', 'avgPlace'] });
       expect(standings[0].name).toBe('B'); // B has lower avgPlace
+    });
+
+    it('handles unsorted input correctly via pre-sort (M14)', () => {
+      // Intentionally unsorted: B has more points but appears after A
+      const standings: ExtendedLeagueStanding[] = [
+        { name: 'A', points: 5, tournaments: 2, wins: 0, cashes: 1, avgPlace: 3.0, bestPlace: 3, totalCost: 20, totalPayout: 5, netBalance: -15, participationRate: 1, knockouts: 0, corrections: 0, rank: 0 },
+        { name: 'B', points: 10, tournaments: 2, wins: 1, cashes: 2, avgPlace: 1.5, bestPlace: 1, totalCost: 20, totalPayout: 25, netBalance: 5, participationRate: 1, knockouts: 0, corrections: 0, rank: 0 },
+      ];
+      const result = applyTiebreaker(standings, [], { criteria: ['avgPlace'] });
+      // B should come first (10 points > 5 points), even though A was passed first
+      expect(result[0].name).toBe('B');
+      expect(result[1].name).toBe('A');
     });
   });
 
@@ -5426,6 +5750,28 @@ describe('League Module', () => {
       expect(decoded!.standings[1].name).toBe('Bob');
       expect(decoded!.standings[1].netBalance).toBe(10);
     });
+
+    it('round-trips league name with pipe delimiter (M13)', () => {
+      const league = makeLeague({ name: 'Poker|Club:Liga' });
+      const standings = [
+        { rank: 1, name: 'Alice', points: 20, tournaments: 3, wins: 2, cashes: 3, avgPlace: 1.5, bestPlace: 1, knockouts: 5, totalCost: 30, totalPayout: 60, netBalance: 30, participationRate: 1, corrections: 0 },
+      ] as ExtendedLeagueStanding[];
+      const hash = encodeLeagueStandingsForQR(league, standings);
+      const decoded = decodeLeagueStandingsFromQR(hash);
+      expect(decoded).not.toBeNull();
+      expect(decoded!.leagueName).toBe('Poker|Club:Liga');
+    });
+
+    it('round-trips player name with colon delimiter (M13)', () => {
+      const league = makeLeague();
+      const standings = [
+        { rank: 1, name: 'O:Brien', points: 20, tournaments: 3, wins: 2, cashes: 3, avgPlace: 1.5, bestPlace: 1, knockouts: 5, totalCost: 30, totalPayout: 60, netBalance: 30, participationRate: 1, corrections: 0 },
+      ] as ExtendedLeagueStanding[];
+      const hash = encodeLeagueStandingsForQR(league, standings);
+      const decoded = decodeLeagueStandingsFromQR(hash);
+      expect(decoded).not.toBeNull();
+      expect(decoded!.standings[0].name).toBe('O:Brien');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -5470,6 +5816,17 @@ describe('League Module', () => {
       expect(result).not.toBeNull();
       expect(result!.players).toHaveLength(1);
       expect(result!.players[0].name).toBe('Valid');
+    });
+
+    it('handles player name containing colon (M39)', () => {
+      // Player "O:Brien" — name contains : which is the delimiter
+      const encoded = 'Test|2024-01-01|1|10|100|0|0|0|60|5|O:Brien:1:100:0:0:0';
+      const result = decodeResultFromQR(encoded);
+      expect(result).not.toBeNull();
+      expect(result!.players).toHaveLength(1);
+      expect(result!.players[0].name).toBe('O:Brien');
+      expect(result!.players[0].place).toBe(1);
+      expect(result!.players[0].payout).toBe(100);
     });
   });
 
@@ -5544,8 +5901,18 @@ describe('League Module', () => {
       expect(url).toContain(window.location.origin);
     });
 
+    it('buildRemoteUrl includes secret when provided', () => {
+      const url = buildRemoteUrl('PKR-ABCDE', 'mySecret123');
+      expect(url).toContain('#remote=PKR-ABCDE&s=mySecret123');
+    });
+
     it('parseRemoteHash extracts valid peer ID', () => {
-      expect(parseRemoteHash('#remote=PKR-AB3D5')).toBe('PKR-AB3D5');
+      expect(parseRemoteHash('#remote=PKR-AB3D5')).toEqual({ peerId: 'PKR-AB3D5', secret: null });
+    });
+
+    it('parseRemoteHash extracts peer ID and secret', () => {
+      const result = parseRemoteHash('#remote=PKR-AB3D5&s=testSecret');
+      expect(result).toEqual({ peerId: 'PKR-AB3D5', secret: 'testSecret' });
     });
 
     it('parseRemoteHash returns null for invalid format', () => {
@@ -5567,6 +5934,104 @@ describe('League Module', () => {
 
     it('parseRemoteHash rejects lowercase', () => {
       expect(parseRemoteHash('#remote=PKR-abcde')).toBeNull();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Sprint 6: Remote Security — HMAC, Rate Limiting, Message Size (M31/M32)
+  // ---------------------------------------------------------------------------
+
+  describe('remote security — HMAC signing (M31)', () => {
+    it('generateSecret returns a URL-safe base64 string', () => {
+      const secret = generateSecret();
+      expect(secret.length).toBeGreaterThan(0);
+      // Should not contain +, /, or =
+      expect(secret).not.toMatch(/[+/=]/);
+    });
+
+    it('generateSecret produces unique values', () => {
+      const secrets = new Set(Array.from({ length: 20 }, () => generateSecret()));
+      expect(secrets.size).toBe(20);
+    });
+
+    it('buildHmacPayload creates canonical payload string', () => {
+      expect(buildHmacPayload('toggle', 1234567890)).toBe('command:toggle:1234567890');
+      expect(buildHmacPayload('next', 0)).toBe('command:next:0');
+    });
+
+    it('signMessage + verifyMessage round-trip succeeds', async () => {
+      const secret = generateSecret();
+      // Import key for both signing and verifying
+      const raw = Uint8Array.from(atob(secret.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+      const key = await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+
+      const payload = buildHmacPayload('toggle', Date.now());
+      const signature = await signMessage(key, payload);
+
+      expect(signature).toMatch(/^[0-9a-f]{64}$/); // SHA-256 = 32 bytes = 64 hex chars
+      const valid = await verifyMessage(key, payload, signature);
+      expect(valid).toBe(true);
+    });
+
+    it('verifyMessage rejects tampered payload', async () => {
+      const secret = generateSecret();
+      const raw = Uint8Array.from(atob(secret.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+      const key = await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+
+      const payload = buildHmacPayload('toggle', Date.now());
+      const signature = await signMessage(key, payload);
+
+      // Tamper the payload
+      const tampered = buildHmacPayload('reset', Date.now());
+      const valid = await verifyMessage(key, tampered, signature);
+      expect(valid).toBe(false);
+    });
+
+    it('verifyMessage rejects wrong secret', async () => {
+      const secret1 = generateSecret();
+      const secret2 = generateSecret();
+      const raw1 = Uint8Array.from(atob(secret1.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+      const raw2 = Uint8Array.from(atob(secret2.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+      const key1 = await crypto.subtle.importKey('raw', raw1, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+      const key2 = await crypto.subtle.importKey('raw', raw2, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+
+      const payload = buildHmacPayload('toggle', Date.now());
+      const signature = await signMessage(key1, payload);
+
+      // Verify with wrong key
+      const valid = await verifyMessage(key2, payload, signature);
+      expect(valid).toBe(false);
+    });
+  });
+
+  describe('remote security — Rate Limiter (M32)', () => {
+    it('allows requests within limit', () => {
+      const limiter = new RateLimiter(5);
+      for (let i = 0; i < 5; i++) {
+        expect(limiter.allow()).toBe(true);
+      }
+    });
+
+    it('throttles requests exceeding limit', () => {
+      const limiter = new RateLimiter(3);
+      expect(limiter.allow()).toBe(true);
+      expect(limiter.allow()).toBe(true);
+      expect(limiter.allow()).toBe(true);
+      // 4th request should be throttled
+      expect(limiter.allow()).toBe(false);
+    });
+
+    it('reset clears the window', () => {
+      const limiter = new RateLimiter(2);
+      expect(limiter.allow()).toBe(true);
+      expect(limiter.allow()).toBe(true);
+      expect(limiter.allow()).toBe(false);
+      limiter.reset();
+      expect(limiter.allow()).toBe(true);
+    });
+
+    it('MAX_MESSAGE_SIZE is 1024 bytes', () => {
+      expect(MAX_MESSAGE_SIZE).toBe(1024);
     });
   });
 

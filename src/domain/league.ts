@@ -100,8 +100,10 @@ export function createGameDayFromResult(
   }
 
   const participants: GameDayParticipant[] = result.players.map((p) => {
-    const rebuyCost = result.rebuyEnabled ? p.rebuys * (result.buyIn) : 0;
-    const addOnCost = p.addOn ? result.buyIn : 0;
+    const perRebuyCost = result.rebuyCost ?? result.buyIn; // backward-compat fallback
+    const perAddOnCost = result.addOnCost ?? result.buyIn; // backward-compat fallback
+    const rebuyCost = result.rebuyEnabled ? p.rebuys * perRebuyCost : 0;
+    const addOnCost = p.addOn ? perAddOnCost : 0;
     const totalCost = result.buyIn + rebuyCost + addOnCost;
     const registeredPlayerId = playerIdMap.get(normalizePlayerName(p.name));
     return {
@@ -117,7 +119,7 @@ export function createGameDayFromResult(
     };
   });
 
-  const totalBuyIns = participants.reduce((sum, p) => sum + p.buyIn + (result.rebuyEnabled ? p.rebuys * result.buyIn : 0) + p.addOnCost, 0);
+  const totalBuyIns = participants.reduce((sum, p) => sum + p.buyIn + (result.rebuyEnabled ? p.rebuys * (result.rebuyCost ?? result.buyIn) : 0) + p.addOnCost, 0);
   const totalPrizePool = result.prizePool;
 
   // Determine next game day number for this league
@@ -243,10 +245,13 @@ export function applyTiebreaker(
   gameDays: GameDay[],
   config: TiebreakerConfig,
 ): ExtendedLeagueStanding[] {
-  // Group by points
+  // Pre-sort by points descending to ensure correct grouping (defensive)
+  const preSorted = [...standings].sort((a, b) => b.points - a.points);
+
+  // Group by points (using pre-sorted input)
   const groups: ExtendedLeagueStanding[][] = [];
   let currentGroup: ExtendedLeagueStanding[] = [];
-  for (const s of standings) {
+  for (const s of preSorted) {
     if (currentGroup.length === 0 || currentGroup[0].points === s.points) {
       currentGroup.push(s);
     } else {
@@ -516,10 +521,12 @@ export function encodeLeagueStandingsForQR(
   standings: ExtendedLeagueStanding[],
 ): string {
   // Compact format: leagueName|rank:name:points:tournaments:wins:netBalance;...
+  // URL-encode league name and player names individually to protect delimiters
+  const safeName = (n: string) => encodeURIComponent(n);
   const players = standings.map((s) =>
-    `${s.rank}:${s.name}:${s.points}:${s.tournaments}:${s.wins}:${s.netBalance.toFixed(2)}`,
+    `${s.rank}:${safeName(s.name)}:${s.points}:${s.tournaments}:${s.wins}:${s.netBalance.toFixed(2)}`,
   ).join(';');
-  const encoded = encodeURIComponent(`${league.name}|${players}`);
+  const encoded = encodeURIComponent(`${safeName(league.name)}|${players}`);
   return `#ls=${encoded}`;
 }
 
@@ -527,21 +534,27 @@ export function decodeLeagueStandingsFromQR(hash: string): { leagueName: string;
   try {
     if (!hash.startsWith('#ls=')) return null;
     const decoded = decodeURIComponent(hash.slice(4));
-    const [leagueName, playersStr] = decoded.split('|');
+    // Split on first | only — league name may be URL-encoded
+    const pipeIdx = decoded.indexOf('|');
+    if (pipeIdx < 0) return null;
+    const leagueName = decodeURIComponent(decoded.slice(0, pipeIdx));
+    const playersStr = decoded.slice(pipeIdx + 1);
     if (!leagueName || !playersStr) return null;
     const standings = playersStr.split(';').filter(Boolean).map((entry) => {
       const [rank, name, points, tournaments, wins, netBalance] = entry.split(':');
       const rankNum = parseInt(rank, 10);
+      // Player names may be URL-encoded
+      const decodedName = decodeURIComponent(name ?? '');
       const pointsNum = parseInt(points, 10);
       const tournamentsNum = parseInt(tournaments, 10);
       const winsNum = parseInt(wins, 10);
       const balanceNum = parseFloat(netBalance);
-      if (!name || [rankNum, pointsNum, tournamentsNum, winsNum, balanceNum].some(isNaN)) {
+      if (!decodedName || [rankNum, pointsNum, tournamentsNum, winsNum, balanceNum].some(isNaN)) {
         return null;
       }
       return {
         rank: rankNum,
-        name,
+        name: decodedName,
         points: pointsNum,
         tournaments: tournamentsNum,
         wins: winsNum,

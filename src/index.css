@@ -135,6 +135,8 @@
   --accent-ring: rgba(16,185,129,0.25);
   --accent-glow: rgba(16,185,129,0.4);
   --accent-glow-strong: rgba(16,185,129,0.5);
+  /* Accessible accent text color — uses -700 on light bg for ≥4.5:1 contrast */
+  --accent-text: var(--accent-700);
   /* Background pattern — overridden dynamically by ThemeContext */
   --bg-pattern: none;
 }
@@ -142,6 +144,8 @@
 .dark {
   --timer-glow-color: rgba(255, 255, 255, 0.15);
   --timer-glow-color-strong: rgba(255, 255, 255, 0.3);
+  /* In dark mode accent-500 has excellent contrast on dark backgrounds */
+  --accent-text: var(--accent-500);
 }
 
 /* === Global Styles === */

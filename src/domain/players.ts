@@ -6,6 +6,7 @@ import { t as moduleT } from '../i18n/translations';
 // Players
 // ---------------------------------------------------------------------------
 
+/** Creates an array of new players with default names based on the current locale. */
 export function defaultPlayers(count: number, t = moduleT): Player[] {
   return Array.from({ length: count }, (_, i) => ({
     id: generatePlayerId(),
@@ -113,15 +114,18 @@ export function reEnterPlayer(players: Player[], eliminatedPlayerId: string): Pl
 // Placement & Bubble
 // ---------------------------------------------------------------------------
 
+/** Returns the placement number for the next eliminated player (= count of active players). */
 export function computeNextPlacement(players: Player[]): number {
   return players.filter((p) => p.status === 'active').length;
 }
 
+/** Returns true when exactly one more elimination would put remaining players in the money. */
 export function isBubble(activePlayers: number, paidPlaces: number): boolean {
   if (paidPlaces <= 0 || activePlayers <= 1) return false;
   return activePlayers === paidPlaces + 1;
 }
 
+/** Returns true when all remaining active players are guaranteed a payout. */
 export function isInTheMoney(activePlayers: number, paidPlaces: number): boolean {
   if (paidPlaces <= 0 || activePlayers <= 1) return false;
   return activePlayers <= paidPlaces;
@@ -131,6 +135,7 @@ export function isInTheMoney(activePlayers: number, paidPlaces: number): boolean
 // Average stack
 // ---------------------------------------------------------------------------
 
+/** Computes the average chip stack per active player based on total chips in play. */
 export function computeAverageStack(
   players: Player[],
   startingChips: number,
@@ -148,6 +153,7 @@ export function computeAverageStack(
   return Math.round(totalChips / activePlayers);
 }
 
+/** Converts an average chip stack to big blind units (e.g. 15000 / 200 = 75.0 BB). */
 export function computeAverageStackInBB(averageStack: number, currentBigBlind: number): number {
   if (currentBigBlind <= 0) return 0;
   return Math.round((averageStack / currentBigBlind) * 10) / 10;
@@ -157,6 +163,7 @@ export function computeAverageStackInBB(averageStack: number, currentBigBlind: n
 // Per-player stack tracking
 // ---------------------------------------------------------------------------
 
+/** Sets each player's chip count based on starting chips plus rebuys and add-ons. */
 export function initializePlayerStacks(
   players: Player[],
   startingChips: number,
@@ -171,12 +178,14 @@ export function initializePlayerStacks(
   }));
 }
 
+/** Returns the player ID of the active player with the most chips, or null if no stacks are tracked. */
 export function findChipLeader(players: Player[]): string | null {
   const withChips = players.filter((p) => p.status === 'active' && p.chips !== undefined && p.chips > 0);
   if (withChips.length === 0) return null;
   return withChips.reduce((leader, p) => (p.chips! > (leader.chips ?? 0) ? p : leader)).id;
 }
 
+/** Computes the average stack from individually tracked player chips. Returns null if no stacks are tracked. */
 export function computeAverageStackFromPlayers(players: Player[]): number | null {
   const active = players.filter((p) => p.status === 'active');
   if (active.length === 0) return null;
