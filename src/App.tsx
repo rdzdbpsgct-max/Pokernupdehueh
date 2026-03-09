@@ -226,8 +226,10 @@ function App() {
   }, [settings.volume]);
 
   // Auto-save tournament checkpoint in game mode
-  // Save immediately on level/status/config changes, and periodically every 5s for running timer
+  // Debounced on config/settings changes (500ms) to avoid blocking during rapid interactions.
+  // Level/status changes and periodic saves (running timer) remain immediate.
   const checkpointIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const checkpointDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (mode !== 'game') return;
     const doSave = () => {
@@ -242,8 +244,9 @@ function App() {
         savedAt: new Date().toISOString(),
       });
     };
-    // Save immediately on level/status/config changes
-    doSave();
+    // Debounce save to avoid blocking during rapid config mutations (e.g. elimination cascade)
+    if (checkpointDebounceRef.current) clearTimeout(checkpointDebounceRef.current);
+    checkpointDebounceRef.current = setTimeout(doSave, 500);
     // For running timer: periodic save every 5s (instead of every tick)
     if (checkpointIntervalRef.current) clearInterval(checkpointIntervalRef.current);
     if (timer.timerState.status === 'running') {
@@ -253,6 +256,10 @@ function App() {
       if (checkpointIntervalRef.current) {
         clearInterval(checkpointIntervalRef.current);
         checkpointIntervalRef.current = null;
+      }
+      if (checkpointDebounceRef.current) {
+        clearTimeout(checkpointDebounceRef.current);
+        checkpointDebounceRef.current = null;
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- remainingSeconds intentionally excluded: interval handles periodic saves
@@ -366,14 +373,17 @@ function App() {
   }, [recentTableMoves]);
 
   // --- Computed rebuy state for game mode ---
+  // Stable integer-second value — limits useMemo cascade to 1×/sec instead of 4×/sec
+  const displaySeconds = Math.floor(timer.timerState.remainingSeconds);
+
   const tournamentElapsed = useMemo(
     () =>
       computeTournamentElapsedSeconds(
         config.levels,
         timer.timerState.currentLevelIndex,
-        timer.timerState.remainingSeconds,
+        displaySeconds,
       ),
-    [config.levels, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds],
+    [config.levels, timer.timerState.currentLevelIndex, displaySeconds],
   );
 
   const rebuyActive = useMemo(
@@ -420,7 +430,7 @@ function App() {
 
     if (config.rebuy.limitType === 'levels' && lastRebuyLevelIndex >= 0) {
       // Show at the end of the last rebuy level (timer expired, waiting for advance)
-      if (idx === lastRebuyLevelIndex && timer.timerState.remainingSeconds <= 0) return true;
+      if (idx === lastRebuyLevelIndex && displaySeconds <= 0) return true;
       // Show during the break after the last rebuy level (if any) + next play level
       const nextIdx = lastRebuyLevelIndex + 1;
       if (nextIdx >= config.levels.length) return false;
@@ -436,7 +446,7 @@ function App() {
     return !rebuyActive
       && addOnEndLevelIndex !== null
       && idx === addOnEndLevelIndex;
-  }, [config.addOn.enabled, config.rebuy, config.levels, lastRebuyLevelIndex, timer.timerState.currentLevelIndex, timer.timerState.remainingSeconds, rebuyActive, addOnEndLevelIndex]);
+  }, [config.addOn.enabled, config.rebuy, config.levels, lastRebuyLevelIndex, timer.timerState.currentLevelIndex, displaySeconds, rebuyActive, addOnEndLevelIndex]);
 
   const currentPlayLevel = useMemo(() => {
     return config.levels
@@ -505,8 +515,13 @@ function App() {
     return { name: league.name, standings: computeExtendedStandings(league, gameDays) };
   }, [config.leagueId]);
 
+  // Use ref for timerState in payload to avoid callback recreation every 250ms tick.
+  // TV display receives timer updates separately via timer-tick BroadcastChannel messages.
+  const timerStateForPayloadRef = useRef(timer.timerState);
+  timerStateForPayloadRef.current = timer.timerState;
+
   const buildFullStatePayload = useCallback((): DisplayStatePayload => ({
-    timerState: timer.timerState,
+    timerState: timerStateForPayloadRef.current,
     levels: config.levels,
     chipConfig: config.chips,
     colorUpSchedule: serializeColorUpMap(colorUpMap),
@@ -530,7 +545,7 @@ function App() {
     leagueName: leagueDisplayData?.name,
     leagueStandings: leagueDisplayData?.standings,
     sidePotData: sidePotData ?? undefined,
-  }), [timer.timerState, config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed, showDealerBadges, leagueDisplayData, sidePotData]);
+  }), [config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed, showDealerBadges, leagueDisplayData, sidePotData]);
 
   // TV Display: BroadcastChannel sync + window management
   const { tvWindowActive, openTVWindow, closeTVWindow } = useTVDisplay({

@@ -52,6 +52,9 @@ export function useVoiceAnnouncements({
   onLevelChange,
   t,
 }: Params) {
+  // Stable integer-second value — avoids re-firing effects 4×/sec from float ticks
+  const displaySeconds = Math.floor(timerState.remainingSeconds);
+
   // Voice: Level change announcement
   const prevLevelIdxVoiceRef = useRef(timerState.currentLevelIndex);
   useEffect(() => {
@@ -108,15 +111,14 @@ export function useVoiceAnnouncements({
       breakWarningRef.current = false;
       return;
     }
-    const remaining = timerState.remainingSeconds;
-    if (remaining <= 30 && remaining > 28 && !breakWarningRef.current) {
+    if (displaySeconds <= 30 && displaySeconds > 28 && !breakWarningRef.current) {
       breakWarningRef.current = true;
       announceBreakWarning(t);
     }
-    if (remaining > 30) {
+    if (displaySeconds > 30) {
       breakWarningRef.current = false;
     }
-  }, [mode, settings.voiceEnabled, config.levels, timerState.currentLevelIndex, timerState.remainingSeconds, t]);
+  }, [mode, settings.voiceEnabled, config.levels, timerState.currentLevelIndex, displaySeconds, t]);
 
   // Voice: Five-minute warning (play levels > 5 min only)
   const fiveMinWarningRef = useRef(false);
@@ -127,15 +129,14 @@ export function useVoiceAnnouncements({
       fiveMinWarningRef.current = false;
       return;
     }
-    const remaining = timerState.remainingSeconds;
-    if (remaining <= 300 && remaining > 298 && !fiveMinWarningRef.current) {
+    if (displaySeconds <= 300 && displaySeconds > 298 && !fiveMinWarningRef.current) {
       fiveMinWarningRef.current = true;
       announceFiveMinutes(t);
     }
-    if (remaining > 300) {
+    if (displaySeconds > 300) {
       fiveMinWarningRef.current = false;
     }
-  }, [mode, settings.voiceEnabled, config.levels, timerState.currentLevelIndex, timerState.remainingSeconds, t]);
+  }, [mode, settings.voiceEnabled, config.levels, timerState.currentLevelIndex, displaySeconds, t]);
 
   // Voice: Player elimination + Bounty collected
   const prevPlayersRef = useRef(config.players);

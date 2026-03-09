@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, startTransition } from 'react';
 import type { TournamentConfig, TableMove } from '../domain/types';
 import {
   computeNextPlacement,
@@ -207,6 +207,8 @@ export function useTournamentActions({
   const eliminatePlayer = useCallback((playerId: string, eliminatedBy: string | null) => {
     pendingTableMovesRef.current = [];
     pendingDissolutionRef.current = null;
+    // Mark as non-urgent transition — complex multi-table mutations don't need to block INP
+    startTransition(() => {
     setConfig((prev) => {
       const placement = computeNextPlacement(prev.players);
 
@@ -274,6 +276,7 @@ export function useTournamentActions({
         tables: updatedTables,
       };
     });
+    }); // end startTransition
   }, [setConfig]);
 
   // Voice: Mystery bounty draw
