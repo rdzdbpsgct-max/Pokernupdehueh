@@ -144,7 +144,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
               }`}
             >
               {/* Drag handle */}
-              <span className="cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-400 text-sm select-none" title="Drag">
+              <span className="cursor-grab active:cursor-grabbing text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-400 text-sm select-none" title={t('playerManager.dragTooltip')}>
                 ⠿
               </span>
 
@@ -176,7 +176,7 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
                 onChange={(e) => updateName(i, e.target.value)}
                 list="registered-players"
                 placeholder={t('playerManager.playerN', { n: i + 1 })}
-                className="flex-1 min-w-0 px-2 py-1 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                className="flex-1 min-w-0 px-2 py-1 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[var(--accent-500)] focus:ring-2 focus:ring-[var(--accent-ring)] transition-all duration-200"
               />
 
               {/* Arrow buttons */}

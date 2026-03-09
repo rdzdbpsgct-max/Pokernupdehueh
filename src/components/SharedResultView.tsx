@@ -1,5 +1,6 @@
 import type { TournamentResult } from '../domain/types';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 import { formatElapsedTime } from '../domain/logic';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 
 export function SharedResultView({ result, onClose }: Props) {
   const { t } = useTranslation();
+  const dialogRef = useDialogA11y(onClose);
 
   const placeEmoji = (place: number) => {
     if (place === 1) return '\u{1F3C6}';
@@ -22,10 +24,10 @@ export function SharedResultView({ result, onClose }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700/40 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="shared-result-title" className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700/40 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-gray-200 dark:border-gray-800/50">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h2 id="shared-result-title" className="text-lg font-bold text-gray-900 dark:text-white">
             {t('shared.title')}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

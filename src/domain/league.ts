@@ -27,13 +27,19 @@ export function normalizePlayerName(name: string): string {
 // GameDay CRUD (localStorage)
 // ---------------------------------------------------------------------------
 
+function isValidGameDay(item: unknown): item is GameDay {
+  if (!item || typeof item !== 'object') return false;
+  const r = item as Record<string, unknown>;
+  return typeof r.id === 'string' && typeof r.leagueId === 'string' && typeof r.date === 'string' && Array.isArray(r.participants);
+}
+
 export function loadGameDays(): GameDay[] {
   try {
     const raw = localStorage.getItem(GAMEDAYS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as GameDay[];
+    return parsed.filter(isValidGameDay);
   } catch {
     return [];
   }

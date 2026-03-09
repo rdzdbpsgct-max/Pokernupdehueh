@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, lazy, Suspense, memo } from 'react';
 import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, Table, PotResult, PlayerPayout } from '../domain/types';
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, computeRebuyPot, findChipLeader, canPlayerRebuy, canReEntry, findPlayerSeat } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -33,7 +33,7 @@ interface Props {
   onSidePotResultChange?: (data: { pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null) => void;
 }
 
-export function PlayerPanel({
+export const PlayerPanel = memo(function PlayerPanel({
   players,
   dealerIndex,
   buyIn,
@@ -493,4 +493,4 @@ export function PlayerPanel({
     )}
     </>
   );
-}
+});

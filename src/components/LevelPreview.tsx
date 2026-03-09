@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Level, TimerState } from '../domain/types';
 import { getLevelLabel, getBlindsText, formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -7,7 +8,7 @@ interface Props {
   levels: Level[];
 }
 
-export function LevelPreview({ timerState, levels }: Props) {
+export const LevelPreview = memo(function LevelPreview({ timerState, levels }: Props) {
   const { t } = useTranslation();
   const nextIndex = timerState.currentLevelIndex + 1;
 
@@ -51,4 +52,7 @@ export function LevelPreview({ timerState, levels }: Props) {
       </div>
     </div>
   );
-}
+}, (prev, next) =>
+  prev.timerState.currentLevelIndex === next.timerState.currentLevelIndex &&
+  prev.levels === next.levels
+);

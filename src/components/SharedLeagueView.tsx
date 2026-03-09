@@ -1,4 +1,5 @@
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface SharedLeagueStanding {
   rank: number;
@@ -17,6 +18,7 @@ interface Props {
 
 export function SharedLeagueView({ leagueName, standings, onClose }: Props) {
   const { t } = useTranslation();
+  const dialogRef = useDialogA11y(onClose);
 
   const medal = (rank: number) => {
     if (rank === 1) return '\u{1F3C6}';
@@ -30,10 +32,10 @@ export function SharedLeagueView({ leagueName, standings, onClose }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700/40 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="shared-league-title" className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700/40 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-gray-200 dark:border-gray-800/50">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h2 id="shared-league-title" className="text-lg font-bold text-gray-900 dark:text-white">
             {t('shared.leagueTitle')}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

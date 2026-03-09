@@ -183,6 +183,10 @@ input[type="number"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  .animate-ticker-scroll {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 /* === Print Styles === */

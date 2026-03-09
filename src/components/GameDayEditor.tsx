@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import type { League, GameDay, GameDayParticipant, RegisteredPlayer } from '../domain/types';
 import { saveGameDay, loadGameDaysForLeague, loadPlayerDatabase, normalizePlayerName } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface Props {
   league: League;
@@ -23,6 +24,7 @@ interface EditableParticipant {
 
 export function GameDayEditor({ league, editingGameDay, onClose, onSaved }: Props) {
   const { t } = useTranslation();
+  const dialogRef = useDialogA11y(onClose);
 
   const registeredPlayersDb = useMemo<RegisteredPlayer[]>(() => loadPlayerDatabase(), []);
   const registeredPlayers = useMemo(() => registeredPlayersDb.map((p) => p.name).sort(), [registeredPlayersDb]);
@@ -177,10 +179,10 @@ export function GameDayEditor({ league, editingGameDay, onClose, onSaved }: Prop
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="gameday-editor-title" className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700/40">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h2 id="gameday-editor-title" className="text-lg font-bold text-gray-900 dark:text-white">
             {editingGameDay ? t('league.editor.editTitle') : t('league.editor.title')}
           </h2>
           <button

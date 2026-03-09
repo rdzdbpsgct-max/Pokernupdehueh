@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { League, LeagueStanding, TournamentConfig } from '../domain/types';
 import {
   loadLeagues,
@@ -15,6 +15,7 @@ import {
   extractLeagueConfig,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 import { ChevronIcon } from './ChevronIcon';
 import { NumberStepper } from './NumberStepper';
 
@@ -34,7 +35,7 @@ interface Props {
 
 export function LeagueManager({ onClose, currentConfig }: Props) {
   const { t } = useTranslation();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useDialogA11y(onClose);
   const [leagues, setLeagues] = useState<League[]>(() => loadLeagues());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -53,19 +54,6 @@ export function LeagueManager({ onClose, currentConfig }: Props) {
     setSavedConfigId(league.id);
     setTimeout(() => setSavedConfigId(null), 2000);
   }, [currentConfig]);
-
-  // Auto-focus & Escape to close
-  useEffect(() => {
-    const el = dialogRef.current;
-    if (!el) return;
-    const focusable = el.querySelector<HTMLElement>('button, [tabindex]');
-    focusable?.focus();
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
 
   const createLeague = useCallback(() => {
     const league: League = {
@@ -286,13 +274,13 @@ function LeagueEntry({
   onSaveConfig?: () => void;
   savedConfig?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const standings = expanded
     ? computeLeagueStandings(league.id, loadTournamentHistory(), league.pointSystem)
     : [];
 
-  const dateStr = new Date(league.createdAt).toLocaleDateString('de-DE', {
+  const dateStr = new Date(league.createdAt).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
     day: '2-digit', month: '2-digit', year: 'numeric',
   });
 
@@ -334,7 +322,7 @@ function LeagueEntry({
                   value={league.name}
                   onChange={(e) => onUpdate({ ...league, name: e.target.value })}
                   placeholder={t('league.namePlaceholder')}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[var(--accent-500)] focus:ring-2 focus:ring-[var(--accent-ring)] transition-all duration-200"
                 />
               </div>
 

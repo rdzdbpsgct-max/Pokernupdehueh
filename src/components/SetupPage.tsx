@@ -274,7 +274,7 @@ export function SetupPage({
                 setConfig((prev) => ({ ...prev, name: e.target.value }))
               }
               placeholder={t('app.tournamentNamePlaceholder')}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+              className="w-full px-3 py-2 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[var(--accent-500)] focus:ring-2 focus:ring-[var(--accent-ring)] transition-all duration-200"
             />
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
@@ -351,7 +351,7 @@ export function SetupPage({
                     return { ...prev, leagueId };
                   });
                 }}
-                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[var(--accent-500)] focus:ring-2 focus:ring-[var(--accent-ring)] transition-all duration-200"
               >
                 <option value="">{t('league.noLeague')}</option>
                 {leagues.map((l) => (

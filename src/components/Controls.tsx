@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { TimerState } from '../domain/types';
 import { useTranslation } from '../i18n';
 
@@ -21,7 +22,7 @@ interface Props {
   onCallTheClock?: () => void;
 }
 
-export function Controls({
+export const Controls = memo(function Controls({
   timerState,
   onToggleStartPause,
   onNext,
@@ -167,4 +168,23 @@ export function Controls({
       )}
     </div>
   );
-}
+}, (prev, next) =>
+  prev.timerState.status === next.timerState.status &&
+  (prev.timerState.remainingSeconds <= 0) === (next.timerState.remainingSeconds <= 0) &&
+  prev.onToggleStartPause === next.onToggleStartPause &&
+  prev.onNext === next.onNext &&
+  prev.onPrevious === next.onPrevious &&
+  prev.onReset === next.onReset &&
+  prev.onRestart === next.onRestart &&
+  prev.hideSecondaryControls === next.hideSecondaryControls &&
+  prev.cleanView === next.cleanView &&
+  prev.onToggleCleanView === next.onToggleCleanView &&
+  prev.lastHandActive === next.lastHandActive &&
+  prev.onLastHand === next.onLastHand &&
+  prev.handForHandActive === next.handForHandActive &&
+  prev.onHandForHand === next.onHandForHand &&
+  prev.onNextHand === next.onNextHand &&
+  prev.showHandForHand === next.showHandForHand &&
+  prev.callTheClockSeconds === next.callTheClockSeconds &&
+  prev.onCallTheClock === next.onCallTheClock
+);

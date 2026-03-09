@@ -194,6 +194,7 @@ const de = {
   'playerManager.setDealer': 'Als Dealer setzen',
   'playerManager.dealer': 'Dealer',
   'playerManager.seat': 'Platz {n}',
+  'playerManager.dragTooltip': 'Ziehen zum Sortieren',
 
   // --- Payout Editor ---
   'payoutEditor.percent': '% Prozent',
@@ -492,6 +493,9 @@ const de = {
   'theme.system': 'System',
   'theme.light': 'Hell',
   'theme.dark': 'Dunkel',
+
+  // --- Language Switcher ---
+  'language.switcherTitle': 'Sprache / Language',
 
   // --- Units ---
   'unit.eur': 'EUR',
@@ -1024,6 +1028,7 @@ const en: Record<TranslationKey, string> = {
   'playerManager.setDealer': 'Set as Dealer',
   'playerManager.dealer': 'Dealer',
   'playerManager.seat': 'Seat {n}',
+  'playerManager.dragTooltip': 'Drag to reorder',
 
   // --- Payout Editor ---
   'payoutEditor.percent': '% Percent',
@@ -1322,6 +1327,9 @@ const en: Record<TranslationKey, string> = {
   'theme.system': 'System',
   'theme.light': 'Light',
   'theme.dark': 'Dark',
+
+  // --- Language Switcher ---
+  'language.switcherTitle': 'Language / Sprache',
 
   // --- Units ---
   'unit.eur': 'EUR',

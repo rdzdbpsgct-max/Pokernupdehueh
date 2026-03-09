@@ -400,13 +400,19 @@ export function saveTournamentResult(result: TournamentResult): void {
   syncPlayersToDatabase(result.players.map((p) => p.name));
 }
 
+function isValidTournamentResult(item: unknown): item is TournamentResult {
+  if (!item || typeof item !== 'object') return false;
+  const r = item as Record<string, unknown>;
+  return typeof r.id === 'string' && typeof r.date === 'string' && Array.isArray(r.players);
+}
+
 export function loadTournamentHistory(): TournamentResult[] {
   try {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as TournamentResult[];
+    return parsed.filter(isValidTournamentResult);
   } catch {
     return [];
   }
@@ -563,13 +569,19 @@ export function defaultPointSystem(): PointSystem {
   };
 }
 
+function isValidLeague(item: unknown): item is League {
+  if (!item || typeof item !== 'object') return false;
+  const r = item as Record<string, unknown>;
+  return typeof r.id === 'string' && typeof r.createdAt === 'string' && r.pointSystem != null;
+}
+
 export function loadLeagues(): League[] {
   try {
     const raw = localStorage.getItem(LEAGUES_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as League[];
+    return parsed.filter(isValidLeague);
   } catch {
     return [];
   }
@@ -711,13 +723,19 @@ export function markWizardCompleted(): void {
 
 const PLAYERS_KEY = 'poker-timer-players';
 
+function isValidRegisteredPlayer(item: unknown): item is RegisteredPlayer {
+  if (!item || typeof item !== 'object') return false;
+  const r = item as Record<string, unknown>;
+  return typeof r.id === 'string' && typeof r.name === 'string' && typeof r.createdAt === 'string';
+}
+
 export function loadPlayerDatabase(): RegisteredPlayer[] {
   try {
     const raw = localStorage.getItem(PLAYERS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as RegisteredPlayer[];
+    return parsed.filter(isValidRegisteredPlayer);
   } catch {
     return [];
   }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { ChipConfig, ChipDenomination, Level } from '../domain/types';
 import { getRemovedDenomIds, getNextColorUpLevel } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -11,7 +11,7 @@ interface Props {
   levels: Level[];
 }
 
-export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels }: Props) {
+export const ChipSidebar = memo(function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels }: Props) {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -102,4 +102,4 @@ export function ChipSidebar({ chipConfig, colorUpMap, currentLevelIndex, levels 
       )}
     </div>
   );
-}
+});

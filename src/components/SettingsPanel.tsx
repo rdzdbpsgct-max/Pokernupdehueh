@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Settings, AccentColor, BackgroundImage } from '../domain/types';
 import { useTranslation } from '../i18n';
 import { NumberStepper } from './NumberStepper';
@@ -53,7 +54,7 @@ const BG_OPTIONS: { value: BackgroundImage; gradient: string; labelKey: string }
   { value: 'sunset',     gradient: 'linear-gradient(135deg, rgba(245,158,11,0.4), rgba(239,68,68,0.4))', labelKey: 'settings.bgSunset' },
 ];
 
-export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props) {
+export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props) {
   const { t } = useTranslation();
   const { accentColor, setAccentColor, backgroundImage, setBackgroundImage } = useTheme();
 
@@ -79,7 +80,8 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
               step={5}
               value={settings.volume}
               onChange={(e) => onChange({ ...settings, volume: Number(e.target.value) })}
-              className="flex-1 h-1.5 accent-emerald-500 cursor-pointer"
+              className="flex-1 h-1.5 cursor-pointer"
+              style={{ accentColor: 'var(--accent-500)' }}
             />
             <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums w-8 text-right">{settings.volume}%</span>
           </div>
@@ -188,4 +190,4 @@ export function SettingsPanel({ settings, onChange, onToggleFullscreen }: Props)
       </div>
     </div>
   );
-}
+});

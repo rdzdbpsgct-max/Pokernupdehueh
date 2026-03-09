@@ -234,7 +234,7 @@ export function ConfigEditor({ config, onChange, anteEnabled }: Props) {
                   type="text"
                   value={level.label ?? t('logic.defaultBreakLabel')}
                   onChange={(e) => updateLevel(i, { label: e.target.value })}
-                  className="w-24 px-2 py-1 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-600/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25 transition-all duration-200"
+                  className="w-24 px-2 py-1 bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-gray-600/60 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[var(--accent-500)] focus:ring-2 focus:ring-[var(--accent-ring)] transition-all duration-200"
                 />
               </div>
             )}

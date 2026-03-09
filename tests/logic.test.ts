@@ -2511,6 +2511,70 @@ describe('Tournament History persistence', () => {
 });
 
 // ---------------------------------------------------------------------------
+// localStorage Validation (type guards filter corrupt data)
+// ---------------------------------------------------------------------------
+describe('localStorage validation filters corrupt data', () => {
+  it('loadTournamentHistory filters out non-object items', () => {
+    localStorage.setItem('poker-timer-history', JSON.stringify([
+      { id: 'valid', date: '2026-01-01', players: [], playerCount: 2, buyIn: 10, prizePool: 20, levelsPlayed: 1, elapsedSeconds: 60, totalRebuys: 0, totalAddOns: 0, bountyEnabled: false, name: 'T' },
+      'not-an-object',
+      42,
+      null,
+      { missing: 'fields' },
+    ]));
+    const result = loadTournamentHistory();
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('valid');
+  });
+
+  it('loadLeagues filters out items without required fields', () => {
+    localStorage.setItem('poker-timer-leagues', JSON.stringify([
+      { id: 'league1', createdAt: '2026-01-01', pointSystem: { entries: [] }, name: 'Test' },
+      { name: 'no-id' },
+      null,
+      'string',
+    ]));
+    const result = loadLeagues();
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('league1');
+  });
+
+  it('loadPlayerDatabase filters out corrupt entries', () => {
+    localStorage.setItem('poker-timer-players', JSON.stringify([
+      { id: 'rp1', name: 'Alice', createdAt: '2026-01-01', lastPlayedAt: '2026-01-01' },
+      { id: 'rp2' }, // missing name and createdAt
+      42,
+      null,
+    ]));
+    const result = loadPlayerDatabase();
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Alice');
+  });
+
+  it('loadGameDays filters out invalid game day items', () => {
+    localStorage.setItem('poker-timer-gamedays', JSON.stringify([
+      { id: 'gd1', leagueId: 'l1', date: '2026-01-01', participants: [], buyIn: 10, prizePool: 20 },
+      { id: 'gd2' }, // missing leagueId, date, participants
+      null,
+    ]));
+    const result = loadGameDays();
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('gd1');
+  });
+
+  it('loadTournamentHistory handles mixed valid/invalid array gracefully', () => {
+    localStorage.setItem('poker-timer-history', JSON.stringify([
+      { id: 'a', date: '2026-01-01', players: [] },
+      { id: 123, date: '2026-01-01', players: [] }, // id is number, not string
+      { id: 'b', date: '2026-01-02', players: [] },
+    ]));
+    const result = loadTournamentHistory();
+    expect(result).toHaveLength(2);
+    expect(result.map(r => r.id)).toEqual(['a', 'b']);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Text & CSV Export
 // ---------------------------------------------------------------------------
 describe('formatResultAsText', () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { TournamentResult, PlayerStat } from '../domain/types';
 import {
   loadTournamentHistory,
@@ -10,6 +10,7 @@ import {
   computePlayerStats,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 import { ChevronIcon } from './ChevronIcon';
 
 type Tab = 'history' | 'stats';
@@ -20,25 +21,12 @@ interface Props {
 
 export function TournamentHistory({ onClose }: Props) {
   const { t, language } = useTranslation();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useDialogA11y(onClose);
   const [history, setHistory] = useState<TournamentResult[]>(() => loadTournamentHistory());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('history');
-
-  // Auto-focus & Escape to close
-  useEffect(() => {
-    const el = dialogRef.current;
-    if (!el) return;
-    const focusable = el.querySelector<HTMLElement>('button, [tabindex]');
-    focusable?.focus();
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
 
   const handleDelete = useCallback((id: string) => {
     deleteTournamentResult(id);
@@ -194,9 +182,9 @@ function HistoryEntry({
   onDownloadCSV: () => void;
   copied: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const winner = result.players.find((p) => p.place === 1);
-  const dateStr = new Date(result.date).toLocaleDateString('de-DE', {
+  const dateStr = new Date(result.date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

@@ -1,9 +1,9 @@
 import { useTranslation } from '../i18n';
 
 export function LanguageSwitcher() {
-  const { language, setLanguage } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
   return (
-    <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700/40" title={language === 'de' ? 'Sprache / Language' : 'Language / Sprache'}>
+    <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700/40" title={t('language.switcherTitle')}>
       <button
         onClick={() => setLanguage('de')}
         title="Deutsch"

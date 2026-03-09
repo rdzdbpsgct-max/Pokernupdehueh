@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { RemoteController, buildRemoteUrl } from '../domain/remote';
 import type { RemoteCommand, RemoteState, HostStatus, ControllerStatus } from '../domain/remote';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 import { useTheme } from '../theme';
 import { formatTime } from '../domain/logic';
 
@@ -20,6 +21,7 @@ interface HostProps {
 
 export function RemoteHostModal({ peerId, status, onClose }: HostProps) {
   const { t } = useTranslation();
+  const dialogRef = useDialogA11y(onClose);
   const { resolved } = useTheme();
 
   const qrUrl = peerId ? buildRemoteUrl(peerId) : '';
@@ -29,9 +31,9 @@ export function RemoteHostModal({ peerId, status, onClose }: HostProps) {
 
   return (
     <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/95 dark:bg-gray-900/95 border border-gray-300 dark:border-gray-700/50 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl animate-scale-in">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="remote-host-title" className="bg-white/95 dark:bg-gray-900/95 border border-gray-300 dark:border-gray-700/50 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl animate-scale-in">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('remote.hostTitle')}</h3>
+          <h3 id="remote-host-title" className="text-lg font-bold text-gray-900 dark:text-white">{t('remote.hostTitle')}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl">&times;</button>
         </div>
 

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { RebuyConfig } from '../domain/types';
 import { formatTime } from '../domain/logic';
 import { useTranslation } from '../i18n';
@@ -9,7 +10,7 @@ interface Props {
   elapsedSeconds: number;
 }
 
-export function RebuyStatus({ active, rebuy, currentPlayLevel, elapsedSeconds }: Props) {
+export const RebuyStatus = memo(function RebuyStatus({ active, rebuy, currentPlayLevel, elapsedSeconds }: Props) {
   const { t } = useTranslation();
 
   if (!rebuy.enabled) return null;
@@ -38,4 +39,4 @@ export function RebuyStatus({ active, rebuy, currentPlayLevel, elapsedSeconds }:
       <span className="text-gray-400 dark:text-gray-500 text-sm">{t('rebuyStatus.ended')}</span>
     </div>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useTranslation } from '../i18n';
 
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
   handForHandActive?: boolean;
 }
 
-export function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOnCost, addOnChips, lastHandActive, handForHandActive }: Props) {
+export const BubbleIndicator = memo(function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOnCost, addOnChips, lastHandActive, handForHandActive }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -68,4 +69,4 @@ export function BubbleIndicator({ isBubble, showItmFlash, addOnWindowOpen, addOn
       )}
     </>
   );
-}
+});

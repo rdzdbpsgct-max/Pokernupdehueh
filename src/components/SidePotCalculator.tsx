@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { calculateSidePots, resolvePotWinners, generateId } from '../domain/logic';
 import type { PlayerPotInput, PlayerPotStatus, PotResult, PotWinnerAssignment, PlayerPayout, SidePotPayoutResult } from '../domain/types';
 import { useTranslation } from '../i18n';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 import { NumberStepper } from './NumberStepper';
 
 interface Props {
@@ -33,6 +34,7 @@ const EXAMPLE_DATA: PlayerPotInput[] = [
 
 export function SidePotCalculator({ onClose, onResultChange }: Props) {
   const { t } = useTranslation();
+  const dialogRef = useDialogA11y(onClose);
   const [players, setPlayers] = useState<PlayerPotInput[]>(() => [
     createPlayer(t('sidePot.playerDefault', { n: 1 })),
     createPlayer(t('sidePot.playerDefault', { n: 2 }), 500, 'all-in'),
@@ -229,13 +231,17 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sidepot-title"
         className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl shadow-black/20 border border-gray-200 dark:border-gray-700/40 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700/40">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('sidePot.title')}</h2>
+            <h2 id="sidepot-title" className="text-lg font-bold text-gray-900 dark:text-white">{t('sidePot.title')}</h2>
             <button
               onClick={() => setShowInfo((v) => !v)}
               className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
