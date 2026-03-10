@@ -748,7 +748,7 @@ export function SetupPage({
         </div>
 
         {/* Start button + Print — sticky on mobile */}
-        <div className="sticky bottom-0 pt-3 pb-3 bg-gray-50 dark:bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 space-y-2" data-tour="start-tournament">
+        <div className="sticky bottom-0 pt-3 pb-3 bg-gray-100 dark:bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 space-y-2" data-tour="start-tournament">
           <button
             onClick={onSwitchToGame}
             disabled={startErrors.length > 0}

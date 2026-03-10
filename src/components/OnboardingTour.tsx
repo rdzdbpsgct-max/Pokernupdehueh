@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '../i18n';
 import { markTourCompleted } from '../domain/configPersistence';
 
@@ -20,12 +20,21 @@ interface Props {
   onComplete: () => void;
 }
 
+interface LayoutResult {
+  rect: { top: number; left: number; width: number; height: number };
+  tooltip: { top: number; left: number; arrowSide: 'top' | 'bottom' };
+  arrowLeft: number;
+}
+
 /** Measure a target element and compute spotlight + tooltip positions. Pure function, no side effects. */
-function computeLayout(target: string) {
+function computeLayout(target: string): LayoutResult | null {
   const el = document.querySelector(`[data-tour="${target}"]`);
   if (!el) return null;
 
   const r = el.getBoundingClientRect();
+  // Skip if element is off-screen or has zero dimensions
+  if (r.width === 0 && r.height === 0) return null;
+
   const tooltipH = 160;
   const padding = 16;
   const spaceBelow = window.innerHeight - r.bottom;
@@ -41,41 +50,61 @@ function computeLayout(target: string) {
   };
 }
 
-// Simple resize counter for triggering re-renders on window resize
-let resizeCount = 0;
-const resizeListeners = new Set<() => void>();
-if (typeof window !== 'undefined') {
-  window.addEventListener('resize', () => {
-    resizeCount++;
-    resizeListeners.forEach(l => l());
-  });
-}
-function subscribeResize(cb: () => void) { resizeListeners.add(cb); return () => { resizeListeners.delete(cb); }; }
-function getResizeSnapshot() { return resizeCount; }
-
 export function OnboardingTour({ onComplete }: Props) {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
-  const scrolledRef = useRef(false);
-
-  // Re-render on window resize
-  useSyncExternalStore(subscribeResize, getResizeSnapshot);
+  const [layout, setLayout] = useState<LayoutResult | null>(null);
+  const rafRef = useRef(0);
 
   const currentStep = TOUR_STEPS[step];
 
-  // Compute layout as derived value (no setState needed)
-  const layout = currentStep ? computeLayout(currentStep.target) : null;
+  // Recompute layout using requestAnimationFrame for accurate positioning
+  const updateLayout = useCallback(() => {
+    if (!currentStep) return;
+    const result = computeLayout(currentStep.target);
+    setLayout(result);
+  }, [currentStep]);
 
-  // Scroll target into view on step change
+  // Scroll target into view on step change, then recompute layout after scroll settles
   useEffect(() => {
     if (!currentStep) return;
-    scrolledRef.current = false;
+
     const el = document.querySelector(`[data-tour="${currentStep.target}"]`);
-    if (el && !scrolledRef.current) {
-      scrolledRef.current = true;
+    if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
-  }, [currentStep]);
+
+    // Recompute layout repeatedly until scroll settles (smooth scroll takes ~300-500ms)
+    let frameCount = 0;
+    const maxFrames = 30; // ~500ms at 60fps
+    const pollLayout = () => {
+      updateLayout();
+      frameCount++;
+      if (frameCount < maxFrames) {
+        rafRef.current = requestAnimationFrame(pollLayout);
+      }
+    };
+    // Start polling after a small delay to let scroll begin
+    const timeoutId = setTimeout(() => {
+      rafRef.current = requestAnimationFrame(pollLayout);
+    }, 50);
+
+    return () => {
+      clearTimeout(timeoutId);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [currentStep, updateLayout]);
+
+  // Also re-measure on resize and scroll
+  useEffect(() => {
+    const handleReposition = () => updateLayout();
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true); // capture phase for nested scrolls
+    return () => {
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [updateLayout]);
 
   const handleNext = useCallback(() => {
     if (step < TOUR_STEPS.length - 1) {
@@ -142,20 +171,22 @@ export function OnboardingTour({ onComplete }: Props) {
       {/* Tooltip */}
       <div
         className="fixed z-[9999] w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700/60 p-5 animate-fade-in"
-        style={{ top: layout?.tooltip.top ?? 0, left: layout?.tooltip.left ?? 0 }}
+        style={{ top: layout?.tooltip.top ?? (window.innerHeight / 2 - 80), left: layout?.tooltip.left ?? (window.innerWidth / 2 - 160) }}
         role="dialog"
         aria-modal="true"
         aria-label={t(currentStep.titleKey as never)}
       >
-        {/* Arrow */}
-        <div
-          className={`absolute w-3 h-3 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 rotate-45 ${
-            (layout?.tooltip.arrowSide ?? 'top') === 'top'
-              ? '-top-1.5 border-l border-t'
-              : '-bottom-1.5 border-r border-b'
-          }`}
-          style={{ left: layout?.arrowLeft ?? 160 }}
-        />
+        {/* Arrow — only show when layout is computed */}
+        {layout && (
+          <div
+            className={`absolute w-3 h-3 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 rotate-45 ${
+              layout.tooltip.arrowSide === 'top'
+                ? '-top-1.5 border-l border-t'
+                : '-bottom-1.5 border-r border-b'
+            }`}
+            style={{ left: layout.arrowLeft }}
+          />
+        )}
 
         {/* Step indicator */}
         <div className="flex items-center gap-1.5 mb-3">

@@ -123,9 +123,17 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
   const [state, setState] = useState<RemoteState['data'] | null>(null);
   const controllerRef = useRef<RemoteController | null>(null);
 
+  // Local timer interpolation: count down between host state updates
+  const [displaySeconds, setDisplaySeconds] = useState<number | null>(null);
+  const lastStateTimeRef = useRef<number>(0);
+
   useEffect(() => {
     const ctrl = new RemoteController(hostPeerId, {
-      onState: (s) => setState(s),
+      onState: (s) => {
+        setState(s);
+        setDisplaySeconds(s.remainingSeconds);
+        lastStateTimeRef.current = Date.now();
+      },
       onStatusChange: (s) => setStatus(s),
     }, secret);
     controllerRef.current = ctrl;
@@ -143,6 +151,19 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Local countdown interpolation: when timer is running, decrement every 100ms
+  useEffect(() => {
+    if (!state || state.timerStatus !== 'running') return;
+
+    const id = setInterval(() => {
+      const elapsed = (Date.now() - lastStateTimeRef.current) / 1000;
+      const interpolated = Math.max(0, state.remainingSeconds - elapsed);
+      setDisplaySeconds(Math.ceil(interpolated));
+    }, 100);
+
+    return () => clearInterval(id);
+  }, [state]);
+
   const sendCmd = useCallback((action: RemoteCommand['action']) => {
     controllerRef.current?.sendCommand(action);
   }, []);
@@ -158,6 +179,9 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
       document.documentElement.classList.remove('dark');
     };
   }, []);
+
+  // Use interpolated seconds for display, fallback to state
+  const shownSeconds = displaySeconds ?? state?.remainingSeconds ?? 0;
 
   return (
     <div
@@ -233,7 +257,7 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
               <div className="text-center">
                 <div className="text-sm text-gray-400 mb-1">{state.levelLabel}</div>
                 <div className="text-5xl font-mono font-bold tabular-nums tracking-tight mb-2">
-                  {formatTime(state.remainingSeconds)}
+                  {formatTime(shownSeconds)}
                 </div>
                 <div className="text-xl font-mono text-gray-300">
                   {state.smallBlind}/{state.bigBlind}

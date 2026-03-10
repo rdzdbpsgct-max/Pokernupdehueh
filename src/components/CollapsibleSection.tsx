@@ -13,12 +13,12 @@ export function CollapsibleSection({ title, summary, defaultOpen = true, childre
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="bg-gray-100/80 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-200 dark:border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-gray-300/30 dark:shadow-black/20" data-tour={dataTour}>
+    <div className="bg-gray-200/90 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-300 dark:border-gray-700/40 rounded-xl overflow-hidden shadow-lg shadow-gray-400/30 dark:shadow-black/20" data-tour={dataTour}>
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
-        className="group w-full flex items-center justify-between px-4 py-3 hover:bg-gray-200/50 dark:hover:bg-gray-700/30 hover:shadow-lg hover:shadow-gray-300/40 dark:hover:shadow-black/25 transition-all duration-200 text-left"
+        className="group w-full flex items-center justify-between px-4 py-3 hover:bg-gray-300/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:shadow-gray-400/40 dark:hover:shadow-black/25 transition-all duration-200 text-left"
       >
         <div>
           <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">

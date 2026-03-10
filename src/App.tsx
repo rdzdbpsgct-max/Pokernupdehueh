@@ -155,12 +155,13 @@ function App() {
 
   const [pendingCheckpoint, setPendingCheckpoint] = useState<TournamentCheckpoint | null>(() => loadCheckpoint());
 
-  // Clock display in game mode — update every 30 seconds
+  // Clock display in game mode — update every second for reliable sync
   const [clockTime, setClockTime] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   useEffect(() => {
     if (mode !== 'game') return;
-    setClockTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    const id = setInterval(() => setClockTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })), 30000);
+    const update = () => setClockTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    update();
+    const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, [mode]);
 
@@ -930,21 +931,34 @@ function App() {
     );
   };
 
+  // Remote Controller Mode — render ONLY the controller view, skip all other UI
+  if (isControllerMode && controllerPeerId) {
+    return (
+      <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
+        <RemoteControllerView
+          hostPeerId={controllerPeerId}
+          secret={controllerSecret}
+          onClose={() => window.close()}
+        />
+      </Suspense></SectionErrorBoundary>
+    );
+  }
+
   return (
     <>
     <PrintView config={config} result={finishedResult} />
     <div className="min-h-full flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700/30 bg-gray-50/90 dark:bg-gray-900/50 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+      <header className="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 border-b border-gray-300 dark:border-gray-700/30 bg-white/95 dark:bg-gray-900/50 backdrop-blur-sm">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
+          <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight truncate">
             {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
           </h1>
           {mode === 'game' && (
             <span className="text-sm text-gray-400 dark:text-gray-500 font-mono tabular-nums">{clockTime}</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           <ThemeSwitcher />
           <LanguageSwitcher />
           <VoiceSwitcher settings={settings} onChange={setSettings} />
@@ -1008,7 +1022,7 @@ function App() {
               {mode === 'setup' && (
                 <button
                   onClick={() => setShowTemplates(true)}
-                  className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+                  className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-300 dark:border-gray-700/30"
                   title={t('app.templates')}
                   data-tour="templates"
                 >
@@ -1020,7 +1034,7 @@ function App() {
                 className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-200 border ${
                   mode === 'league'
                     ? 'text-white shadow-sm'
-                    : 'bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700/30'
+                    : 'bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700/30'
                 }`}
                 style={mode === 'league' ? { backgroundColor: 'var(--accent-600)', borderColor: 'var(--accent-500)' } : undefined}
                 title={t('app.leagues')}
@@ -1030,7 +1044,7 @@ function App() {
               </button>
               <button
                 onClick={() => setShowHistory(true)}
-                className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-300 dark:border-gray-700/30"
                 title={t('app.history')}
               >
                 {t('app.history')}
@@ -1038,7 +1052,7 @@ function App() {
               {mode === 'setup' && (
                 <button
                   onClick={() => setShowInstallGuide(true)}
-                  className="p-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+                  className="p-1.5 bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg transition-all duration-200 border border-gray-300 dark:border-gray-700/30"
                   title={t('settings.installApp' as Parameters<typeof t>[0])}
                   aria-label={t('settings.installApp' as Parameters<typeof t>[0])}
                 >
@@ -1368,17 +1382,6 @@ function App() {
             leagueName={sharedLeague.leagueName}
             standings={sharedLeague.standings}
             onClose={() => setSharedLeague(null)}
-          />
-        </Suspense></SectionErrorBoundary>
-      )}
-
-      {/* Remote Controller (from QR code #remote= hash) */}
-      {isControllerMode && controllerPeerId && (
-        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
-          <RemoteControllerView
-            hostPeerId={controllerPeerId}
-            secret={controllerSecret}
-            onClose={() => window.close()}
           />
         </Suspense></SectionErrorBoundary>
       )}

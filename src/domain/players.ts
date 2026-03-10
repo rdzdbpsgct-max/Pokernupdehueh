@@ -144,12 +144,15 @@ export function computeAverageStack(
 ): number {
   const activePlayers = players.filter((p) => p.status === 'active').length;
   if (activePlayers === 0) return 0;
-  const totalRebuys = players.reduce((sum, p) => sum + p.rebuys, 0);
+  const safeStarting = startingChips || 0;
+  const safeRebuy = rebuyChips || 0;
+  const safeAddOn = addOnChips || 0;
+  const totalRebuys = players.reduce((sum, p) => sum + (p.rebuys || 0), 0);
   const totalAddOns = players.filter((p) => p.addOn).length;
   const totalChips =
-    players.length * startingChips +
-    totalRebuys * rebuyChips +
-    totalAddOns * addOnChips;
+    players.length * safeStarting +
+    totalRebuys * safeRebuy +
+    totalAddOns * safeAddOn;
   return Math.round(totalChips / activePlayers);
 }
 
@@ -170,10 +173,13 @@ export function initializePlayerStacks(
   rebuyChips: number,
   addOnChips: number,
 ): Player[] {
+  const safeStarting = startingChips || 0;
+  const safeRebuy = rebuyChips || 0;
+  const safeAddOn = addOnChips || 0;
   return players.map((p) => ({
     ...p,
     chips: p.status === 'active'
-      ? startingChips + p.rebuys * rebuyChips + (p.addOn ? addOnChips : 0)
+      ? safeStarting + (p.rebuys || 0) * safeRebuy + (p.addOn ? safeAddOn : 0)
       : 0,
   }));
 }
@@ -197,10 +203,10 @@ export function computeAverageStackFromPlayers(players: Player[]): number | null
 
 export function addRebuyToStack(player: Player, rebuyChips: number): Player {
   if (player.chips === undefined) return player;
-  return { ...player, chips: player.chips + rebuyChips };
+  return { ...player, chips: player.chips + (rebuyChips || 0) };
 }
 
 export function addAddOnToStack(player: Player, addOnChips: number): Player {
   if (player.chips === undefined) return player;
-  return { ...player, chips: player.chips + addOnChips };
+  return { ...player, chips: player.chips + (addOnChips || 0) };
 }

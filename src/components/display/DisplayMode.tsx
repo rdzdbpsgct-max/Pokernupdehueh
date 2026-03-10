@@ -44,24 +44,52 @@ interface Props {
 
 const ROTATION_INTERVAL = 15_000;
 
-/** Memoized ticker banner — only re-renders when ticker text actually changes */
+/** Memoized ticker banner — seamless infinite loop using measured content width */
 const TickerBanner = memo(function TickerBanner({ items }: { items: string[] }) {
+  const contentRef = useRef<HTMLSpanElement>(null);
+  const [contentWidth, setContentWidth] = useState(0);
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const measure = () => {
+      if (contentRef.current) {
+        setContentWidth(contentRef.current.offsetWidth);
+      }
+    };
+    measure();
+    // Re-measure on resize
+    const ro = new ResizeObserver(measure);
+    ro.observe(contentRef.current);
+    return () => ro.disconnect();
+  }, [items]);
+
+  const renderItems = (prefix: string) =>
+    items.map((item, i) => (
+      <span key={`${prefix}-${i}`}>
+        <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>{'\u25C6'}</span>
+        {item}
+      </span>
+    ));
+
+  // Speed: ~80px/second for comfortable reading
+  const duration = contentWidth > 0 ? contentWidth / 80 : 25;
+
   return (
     <div className="border-t border-gray-800/60 overflow-hidden bg-gray-900/80">
-      <div className="animate-ticker-scroll whitespace-nowrap py-2.5 text-base text-gray-200 font-semibold tracking-wide will-change-transform">
-        {items.map((item, i) => (
-          <span key={i}>
-            <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>◆</span>
-            {item}
-          </span>
-        ))}
-        {/* Duplicate for seamless loop */}
-        {items.map((item, i) => (
-          <span key={`dup-${i}`}>
-            <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>◆</span>
-            {item}
-          </span>
-        ))}
+      <div
+        className="whitespace-nowrap py-2.5 text-base text-gray-200 font-semibold tracking-wide will-change-transform"
+        style={contentWidth > 0 ? {
+          animation: `ticker-scroll ${duration}s linear infinite`,
+        } : undefined}
+      >
+        {/* First set — measured for exact width */}
+        <span ref={contentRef} className="inline-block">
+          {renderItems('a')}
+        </span>
+        {/* Duplicate for seamless loop — positioned right after first set */}
+        <span className="inline-block">
+          {renderItems('b')}
+        </span>
       </div>
     </div>
   );

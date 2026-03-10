@@ -163,7 +163,7 @@ html, body, #root {
 }
 
 body {
-  background-color: #f9fafb;
+  background-color: #eef0f4;
   background-image: var(--bg-pattern, none);
   background-attachment: fixed;
   color: #111827;
