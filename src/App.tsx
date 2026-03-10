@@ -40,6 +40,7 @@ import { useTVDisplay } from './hooks/useTVDisplay';
 import { useWakeLock } from './hooks/useWakeLock';
 import { useConfirmDialog } from './hooks/useConfirmDialog';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useTranslation } from './i18n';
 import { showToast } from './domain/toast';
 import {
@@ -93,6 +94,7 @@ const RemoteHostModal = lazy(() => import('./components/RemoteControl').then(m =
 const RemoteControllerView = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteControllerView })));
 const LeagueView = lazy(() => import('./components/LeagueView').then(m => ({ default: m.LeagueView })));
 const OnboardingTour = lazy(() => import('./components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
+const PWAInstallGuide = lazy(() => import('./components/PWAInstallGuide').then(m => ({ default: m.PWAInstallGuide })));
 
 type Mode = 'setup' | 'game' | 'league';
 
@@ -270,6 +272,10 @@ function App() {
 
   // Wake Lock: prevent screen from sleeping during active tournament
   useWakeLock(mode === 'game' && timer.timerState.status === 'running');
+
+  // PWA install prompt
+  const { canPrompt: canInstallPrompt, isInstalled: isPWAInstalled, promptInstall } = useInstallPrompt();
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   // Online/Offline detection — show toast on status change
   const isOnline = useOnlineStatus();
@@ -1029,6 +1035,18 @@ function App() {
               >
                 {t('app.history')}
               </button>
+              {mode === 'setup' && (
+                <button
+                  onClick={() => setShowInstallGuide(true)}
+                  className="p-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
+                  title={t('settings.installApp' as Parameters<typeof t>[0])}
+                  aria-label={t('settings.installApp' as Parameters<typeof t>[0])}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
+                  </svg>
+                </button>
+              )}
             </>
           )}
         </div>
@@ -1235,6 +1253,7 @@ function App() {
                   settings={settings}
                   onChange={setSettings}
                   onToggleFullscreen={toggleFullscreen}
+                  onShowInstallGuide={() => setShowInstallGuide(true)}
                 />
                 <button
                   onClick={handleExitToSetup}
@@ -1321,6 +1340,18 @@ function App() {
         <Suspense fallback={null}>
           <OnboardingTour onComplete={() => setShowTour(false)} />
         </Suspense>
+      )}
+
+      {/* PWA Install Guide */}
+      {showInstallGuide && (
+        <SectionErrorBoundary><Suspense fallback={null}>
+          <PWAInstallGuide
+            onClose={() => setShowInstallGuide(false)}
+            canPrompt={canInstallPrompt}
+            isInstalled={isPWAInstalled}
+            onPromptInstall={promptInstall}
+          />
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Shared Result Modal (from QR code) */}
