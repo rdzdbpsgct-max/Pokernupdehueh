@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo } from 'react';
 import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table, ExtendedLeagueStanding } from '../../domain/types';
 import { formatTime, getLevelLabel, getBlindsText, computePrizePool, computeAverageStackInBB, computeRebuyPot, isRebuyActive } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
@@ -44,57 +44,103 @@ interface Props {
 
 const ROTATION_INTERVAL = 15_000;
 
-/** Memoized ticker banner — seamless infinite loop using measured content width */
-const TickerBanner = memo(function TickerBanner({ items }: { items: string[] }) {
-  const contentRef = useRef<HTMLSpanElement>(null);
-  const [contentWidth, setContentWidth] = useState(0);
+/**
+ * Seamless infinite ticker banner — pixel-perfect rAF scrolling.
+ *
+ * How it works:
+ * 1. Measure the pixel width of one content set (via useLayoutEffect + ResizeObserver)
+ * 2. Compute how many copies are needed to fill the viewport with no visible gaps
+ * 3. requestAnimationFrame drives translate3d at 80 px/s
+ * 4. Modulo wrap at exactly one content-set width → perfectly seamless loop
+ */
+const TICKER_SPEED = 80; // pixels per second
 
+const TickerBanner = memo(function TickerBanner({ items }: { items: string[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const singleSetRef = useRef<HTMLDivElement>(null);
+  const widthRef = useRef(0);
+  const [copies, setCopies] = useState(3);
+
+  // Measure content width and compute needed copies (before paint)
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const singleSet = singleSetRef.current;
+    if (!container || !singleSet) return;
+    const contentW = singleSet.getBoundingClientRect().width;
+    widthRef.current = contentW;
+    if (contentW > 0) {
+      const containerW = container.clientWidth;
+      setCopies(Math.max(2, Math.ceil(containerW / contentW) + 1));
+    }
+  }, [items]);
+
+  // Re-measure on window/container resize
   useEffect(() => {
-    if (!contentRef.current) return;
-    const measure = () => {
-      if (contentRef.current) {
-        setContentWidth(contentRef.current.offsetWidth);
+    const container = containerRef.current;
+    const singleSet = singleSetRef.current;
+    if (!container || !singleSet) return;
+    const recalc = () => {
+      const contentW = singleSet.getBoundingClientRect().width;
+      widthRef.current = contentW;
+      if (contentW > 0) {
+        const containerW = container.clientWidth;
+        setCopies(Math.max(2, Math.ceil(containerW / contentW) + 1));
       }
     };
-    measure();
-    // Re-measure on resize
-    const ro = new ResizeObserver(measure);
-    ro.observe(contentRef.current);
+    const ro = new ResizeObserver(recalc);
+    ro.observe(container);
     return () => ro.disconnect();
   }, [items]);
 
-  const renderItems = (prefix: string) =>
+  // Pixel-perfect rAF animation — modulo wrap for seamless loop
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    // Respect prefers-reduced-motion
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let offset = 0;
+    let lastTime = 0;
+
+    const tick = (now: number) => {
+      if (lastTime > 0 && widthRef.current > 0) {
+        const dt = (now - lastTime) / 1000;
+        offset = (offset + TICKER_SPEED * dt) % widthRef.current;
+        track.style.transform = `translate3d(-${offset}px, 0, 0)`;
+      }
+      lastTime = now;
+      rafId = requestAnimationFrame(tick);
+    };
+
+    let rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [items, copies]);
+
+  const renderItems = useCallback((prefix: string) =>
     items.map((item, i) => (
       <span key={`${prefix}-${i}`}>
         <span className="mx-4 opacity-70" style={{ color: 'var(--accent-400)' }}>{'\u25C6'}</span>
         {item}
       </span>
-    ));
-
-  // Speed: ~80px/second for comfortable reading
-  const duration = contentWidth > 0 ? contentWidth / 80 : 25;
+    )), [items]);
 
   return (
-    <div className="border-t border-gray-800/60 overflow-hidden bg-gray-900/80">
+    <div ref={containerRef} className="border-t border-gray-800/60 overflow-hidden bg-gray-900/80">
       <div
-        className="whitespace-nowrap py-2.5 text-base text-gray-200 font-semibold tracking-wide will-change-transform"
-        style={contentWidth > 0 ? {
-          animation: `ticker-scroll ${duration}s linear infinite`,
-        } : undefined}
+        ref={trackRef}
+        className="whitespace-nowrap py-2.5 text-base text-gray-200 font-semibold tracking-wide"
+        style={{ display: 'flex', willChange: 'transform' }}
       >
-        {/* First set — measured for exact width */}
-        <span ref={contentRef} className="inline-block">
-          {renderItems('a')}
-        </span>
-        {/* Duplicate for seamless loop — positioned right after first set */}
-        <span className="inline-block">
-          {renderItems('b')}
-        </span>
+        {Array.from({ length: copies }, (_, c) => (
+          <div key={c} ref={c === 0 ? singleSetRef : undefined} style={{ flexShrink: 0 }}>
+            {renderItems(String(c))}
+          </div>
+        ))}
       </div>
     </div>
   );
 }, (prev, next) => {
-  // Only re-render when ticker items actually change
   if (prev.items.length !== next.items.length) return false;
   return prev.items.every((item, i) => item === next.items[i]);
 });
