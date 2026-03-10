@@ -422,6 +422,10 @@ const de = {
   'display.payoutPlace': 'Platz {n}',
   'display.chipLeaderBadge': 'CL',
 
+  // --- Online/Offline ---
+  'app.offlineNotice': 'Offline — Fernsteuerung nicht verfügbar',
+  'app.onlineNotice': 'Wieder online',
+
   // --- Tournament History ---
   'app.history': 'Historie',
   'app.loading': 'Wird geladen…',
@@ -830,6 +834,22 @@ const de = {
   'sidePot.warnAllEqual': 'Alle Beträge gleich — kein Side Pot nötig.',
   'sidePot.warnAllFolded': 'Alle Spieler haben gefoldet — kein Spieler ist gewinnberechtigt.',
   'sidePot.warnPotNoEligible': '{pot}: Kein Spieler gewinnberechtigt (alle gefoldet).',
+
+  // --- Onboarding Tour ---
+  'tour.step1.title': 'Schnellstart-Vorlagen',
+  'tour.step1.desc': 'Wähle eine Vorlage für einen schnellen Start — Cashgame, Standard oder Deep Stack.',
+  'tour.step2.title': 'Blindstruktur anpassen',
+  'tour.step2.desc': 'Generiere Blinds automatisch oder passe Levels, Pausen und Antes manuell an.',
+  'tour.step3.title': 'Vorlagen speichern & laden',
+  'tour.step3.desc': 'Speichere deine Konfiguration als Vorlage und lade sie beim nächsten Turnier.',
+  'tour.step4.title': 'Liga erstellen',
+  'tour.step4.desc': 'Verwalte eine Liga mit Rangliste, Spieltagen und Punktesystem.',
+  'tour.step5.title': 'Turnier starten',
+  'tour.step5.desc': 'Starte das Turnier! Im Spiel: Space = Pause, N = nächstes Level, T = TV-Modus, F = Clean View.',
+  'tour.skip': 'Überspringen',
+  'tour.prev': 'Zurück',
+  'tour.next': 'Weiter',
+  'tour.finish': 'Los geht\'s!',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -1256,6 +1276,10 @@ const en: Record<TranslationKey, string> = {
   'display.payoutPlace': 'Place {n}',
   'display.chipLeaderBadge': 'CL',
 
+  // --- Online/Offline ---
+  'app.offlineNotice': 'Offline — remote control unavailable',
+  'app.onlineNotice': 'Back online',
+
   // --- Tournament History ---
   'app.history': 'History',
   'app.loading': 'Loading…',
@@ -1661,6 +1685,22 @@ const en: Record<TranslationKey, string> = {
   'sidePot.warnAllEqual': 'All amounts equal — no side pot needed.',
   'sidePot.warnAllFolded': 'All players folded — no player eligible to win.',
   'sidePot.warnPotNoEligible': '{pot}: No player eligible to win (all folded).',
+
+  // --- Onboarding Tour ---
+  'tour.step1.title': 'Quick Start Presets',
+  'tour.step1.desc': 'Pick a preset for a quick start — Cash Game, Standard or Deep Stack.',
+  'tour.step2.title': 'Customize Blind Structure',
+  'tour.step2.desc': 'Generate blinds automatically or adjust levels, breaks and antes manually.',
+  'tour.step3.title': 'Save & Load Templates',
+  'tour.step3.desc': 'Save your configuration as a template and reload it for your next tournament.',
+  'tour.step4.title': 'Create a League',
+  'tour.step4.desc': 'Manage a league with standings, game days and a point system.',
+  'tour.step5.title': 'Start Tournament',
+  'tour.step5.desc': 'Start the tournament! In game: Space = Pause, N = Next Level, T = TV Mode, F = Clean View.',
+  'tour.skip': 'Skip',
+  'tour.prev': 'Back',
+  'tour.next': 'Next',
+  'tour.finish': 'Let\'s go!',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

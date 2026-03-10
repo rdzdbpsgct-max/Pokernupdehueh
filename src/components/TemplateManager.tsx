@@ -3,8 +3,8 @@ import type { TournamentConfig } from '../domain/types';
 import type { TournamentTemplate } from '../domain/logic';
 import { loadTemplates, saveTemplate, deleteTemplate, exportTemplateToJSON, parseTemplateFile, exportConfigJSON, importConfigJSON } from '../domain/logic';
 import { useTranslation } from '../i18n';
-import { useDialogA11y } from '../hooks/useDialogA11y';
 import { ChevronIcon } from './ChevronIcon';
+import { BottomSheet } from './BottomSheet';
 
 // Minimal type for File System Access API (Chromium only)
 interface FilePickerHandle {
@@ -26,7 +26,6 @@ interface Props {
 
 export function TemplateManager({ config, onLoad, onClose }: Props) {
   const { t } = useTranslation();
-  const dialogRef = useDialogA11y(onClose);
   const [templates, setTemplates] = useState<TournamentTemplate[]>(() => loadTemplates());
   const [newName, setNewName] = useState(config.name || '');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -152,8 +151,8 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="template-title" className="bg-white/95 dark:bg-gray-900/95 border border-gray-300 dark:border-gray-700/50 rounded-2xl p-6 max-w-md w-full space-y-4 max-h-[80vh] flex flex-col shadow-2xl shadow-gray-300/30 dark:shadow-black/40 animate-scale-in">
+    <BottomSheet onClose={onClose} ariaLabelledBy="template-title" maxWidth="max-w-md">
+      <div className="p-6 space-y-4 overflow-y-auto flex-1">
         <h3 id="template-title" className="text-lg font-bold text-gray-900 dark:text-white">{t('templates.title')}</h3>
 
         {/* Save current config as template */}
@@ -305,6 +304,6 @@ export function TemplateManager({ config, onLoad, onClose }: Props) {
           {t('templates.close')}
         </button>
       </div>
-    </div>
+    </BottomSheet>
   );
 }

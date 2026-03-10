@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, lazy, Suspense } from 'react';
 import type { TournamentConfig, TournamentCheckpoint, League, Table, MultiTableConfig } from '../domain/types';
 import {
   stripAnteFromLevels,
@@ -28,7 +28,7 @@ import { BlindGenerator } from './BlindGenerator';
 import { CollapsibleSection } from './CollapsibleSection';
 import { CollapsibleSubSection } from './CollapsibleSubSection';
 import { NumberStepper } from './NumberStepper';
-import { QRCodeSVG } from 'qrcode.react';
+const SetupQRCode = lazy(() => import('./SetupQRCode').then(m => ({ default: m.SetupQRCode })));
 
 interface Props {
   config: TournamentConfig;
@@ -39,7 +39,6 @@ interface Props {
   onSwitchToGame: () => void;
   onConfirm: (title: string, message: string, confirmLabel: string, onConfirm: () => void) => void;
   startErrors: string[];
-  theme: 'light' | 'dark';
 }
 
 export function SetupPage({
@@ -51,7 +50,6 @@ export function SetupPage({
   onSwitchToGame,
   onConfirm,
   startErrors,
-  theme,
 }: Props) {
   const { t } = useTranslation();
 
@@ -241,7 +239,7 @@ export function SetupPage({
         )}
 
         {/* Quick Start Presets */}
-        <div className="space-y-2">
+        <div className="space-y-2" data-tour="presets">
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('preset.title')}</p>
           <div className="flex gap-2 flex-wrap">
             {getBuiltInPresets().map((preset) => (
@@ -550,7 +548,7 @@ export function SetupPage({
         </CollapsibleSection>
 
         {/* Blind-Struktur (Generator + Ante Toggle + Level-Tabelle) */}
-        <CollapsibleSection title={t('app.blindStructure')} summary={blindSummary}>
+        <CollapsibleSection title={t('app.blindStructure')} summary={blindSummary} data-tour="blind-generator">
           <div className="space-y-4">
             <BlindGenerator
               startingChips={config.startingChips}
@@ -750,7 +748,7 @@ export function SetupPage({
         </div>
 
         {/* Start button + Print — sticky on mobile */}
-        <div className="sticky bottom-0 pt-3 pb-3 bg-gray-50 dark:bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 space-y-2">
+        <div className="sticky bottom-0 pt-3 pb-3 bg-gray-50 dark:bg-gray-900 sm:static sm:bg-transparent sm:pt-0 sm:pb-0 space-y-2" data-tour="start-tournament">
           <button
             onClick={onSwitchToGame}
             disabled={startErrors.length > 0}
@@ -768,19 +766,10 @@ export function SetupPage({
           </button>
         </div>
 
-        {/* QR Code — App link */}
-        <div className="flex flex-col items-center gap-2 pt-2 pb-4">
-          <QRCodeSVG
-            value={`${window.location.origin}${import.meta.env.BASE_URL || '/'}`}
-            size={100}
-            level="L"
-            bgColor={theme === 'dark' ? '#111827' : '#f9fafb'}
-            fgColor={theme === 'dark' ? '#e5e7eb' : '#111827'}
-          />
-          <span className="text-xs text-gray-400 dark:text-gray-500 text-center">
-            {t('finished.qrApp')}
-          </span>
-        </div>
+        {/* QR Code — App link (lazy-loaded to keep qrcode.react out of main bundle) */}
+        <Suspense fallback={null}>
+          <SetupQRCode />
+        </Suspense>
       </div>
     </div>
   );

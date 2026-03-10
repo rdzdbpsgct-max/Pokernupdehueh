@@ -401,3 +401,23 @@ export function markWizardCompleted(): void {
     localStorage.setItem(WIZARD_KEY, 'true');
   } catch { /* private browsing */ }
 }
+
+// ---------------------------------------------------------------------------
+// Onboarding Tour
+// ---------------------------------------------------------------------------
+
+export const TOUR_KEY = 'poker-timer-tour-completed';
+
+export function isTourCompleted(): boolean {
+  try {
+    return localStorage.getItem(TOUR_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function markTourCompleted(): void {
+  try {
+    localStorage.setItem(TOUR_KEY, 'true');
+  } catch { /* private browsing */ }
+}

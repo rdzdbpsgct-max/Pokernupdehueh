@@ -11,6 +11,14 @@ export default defineConfig({
   build: {
     // Support older iPads (iPadOS 15+) — Vite 7 defaults to safari16
     target: ['es2020', 'safari14'],
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-peerjs': ['peerjs'],
+          'vendor-qrcode': ['qrcode.react'],
+        },
+      },
+    },
   },
   plugins: [
     react(),

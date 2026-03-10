@@ -15,8 +15,8 @@ import {
   extractLeagueConfig,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
-import { useDialogA11y } from '../hooks/useDialogA11y';
 import { ChevronIcon } from './ChevronIcon';
+import { BottomSheet } from './BottomSheet';
 import { NumberStepper } from './NumberStepper';
 
 interface WindowWithFilePicker extends Window {
@@ -35,7 +35,6 @@ interface Props {
 
 export function LeagueManager({ onClose, currentConfig }: Props) {
   const { t } = useTranslation();
-  const dialogRef = useDialogA11y(onClose);
   const [leagues, setLeagues] = useState<League[]>(() => loadLeagues());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -160,14 +159,7 @@ export function LeagueManager({ onClose, currentConfig }: Props) {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="league-title"
-        className="bg-white/95 dark:bg-gray-900/95 border border-gray-300 dark:border-gray-700/50 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl shadow-gray-300/40 dark:shadow-black/40 animate-scale-in"
-      >
+    <BottomSheet onClose={onClose} ariaLabelledBy="league-title">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700/40">
           <h2 id="league-title" className="text-lg font-bold text-gray-900 dark:text-white">{t('league.title')}</h2>
@@ -233,8 +225,7 @@ export function LeagueManager({ onClose, currentConfig }: Props) {
             ))
           )}
         </div>
-      </div>
-    </div>
+    </BottomSheet>
   );
 }
 

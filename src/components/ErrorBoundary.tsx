@@ -19,6 +19,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, info.componentStack);
+    // Report to Sentry if available (dynamic import — no bundle impact when DSN not set)
+    import('@sentry/react').then((Sentry) => {
+      Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
+    }).catch(() => { /* Sentry not available */ });
   }
 
   render() {
@@ -58,6 +62,9 @@ export class SectionErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('SectionErrorBoundary caught:', error, info.componentStack);
+    import('@sentry/react').then((Sentry) => {
+      Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
+    }).catch(() => { /* Sentry not available */ });
   }
 
   render() {

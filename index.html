@@ -5,7 +5,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://*.peerjs.com https://*.peerjs.com https://stun.l.google.com:19302 https://va.vercel-scripts.com; media-src 'self'; img-src 'self' data: blob:; font-src 'self';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://*.peerjs.com https://*.peerjs.com https://stun.l.google.com:19302 https://va.vercel-scripts.com https://*.ingest.sentry.io; media-src 'self'; img-src 'self' data: blob:; font-src 'self';" />
     <meta name="theme-color" content="#111827" />
     <meta name="description" content="Poker tournament timer for home games" />
     <title>7Mountain Poker - Tournament Timer</title>
@@ -28,6 +28,7 @@
     </script>
   </head>
   <body>
+    <a href="#main-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999" onfocus="this.style.position='fixed';this.style.left='1rem';this.style.top='1rem';this.style.width='auto';this.style.height='auto';this.style.overflow='visible';this.style.padding='0.5rem 1rem';this.style.background='#10b981';this.style.color='#fff';this.style.borderRadius='0.5rem';this.style.fontFamily='system-ui';this.style.fontSize='0.875rem';this.style.fontWeight='600';this.style.textDecoration='none';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.3)'" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';this.style.overflow='hidden';this.style.padding='0'">Skip to main content</a>
     <div id="root">
       <!-- Fallback shown until React mounts (replaced by React render) -->
       <noscript>

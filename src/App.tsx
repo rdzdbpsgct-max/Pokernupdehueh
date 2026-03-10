@@ -39,7 +39,9 @@ import { useTournamentActions } from './hooks/useTournamentActions';
 import { useTVDisplay } from './hooks/useTVDisplay';
 import { useWakeLock } from './hooks/useWakeLock';
 import { useConfirmDialog } from './hooks/useConfirmDialog';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useTranslation } from './i18n';
+import { showToast } from './domain/toast';
 import {
   setSpeechLanguage,
   initSpeech,
@@ -57,6 +59,7 @@ import { setAudioVolume } from './domain/audioPlayer';
 // Setup-mode components (static imports — used immediately on load)
 import { SetupPage } from './components/SetupPage';
 import { SetupWizard } from './components/SetupWizard';
+import { isTourCompleted } from './domain/configPersistence';
 import { PrintView } from './components/PrintView';
 import { TemplateManager } from './components/TemplateManager';
 import { ToastContainer } from './components/Toast';
@@ -65,7 +68,6 @@ import { LeagueManager } from './components/LeagueManager';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { VoiceSwitcher } from './components/VoiceSwitcher';
-import { useTheme } from './theme';
 import type { RemoteCommand } from './domain/remote';
 import { useRemoteControl } from './hooks/useRemoteControl';
 import { SectionErrorBoundary } from './components/ErrorBoundary';
@@ -90,12 +92,12 @@ const SeatingOverlay = lazy(() => import('./components/SeatingOverlay').then(m =
 const RemoteHostModal = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteHostModal })));
 const RemoteControllerView = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteControllerView })));
 const LeagueView = lazy(() => import('./components/LeagueView').then(m => ({ default: m.LeagueView })));
+const OnboardingTour = lazy(() => import('./components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
 
 type Mode = 'setup' | 'game' | 'league';
 
 function App() {
   const { t, language } = useTranslation();
-  const { resolved: theme } = useTheme();
 
   // Sync speech language with app language
   useEffect(() => {
@@ -115,6 +117,7 @@ function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showLeagues, setShowLeagues] = useState(false);
   const [showWizard, setShowWizard] = useState(true);
+  const [showTour, setShowTour] = useState(false);
   const [sharedResult, setSharedResult] = useState(() => {
     const hash = window.location.hash;
     if (hash.startsWith('#r=')) {
@@ -267,6 +270,15 @@ function App() {
 
   // Wake Lock: prevent screen from sleeping during active tournament
   useWakeLock(mode === 'game' && timer.timerState.status === 'running');
+
+  // Online/Offline detection — show toast on status change
+  const isOnline = useOnlineStatus();
+  const prevOnlineRef = useRef(isOnline);
+  useEffect(() => {
+    if (prevOnlineRef.current === isOnline) return;
+    prevOnlineRef.current = isOnline;
+    showToast(isOnline ? t('app.onlineNotice') : t('app.offlineNotice'));
+  }, [isOnline, t]);
 
   // Toggle clean view: also controls both sidebars
   const toggleCleanView = useCallback(() => {
@@ -992,6 +1004,7 @@ function App() {
                   onClick={() => setShowTemplates(true)}
                   className="px-3 py-1.5 bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-200 dark:border-gray-700/30"
                   title={t('app.templates')}
+                  data-tour="templates"
                 >
                   {t('app.templates')}
                 </button>
@@ -1005,6 +1018,7 @@ function App() {
                 }`}
                 style={mode === 'league' ? { backgroundColor: 'var(--accent-600)', borderColor: 'var(--accent-500)' } : undefined}
                 title={t('app.leagues')}
+                data-tour="leagues"
               >
                 {t('app.leagues')}
               </button>
@@ -1021,7 +1035,7 @@ function App() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex">
+      <main id="main-content" className="flex-1 flex">
         {mode === 'league' ? (
           /* League Mode */
           <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
@@ -1043,7 +1057,6 @@ function App() {
             onSwitchToGame={switchToGame}
             onConfirm={confirmBeforeAction}
             startErrors={startErrors}
-            theme={theme}
           />
         ) : tournamentFinished && winner ? (
           /* Tournament Finished */
@@ -1294,9 +1307,20 @@ function App() {
           onComplete={(wizardConfig) => {
             setConfig(wizardConfig);
             setShowWizard(false);
+            // Show onboarding tour after wizard if not already completed
+            if (!isTourCompleted()) {
+              setTimeout(() => setShowTour(true), 500);
+            }
           }}
           onSkip={() => setShowWizard(false)}
         />
+      )}
+
+      {/* Onboarding Tour (after wizard completion) */}
+      {showTour && mode === 'setup' && (
+        <Suspense fallback={null}>
+          <OnboardingTour onComplete={() => setShowTour(false)} />
+        </Suspense>
       )}
 
       {/* Shared Result Modal (from QR code) */}

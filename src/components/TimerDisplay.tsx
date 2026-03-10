@@ -154,15 +154,21 @@ export const TimerDisplay = memo(function TimerDisplay({ timerState, levels, lar
   const [scrubbing, setScrubbing] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
 
+  // Screen reader announcement — only changes every 15s or during countdown (≤10s)
+  // Pure derived value: aria-live="polite" announces only when text changes
+  const displaySeconds = Math.floor(timerState.remainingSeconds);
   const currentLevel = levels[timerState.currentLevelIndex];
+  const srLabel = currentLevel ? getLevelLabel(currentLevel, timerState.currentLevelIndex, levels) : '';
+  const srSnapshotSeconds = displaySeconds <= 10 ? displaySeconds : Math.floor(displaySeconds / 15) * 15;
+  const srAnnouncement = currentLevel ? `${srLabel}: ${formatTime(srSnapshotSeconds)}` : '';
+
   if (!currentLevel) return null;
 
+  const label = srLabel;
   const remaining = timerState.remainingSeconds;
   const isCountdown = countdownEnabled && remaining <= 10 && remaining > 0 && timerState.status === 'running';
   const isBreak = currentLevel.type === 'break';
   const progress = 1 - remaining / currentLevel.durationSeconds;
-
-  const label = getLevelLabel(currentLevel, timerState.currentLevelIndex, levels);
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 sm:gap-4 select-none w-full">
@@ -268,9 +274,12 @@ export const TimerDisplay = memo(function TimerDisplay({ timerState, levels, lar
             : 'text-gray-900 dark:text-white animate-timer-glow'
         }`}
         aria-label={formatTime(remaining)}
+        aria-hidden="true"
       >
         {formatTime(remaining)}
       </div>
+      {/* Screen reader: periodic timer announcement (every 15s + countdown) */}
+      <div aria-live="polite" role="timer" className="sr-only">{srAnnouncement}</div>
 
       {/* Time-Scrub Controls (hidden in clean view) */}
       {!cleanView && onScrub && (

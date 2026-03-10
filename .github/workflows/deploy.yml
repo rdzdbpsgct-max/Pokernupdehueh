@@ -41,7 +41,16 @@ jobs:
       - name: Test
         run: npm run test
 
-      - name: Build
+      - name: Build (E2E)
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E Tests
+        run: npx playwright test
+
+      - name: Build (deploy)
         run: npm run build
         env:
           VITE_BASE_PATH: /7MountainPoker/
@@ -52,10 +61,10 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           ls -lh dist/assets/*.js | awk '{print $5, $9}' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          MAIN_BUNDLE=$(ls dist/assets/index-*.js 2>/dev/null | head -1)
+          MAIN_BUNDLE=$(ls -S dist/assets/index-*.js 2>/dev/null | head -1)
           if [ -n "$MAIN_BUNDLE" ]; then
             MAIN_SIZE=$(wc -c < "$MAIN_BUNDLE" | tr -d ' ')
-            MAX_SIZE=700000
+            MAX_SIZE=520000
             if [ "$MAIN_SIZE" -gt "$MAX_SIZE" ]; then
               echo "::warning::Main bundle exceeds ${MAX_SIZE} bytes (actual: ${MAIN_SIZE} bytes)"
             fi

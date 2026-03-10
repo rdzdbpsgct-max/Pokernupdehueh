@@ -10,6 +10,18 @@ import App from './App.tsx'
 import { TVDisplayWindow } from './components/display'
 import { initStorage } from './domain/storage'
 
+// Sentry error tracking — only active when VITE_SENTRY_DSN env var is set (Vercel production)
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+if (sentryDsn) {
+  import('@sentry/react').then((Sentry) => {
+    Sentry.init({
+      dsn: sentryDsn,
+      tracesSampleRate: 0,
+      environment: import.meta.env.MODE,
+    });
+  }).catch(() => { /* Sentry init failed silently */ });
+}
+
 const isDisplayWindow = window.location.hash === '#display';
 
 function renderApp() {
