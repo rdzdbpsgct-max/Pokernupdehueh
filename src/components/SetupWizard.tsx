@@ -14,9 +14,9 @@ import { useTranslation } from '../i18n';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { NumberStepper } from './NumberStepper';
 
-type WizardStep = 'welcome' | 'players' | 'buyIn' | 'blindSpeed' | 'review';
+type WizardStep = 'welcome' | 'players' | 'buyIn' | 'blindSpeed' | 'tips' | 'review';
 
-const STEPS: WizardStep[] = ['welcome', 'players', 'buyIn', 'blindSpeed', 'review'];
+const STEPS: WizardStep[] = ['welcome', 'players', 'buyIn', 'blindSpeed', 'tips', 'review'];
 
 interface Props {
   onComplete: (config: TournamentConfig) => void;
@@ -196,6 +196,33 @@ export function SetupWizard({ onComplete, onSkip }: Props) {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {step === 'tips' && (
+            <div className="text-center space-y-5 w-full">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('wizard.tips')}</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('wizard.tipsDesc')}</p>
+              </div>
+              <div className="flex flex-col gap-3">
+                {([
+                  { icon: '\uD83D\uDCF1', title: t('wizard.tipRemote'), desc: t('wizard.tipRemoteDesc') },
+                  { icon: '\uD83D\uDCFA', title: t('wizard.tipTV'), desc: t('wizard.tipTVDesc') },
+                  { icon: '\uD83C\uDFA4', title: t('wizard.tipVoice'), desc: t('wizard.tipVoiceDesc') },
+                ] as const).map((tip) => (
+                  <div
+                    key={tip.title}
+                    className="flex items-start gap-3 px-4 py-3 rounded-xl text-left bg-gray-50/80 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/40"
+                  >
+                    <span className="text-2xl leading-none mt-0.5">{tip.icon}</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm">{tip.title}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{tip.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

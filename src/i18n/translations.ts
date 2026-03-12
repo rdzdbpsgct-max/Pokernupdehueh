@@ -618,6 +618,14 @@ const de = {
   'wizard.back': 'Zurück',
   'wizard.skip': 'Überspringen',
   'wizard.start': 'Turnier starten!',
+  'wizard.tips': 'Gut zu wissen',
+  'wizard.tipsDesc': 'Diese Features helfen dir beim Turnier:',
+  'wizard.tipRemote': 'Fernbedienung',
+  'wizard.tipRemoteDesc': 'Steuere das Turnier bequem vom Smartphone — einfach QR-Code scannen.',
+  'wizard.tipTV': 'TV-Modus',
+  'wizard.tipTVDesc': 'Zeige Timer & Blinds auf einem Fernseher oder Beamer — Taste T im Spielmodus.',
+  'wizard.tipVoice': 'Sprachansagen',
+  'wizard.tipVoiceDesc': 'Professionelle Ansagen für Blindwechsel, Pausen und Events — umschaltbar im Header.',
 
   // --- Display: Seating ---
   'display.seating': 'Sitzplan',
@@ -1533,6 +1541,14 @@ const en: Record<TranslationKey, string> = {
   'wizard.back': 'Back',
   'wizard.skip': 'Skip',
   'wizard.start': 'Start Tournament!',
+  'wizard.tips': 'Good to Know',
+  'wizard.tipsDesc': 'These features help you during the tournament:',
+  'wizard.tipRemote': 'Remote Control',
+  'wizard.tipRemoteDesc': 'Control the tournament from your smartphone — just scan the QR code.',
+  'wizard.tipTV': 'TV Mode',
+  'wizard.tipTVDesc': 'Show timer & blinds on a TV or projector — press T during game mode.',
+  'wizard.tipVoice': 'Voice Announcements',
+  'wizard.tipVoiceDesc': 'Professional announcements for blind changes, breaks and events — toggle in the header.',
 
   // --- Display: Seating ---
   'display.seating': 'Seating',
