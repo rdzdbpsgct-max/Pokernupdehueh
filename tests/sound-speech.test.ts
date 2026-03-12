@@ -80,21 +80,21 @@ const mockGain = {
   },
 };
 
-const mockAudioCtx = {
-  createOscillator: vi.fn(() => ({ ...mockOsc })),
-  createGain: vi.fn(() => ({
+// Provide AudioContext globally (use a class to avoid vi.fn constructor warnings)
+class MockAudioContext {
+  createOscillator = vi.fn(() => ({ ...mockOsc }));
+  createGain = vi.fn(() => ({
     ...mockGain,
     gain: { ...mockGain.gain },
-  })),
-  destination: {},
-  currentTime: 0,
-  state: 'running' as AudioContextState,
-  resume: vi.fn(() => Promise.resolve()),
-  close: vi.fn(),
-};
+  }));
+  destination = {};
+  currentTime = 0;
+  state: AudioContextState = 'running';
+  resume = vi.fn(() => Promise.resolve());
+  close = vi.fn();
+}
 
-// Provide AudioContext globally
-vi.stubGlobal('AudioContext', vi.fn(() => ({ ...mockAudioCtx })));
+vi.stubGlobal('AudioContext', MockAudioContext);
 
 // Mock audioPlayer for speech tests (avoid actual MP3 loading)
 vi.mock('../src/domain/audioPlayer', () => ({

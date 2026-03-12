@@ -13,9 +13,30 @@ export default defineConfig({
     target: ['es2020', 'safari14'],
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-peerjs': ['peerjs'],
-          'vendor-qrcode': ['qrcode.react'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('/node_modules/react/')
+            || id.includes('/node_modules/react-dom/')
+            || id.includes('/node_modules/scheduler/')) {
+            return 'vendor-react';
+          }
+
+          if (id.includes('/node_modules/@sentry/browser/')) return 'vendor-sentry-browser';
+          if (id.includes('/node_modules/@sentry/core/')) return 'vendor-sentry-core';
+          if (id.includes('/node_modules/@sentry/utils/')) return 'vendor-sentry-utils';
+          if (id.includes('/node_modules/@sentry-internal/')) return 'vendor-sentry-internal';
+          if (id.includes('/node_modules/@sentry/')) return 'vendor-sentry';
+
+          if (id.includes('/node_modules/@vercel/analytics/')
+            || id.includes('/node_modules/@vercel/speed-insights/')) {
+            return 'vendor-vercel';
+          }
+          if (id.includes('/node_modules/peerjs/')) return 'vendor-peerjs';
+          if (id.includes('/node_modules/qrcode.react/')) return 'vendor-qrcode';
+          if (id.includes('/node_modules/html-to-image/')
+            || id.includes('/node_modules/idb/')) {
+            return 'vendor-utils';
+          }
         },
       },
     },
@@ -77,5 +98,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
+    // Keep Playwright specs out of Vitest to avoid cross-runner collisions.
+    exclude: ['tests/e2e/**', 'node_modules/**', 'dist/**'],
   },
 })

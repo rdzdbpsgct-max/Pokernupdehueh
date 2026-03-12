@@ -191,6 +191,7 @@ export interface RemoteCommand {
 /** State updates sent from Host → Controller */
 export interface RemoteState {
   type: 'state';
+  version: number;
   data: {
     timerStatus: 'running' | 'paused' | 'finished';
     remainingSeconds: number;
@@ -213,6 +214,8 @@ export interface RemotePing {
 }
 
 export type RemoteMessage = RemoteCommand | RemoteState | RemotePing;
+
+export const REMOTE_STATE_CONTRACT_VERSION = 1;
 
 /** Valid command actions for whitelist validation */
 const VALID_COMMAND_ACTIONS: ReadonlySet<RemoteCommand['action']> = new Set([
@@ -435,7 +438,11 @@ export class RemoteHost {
   sendState(state: RemoteState['data']): void {
     if (!this.conn?.open) return;
     try {
-      this.conn.send(JSON.stringify({ type: 'state', data: state } satisfies RemoteState));
+      this.conn.send(JSON.stringify({
+        type: 'state',
+        version: REMOTE_STATE_CONTRACT_VERSION,
+        data: state,
+      } satisfies RemoteState));
     } catch {
       // Connection lost
     }
@@ -558,6 +565,7 @@ export class RemoteController {
       try {
         const msg = (typeof raw === 'string' ? JSON.parse(raw) : raw) as RemoteMessage;
         if (msg.type === 'state') {
+          if (msg.version !== REMOTE_STATE_CONTRACT_VERSION) return;
           this.callbacks.onState(msg.data);
         } else if (msg.type === 'ping') {
           // Reply to keepalive

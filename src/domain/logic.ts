@@ -13,3 +13,4 @@ export * from './persistence';
 export * from './tables';
 export * from './league';
 export * from './storage';
+export * from './recovery';

@@ -203,22 +203,23 @@ export function seatPlayerAtSmallestTable(
 
   const activeIds = new Set(players.filter(p => p.status === 'active').map(p => p.id));
 
-  // Find table with fewest active players that has an empty seat
+  // Find table with fewest active players that has an available (empty + unlocked) seat
   let bestTable: Table | null = null;
+  let bestSeatNumber: number | null = null;
   let bestCount = Infinity;
   for (const table of activeTables) {
+    const availableSeat = findLowestAvailableSeat(table);
+    if (availableSeat === null) continue;
+
     const count = table.seats.filter(s => s.playerId !== null && activeIds.has(s.playerId)).length;
-    const hasEmpty = table.seats.some(s => s.playerId === null);
-    if (hasEmpty && count < bestCount) {
+    if (count < bestCount) {
       bestCount = count;
       bestTable = table;
+      bestSeatNumber = availableSeat;
     }
   }
 
-  if (!bestTable) return null;
-
-  const seatNumber = findLowestAvailableSeat(bestTable);
-  if (seatNumber === null) return null;
+  if (!bestTable || bestSeatNumber === null) return null;
 
   const targetTableId = bestTable.id;
   const updated = tables.map(t => {
@@ -226,12 +227,12 @@ export function seatPlayerAtSmallestTable(
     return {
       ...t,
       seats: t.seats.map(s =>
-        s.seatNumber === seatNumber ? { ...s, playerId } : s,
+        s.seatNumber === bestSeatNumber ? { ...s, playerId } : s,
       ),
     };
   });
 
-  return { tables: updated, tableId: targetTableId, seatNumber };
+  return { tables: updated, tableId: targetTableId, seatNumber: bestSeatNumber };
 }
 
 // ---------------------------------------------------------------------------

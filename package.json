@@ -8,9 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test": "NODE_NO_WARNINGS=1 vitest run",
+    "test:watch": "NODE_NO_WARNINGS=1 vitest",
+    "test:e2e": "env -u NO_COLOR playwright test",
+    "test:e2e:cross": "env -u NO_COLOR PW_INCLUDE_WEBKIT=1 playwright test",
     "prepare": "husky"
   },
   "dependencies": {

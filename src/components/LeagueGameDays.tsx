@@ -9,9 +9,10 @@ interface Props {
   onStartGameDay: () => void;
   onRefresh: () => void;
   onManualEntry?: () => void;
+  onEditGameDay?: (gameDay: GameDay) => void;
 }
 
-export function LeagueGameDays({ gameDays, onStartGameDay, onRefresh, onManualEntry }: Props) {
+export function LeagueGameDays({ gameDays, onStartGameDay, onRefresh, onManualEntry, onEditGameDay }: Props) {
   const { t } = useTranslation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -160,6 +161,14 @@ export function LeagueGameDays({ gameDays, onStartGameDay, onRefresh, onManualEn
                         <span className="text-xs text-gray-500 dark:text-gray-400 italic">{gd.notes}</span>
                       )}
                       <div className="flex items-center gap-2 ml-auto">
+                        {onEditGameDay && (
+                          <button
+                            onClick={() => onEditGameDay(gd)}
+                            className="text-xs px-2 py-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                          >
+                            {t('league.gameDays.edit')}
+                          </button>
+                        )}
                         {confirmDeleteId === gd.id ? (
                           <>
                             <button

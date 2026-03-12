@@ -13,6 +13,9 @@ export function skipWizard(page: Page) {
  * This is the most reliable way to get a valid tournament config.
  */
 export async function completeWizard(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('poker-timer-tour-completed', 'true');
+  });
   await page.goto('/');
 
   // Step 1: Welcome — click "Weiter" (Next)

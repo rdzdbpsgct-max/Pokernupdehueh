@@ -10,6 +10,10 @@ import {
   deserializeColorUpMap,
   createDisplayChannel,
   sendDisplayMessage,
+  withDisplayContract,
+  isDisplayMessage,
+  DISPLAY_CONTRACT_NAME,
+  DISPLAY_CONTRACT_VERSION,
 } from '../src/domain/displayChannel';
 import type { ChipDenomination } from '../src/domain/types';
 
@@ -111,7 +115,7 @@ describe('sendDisplayMessage', () => {
     const channel = createDisplayChannel();
     expect(() =>
       sendDisplayMessage(channel, {
-        type: 'close',
+        ...withDisplayContract({ type: 'close' }),
       })
     ).not.toThrow();
     channel.close();
@@ -122,17 +126,17 @@ describe('sendDisplayMessage', () => {
     channel.close();
     // Should catch internally and not throw
     expect(() =>
-      sendDisplayMessage(channel, { type: 'close' })
+      sendDisplayMessage(channel, withDisplayContract({ type: 'close' }))
     ).not.toThrow();
   });
 
   it('sends timer-tick messages', () => {
     const channel = createDisplayChannel();
     expect(() =>
-      sendDisplayMessage(channel, {
+      sendDisplayMessage(channel, withDisplayContract({
         type: 'timer-tick',
         payload: { remainingSeconds: 120, status: 'running', currentLevelIndex: 3 },
-      })
+      }))
     ).not.toThrow();
     channel.close();
   });
@@ -140,11 +144,28 @@ describe('sendDisplayMessage', () => {
   it('sends call-the-clock messages', () => {
     const channel = createDisplayChannel();
     expect(() =>
-      sendDisplayMessage(channel, {
+      sendDisplayMessage(channel, withDisplayContract({
         type: 'call-the-clock',
         payload: { durationSeconds: 60, soundEnabled: true, voiceEnabled: false },
-      })
+      }))
     ).not.toThrow();
     channel.close();
+  });
+});
+
+describe('display contract metadata', () => {
+  it('adds contract name and version to messages', () => {
+    const msg = withDisplayContract({ type: 'close' });
+    expect(msg.contract).toBe(DISPLAY_CONTRACT_NAME);
+    expect(msg.version).toBe(DISPLAY_CONTRACT_VERSION);
+  });
+
+  it('validates supported messages', () => {
+    expect(
+      isDisplayMessage(withDisplayContract({ type: 'timer-tick', payload: { remainingSeconds: 10, status: 'running', currentLevelIndex: 0 } })),
+    ).toBe(true);
+    expect(
+      isDisplayMessage({ type: 'timer-tick', payload: { remainingSeconds: 10, status: 'running', currentLevelIndex: 0 } }),
+    ).toBe(false);
   });
 });

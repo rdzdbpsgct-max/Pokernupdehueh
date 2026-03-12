@@ -7,17 +7,20 @@ test.describe('Game Controls', () => {
   });
 
   test('play/pause via space bar', async ({ page }) => {
+    const playPauseButton = page.locator('button[aria-pressed]').first();
+    await expect(playPauseButton).toHaveAttribute('aria-pressed', 'false', { timeout: 3000 });
+
     // Timer should start in stopped state — press space to start
     await page.keyboard.press('Space');
 
-    // Should show "Pause" button text (running state)
-    await expect(page.locator('button:has-text("Pause")').first()).toBeVisible({ timeout: 3000 });
+    // Running state is reflected via aria-pressed=true
+    await expect(playPauseButton).toHaveAttribute('aria-pressed', 'true', { timeout: 3000 });
 
     // Pause
     await page.keyboard.press('Space');
 
-    // Should show "Start" button text (paused state)
-    await expect(page.locator('button:has-text("Start")').first()).toBeVisible({ timeout: 3000 });
+    // Paused/stopped state returns to aria-pressed=false
+    await expect(playPauseButton).toHaveAttribute('aria-pressed', 'false', { timeout: 3000 });
   });
 
   test('next/previous level via keyboard', async ({ page }) => {

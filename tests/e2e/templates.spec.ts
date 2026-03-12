@@ -14,7 +14,7 @@ test.describe('Templates', () => {
     await page.waitForTimeout(500);
 
     // Template modal should open
-    const modal = page.locator('[role="dialog"], [aria-modal="true"]').first();
+    const modal = page.locator('[role="dialog"][aria-label*="Vorlagen"], [role="dialog"]:has-text("Vorlagen"), [aria-modal="true"]:has-text("Vorlagen")').first();
     await expect(modal).toBeVisible({ timeout: 3000 });
 
     // Look for save input
@@ -25,7 +25,7 @@ test.describe('Templates', () => {
       // Click save button
       const saveBtn = modal.locator('button:has-text("Speichern")').first();
       if (await saveBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await saveBtn.click();
+        await saveBtn.click({ force: true });
         await page.waitForTimeout(500);
 
         // Template should now appear in list

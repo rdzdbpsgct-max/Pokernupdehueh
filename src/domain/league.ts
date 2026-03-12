@@ -18,6 +18,20 @@ export function normalizePlayerName(name: string): string {
   return name.toLowerCase().trim();
 }
 
+/**
+ * Compute participant cost from recorded payout/netBalance when available.
+ * This keeps standings consistent with historical game day records that may
+ * use per-result rebuy/add-on costs differing from buy-in.
+ */
+function computeParticipantTotalCost(p: GameDayParticipant): number {
+  const derived = p.payout - p.netBalance;
+  if (Number.isFinite(derived) && derived >= 0) {
+    return derived;
+  }
+  // Backward-compatible fallback for malformed legacy records.
+  return p.buyIn + (p.rebuys * p.buyIn) + p.addOnCost;
+}
+
 // ---------------------------------------------------------------------------
 // GameDay CRUD (backed by IndexedDB cache layer)
 // ---------------------------------------------------------------------------
@@ -163,7 +177,7 @@ export function computeExtendedStandings(
       if (p.payout > 0) standing.cashes++;
       standing.avgPlace += p.place;
       if (p.place < standing.bestPlace) standing.bestPlace = p.place;
-      const cost = p.buyIn + (p.rebuys * p.buyIn) + p.addOnCost;
+      const cost = computeParticipantTotalCost(p);
       standing.totalCost += cost;
       standing.totalPayout += p.payout;
       standing.netBalance += p.netBalance;

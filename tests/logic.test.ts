@@ -3834,6 +3834,30 @@ describe('Multi-Table', () => {
     expect(result!.seatNumber).toBe(2); // lowest available at T2
   });
 
+  it('seatPlayerAtSmallestTable skips tables with only locked empty seats', () => {
+    const t1 = mkTable('t1', 'T1', 2, ['p1']);
+    t1.seats[1] = { ...t1.seats[1], locked: true }; // empty but unavailable
+
+    const t2 = mkTable('t2', 'T2', 3, ['p2', 'p3']);
+    const tables: Table[] = [t1, t2];
+    const players = mkPlayers(3);
+
+    const result = seatPlayerAtSmallestTable(tables, players, 'p4');
+    expect(result).not.toBeNull();
+    expect(result!.tableId).toBe('t2');
+    expect(result!.seatNumber).toBe(3);
+  });
+
+  it('seatPlayerAtSmallestTable returns null when all empty seats are locked', () => {
+    const t1 = mkTable('t1', 'T1', 2, ['p1']);
+    t1.seats[1] = { ...t1.seats[1], locked: true };
+    const t2 = mkTable('t2', 'T2', 2, ['p2']);
+    t2.seats[1] = { ...t2.seats[1], locked: true };
+
+    const result = seatPlayerAtSmallestTable([t1, t2], mkPlayers(2), 'p3');
+    expect(result).toBeNull();
+  });
+
   // --- Dissolution ---
 
   it('findTableToDissolve finds table at/below threshold', () => {
@@ -5483,6 +5507,23 @@ describe('League Module', () => {
       expect(alice?.netBalance).toBe(30);
       expect(bob?.totalCost).toBe(25); // 10 + 10 (rebuy) + 5 (addon)
       expect(bob?.netBalance).toBe(-10);
+    });
+
+    it('derives totalCost from payout and netBalance for variable rebuy costs', () => {
+      const league = makeLeague();
+      const gameDays = [
+        makeGameDay({ participants: [
+          // This mirrors a game day created from a result with rebuyCost lower than buyIn.
+          { name: 'Bob', place: 1, points: 10, buyIn: 10, rebuys: 2, addOnCost: 3, payout: 30, netBalance: 7 },
+        ]}),
+      ];
+
+      const standings = computeExtendedStandings(league, gameDays);
+      const bob = standings.find(s => s.name === 'Bob');
+
+      // Cost must match recorded economics: payout - net = 30 - 7 = 23.
+      expect(bob?.totalCost).toBe(23);
+      expect(bob?.netBalance).toBe(7);
     });
   });
 

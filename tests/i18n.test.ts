@@ -72,16 +72,15 @@ describe('i18n untranslated detection', () => {
     }
     // This test is informational — it reports but doesn't fail on a fixed count
     // because some keys genuinely have identical translations (e.g., proper nouns).
-    if (identical.length > 0) {
+    if (identical.length > 0 && process.env.DEBUG_I18N_TESTS === '1') {
       console.warn(
         `[i18n] ${identical.length} keys have identical DE/EN values (potential untranslated):\n` +
         identical.slice(0, 20).join('\n')
       );
     }
-    // Soft assertion: baseline is ~91 identical keys (many legitimate: poker terms,
-    // abbreviations like "Rebuy", "Add-On", "Bounty", number formats, etc.)
-    // Alert if this grows significantly beyond the known baseline.
-    expect(identical.length).toBeLessThan(120);
+    // Soft assertion: keep identical DE/EN keys below the current quality target.
+    // Legitimate exceptions still exist (brand names, technical abbreviations).
+    expect(identical.length).toBeLessThan(90);
   });
 });
 

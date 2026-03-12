@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { DisplayStatePayload } from '../domain/displayChannel';
-import { createDisplayChannel, sendDisplayMessage } from '../domain/displayChannel';
+import { createDisplayChannel, sendDisplayMessage, withDisplayContract } from '../domain/displayChannel';
 
 interface UseTVDisplayOptions {
   mode: string;
@@ -77,7 +77,7 @@ export function useTVDisplay({
   // Close TV window
   const closeTVWindow = useCallback(() => {
     if (channelRef.current) {
-      sendDisplayMessage(channelRef.current, { type: 'close' });
+      sendDisplayMessage(channelRef.current, withDisplayContract({ type: 'close' }));
     }
     if (tvWindowRef.current && !tvWindowRef.current.closed) {
       tvWindowRef.current.close();
@@ -90,23 +90,23 @@ export function useTVDisplay({
   useEffect(() => {
     if (!channelRef.current || !tvWindowActive) return;
     if (showCallTheClock) {
-      sendDisplayMessage(channelRef.current, {
+      sendDisplayMessage(channelRef.current, withDisplayContract({
         type: 'call-the-clock',
         payload: {
           durationSeconds: callTheClockSeconds,
           soundEnabled,
           voiceEnabled,
         },
-      });
+      }));
     } else {
-      sendDisplayMessage(channelRef.current, { type: 'call-the-clock-dismiss' });
+      sendDisplayMessage(channelRef.current, withDisplayContract({ type: 'call-the-clock-dismiss' }));
     }
   }, [showCallTheClock, tvWindowActive, callTheClockSeconds, soundEnabled, voiceEnabled]);
 
   // Send full-state on significant changes
   useEffect(() => {
     if (!channelRef.current || !tvWindowActive) return;
-    sendDisplayMessage(channelRef.current, { type: 'full-state', payload: buildFullStatePayload() });
+    sendDisplayMessage(channelRef.current, withDisplayContract({ type: 'full-state', payload: buildFullStatePayload() }));
   }, [tvWindowActive, buildFullStatePayload]);
 
   // Send timer tick every 500ms for smooth timer display
@@ -114,14 +114,14 @@ export function useTVDisplay({
     if (!tvWindowActive || mode !== 'game') return;
     const id = setInterval(() => {
       if (!channelRef.current) return;
-      sendDisplayMessage(channelRef.current, {
+      sendDisplayMessage(channelRef.current, withDisplayContract({
         type: 'timer-tick',
         payload: {
           remainingSeconds,
           status: timerStatus,
           currentLevelIndex,
         },
-      });
+      }));
     }, 500);
     return () => clearInterval(id);
   }, [tvWindowActive, mode, remainingSeconds, timerStatus, currentLevelIndex]);

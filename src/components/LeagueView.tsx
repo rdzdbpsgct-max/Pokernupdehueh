@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, lazy, Suspense } from 'react';
-import type { League, ExtendedLeagueStanding, LeagueCorrection } from '../domain/types';
+import type { League, ExtendedLeagueStanding, LeagueCorrection, GameDay } from '../domain/types';
 import {
   loadLeagues,
   saveLeague,
@@ -23,7 +23,7 @@ const LeagueSettings = lazy(() => import('./LeagueSettings').then((m) => ({ defa
 type Tab = 'standings' | 'gameDays' | 'finances';
 
 interface Props {
-  onStartTournament: (leagueId: string) => void;
+  onStartTournament: (leagueId: string, options?: { quickStart?: boolean }) => void;
 }
 
 export function LeagueView({ onStartTournament }: Props) {
@@ -42,6 +42,7 @@ export function LeagueView({ onStartTournament }: Props) {
   const [refreshKey, setRefreshKey] = useState(0);
   // Phase 2 state
   const [showGameDayEditor, setShowGameDayEditor] = useState(false);
+  const [editingGameDay, setEditingGameDay] = useState<GameDay | undefined>(undefined);
   const [showSettings, setShowSettings] = useState(false);
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
   const [correctionPlayer, setCorrectionPlayer] = useState('');
@@ -127,6 +128,11 @@ export function LeagueView({ onStartTournament }: Props) {
     onStartTournament(selectedLeagueId);
   }, [selectedLeagueId, selectedLeague, onStartTournament]);
 
+  const handleQuickStartGameDay = useCallback(() => {
+    if (!selectedLeagueId || !selectedLeague) return;
+    onStartTournament(selectedLeagueId, { quickStart: true });
+  }, [selectedLeagueId, selectedLeague, onStartTournament]);
+
   // Corrections (Step 17)
   const handleAddCorrection = useCallback(() => {
     if (!selectedLeague || !correctionPlayer.trim()) return;
@@ -199,7 +205,17 @@ export function LeagueView({ onStartTournament }: Props) {
                     {t('league.gameDays.startNew')}
                   </button>
                   <button
-                    onClick={() => setShowGameDayEditor(true)}
+                    onClick={handleQuickStartGameDay}
+                    className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-300 dark:border-emerald-700/50 active:scale-[0.97]"
+                    title={t('league.gameDays.quickStartHint')}
+                  >
+                    ⚡ {t('league.gameDays.quickStart')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingGameDay(undefined);
+                      setShowGameDayEditor(true);
+                    }}
                     className="px-3 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs transition-colors"
                     title={t('league.editor.manual')}
                     aria-label={t('league.editor.manual')}
@@ -341,7 +357,14 @@ export function LeagueView({ onStartTournament }: Props) {
                 gameDays={gameDays}
                 onStartGameDay={handleStartGameDay}
                 onRefresh={refreshData}
-                onManualEntry={() => setShowGameDayEditor(true)}
+                onManualEntry={() => {
+                  setEditingGameDay(undefined);
+                  setShowGameDayEditor(true);
+                }}
+                onEditGameDay={(gameDay) => {
+                  setEditingGameDay(gameDay);
+                  setShowGameDayEditor(true);
+                }}
               />
             )}
             {activeTab === 'finances' && (
@@ -359,8 +382,16 @@ export function LeagueView({ onStartTournament }: Props) {
         <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <GameDayEditor
             league={selectedLeague}
-            onClose={() => setShowGameDayEditor(false)}
-            onSaved={() => { setShowGameDayEditor(false); refreshData(); }}
+            editingGameDay={editingGameDay}
+            onClose={() => {
+              setShowGameDayEditor(false);
+              setEditingGameDay(undefined);
+            }}
+            onSaved={() => {
+              setShowGameDayEditor(false);
+              setEditingGameDay(undefined);
+              refreshData();
+            }}
           />
         </Suspense></SectionErrorBoundary>
       )}
