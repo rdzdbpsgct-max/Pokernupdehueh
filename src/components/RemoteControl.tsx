@@ -124,11 +124,14 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
   const [state, setState] = useState<RemoteState['data'] | null>(null);
   const controllerRef = useRef<RemoteController | null>(null);
 
-  // Local timer interpolation — ref-based to avoid interval teardown on every state update
+  // Local timer interpolation — SINGLE writer pattern: only the interval writes displaySeconds.
+  // onState only updates refs. This prevents two-writer race conditions that cause display flicker.
   const [displaySeconds, setDisplaySeconds] = useState<number | null>(null);
   const lastStateTimeRef = useRef<number>(0);
   const remainingRef = useRef<number>(0);
   const timerStatusRef = useRef<string>('paused');
+  const levelIndexRef = useRef<number>(-1);
+  const forceUpdateRef = useRef(false);
 
   // Player management section state
   const [playersExpanded, setPlayersExpanded] = useState(false);
@@ -138,23 +141,45 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
     const ctrl = new RemoteController(hostPeerId, {
       onState: (s) => {
         setState(s);
-        // Update refs for interpolation (no interval teardown needed)
+        // Detect level change or status change → force display update (allow jump to any value)
+        if (s.currentLevelIndex !== levelIndexRef.current || s.timerStatus !== timerStatusRef.current) {
+          forceUpdateRef.current = true;
+        }
+        // Only update refs — NEVER call setDisplaySeconds here (single-writer pattern)
         remainingRef.current = s.remainingSeconds;
         timerStatusRef.current = s.timerStatus;
         lastStateTimeRef.current = Date.now();
-        // Immediately set display to authoritative value
-        setDisplaySeconds(Math.floor(s.remainingSeconds));
+        levelIndexRef.current = s.currentLevelIndex;
       },
       onStatusChange: (s) => setStatus(s),
     }, secret);
     controllerRef.current = ctrl;
 
-    // Permanent 100ms interpolation interval — reads from refs, never torn down
+    // Permanent 100ms interval — SOLE writer of displaySeconds
     const tickId = setInterval(() => {
-      if (timerStatusRef.current !== 'running') return;
-      const elapsed = (Date.now() - lastStateTimeRef.current) / 1000;
-      const interpolated = Math.max(0, remainingRef.current - elapsed);
-      setDisplaySeconds(Math.floor(interpolated));
+      const running = timerStatusRef.current === 'running';
+      let target: number;
+
+      if (running) {
+        const elapsed = (Date.now() - lastStateTimeRef.current) / 1000;
+        target = Math.floor(Math.max(0, remainingRef.current - elapsed));
+      } else {
+        // Paused: show host's authoritative value directly
+        target = Math.floor(remainingRef.current);
+      }
+
+      setDisplaySeconds((prev) => {
+        // Force update on level/status change (reset, level advance, pause/resume)
+        if (forceUpdateRef.current) {
+          forceUpdateRef.current = false;
+          return target;
+        }
+        // First value
+        if (prev === null) return target;
+        // Monotonic decrease: during running countdown, never jump UP (suppresses network-jitter flicker)
+        if (running && target > prev) return prev;
+        return target;
+      });
     }, 100);
 
     // Request Wake Lock to keep screen on
