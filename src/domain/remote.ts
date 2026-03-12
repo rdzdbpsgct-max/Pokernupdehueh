@@ -230,6 +230,18 @@ export interface RemoteState {
     rebuyActive?: boolean;
     /** Whether add-on window is currently open */
     addOnWindowOpen?: boolean;
+    /** Prize pool in currency units */
+    prizePool?: number;
+    /** Average stack in big blinds (1 decimal) */
+    avgStackBB?: number;
+    /** Tournament elapsed time in seconds */
+    elapsedSeconds?: number;
+    /** Next level description, e.g. "Level 5: 200/400" or "Pause 10 Min" */
+    nextLevelLabel?: string;
+    /** Whether current level is a break */
+    isBreak?: boolean;
+    /** Whether players are in the money */
+    isItm?: boolean;
   };
 }
 

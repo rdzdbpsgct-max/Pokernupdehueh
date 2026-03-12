@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { SetStateAction } from 'react';
 import type { RemoteCommand, RemotePlayerInfo } from '../domain/remote';
-import type { Player, Settings, TimerState, TournamentConfig } from '../domain/types';
+import type { Level, Player, Settings, TimerState, TournamentConfig } from '../domain/types';
 import type { TranslationKey } from '../i18n';
+import { computePrizePool, computeAverageStackInBB } from '../domain/logic';
 import { useRemoteControl } from './useRemoteControl';
 
 type AppMode = 'setup' | 'game' | 'league';
@@ -29,6 +30,9 @@ interface UseRemoteHostBridgeParams {
   rebuyActive: boolean;
   addOnWindowOpen: boolean;
   bountyEnabled: boolean;
+  averageStack: number;
+  tournamentElapsed: number;
+  isItm: boolean;
   onAdvanceDealer: () => void;
   onEliminatePlayer: (playerId: string, eliminatedBy: string | null) => void;
   onUpdatePlayerRebuys: (playerId: string, newCount: number) => void;
@@ -39,6 +43,17 @@ interface UseRemoteHostBridgeParams {
 }
 
 /** Build compact player list for remote state (short field names for message size) */
+function buildNextLevelLabel(levels: Level[], currentIndex: number, t: (key: string, params?: Record<string, string | number>) => string): string | undefined {
+  const next = levels[currentIndex + 1];
+  if (!next) return undefined;
+  if (next.type === 'break') {
+    const mins = Math.round(next.durationSeconds / 60);
+    return `${next.label || t('config.break')} ${mins} Min`;
+  }
+  const nextPlayNumber = levels.slice(0, currentIndex + 2).filter((l) => l.type === 'level').length;
+  return `Level ${nextPlayNumber}: ${next.smallBlind}/${next.bigBlind}${next.ante ? ` (${next.ante})` : ''}`;
+}
+
 function buildRemotePlayerList(players: Player[]): RemotePlayerInfo[] {
   // For message-size budget: only include active players when list is large
   const list = players.length > 18
@@ -65,6 +80,9 @@ export function useRemoteHostBridge({
   rebuyActive,
   addOnWindowOpen,
   bountyEnabled,
+  averageStack,
+  tournamentElapsed,
+  isItm,
   onAdvanceDealer,
   onEliminatePlayer,
   onUpdatePlayerRebuys,
@@ -177,6 +195,16 @@ export function useRemoteHostBridge({
       const bigBlind = currentLevel?.type === 'level' ? currentLevel.bigBlind : 0;
       const ante = currentLevel?.type === 'level' ? currentLevel.ante : undefined;
 
+      const isBreak = currentLevel?.type === 'break';
+      const prizePool = computePrizePool(
+        config.players, config.buyIn,
+        config.rebuy.enabled ? config.rebuy.rebuyCost : undefined,
+        config.addOn.enabled ? config.addOn.cost : undefined,
+      );
+      const avgStackBB = bigBlind && bigBlind > 0
+        ? computeAverageStackInBB(averageStack, bigBlind)
+        : 0;
+
       host.sendState({
         timerStatus: timerState.status === 'running' ? 'running' : 'paused',
         remainingSeconds: timerState.remainingSeconds,
@@ -194,6 +222,12 @@ export function useRemoteHostBridge({
         bountyEnabled,
         rebuyActive,
         addOnWindowOpen,
+        prizePool,
+        avgStackBB,
+        elapsedSeconds: tournamentElapsed,
+        nextLevelLabel: buildNextLevelLabel(config.levels, timerState.currentLevelIndex, t as (key: string) => string),
+        isBreak,
+        isItm,
       });
     };
 
@@ -223,6 +257,8 @@ export function useRemoteHostBridge({
     rebuyActive,
     addOnWindowOpen,
     bountyEnabled,
+    averageStack,
+    isItm,
     settings.soundEnabled,
     t,
     remoteHostRef,

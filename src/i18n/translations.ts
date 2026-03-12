@@ -197,6 +197,9 @@ const de = {
   'remote.whoEliminated': 'Wer hat {name} eliminiert?',
   'remote.cancelElimination': 'Abbrechen',
   'remote.noPlayers': 'Keine Spielerdaten',
+  'remote.nextLevel': 'Nächstes',
+  'remote.avgStackShort': 'Ø',
+  'remote.breakLabel': 'Pause',
 
   'settings.shortcuts': 'Tastenkürzel',
   'settings.shortcutStartPause': 'Start/Pause',
@@ -1140,6 +1143,9 @@ const en: Record<TranslationKey, string> = {
   'remote.whoEliminated': 'Who eliminated {name}?',
   'remote.cancelElimination': 'Cancel',
   'remote.noPlayers': 'No player data',
+  'remote.nextLevel': 'Next',
+  'remote.avgStackShort': 'Avg',
+  'remote.breakLabel': 'Break',
 
   'settings.shortcuts': 'Keyboard Shortcuts',
   'settings.shortcutStartPause': 'Start/Pause',

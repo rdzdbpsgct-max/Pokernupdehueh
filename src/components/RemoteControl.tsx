@@ -5,7 +5,7 @@ import type { RemoteCommand, RemoteState, RemotePlayerInfo, HostStatus, Controll
 import { useTranslation } from '../i18n';
 import { useDialogA11y } from '../hooks/useDialogA11y';
 import { useTheme } from '../theme';
-import { formatTime } from '../domain/logic';
+import { formatTime, formatElapsedTime } from '../domain/logic';
 import { ChevronIcon } from './ChevronIcon';
 
 // ---------------------------------------------------------------------------
@@ -124,9 +124,11 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
   const [state, setState] = useState<RemoteState['data'] | null>(null);
   const controllerRef = useRef<RemoteController | null>(null);
 
-  // Local timer interpolation: count down between host state updates
+  // Local timer interpolation — ref-based to avoid interval teardown on every state update
   const [displaySeconds, setDisplaySeconds] = useState<number | null>(null);
   const lastStateTimeRef = useRef<number>(0);
+  const remainingRef = useRef<number>(0);
+  const timerStatusRef = useRef<string>('paused');
 
   // Player management section state
   const [playersExpanded, setPlayersExpanded] = useState(false);
@@ -136,12 +138,24 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
     const ctrl = new RemoteController(hostPeerId, {
       onState: (s) => {
         setState(s);
-        setDisplaySeconds(s.remainingSeconds);
+        // Update refs for interpolation (no interval teardown needed)
+        remainingRef.current = s.remainingSeconds;
+        timerStatusRef.current = s.timerStatus;
         lastStateTimeRef.current = Date.now();
+        // Immediately set display to authoritative value
+        setDisplaySeconds(Math.floor(s.remainingSeconds));
       },
       onStatusChange: (s) => setStatus(s),
     }, secret);
     controllerRef.current = ctrl;
+
+    // Permanent 100ms interpolation interval — reads from refs, never torn down
+    const tickId = setInterval(() => {
+      if (timerStatusRef.current !== 'running') return;
+      const elapsed = (Date.now() - lastStateTimeRef.current) / 1000;
+      const interpolated = Math.max(0, remainingRef.current - elapsed);
+      setDisplaySeconds(Math.floor(interpolated));
+    }, 100);
 
     // Request Wake Lock to keep screen on
     let wakeLock: WakeLockSentinel | null = null;
@@ -151,23 +165,11 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
 
     return () => {
       ctrl.destroy();
+      clearInterval(tickId);
       if (wakeLock) { wakeLock.release().catch(() => { /* ignore */ }); }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Local countdown interpolation: when timer is running, decrement every 100ms
-  useEffect(() => {
-    if (!state || state.timerStatus !== 'running') return;
-
-    const id = setInterval(() => {
-      const elapsed = (Date.now() - lastStateTimeRef.current) / 1000;
-      const interpolated = Math.max(0, state.remainingSeconds - elapsed);
-      setDisplaySeconds(Math.ceil(interpolated));
-    }, 100);
-
-    return () => clearInterval(id);
-  }, [state]);
 
   const sendCmd = useCallback((action: RemoteCommand['action'], payload?: Record<string, unknown>) => {
     controllerRef.current?.sendCommand(action, payload);
@@ -260,14 +262,27 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
           {state && (
             <div className="bg-gray-900 rounded-2xl p-5 border border-gray-800 mb-4">
               <div className="text-center">
-                <div className="text-sm text-gray-400 mb-1">{state.levelLabel}</div>
+                <div className="text-sm text-gray-400 mb-1">
+                  {state.isBreak ? `${String.fromCodePoint(0x2615)} ${state.levelLabel}` : state.levelLabel}
+                </div>
                 <div className="text-5xl font-mono font-bold tabular-nums tracking-tight mb-2">
                   {formatTime(shownSeconds)}
                 </div>
-                <div className="text-xl font-mono text-gray-300">
-                  {state.smallBlind}/{state.bigBlind}
-                  {state.ante ? ` (${state.ante})` : ''}
-                </div>
+                {state.isBreak ? (
+                  <div className="text-lg text-amber-400 font-medium">
+                    {t('remote.breakLabel')}
+                  </div>
+                ) : (
+                  <div className="text-xl font-mono text-gray-300">
+                    {state.smallBlind}/{state.bigBlind}
+                    {state.ante ? ` (${state.ante})` : ''}
+                  </div>
+                )}
+                {state.nextLevelLabel && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {t('remote.nextLevel')}: {state.nextLevelLabel}
+                  </div>
+                )}
               </div>
 
               {/* Status row */}
@@ -276,6 +291,11 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
                   {state.activePlayerCount}/{state.totalPlayerCount} {t('remote.players')}
                 </span>
                 <div className="flex items-center gap-2">
+                  {state.isItm && (
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 20%, transparent)', color: 'var(--accent-400)' }}>
+                      ITM
+                    </span>
+                  )}
                   {state.isBubble && (
                     <span className="text-xs font-bold text-red-400 animate-pulse">BUBBLE!</span>
                   )}
@@ -290,6 +310,27 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
                   </span>
                 </div>
               </div>
+
+              {/* Tournament stats row */}
+              {(state.prizePool != null || state.avgStackBB != null || state.elapsedSeconds != null) && (
+                <div className="flex justify-center gap-3 mt-2 pt-2 border-t border-gray-800/60">
+                  {state.prizePool != null && state.prizePool > 0 && (
+                    <span className="text-xs text-gray-500">
+                      {String.fromCodePoint(0x1F4B0)} {state.prizePool}{String.fromCodePoint(0x20AC)}
+                    </span>
+                  )}
+                  {state.avgStackBB != null && state.avgStackBB > 0 && !state.isBreak && (
+                    <span className="text-xs text-gray-500">
+                      {t('remote.avgStackShort')} {state.avgStackBB} BB
+                    </span>
+                  )}
+                  {state.elapsedSeconds != null && state.elapsedSeconds > 0 && (
+                    <span className="text-xs text-gray-500">
+                      {String.fromCodePoint(0x23F1)} {formatElapsedTime(state.elapsedSeconds)}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

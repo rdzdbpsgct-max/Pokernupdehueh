@@ -5,6 +5,23 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.3.1] – 2026-03-12
+
+### Remote Control: Timer-Fix & Turnier-Infos
+
+- **Timer-Interpolation repariert**: Ref-basierte Countdown-Berechnung statt `useEffect([state])`-Abhängigkeit. Der 100ms-Interval wird einmalig erstellt und liest aus Refs — kein Teardown/Recreate mehr bei jedem Host-State-Update. Behebt Timer-Blinken und Verzögerungen auf der Fernbedienung.
+- **Math.floor statt Math.ceil**: Konsistent mit Host-Timer `formatTime()` — kein sporadisches 1-Sekunden-Offset mehr.
+- **Turnier-Infos auf Fernbedienung**: Stats-Zeile im Timer-Card zeigt Prizepool (💰), Ø Stack in BB (Ø), Spielzeit (⏱).
+- **Nächstes Level**: Zeile unter den Blinds zeigt nächstes Level oder nächste Pause mit Dauer.
+- **Break-Anzeige**: Bei Pausen wird ☕ + "Pause" statt Blinds angezeigt.
+- **ITM-Badge**: Grüner "ITM"-Badge neben Bubble-Badge wenn In The Money.
+- **RemoteState erweitert**: 6 neue optionale Felder (`prizePool`, `avgStackBB`, `elapsedSeconds`, `nextLevelLabel`, `isBreak`, `isItm`).
+- **6 neue Translation-Keys** (3 DE + 3 EN): `remote.nextLevel`, `remote.avgStackShort`, `remote.breakLabel`
+- **RemoteControl.tsx**: 15.11KB Chunk
+- **963 Tests gesamt**
+
+---
+
 ## [6.3.0] – 2026-03-12
 
 ### Remote Control: Spieler-Management

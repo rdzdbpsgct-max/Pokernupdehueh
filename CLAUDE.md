@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.3.0
+**Version**: 6.3.1
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -358,6 +358,16 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.3.1 — Remote Control: Timer-Fix & Turnier-Infos
+
+- **Timer-Interpolation repariert**: Ref-basierte Countdown-Berechnung — permanenter 100ms-Interval liest aus Refs statt `useEffect([state])`-Teardown/Recreate bei jedem Host-Update. `Math.floor` statt `Math.ceil` (konsistent mit Host). Behebt Timer-Blinken und Verzögerungen.
+- **Turnier-Infos auf Fernbedienung**: Stats-Zeile (💰 Prizepool, Ø Avg BB, ⏱ Spielzeit), nächstes Level, Break-Anzeige (☕), ITM-Badge.
+- **RemoteState erweitert**: 6 neue optionale Felder (`prizePool`, `avgStackBB`, `elapsedSeconds`, `nextLevelLabel`, `isBreak`, `isItm`).
+- **useRemoteHostBridge**: 3 neue Props (`averageStack`, `tournamentElapsed`, `isItm`), `buildNextLevelLabel()` Helper, `computePrizePool()`/`computeAverageStackInBB()` Berechnung.
+- **6 neue Translation-Keys** (3 DE + 3 EN)
+- **RemoteControl.tsx**: 15.11KB Chunk
+- **963 Tests gesamt**
 
 ### v6.3.0 — Remote Control: Spieler-Management
 
