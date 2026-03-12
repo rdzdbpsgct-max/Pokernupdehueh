@@ -8,7 +8,7 @@ export function SetupQRCode() {
   return (
     <div className="flex flex-col items-center gap-2 pt-2 pb-4">
       <QRCodeSVG
-        value={`${window.location.origin}${import.meta.env.BASE_URL || '/'}`}
+        value={`${window.location.origin}${import.meta.env.BASE_URL || '/'}#install`}
         size={100}
         level="L"
         bgColor={theme === 'dark' ? '#111827' : '#f9fafb'}

@@ -266,7 +266,13 @@ function App() {
 
   // PWA install prompt
   const { canPrompt: canInstallPrompt, isInstalled: isPWAInstalled, promptInstall } = useInstallPrompt();
-  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(() => {
+    if (window.location.hash === '#install') {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      return true;
+    }
+    return false;
+  });
   const [showHelp, setShowHelp] = useState(false);
 
   // Online/Offline detection — show toast on status change
