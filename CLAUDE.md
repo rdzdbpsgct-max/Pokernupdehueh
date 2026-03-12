@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.3.1
+**Version**: 6.4.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (963 tests, single run)
+npm run test         # Vitest run (966 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -257,7 +257,7 @@ public/
 
 - **Drift-free timer**: Uses `Date.now()` wall-clock timestamps, not interval counters
 - **Sound**: Web Audio API oscillators — no external audio files. Sound functions return Promises for precise voice coordination (victory: 1700ms, bubble: 1450ms, ITM: 700ms)
-- **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 230 MP3 files per language in `public/audio/de/` and `public/audio/en/` (460 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names, mystery bounty amounts). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, tournament winner (personalized with name), add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed, mystery bounty draw, call the clock (start + expired), late registration closed, table moves, final table. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
+- **Voice announcements**: Triple-fallback system — ElevenLabs pre-recorded MP3s (German: Ava, English: voice `xctasy8XvGp2cVO9HL9k`), HTMLAudioElement fallback, Web Speech API (`speechSynthesis`) as last resort. 234 MP3 files per language in `public/audio/de/` and `public/audio/en/` (468 total, PWA-cached for offline use). `audioPlayer.ts` handles gapless sequential MP3 playback via Web Audio API with trailing-silence trimming, falls back to HTMLAudioElement for maximum browser compatibility; `speech.ts` unified queue supports both `audio` and `speech` items. Manifest-based file lookup (110 blind pairs, 20 ante values, 25 levels, 30 break durations 1–30 min) determines MP3 availability; falls back to Web Speech API for missing files or dynamic content (player names, mystery bounty amounts). `VoiceSwitcher` header toggle (sound-only / voice). Announces: tournament start ("Shuffle up and deal!"), level changes, breaks (start + 30s warning + break over), 5-minute warning, last hand (before break / end of level), bubble, dynamic player count milestones (based on paid places — announces from paidPlaces down to 3 + heads-up), ITM, eliminations, rebuy taken, tournament winner (personalized with name), add-on, rebuy end, color-up (+ next-break warning), timer paused/resumed, mystery bounty draw, call the clock (start + expired), late registration closed, table moves (MP3 intro + speech details), table dissolution (MP3 intro + speech details), final table. Verbal countdown for last 10 seconds (play levels only, beeps during breaks). Sound effects finish before voice starts (delay-based coordination).
 - **Keyboard shortcuts** (in App.tsx): Space (play/pause), N (next level), V (previous), R (reset), F (clean view toggle), L (last hand toggle), T (TV display mode toggle), H (hand-for-hand toggle), C (call the clock)
 - **TV Display Mode**: Dedicated fullscreen overlay (`DisplayMode.tsx`) optimized for projectors/TVs at 3+ meter distance. Split-layout: **Timer always visible** (top ~55% — level label, blinds, countdown, progress bar, next level preview, banners) + **6 rotating secondary screens** (bottom ~45% — Players → Stats → Payout → Blind Schedule → Chips → Seating, every 15 seconds). Players screen: active grid with CL badge, rebuys, eliminated compact. Stats screen: prizepool, active players, avg BB, elapsed/remaining, rebuys, add-ons, bounty pool. Payout screen: places with amounts, medal emojis top 3, bubble indicator. Dark background, large timer (8rem). Manual navigation via arrow keys. Indicator dots for secondary screens. Exit via T/Escape. Lazy-loaded (~13.5 KB chunk). 📺 button in header during game mode.
 - **Ante calculation**: Two modes — Standard (~12.5% of big blind, rounded to "nice" values) or Big Blind Ante (BBA, ante = big blind). Toggle in setup when ante is enabled. `AnteMode` type in `types.ts`
@@ -320,7 +320,7 @@ public/
 
 ## Testing
 
-- **963 tests** across 15 test files + 1 setup file
+- **966 tests** across 15 test files + 1 setup file
 - Core files: `logic.test.ts` (530), `components.test.tsx` (95), `edge-cases.test.ts` (88), `sound-speech.test.ts` (54), `integration.test.ts` (36), `tournamentActions.test.tsx` (31), `hooks.test.tsx` (25), `i18n.test.ts` (24), `persistence.test.ts` (24), `controls.test.tsx` (22), `display-channel.test.ts` (14), `entitlements.test.ts` (8), `toast.test.ts` (6), `monetizationTelemetry.test.ts` (3), `recovery.test.ts` (3)
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
@@ -358,6 +358,16 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.4.0 — Dokumentation, Help-Center & Sound-Vervollständigung
+
+- **3 neue MP3-Paare** (6 Dateien): `rebuy-taken.mp3`, `table-move.mp3`, `table-dissolved.mp3` — ElevenLabs TTS, je DE + EN. 468 Audio-Dateien gesamt (234 pro Sprache).
+- **Neue Ansage `announceRebuyTaken()`**: MP3-basierte Ansage bei Rebuy-Kauf (über Remote oder PlayerPanel). Automatisch getriggert durch Rebuy-Count-Tracking in `useVoiceAnnouncements.ts`.
+- **MP3-Intros für Tischwechsel**: `announceTableMove()` und `announceTableDissolution()` nutzen jetzt MP3-Intro + Speech-Details statt reinem Web Speech API.
+- **Help-Center erweitert**: 2 neue Items in Remote-Control-Sektion (Spieler-Management, Turnier-Infos auf Controller). 1 neuer FAQ-Eintrag (Spieler per Fernbedienung eliminieren). 15 FAQ-Einträge gesamt.
+- **README.md aktualisiert**: Version 6.0.0 → 6.4.0, neue Features (Hilfe-Center, Remote-Turnier-Infos), Audio-Counts (468), Test-Count (966), IndexedDB-Persistenz.
+- **6 neue Translation-Keys** (3 DE + 3 EN): `voice.rebuyTaken`, `voice.tableMoveIntro`, `voice.tableDissolutionIntro`
+- **3 neue Tests** — **966 Tests gesamt**
 
 ### v6.3.1 — Remote Control: Timer-Fix & Turnier-Infos
 

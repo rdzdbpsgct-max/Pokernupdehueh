@@ -5,6 +5,20 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.4.0] – 2026-03-12
+
+### Dokumentation, Help-Center & Sound-Vervollständigung
+
+- **3 neue MP3-Paare** (6 Dateien): `rebuy-taken.mp3`, `table-move.mp3`, `table-dissolved.mp3` — ElevenLabs TTS, je DE + EN. **468 Audio-Dateien** gesamt (234 pro Sprache).
+- **Neue Ansage `announceRebuyTaken()`**: MP3-basierte Ansage bei Rebuy-Kauf. Getriggert durch Rebuy-Count-Tracking in `useVoiceAnnouncements.ts`.
+- **MP3-Intros für Tischwechsel**: `announceTableMove()` und `announceTableDissolution()` nutzen jetzt MP3-Intro + Speech-Details statt reinem Web Speech API.
+- **Help-Center erweitert**: 2 neue Items in Remote-Control-Sektion (Spieler-Management, Turnier-Infos auf Controller). 1 neuer FAQ-Eintrag. 15 FAQ-Einträge gesamt.
+- **README.md komplett aktualisiert**: Version 6.0.0 → 6.4.0, neue Features, aktuelle Counts.
+- **6 neue Translation-Keys** (3 DE + 3 EN)
+- **3 neue Tests** — **966 Tests gesamt**
+
+---
+
 ## [6.3.1] – 2026-03-12
 
 ### Remote Control: Timer-Fix & Turnier-Infos

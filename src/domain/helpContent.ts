@@ -287,6 +287,20 @@ export const helpSections: HelpSection[] = [
           en: 'A colored dot on the 📱 icon shows status: green = connected. On connection loss, the app automatically retries up to 3 times.',
         },
       },
+      {
+        title: { de: 'Spieler-Management', en: 'Player Management' },
+        body: {
+          de: 'Die aufklappbare Spielerliste auf der Fernbedienung zeigt alle aktiven Spieler. Du kannst Spieler eliminieren (mit Bounty-Picker bei aktivem Kopfgeld), Rebuys vergeben und Add-Ons zuweisen — alles vom Smartphone aus.',
+          en: 'The collapsible player list on the remote shows all active players. You can eliminate players (with bounty picker when bounties are active), assign rebuys, and grant add-ons — all from your smartphone.',
+        },
+      },
+      {
+        title: { de: 'Turnier-Infos auf dem Controller', en: 'Tournament Info on Controller' },
+        body: {
+          de: 'Der Controller zeigt neben Timer und Blinds auch Prizepool, durchschnittlichen Stack in Big Blinds, bisherige Spielzeit, das nächste Level, Pausen-Anzeige und ITM-Status.',
+          en: 'The controller shows prize pool, average stack in big blinds, elapsed time, next level, break indicator, and ITM status — in addition to timer and blinds.',
+        },
+      },
     ],
   },
   {
@@ -446,6 +460,13 @@ export const faqEntries: FaqEntry[] = [
     answer: {
       de: 'Ja, die App nutzt die Wake Lock API — dein Bildschirm bleibt automatisch an, solange der Timer läuft. Kein manuelles Einstellen nötig.',
       en: 'Yes, the app uses the Wake Lock API — your screen stays on automatically while the timer runs. No manual configuration needed.',
+    },
+  },
+  {
+    question: { de: 'Kann ich Spieler über die Fernbedienung eliminieren?', en: 'Can I eliminate players via the remote control?' },
+    answer: {
+      de: 'Ja! Öffne die Spielerliste auf dem Controller und tippe auf das ❌-Symbol neben dem Spieler. Bei aktivem Bounty erscheint ein Eliminator-Picker, in dem du auswählst, wer den Knockout gemacht hat.',
+      en: 'Yes! Open the player list on the controller and tap the ❌ icon next to the player. With bounties active, an eliminator picker appears to select who made the knockout.',
     },
   },
 ];

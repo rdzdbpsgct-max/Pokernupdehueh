@@ -571,6 +571,9 @@ const de = {
   'voice.winner': 'Turniersieger! Herzlichen Glückwunsch!',
   'voice.bountyCollected': 'Bounty kassiert!',
   'voice.handForHand': 'Händ for Händ! Alle Tische spielen gleichzeitig.',
+  'voice.rebuyTaken': 'Riebai genommen',
+  'voice.tableMoveIntro': 'Tischwechsel',
+  'voice.tableDissolutionIntro': 'Tisch aufgelöst',
 
   // --- Leagues ---
   'app.leagues': 'Ligen',
@@ -1514,6 +1517,9 @@ const en: Record<TranslationKey, string> = {
   'voice.winner': 'Tournament winner! Congratulations!',
   'voice.bountyCollected': 'Bounty collected!',
   'voice.handForHand': 'Hand for hand! All tables play simultaneously.',
+  'voice.rebuyTaken': 'Rebuy taken',
+  'voice.tableMoveIntro': 'Table move',
+  'voice.tableDissolutionIntro': 'Table dissolved',
 
   // --- Leagues ---
   'app.leagues': 'Leagues',

@@ -8,6 +8,7 @@ import {
   announceBreakOver,
   announceAddOn,
   announceRebuyEnded,
+  announceRebuyTaken,
   announceColorUp,
   announceColorUpWarning,
   announceBounty,
@@ -211,6 +212,20 @@ export function useVoiceAnnouncements({
     }
     prevRebuyForVoice.current = rebuyActive;
   }, [rebuyActive, config.addOn.enabled, config.rebuy.enabled, settings.voiceEnabled, mode, t]);
+
+  // Voice: Rebuy taken — announce when total rebuys increase
+  const totalRebuys = config.players.reduce((sum, p) => sum + p.rebuys, 0);
+  const prevTotalRebuysRef = useRef(totalRebuys);
+  useEffect(() => {
+    if (mode !== 'game' || !settings.voiceEnabled) {
+      prevTotalRebuysRef.current = totalRebuys;
+      return;
+    }
+    if (totalRebuys > prevTotalRebuysRef.current) {
+      announceRebuyTaken(t);
+    }
+    prevTotalRebuysRef.current = totalRebuys;
+  }, [mode, settings.voiceEnabled, totalRebuys, t]);
 
   // Reset function for switchToSetup
   const reset = useCallback(() => {

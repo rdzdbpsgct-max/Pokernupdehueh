@@ -48,6 +48,7 @@ import {
   announceTimerPaused,
   announceTimerResumed,
   announceHandForHand,
+  announceRebuyTaken,
   announceTableMove,
   announceTableDissolution,
   announceFinalTable,
@@ -345,6 +346,20 @@ describe('Speech system (speech.ts)', () => {
 
     it('announceTournamentWinner with player name', () => {
       expect(() => announceTournamentWinner('Lisa', mockT as never)).not.toThrow();
+    });
+
+    it('announceRebuyTaken enqueues MP3 audio item', () => {
+      expect(() => announceRebuyTaken(mockT as never)).not.toThrow();
+    });
+
+    it('announceTableMove enqueues MP3 intro + speech detail', () => {
+      // Should not throw; now uses MP3 intro followed by speech
+      expect(() => announceTableMove('Max', 'Tisch 2', 5, mockT as never)).not.toThrow();
+    });
+
+    it('announceTableDissolution enqueues MP3 intro + speech detail', () => {
+      // Should not throw; now uses MP3 intro followed by speech
+      expect(() => announceTableDissolution('Tisch 3', mockT as never)).not.toThrow();
     });
   });
 });

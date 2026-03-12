@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-6.0.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-6.4.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/7MountainPoker/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://7mountainpoker.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-963%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-966%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -71,11 +71,11 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Screenshot/Teilen | Turnier-Ergebnisse als PNG — Web Share API auf Mobile, Download auf Desktop |
 | QR-Codes | App-URL + Turnierergebnis als QR-Code — scannen und Ergebnis in der App sehen |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
-| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Sieger, Turnierstart, Color-Up, Timer-Status. Dreistufiger Fallback: Web Audio API → HTMLAudioElement → Web Speech API. 450 Audio-Dateien (225 pro Sprache), offline via PWA. |
-| TV-Modus | Split-Layout: Timer permanent oben, 5 rotierende Screens unten (Spieler, Stats, Auszahlung, Blindstruktur, Chips) — optimiert für TV/Beamer |
+| Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Rebuys, Sieger, Turnierstart, Color-Up, Tischwechsel, Timer-Status. Dreistufiger Fallback: Web Audio API → HTMLAudioElement → Web Speech API. 468 Audio-Dateien (234 pro Sprache), offline via PWA. |
+| TV-Modus | Split-Layout: Timer permanent oben, 6 rotierende Screens unten (Spieler, Stats, Auszahlung, Blindstruktur, Chips, Sitzplan) — optimiert für TV/Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
-| Persistenz | Automatische Speicherung im Browser (localStorage) |
+| Persistenz | Cache-First IndexedDB-Speicher (50 MB+) mit automatischem localStorage-Fallback |
 | Turnier-Checkpoint | Automatische Spielstandsicherung, Wiederherstellung nach Browser-Crash |
 | Barrierefreiheit | ARIA-Labels, Dialog-Rollen, Auto-Fokus, Escape-zum-Schließen |
 | Kompatibilität | Safe Area Insets, dynamische Viewport-Höhe, optimierte Touch-Targets, numerische Tastatur, Tablet-Layout |
@@ -89,7 +89,8 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Re-Entry | Spieler können sich nach Elimination neu einkaufen (neuer Stack, separate Statistik) |
 | Seat-Locking | Bestimmte Sitzplätze an Tischen sperren (Multi-Table) |
 | Liga-Modus | Homegame-Liga mit Spieltagen, Punktesystem, Tiebreaker, Saisons, Finanzen, Gastspieler, Spieler-Detailansicht, QR-Teilen, TV-Display, Druckansicht |
-| Fernsteuerung | Turnier vom Smartphone steuern via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock + Spieler-Management: Elimination, Rebuy, Add-On) — Ein-QR-Verbindung |
+| Hilfe-Center | Durchsuchbares bilinguales Hilfesystem mit Anleitung (8 Sektionen), FAQ (15 Einträge), Tastenkürzel (11 Einträge) — erreichbar über ?-Button im Header |
+| Fernsteuerung | Turnier vom Smartphone steuern via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock + Spieler-Management: Elimination, Rebuy, Add-On + Turnier-Infos: Prizepool, Avg Stack, Spielzeit) — Ein-QR-Verbindung |
 | Premium UI | Glassmorphism, Gradient-Buttons, Timer-Glow, benutzerdefinierte Animationen, taktile Interaktionen |
 | Design-System | Einheitliche Abrundungen, Border-Opacities, Focus-Glow, Custom Number-Stepper, SVG-Chevrons |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
@@ -162,16 +163,16 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Screenshot/share | Tournament results as PNG — Web Share API on mobile, download on desktop |
 | QR Codes | App URL + tournament result as QR code — scan and view results in the app |
 | Sound | Countdown beeps, level end, bubble tension, ITM fanfare, victory melody (Web Audio API) |
-| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, dynamic player count milestones (based on paid places), heads-up, ITM, eliminations, winner, tournament start, color-up, timer status. Triple fallback: Web Audio API → HTMLAudioElement → Web Speech API. 450 audio files (225 per language), offline via PWA. |
+| Voice announcements | Professional ElevenLabs MP3 voices (German + English) for level changes, breaks (1–30 min), 5-min warning, last hand, bubble, dynamic player count milestones (based on paid places), heads-up, ITM, eliminations, rebuys, winner, tournament start, color-up, table moves, timer status. Triple fallback: Web Audio API → HTMLAudioElement → Web Speech API. 468 audio files (234 per language), offline via PWA. |
 | Clock display | Real-time clock in game mode header — never lose track of time at the table |
 | Last Hand | Toggle button + keyboard shortcut (L) + amber banner + voice announcement (before break / end of level) |
 | Dealer rotation | One-click dealer button advance, skips eliminated players |
 | Error boundary | Catches React crashes with user-friendly reload page |
-| TV Display Mode | Dedicated fullscreen overlay for projectors/TVs — five rotating screens (players, stats, payout, blind schedule, chip values), auto-rotation every 15 sec, arrow key navigation (T) |
+| TV Display Mode | Dedicated fullscreen overlay for projectors/TVs — six rotating screens (players, stats, payout, blind schedule, chip values, seating), auto-rotation every 15 sec, arrow key navigation (T) |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
-| Persistence | Automatic saving in browser (localStorage) |
+| Persistence | Cache-first IndexedDB storage (50 MB+) with automatic localStorage fallback |
 | Tournament checkpoint | Auto-save game state, recovery after browser crash |
 | Tournament history | Persistent results across sessions (max 50), expandable standings, player statistics, WhatsApp text copy, CSV download |
 | Accessibility | ARIA labels, dialog roles, auto-focus, escape-to-close |
@@ -186,7 +187,8 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Re-Entry | Players can re-enter after elimination (fresh stack, separate stats) |
 | Seat Locking | Lock specific seats at tables (multi-table) |
 | League Mode | Home game league with game days, point system, tiebreaker, seasons, finances, guest players, player detail modal, QR sharing, TV display, print view |
-| Remote Control | Control tournament from smartphone via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock + player management: elimination, rebuy, add-on) — single QR scan |
+| Help Center | Searchable bilingual help system with guide (8 sections), FAQ (15 entries), keyboard shortcuts (11 entries) — accessible via ? button in header |
+| Remote Control | Control tournament from smartphone via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock + player management: elimination, rebuy, add-on + tournament info: prize pool, avg stack, elapsed time) — single QR scan |
 | Premium UI | Glassmorphism, gradient buttons, timer glow, custom animations, tactile interactions |
 | Design system | Unified rounding, border opacities, focus glow, custom number stepper, SVG chevrons |
 | Validation | Input validation before tournament start with clear error messages |
@@ -211,13 +213,13 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-963_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-966_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 
 - **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
 - **TypeScript 5.9** — Strikte Typisierung / Strict typing
 - **Vite 7** — Build-Tool / Build tool
 - **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
-- **Vitest** — 963 Tests / Unit tests
+- **Vitest** — 966 Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
 - **Vercel** — Automatisches Deploy / Auto-deploy on push
 - **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
@@ -251,7 +253,7 @@ App: `http://localhost:5173/`
 
 ```bash
 npm run lint        # ESLint
-npm run test        # 963 Tests
+npm run test        # 966 Tests
 npm run build       # Production-Build → ./dist
 ```
 
@@ -277,7 +279,7 @@ src/
     themeContextValue.ts # Context + Types
     index.ts            # Barrel-Export
   i18n/
-    translations.ts     # DE/EN Übersetzungen / Translations (~480+ Keys)
+    translations.ts     # DE/EN Übersetzungen / Translations (~700+ Keys)
     LanguageContext.tsx  # React Context Provider
     useTranslation.ts   # useTranslation() Hook
     index.ts            # Barrel-Export
@@ -312,10 +314,10 @@ src/
     LevelPreview.tsx      # Level-Vorschau / Level preview
     RebuyStatus.tsx      # Rebuy-Anzeige / Rebuy indicator
 public/
-  audio/de/             # 181 ElevenLabs MP3 Audiodateien (Deutsch, Stimme: Ava)
-  audio/en/             # 181 ElevenLabs MP3 Audiodateien (Englisch)
+  audio/de/             # 234 ElevenLabs MP3 Audiodateien (Deutsch, Stimme: Ava)
+  audio/en/             # 234 ElevenLabs MP3 Audiodateien (Englisch)
 tests/
-  logic.test.ts         # 963 Tests
+  logic.test.ts         # 966 Tests
 ```
 
 ## Architektur / Architecture
@@ -327,7 +329,7 @@ tests/
 - **Dark/Light Mode** — `ThemeProvider` + `useTheme()` Hook, 3-Wege-Toggle (System/Hell/Dunkel), `prefers-color-scheme` Listener, Tailwind `dark:`-Varianten / `ThemeProvider` + `useTheme()` hook, 3-way toggle (System/Light/Dark), `prefers-color-scheme` listener, Tailwind `dark:` variants
 - **Keine externen State-Libraries / No external state libraries** — React Hooks + Props + Context (i18n + Theme) / Only React hooks + props + Context (i18n + theme)
 - **Sound via Web Audio API** — Beep-Sounds als Oszillatoren (keine externen Dateien) / Beep sounds as oscillators (no external files)
-- **Sprachausgabe / Voice** — ElevenLabs MP3 (Deutsch + Englisch, je 181 Dateien in `public/audio/de/` + `public/audio/en/`), Web Speech API Fallback, Pausenansagen minutengenau 1–30 Min / ElevenLabs MP3 (German + English, 181 files each in `public/audio/de/` + `public/audio/en/`), Web Speech API fallback, break announcements for every minute 1–30
+- **Sprachausgabe / Voice** — ElevenLabs MP3 (Deutsch + Englisch, je 234 Dateien in `public/audio/de/` + `public/audio/en/`), Web Speech API Fallback, Pausenansagen minutengenau 1–30 Min / ElevenLabs MP3 (German + English, 234 files each in `public/audio/de/` + `public/audio/en/`), Web Speech API fallback, break announcements for every minute 1–30
 - **PWA** — Offline-fähig, installierbar / Offline-capable, installable
 - **Backward-Kompatibilität / Backward compatibility** — Alte localStorage-Daten werden mit Defaults ergänzt / Old localStorage data is augmented with defaults
 

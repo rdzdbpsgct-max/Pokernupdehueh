@@ -424,13 +424,20 @@ export function announceHandForHand(t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/hand-for-hand.mp3'], t('voice.handForHand')));
 }
 
+/** Rebuy taken — a player took a rebuy */
+export function announceRebuyTaken(t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/rebuy-taken.mp3'], t('voice.rebuyTaken')));
+}
+
 /** Table move — player moves to a different table (with seat info) */
 export function announceTableMove(playerName: string, tableName: string, toSeat: number, t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/table-move.mp3'], t('voice.tableMoveIntro')));
   enqueue({ mode: 'speech', text: t('voice.tableMove', { player: playerName, table: tableName, seat: toSeat }) });
 }
 
 /** Table dissolution — a table is being broken */
 export function announceTableDissolution(tableName: string, t: TranslateFn): void {
+  enqueue(audioOrSpeech(['fixed/table-dissolved.mp3'], t('voice.tableDissolutionIntro')));
   enqueue({ mode: 'speech', text: t('voice.tableDissolution', { table: tableName }) });
 }
 
