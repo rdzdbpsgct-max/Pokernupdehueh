@@ -8,8 +8,6 @@ import App from './App.tsx'
 import { TVDisplayWindow } from './components/display'
 import { initStorage } from './domain/storage'
 
-const Analytics = lazy(() => import('@vercel/analytics/react').then((m) => ({ default: m.Analytics })));
-const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then((m) => ({ default: m.SpeedInsights })));
 const isDisplayWindow = window.location.hash === '#display';
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
@@ -37,6 +35,11 @@ if (sentryDsn && import.meta.env.PROD && !isDisplayWindow) {
 }
 
 function renderApp() {
+  // Lazy-loaded inside renderApp to avoid top-level component declarations
+  // in the entry-point file (react-refresh/only-export-components).
+  const Analytics = lazy(() => import('@vercel/analytics/react').then((m) => ({ default: m.Analytics })));
+  const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then((m) => ({ default: m.SpeedInsights })));
+
   function DeferredMonitoring() {
     const [enabled, setEnabled] = useState(false);
 
