@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import type { DisplayStatePayload, DisplayMessage } from '../../domain/displayChannel';
-import { createDisplayChannel, deserializeColorUpMap } from '../../domain/displayChannel';
+import { createDisplayChannel, deserializeColorUpMap, isDisplayMessage } from '../../domain/displayChannel';
 import { useTranslation } from '../../i18n';
 import { DisplayMode } from './DisplayMode';
-import { CallTheClock } from '../CallTheClock';
+
+const CallTheClock = lazy(() => import('../CallTheClock').then((m) => ({ default: m.CallTheClock })));
 
 /**
  * TVDisplayWindow — standalone component rendered in the secondary TV browser window.
@@ -37,8 +38,10 @@ export function TVDisplayWindow() {
     const channel = createDisplayChannel();
     channelRef.current = channel;
 
-    channel.onmessage = (event: MessageEvent<DisplayMessage>) => {
-      const msg = event.data;
+    channel.onmessage = (event: MessageEvent<DisplayMessage | unknown>) => {
+      const rawMsg = event.data;
+      if (!isDisplayMessage(rawMsg)) return;
+      const msg = rawMsg;
       switch (msg.type) {
         case 'full-state':
           setState(msg.payload);
@@ -138,12 +141,14 @@ export function TVDisplayWindow() {
         sidePotData={state.sidePotData}
       />
       {ctcPayload && (
-        <CallTheClock
-          durationSeconds={ctcPayload.durationSeconds}
-          soundEnabled={ctcPayload.soundEnabled}
-          voiceEnabled={ctcPayload.voiceEnabled}
-          onClose={() => setCtcPayload(null)}
-        />
+        <Suspense fallback={null}>
+          <CallTheClock
+            durationSeconds={ctcPayload.durationSeconds}
+            soundEnabled={ctcPayload.soundEnabled}
+            voiceEnabled={ctcPayload.voiceEnabled}
+            onClose={() => setCtcPayload(null)}
+          />
+        </Suspense>
       )}
     </>
   );

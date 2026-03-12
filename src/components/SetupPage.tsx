@@ -96,6 +96,27 @@ export function SetupPage({
     return t('multiTable.tableCount', { n: config.tables.length });
   }, [config.tables, t]);
 
+  const setupGuideSteps = useMemo(() => ([
+    {
+      key: 'players',
+      done: config.players.length >= 2,
+      label: t('setupGuide.stepPlayers'),
+    },
+    {
+      key: 'levels',
+      done: config.levels.length > 0,
+      label: t('setupGuide.stepLevels'),
+    },
+    {
+      key: 'payout',
+      done: config.payout.entries.length > 0,
+      label: t('setupGuide.stepPayout'),
+    },
+  ]), [config.players.length, config.levels.length, config.payout.entries.length, t]);
+
+  const completedGuideSteps = setupGuideSteps.filter((step) => step.done).length;
+  const setupGuideProgress = Math.round((completedGuideSteps / setupGuideSteps.length) * 100);
+
   // Multi-table toggle and config handlers
   const handleToggleMultiTable = useCallback(() => {
     setConfig((prev) => {
@@ -237,6 +258,63 @@ export function SetupPage({
             </div>
           </div>
         )}
+
+        {/* Quick-start guidance card */}
+        <div className="relative overflow-hidden rounded-2xl border border-teal-300/70 dark:border-teal-700/50 bg-gradient-to-br from-teal-50 via-cyan-50 to-white dark:from-teal-950/35 dark:via-cyan-950/20 dark:to-gray-900/20 shadow-lg shadow-cyan-200/40 dark:shadow-cyan-950/20 p-4 sm:p-5 animate-fade-in">
+          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-teal-200/30 dark:from-teal-500/10 to-transparent pointer-events-none" />
+          <div className="relative space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-teal-700 dark:text-teal-300">
+                  {t('setupGuide.badge')}
+                </p>
+                <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
+                  {t('setupGuide.title')}
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+                  {startErrors.length === 0 ? t('setupGuide.subtitleReady') : t('setupGuide.subtitlePending')}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('setupGuide.progress')}</p>
+                <p className="text-lg font-bold text-teal-700 dark:text-teal-300">{setupGuideProgress}%</p>
+              </div>
+            </div>
+
+            <div className="h-2 rounded-full bg-white/70 dark:bg-gray-800/70 border border-teal-200/60 dark:border-teal-800/40 overflow-hidden">
+              <div
+                className="h-full transition-all duration-500"
+                style={{
+                  width: `${setupGuideProgress}%`,
+                  background: 'linear-gradient(90deg, var(--accent-500), var(--accent-600))',
+                }}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {setupGuideSteps.map((step) => (
+                <div
+                  key={step.key}
+                  className={`rounded-lg border px-3 py-2 text-xs sm:text-sm ${
+                    step.done
+                      ? 'border-teal-300/70 dark:border-teal-700/60 bg-teal-100/70 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200'
+                      : 'border-gray-300/70 dark:border-gray-700/60 bg-white/70 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  <span className="font-semibold mr-1.5">{step.done ? '✓' : '•'}</span>
+                  {step.label}
+                </div>
+              ))}
+            </div>
+
+            {startErrors.length > 0 && (
+              <p className="text-xs text-rose-700 dark:text-rose-300 bg-rose-50/80 dark:bg-rose-900/20 border border-rose-300/70 dark:border-rose-700/50 rounded-lg px-3 py-2">
+                <span className="font-semibold">{t('setupGuide.blockerLabel')}: </span>
+                {startErrors[0]}
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Quick Start Presets */}
         <div className="space-y-2" data-tour="presets">

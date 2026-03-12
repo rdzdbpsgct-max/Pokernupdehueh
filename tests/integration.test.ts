@@ -11,7 +11,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { initStorage, getCached } from '../src/domain/storage';
+import { initStorage, getCached, resetStorage } from '../src/domain/storage';
 import {
   defaultConfig,
   defaultSettings,
@@ -20,6 +20,9 @@ import {
   clearCheckpoint,
   parseConfigObject,
   saveConfig,
+  loadConfig,
+  saveSettings,
+  loadSettings,
   restartTournament,
   advanceLevel,
   computeRemaining,
@@ -292,8 +295,10 @@ describe('useTimer hook lifecycle', () => {
     expect(result.current.timerState.status).toBe('running');
 
     // Advance 2 seconds
-    vi.advanceTimersByTime(2000);
-    act(() => vi.advanceTimersByTime(0)); // flush setTimerState
+    act(() => {
+      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(0); // flush setTimerState
+    });
 
     // Pause
     act(() => result.current.pause());
@@ -343,8 +348,10 @@ describe('useTimer hook lifecycle', () => {
     const { result } = renderHook(() => useTimer(levels, settings));
 
     act(() => result.current.start());
-    vi.advanceTimersByTime(5000);
-    act(() => vi.advanceTimersByTime(0));
+    act(() => {
+      vi.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(0);
+    });
 
     act(() => result.current.resetLevel());
     expect(result.current.timerState.status).toBe('stopped');
@@ -595,6 +602,35 @@ describe('Config persistence round-trip', () => {
       expect(cached.name).toBe('Test Tournament');
       expect(cached.buyIn).toBe(50);
     }
+  });
+
+  it('config and settings survive storage re-init (reload scenario)', async () => {
+    const config = defaultConfig();
+    config.name = 'Reload Recovery';
+    config.buyIn = 37;
+
+    const settings = defaultSettings();
+    settings.volume = 64;
+    settings.autoAdvance = false;
+
+    saveConfig(config);
+    saveSettings(settings);
+
+    // setCached persists async to IndexedDB in background
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Simulate app reload: storage cache resets and re-inits from IndexedDB
+    await resetStorage();
+    await initStorage();
+
+    const loadedConfig = loadConfig();
+    const loadedSettings = loadSettings();
+    expect(loadedConfig).not.toBeNull();
+    expect(loadedSettings).not.toBeNull();
+    expect(loadedConfig!.name).toBe('Reload Recovery');
+    expect(loadedConfig!.buyIn).toBe(37);
+    expect(loadedSettings!.volume).toBe(64);
+    expect(loadedSettings!.autoAdvance).toBe(false);
   });
 });
 

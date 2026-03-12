@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
-import { Analytics } from '@vercel/analytics/react';
 import type { TournamentConfig, Settings, TournamentCheckpoint, Table, TableMove, PotResult, PlayerPayout } from './domain/types';
 import { serializeColorUpMap } from './domain/displayChannel';
 import type { DisplayStatePayload } from './domain/displayChannel';
@@ -7,24 +6,21 @@ import {
   defaultConfig,
   defaultSettings,
   saveConfig,
+  loadConfig,
   saveSettings,
+  loadSettings,
   saveCheckpoint,
   loadCheckpoint,
   clearCheckpoint,
   isRebuyActive,
   isLateRegistrationOpen,
   computeTournamentElapsedSeconds,
-  validatePayoutConfig,
-  validateConfig,
   computeAverageStack,
   scheduleToColorUpMap,
   isBubble,
   isInTheMoney,
   buildTournamentResult,
   saveTournamentResult,
-  decodeResultFromQR,
-  decodeLeagueStandingsFromQR,
-  distributePlayersToTables,
   loadLeagues,
   createGameDayFromResult,
   computeExtendedStandings,
@@ -36,6 +32,7 @@ import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
 import { useGameEvents } from './hooks/useGameEvents';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTournamentActions } from './hooks/useTournamentActions';
+import { useTournamentModeTransitions } from './hooks/useTournamentModeTransitions';
 import { useTVDisplay } from './hooks/useTVDisplay';
 import { useWakeLock } from './hooks/useWakeLock';
 import { useConfirmDialog } from './hooks/useConfirmDialog';
@@ -44,10 +41,12 @@ import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useTranslation } from './i18n';
 import { showToast } from './domain/toast';
 import {
+  loadEntitlements,
+  isFeatureAvailable,
+  getRequiredTier,
+} from './domain/entitlements';
+import {
   setSpeechLanguage,
-  initSpeech,
-  cancelSpeech,
-  announceTournamentStart,
   announceLastHand,
   announceHandForHand,
   announceTableMove,
@@ -58,48 +57,45 @@ import {
 import { setMasterVolume } from './domain/sounds';
 import { setAudioVolume } from './domain/audioPlayer';
 // Setup-mode components (static imports — used immediately on load)
-import { SetupPage } from './components/SetupPage';
-import { SetupWizard } from './components/SetupWizard';
 import { isTourCompleted } from './domain/configPersistence';
-import { PrintView } from './components/PrintView';
-import { TemplateManager } from './components/TemplateManager';
 import { ToastContainer } from './components/Toast';
-import { TournamentHistory } from './components/TournamentHistory';
-import { LeagueManager } from './components/LeagueManager';
-import { LanguageSwitcher } from './components/LanguageSwitcher';
-import { ThemeSwitcher } from './components/ThemeSwitcher';
-import { VoiceSwitcher } from './components/VoiceSwitcher';
-import type { RemoteCommand } from './domain/remote';
-import { useRemoteControl } from './hooks/useRemoteControl';
+import { useRemoteHostBridge } from './hooks/useRemoteHostBridge';
+import { collectStartErrors } from './domain/startValidation';
 import { SectionErrorBoundary } from './components/ErrorBoundary';
 import { LoadingFallback } from './components/LoadingFallback';
+import { SetupModeContainer } from './components/modes/SetupModeContainer';
+import { LeagueModeContainer } from './components/modes/LeagueModeContainer';
+import { TournamentFinishedContainer } from './components/modes/TournamentFinishedContainer';
+import { GameModeContainer } from './components/modes/GameModeContainer';
+import { AppHeader } from './components/AppHeader';
+import { FeatureGateModal } from './components/FeatureGateModal';
+import { useFeatureGate } from './hooks/useFeatureGate';
+import { usePrintViewWarmup } from './hooks/usePrintViewWarmup';
+import { useSharedPayloads } from './hooks/useSharedPayloads';
 
 // Game-mode components (lazy — only needed after tournament starts)
-const TimerDisplay = lazy(() => import('./components/TimerDisplay').then(m => ({ default: m.TimerDisplay })));
-const Controls = lazy(() => import('./components/Controls').then(m => ({ default: m.Controls })));
-const LevelPreview = lazy(() => import('./components/LevelPreview').then(m => ({ default: m.LevelPreview })));
-const PlayerPanel = lazy(() => import('./components/PlayerPanel').then(m => ({ default: m.PlayerPanel })));
-const ChipSidebar = lazy(() => import('./components/ChipSidebar').then(m => ({ default: m.ChipSidebar })));
-const RebuyStatus = lazy(() => import('./components/RebuyStatus').then(m => ({ default: m.RebuyStatus })));
-const BubbleIndicator = lazy(() => import('./components/BubbleIndicator').then(m => ({ default: m.BubbleIndicator })));
-const SettingsPanel = lazy(() => import('./components/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
-const TournamentFinished = lazy(() => import('./components/TournamentFinished').then(m => ({ default: m.TournamentFinished })));
 // DisplayMode is now rendered in a separate TV window via TVDisplayWindow
+const SetupWizard = lazy(() => import('./components/SetupWizard').then(m => ({ default: m.SetupWizard })));
+const PrintView = lazy(() => import('./components/PrintView').then(m => ({ default: m.PrintView })));
 const SharedResultView = lazy(() => import('./components/SharedResultView').then(m => ({ default: m.SharedResultView })));
 const SharedLeagueView = lazy(() => import('./components/SharedLeagueView').then(m => ({ default: m.SharedLeagueView })));
 const CallTheClock = lazy(() => import('./components/CallTheClock').then(m => ({ default: m.CallTheClock })));
-const MultiTablePanel = lazy(() => import('./components/MultiTablePanel').then(m => ({ default: m.MultiTablePanel })));
 const SeatingOverlay = lazy(() => import('./components/SeatingOverlay').then(m => ({ default: m.SeatingOverlay })));
 const RemoteHostModal = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteHostModal })));
 const RemoteControllerView = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteControllerView })));
-const LeagueView = lazy(() => import('./components/LeagueView').then(m => ({ default: m.LeagueView })));
 const OnboardingTour = lazy(() => import('./components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
 const PWAInstallGuide = lazy(() => import('./components/PWAInstallGuide').then(m => ({ default: m.PWAInstallGuide })));
+const TemplateManager = lazy(() => import('./components/TemplateManager').then(m => ({ default: m.TemplateManager })));
+const TournamentHistory = lazy(() => import('./components/TournamentHistory').then(m => ({ default: m.TournamentHistory })));
 
 type Mode = 'setup' | 'game' | 'league';
 
 function App() {
   const { t, language } = useTranslation();
+  const entitlements = useMemo(() => loadEntitlements(), []);
+  const canUseTVDisplay = useMemo(() => isFeatureAvailable('tvDisplay', entitlements), [entitlements]);
+  const canUseRemoteControl = useMemo(() => isFeatureAvailable('remoteControl', entitlements), [entitlements]);
+  const canUseLeagueMode = useMemo(() => isFeatureAvailable('league', entitlements), [entitlements]);
 
   // Sync speech language with app language
   useEffect(() => {
@@ -108,48 +104,41 @@ function App() {
 
   const [mode, setMode] = useState<Mode>('setup');
   const [config, setConfig] = useState<TournamentConfig>(
-    () => defaultConfig(),
+    () => {
+      const persisted = loadConfig();
+      return persisted && persisted.levels.length > 0 ? persisted : defaultConfig();
+    },
   );
   const [settings, setSettings] = useState<Settings>(
-    () => defaultSettings(),
+    () => {
+      const persisted = loadSettings();
+      return persisted ? { ...defaultSettings(), ...persisted } : defaultSettings();
+    },
   );
+  useEffect(() => {
+    if (mode === 'league' && !canUseLeagueMode) {
+      setMode('setup');
+    }
+  }, [mode, canUseLeagueMode]);
   const [showPlayerPanel, setShowPlayerPanel] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [showLeagues, setShowLeagues] = useState(false);
   const [showWizard, setShowWizard] = useState(true);
   const [showTour, setShowTour] = useState(false);
-  const [sharedResult, setSharedResult] = useState(() => {
-    const hash = window.location.hash;
-    if (hash.startsWith('#r=')) {
-      const encoded = decodeURIComponent(hash.slice(3));
-      const result = decodeResultFromQR(encoded);
-      if (result) {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-      return result;
-    }
-    return null;
-  });
-  const [sharedLeague, setSharedLeague] = useState(() => {
-    const hash = window.location.hash;
-    if (hash.startsWith('#ls=')) {
-      const result = decodeLeagueStandingsFromQR(hash);
-      if (result) {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-      return result;
-    }
-    return null;
-  });
+  const printViewReady = usePrintViewWarmup();
+  const {
+    sharedResult,
+    setSharedResult,
+    sharedLeague,
+    setSharedLeague,
+  } = useSharedPayloads();
   const [cleanView, setCleanView] = useState(false);
   const [lastHandActive, setLastHandActive] = useState(false);
   const [handForHandActive, setHandForHandActive] = useState(false);
   const [showCallTheClock, setShowCallTheClock] = useState(false);
   const [showDealerBadges, setShowDealerBadges] = useState(true);
   const [sidePotData, setSidePotData] = useState<{ pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null>(null);
-  const [showSeatingOverlay, setShowSeatingOverlay] = useState(false);
   const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
   const { confirmAction, dialogRef: confirmDialogRef, confirm: confirmBeforeAction, dismiss: dismissConfirm, execute: executeConfirm } = useConfirmDialog();
 
@@ -583,6 +572,24 @@ function App() {
     if (tvWindowActive) closeTVWindow();
     else openTVWindow();
   }, [tvWindowActive, closeTVWindow, openTVWindow]);
+  const {
+    lockedFeature,
+    openFeatureGate,
+    closeFeatureGate,
+    handleUpgradeIntent,
+  } = useFeatureGate({
+    currentTier: entitlements.tier,
+    mode,
+    t,
+  });
+
+  const handleToggleTVWindowWithGate = useCallback(() => {
+    if (!canUseTVDisplay) {
+      openFeatureGate('tvDisplay');
+      return;
+    }
+    handleToggleTVWindow();
+  }, [canUseTVDisplay, openFeatureGate, handleToggleTVWindow]);
 
   useKeyboardShortcuts({
     mode,
@@ -592,7 +599,7 @@ function App() {
     onResetLevel: handleResetLevelShortcut,
     onToggleCleanView: toggleCleanView,
     onLastHand: handleLastHand,
-    onToggleTVWindow: handleToggleTVWindow,
+    onToggleTVWindow: handleToggleTVWindowWithGate,
     onHandForHand: handleHandForHand,
     onCallTheClock: useCallback(() => setShowCallTheClock((v) => !v), []),
   });
@@ -646,18 +653,7 @@ function App() {
     return buildTournamentResult(config, tournamentElapsed, currentPlayLevel);
   }, [tournamentFinished, config, tournamentElapsed, currentPlayLevel]);
 
-  const startErrors = useMemo(() => {
-    const errors: string[] = [];
-    if (config.players.length < 2) {
-      errors.push(t('app.minPlayersRequired'));
-    }
-    if (config.payout.entries.length > config.players.length) {
-      errors.push(t('app.morePlacesThanPlayers', { places: config.payout.entries.length, players: config.players.length }));
-    }
-    errors.push(...validatePayoutConfig(config.payout, config.players.length));
-    errors.push(...validateConfig(config).map((e) => e.message));
-    return errors;
-  }, [config, t]);
+  const startErrors = useMemo(() => collectStartErrors(config, t), [config, t]);
 
   // Game events: victory sound/pause, bubble/ITM effects
   const { showItmFlash, reset: resetGameEvents } = useGameEvents({
@@ -716,220 +712,70 @@ function App() {
     }
   }, [settings.voiceEnabled, t]);
 
-  // --- Remote control ---
-  const handleRemoteCommand = useCallback((cmd: RemoteCommand) => {
-    switch (cmd.action) {
-      case 'toggle': timer.toggleStartPause(); break;
-      case 'play': timer.start(); break;
-      case 'pause': timer.pause(); break;
-      case 'next': timer.nextLevel(); break;
-      case 'prev': timer.previousLevel(); break;
-      case 'reset': timer.resetLevel(); break;
-      case 'call-the-clock': setShowCallTheClock(v => !v); break;
-      case 'advanceDealer': handleAdvanceDealer(); break;
-      case 'toggleSound':
-        setSettings(prev => ({ ...prev, soundEnabled: !prev.soundEnabled, voiceEnabled: !prev.voiceEnabled }));
-        break;
-    }
-  }, [timer, handleAdvanceDealer, setSettings]);
-
   const {
-    hostRef: remoteHostRef,
-    hostStatus: remoteHostStatus,
-    showRemoteModal: showRemoteControl,
-    setShowRemoteModal: setShowRemoteControl,
+    remoteHostRef,
+    remoteHostStatus,
+    showRemoteControl,
+    setShowRemoteControl,
     isControllerMode,
     controllerPeerId,
     controllerSecret,
-    startHost: startRemoteHost,
-  } = useRemoteControl({
-    onCommand: handleRemoteCommand,
-    enabled: mode === 'game',
+    startRemoteHost,
+  } = useRemoteHostBridge({
+    mode,
+    config,
+    settings,
+    timerState: timer.timerState,
+    timerControls: {
+      toggleStartPause: timer.toggleStartPause,
+      start: timer.start,
+      pause: timer.pause,
+      nextLevel: timer.nextLevel,
+      previousLevel: timer.previousLevel,
+      resetLevel: timer.resetLevel,
+    },
+    activePlayerCount,
+    bubbleActive,
+    onAdvanceDealer: handleAdvanceDealer,
+    setShowCallTheClock,
+    setSettings,
+    t,
   });
 
-  // Send state updates to connected remote controller (throttled to 1/sec for running timer)
-  const remoteStateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => {
-    const host = remoteHostRef.current;
-    if (!host || !host.connected || mode !== 'game') return;
-
-    const sendRemoteState = () => {
-      const currentLevel = config.levels[timer.timerState.currentLevelIndex];
-      const levelLabel = currentLevel?.type === 'break'
-        ? (currentLevel.label || t('config.break'))
-        : `Level ${config.levels.slice(0, timer.timerState.currentLevelIndex + 1).filter(l => l.type === 'level').length}`;
-
-      const sb = currentLevel?.type === 'level' ? currentLevel.smallBlind : 0;
-      const bb = currentLevel?.type === 'level' ? currentLevel.bigBlind : 0;
-      const levelAnte = currentLevel?.type === 'level' ? currentLevel.ante : undefined;
-
-      host.sendState({
-        timerStatus: timer.timerState.status === 'running' ? 'running' : 'paused',
-        remainingSeconds: timer.timerState.remainingSeconds,
-        currentLevelIndex: timer.timerState.currentLevelIndex,
-        levelLabel,
-        smallBlind: sb ?? 0,
-        bigBlind: bb ?? 0,
-        ante: levelAnte,
-        activePlayerCount,
-        totalPlayerCount: config.players.length,
-        isBubble: bubbleActive,
-        tournamentName: config.name,
-        soundEnabled: settings.soundEnabled,
-      });
-    };
-
-    // Send immediately on level/status/player changes
-    sendRemoteState();
-
-    // For running timer: periodic sync every 1s
-    if (remoteStateIntervalRef.current) clearInterval(remoteStateIntervalRef.current);
-    if (timer.timerState.status === 'running') {
-      remoteStateIntervalRef.current = setInterval(sendRemoteState, 1000);
-    }
-    return () => {
-      if (remoteStateIntervalRef.current) {
-        clearInterval(remoteStateIntervalRef.current);
-        remoteStateIntervalRef.current = null;
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- remainingSeconds intentionally excluded: interval handles periodic sync
-  }, [mode, timer.timerState.status, timer.timerState.currentLevelIndex, config.levels, config.players, config.name, activePlayerCount, bubbleActive, settings.soundEnabled, t, remoteHostRef]);
-
-  const switchToGame = () => {
-    // Reset all player state when starting a new tournament
-    setConfig((prev) => {
-      const resetPlayers = prev.players.map((p) => ({
-        ...p,
-        rebuys: 0,
-        addOn: false,
-        status: 'active' as const,
-        placement: null,
-        eliminatedBy: null,
-        knockouts: 0,
-      }));
-
-      // Auto-distribute players to tables if multi-table is enabled
-      let updatedTables = prev.tables;
-      if (updatedTables && updatedTables.length > 0) {
-        const playerIds = resetPlayers.map(p => p.id);
-        updatedTables = distributePlayersToTables(playerIds, updatedTables);
-        // Set per-table dealers to first occupied seat
-        updatedTables = updatedTables.map(t => {
-          if (t.status !== 'active') return t;
-          const firstOccupied = t.seats.find(s => s.playerId !== null);
-          return { ...t, dealerSeat: firstOccupied?.seatNumber ?? null };
-        });
-      }
-
-      return { ...prev, players: resetPlayers, tables: updatedTables };
-    });
-    setAddOnEndLevelIndex(null);
-    setRecentTableMoves([]);
-    // Ensure all panels are visible when starting a game
-    setCleanView(false);
-    setShowPlayerPanel(true);
-    setShowSidebar(true);
-    setShowDealerBadges(true);
-    setMode('game');
-    initSpeech();
-
-    if (config.tables && config.tables.length > 0) {
-      // Multi-table: show seating overlay, timer starts when user dismisses
-      setShowSeatingOverlay(true);
-    } else {
-      timer.restart();
-      if (settings.voiceEnabled) announceTournamentStart(t);
-    }
-  };
-
-  const handleDismissSeating = useCallback(() => {
-    setShowSeatingOverlay(false);
-    timer.restart();
-    if (settings.voiceEnabled) announceTournamentStart(t);
-  }, [timer, settings.voiceEnabled, t]);
-
-  const switchToSetup = () => {
-    cancelSpeech();
-    timer.restart();
-    setAddOnEndLevelIndex(null);
-    setLastHandActive(false);
-    setHandForHandActive(false);
-    closeTVWindow();
-    // Remote control cleanup is handled by useRemoteControl hook (enabled: mode === 'game')
-    setShowRemoteControl(false);
-    resetGameEvents();
-    resetVoice();
-    clearCheckpoint();
-    setMode('setup');
-  };
-
-  const restoreFromCheckpoint = useCallback(() => {
-    if (!pendingCheckpoint) return;
-    setConfig(pendingCheckpoint.config);
-    setSettings(pendingCheckpoint.settings);
-    timer.restoreLevel(
-      pendingCheckpoint.timer.currentLevelIndex,
-      pendingCheckpoint.timer.remainingSeconds,
-    );
-    setPendingCheckpoint(null);
-    setCleanView(false);
-    setShowPlayerPanel(true);
-    setShowSidebar(true);
-    setMode('game');
-  }, [pendingCheckpoint, timer]);
-
-  const dismissCheckpoint = useCallback(() => {
-    clearCheckpoint();
-    setPendingCheckpoint(null);
-  }, []);
-
-  const handleResetLevel = () => {
-    confirmBeforeAction(
-      t('confirm.resetLevel.title'),
-      t('confirm.resetLevel.message'),
-      t('confirm.resetLevel.confirm'),
-      timer.resetLevel,
-    );
-  };
-
-  const handleRestart = () => {
-    confirmBeforeAction(
-      t('confirm.restartTournament.title'),
-      t('confirm.restartTournament.message'),
-      t('confirm.restartTournament.confirm'),
-      () => {
-        timer.restart();
-        // Reset all players to active state
-        setConfig((prev) => ({
-          ...prev,
-          players: prev.players.map((p) => ({
-            ...p,
-            rebuys: 0,
-            addOn: false,
-            status: 'active' as const,
-            placement: null,
-            eliminatedBy: null,
-            knockouts: 0,
-            chips: undefined,
-          })),
-        }));
-        // Reset all game state
-        setAddOnEndLevelIndex(null);
-        setHandForHandActive(false);
-        resetGameEvents();
-      },
-    );
-  };
-
-  const handleExitToSetup = () => {
-    confirmBeforeAction(
-      t('confirm.exitTournament.title'),
-      t('confirm.exitTournament.message'),
-      t('confirm.exitTournament.confirm'),
-      switchToSetup,
-    );
-  };
+  const {
+    showSeatingOverlay,
+    switchToGame,
+    handleDismissSeating,
+    switchToSetup,
+    restoreFromCheckpoint,
+    dismissCheckpoint,
+    handleResetLevel,
+    handleRestart,
+    handleExitToSetup,
+  } = useTournamentModeTransitions({
+    config,
+    settings,
+    pendingCheckpoint,
+    timer,
+    t,
+    setConfig,
+    setSettings,
+    setMode,
+    setPendingCheckpoint,
+    setAddOnEndLevelIndex,
+    setRecentTableMoves,
+    setCleanView,
+    setShowPlayerPanel,
+    setShowSidebar,
+    setShowDealerBadges,
+    setLastHandActive,
+    setHandForHandActive,
+    setShowRemoteControl,
+    closeTVWindow,
+    resetGameEvents,
+    resetVoice,
+    confirmBeforeAction,
+  });
 
   // Remote Controller Mode — render ONLY the controller view, skip all other UI
   if (isControllerMode && controllerPeerId) {
@@ -946,141 +792,60 @@ function App() {
 
   return (
     <>
-    <PrintView config={config} result={finishedResult} />
+    {printViewReady && (
+      <SectionErrorBoundary><Suspense fallback={null}>
+        <PrintView config={config} result={finishedResult} />
+      </Suspense></SectionErrorBoundary>
+    )}
     <div className="min-h-full flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 border-b border-gray-300 dark:border-gray-700/30 bg-white/95 dark:bg-gray-900/50 backdrop-blur-sm">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
-          <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight truncate">
-            {mode === 'game' && config.name ? `♠ ♥ ${config.name} ♦ ♣` : t('app.title')}
-          </h1>
-          {mode === 'game' && (
-            <span className="text-sm text-gray-400 dark:text-gray-500 font-mono tabular-nums">{clockTime}</span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
-          <ThemeSwitcher />
-          <LanguageSwitcher />
-          <VoiceSwitcher settings={settings} onChange={setSettings} />
-          {mode === 'game' && !tournamentFinished && (
-            <>
-              <button
-                onClick={startRemoteHost}
-                className="relative px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30 rounded-lg text-sm font-medium transition-all duration-200"
-                title={t('remote.openRemote')}
-              >
-                {String.fromCodePoint(0x1F4F1)}
-                {remoteHostStatus === 'connected' && (
-                  <span
-                    className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-800"
-                    style={{ backgroundColor: 'var(--accent-500)' }}
-                  />
-                )}
-              </button>
-              <button
-                onClick={tvWindowActive ? closeTVWindow : openTVWindow}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
-                  tvWindowActive
-                    ? 'text-white shadow-sm'
-                    : 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600/30'
-                }`}
-                style={tvWindowActive ? { backgroundColor: 'var(--accent-600)', borderColor: 'var(--accent-500)', boxShadow: `0 1px 2px var(--accent-900)` } : undefined}
-                title={tvWindowActive ? t('display.tvWindowActive') : t('display.activate')}
-              >
-                📺
-              </button>
-            </>
-          )}
-          {mode !== 'game' && (
-            <button
-              onClick={() => {
-                if (mode === 'league') setMode('setup');
-                else setMode('game');
-              }}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                mode === 'league'
-                  ? 'bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30'
-                  : 'text-white shadow-md'
-              }`}
-              style={mode === 'setup' ? { background: 'linear-gradient(to bottom, var(--accent-600), var(--accent-700))', boxShadow: `0 4px 6px -1px var(--accent-900)` } : undefined}
-              title={mode === 'setup' ? t('app.startGame') : t('app.setup')}
-            >
-              {mode === 'setup' ? t('app.startGame') : t('app.setup')}
-            </button>
-          )}
-          {mode === 'game' && (
-            <button
-              onClick={handleExitToSetup}
-              className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30 rounded-lg text-sm font-medium transition-all duration-200"
-              title={t('app.setup')}
-            >
-              {t('app.setup')}
-            </button>
-          )}
-          {(mode === 'setup' || mode === 'league') && (
-            <>
-              {mode === 'setup' && (
-                <button
-                  onClick={() => setShowTemplates(true)}
-                  className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-300 dark:border-gray-700/30"
-                  title={t('app.templates')}
-                  data-tour="templates"
-                >
-                  {t('app.templates')}
-                </button>
-              )}
-              <button
-                onClick={() => setMode(mode === 'league' ? 'setup' : 'league')}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-200 border ${
-                  mode === 'league'
-                    ? 'text-white shadow-sm'
-                    : 'bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700/30'
-                }`}
-                style={mode === 'league' ? { backgroundColor: 'var(--accent-600)', borderColor: 'var(--accent-500)' } : undefined}
-                title={t('app.leagues')}
-                data-tour="leagues"
-              >
-                {t('app.leagues')}
-              </button>
-              <button
-                onClick={() => setShowHistory(true)}
-                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-300 dark:border-gray-700/30"
-                title={t('app.history')}
-              >
-                {t('app.history')}
-              </button>
-              {mode === 'setup' && (
-                <button
-                  onClick={() => setShowInstallGuide(true)}
-                  className="p-1.5 bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg transition-all duration-200 border border-gray-300 dark:border-gray-700/30"
-                  title={t('settings.installApp' as Parameters<typeof t>[0])}
-                  aria-label={t('settings.installApp' as Parameters<typeof t>[0])}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
-                  </svg>
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </header>
+      <AppHeader
+        mode={mode}
+        tournamentName={config.name}
+        clockTime={clockTime}
+        settings={settings}
+        onSettingsChange={setSettings}
+        tournamentFinished={tournamentFinished}
+        canUseRemoteControl={canUseRemoteControl}
+        canUseTVDisplay={canUseTVDisplay}
+        canUseLeagueMode={canUseLeagueMode}
+        remoteHostConnected={remoteHostStatus === 'connected'}
+        tvWindowActive={tvWindowActive}
+        onStartRemoteHost={startRemoteHost}
+        onToggleTVWindow={handleToggleTVWindow}
+        onToggleSetupGame={() => {
+          if (mode === 'league') setMode('setup');
+          else setMode('game');
+        }}
+        onExitToSetup={handleExitToSetup}
+        onShowTemplates={() => setShowTemplates(true)}
+        onToggleLeagueMode={() => setMode(mode === 'league' ? 'setup' : 'league')}
+        onShowHistory={() => setShowHistory(true)}
+        onShowInstallGuide={() => setShowInstallGuide(true)}
+        onOpenFeatureGate={openFeatureGate}
+      />
 
       {/* Main content */}
       <main id="main-content" className="flex-1 flex">
         {mode === 'league' ? (
           /* League Mode */
-          <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
-            <LeagueView
-              onStartTournament={(leagueId) => {
-                setConfig(prev => ({ ...prev, leagueId }));
-                setMode('setup');
-              }}
-            />
-          </Suspense></SectionErrorBoundary>
+          <LeagueModeContainer
+            onStartTournament={(leagueId, options) => {
+              setConfig(prev => ({ ...prev, leagueId }));
+              if (options?.quickStart) {
+                const quickConfig = { ...config, leagueId };
+                const quickStartErrors = collectStartErrors(quickConfig, t);
+                if (quickStartErrors.length === 0) {
+                  switchToGame();
+                  return;
+                }
+                showToast(quickStartErrors[0]);
+              }
+              setMode('setup');
+            }}
+          />
         ) : mode === 'setup' ? (
           /* Setup Mode */
-          <SetupPage
+          <SetupModeContainer
             config={config}
             setConfig={setConfig}
             pendingCheckpoint={pendingCheckpoint}
@@ -1092,193 +857,67 @@ function App() {
           />
         ) : tournamentFinished && winner ? (
           /* Tournament Finished */
-          <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
-            <TournamentFinished
-              players={config.players}
-              winner={winner}
-              buyIn={config.buyIn}
-              payout={config.payout}
-              bounty={config.bounty}
-              rebuy={config.rebuy}
-              addOn={config.addOn}
-              tournamentResult={finishedResult}
-              onBackToSetup={switchToSetup}
-            />
-          </Suspense></SectionErrorBoundary>
+          <TournamentFinishedContainer
+            players={config.players}
+            winner={winner}
+            buyIn={config.buyIn}
+            payout={config.payout}
+            bounty={config.bounty}
+            rebuy={config.rebuy}
+            addOn={config.addOn}
+            tournamentResult={finishedResult}
+            onBackToSetup={switchToSetup}
+          />
         ) : (
           /* Game Mode */
-          <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
-          <div className="flex-1 flex flex-col overflow-hidden relative">
-            {/* Player Panel (LEFT) */}
-            {showPlayerPanel && config.players.length > 0 && (
-              <aside className="w-full md:absolute md:left-0 md:top-0 md:bottom-0 md:w-60 lg:w-72 md:z-20 md:shadow-xl md:shadow-black/20 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-900/40 p-3 sm:p-4 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
-                <PlayerPanel
-                  players={config.players}
-                  dealerIndex={config.dealerIndex}
-                  buyIn={config.buyIn}
-                  payout={config.payout}
-                  rebuyActive={rebuyActive}
-                  rebuyConfig={config.rebuy}
-                  addOnConfig={config.addOn}
-                  addOnWindowOpen={addOnWindowOpen}
-                  bountyConfig={config.bounty}
-                  averageStack={averageStack}
-                  onUpdateRebuys={updatePlayerRebuys}
-                  onUpdateAddOn={updatePlayerAddOn}
-                  onEliminatePlayer={eliminatePlayer}
-                  onReinstatePlayer={reinstatePlayer}
-                  onAdvanceDealer={handleAdvanceDealer}
-                  showDealerBadges={showDealerBadges}
-                  onToggleDealerBadges={handleToggleDealerBadges}
-                  onUpdateStack={updatePlayerStack}
-                  onInitStacks={initStacks}
-                  onClearStacks={clearStacks}
-                  lateRegOpen={lateRegOpen}
-                  onAddLatePlayer={addLatePlayer}
-                  onReEntryPlayer={handleReEntry}
-                  tables={config.tables}
-                  onSidePotResultChange={setSidePotData}
-                />
-              </aside>
-            )}
-
-            {/* Timer area (CENTER) with edge toggle buttons */}
-            <div className="flex-1 flex flex-col relative">
-              {/* Desktop: side toggle buttons */}
-              {config.players.length > 0 && (
-                <button
-                  onClick={() => setShowPlayerPanel((v) => !v)}
-                  className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 w-7 h-20 items-center justify-center bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700/80 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-r-lg text-xs transition-all duration-200 border-r border-y border-gray-200 dark:border-gray-700/30 shadow-md shadow-gray-300/30 dark:shadow-black/10"
-                  title={showPlayerPanel ? t('app.hidePlayers') : t('app.showPlayers')}
-                >
-                  {showPlayerPanel ? '\u25C0' : '\u25B6'}
-                </button>
-              )}
-              <button
-                onClick={() => setShowSidebar((v) => !v)}
-                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-30 w-7 h-20 items-center justify-center bg-white dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700/80 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-l-lg text-xs transition-all duration-200 border-l border-y border-gray-200 dark:border-gray-700/30 shadow-md shadow-gray-300/30 dark:shadow-black/10"
-                title={showSidebar ? t('app.hideSidebar') : t('app.showSidebar')}
-              >
-                {showSidebar ? '\u25B6' : '\u25C0'}
-              </button>
-
-              {/* Timer + Controls */}
-              <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 gap-3 sm:gap-6 relative">
-                <TimerDisplay
-                  timerState={timer.timerState}
-                  levels={config.levels}
-                  largeDisplay={settings.largeDisplay}
-                  countdownEnabled={settings.countdownEnabled}
-                  onScrub={timer.setRemainingSeconds}
-                  onScrubEnd={timer.start}
-                  chipConfig={config.chips}
-                  cleanView={cleanView}
-                  colorUpMap={colorUpMap}
-                  anteMode={config.anteMode}
-                />
-                <BubbleIndicator
-                  isBubble={bubbleActive}
-                  showItmFlash={showItmFlash}
-                  addOnWindowOpen={addOnWindowOpen}
-                  addOnCost={config.addOn.cost}
-                  addOnChips={config.addOn.chips}
-                  lastHandActive={lastHandActive}
-                  handForHandActive={handForHandActive}
-                />
-                {!cleanView && (
-                  <RebuyStatus
-                    active={rebuyActive}
-                    rebuy={config.rebuy}
-                    currentPlayLevel={currentPlayLevel}
-                    elapsedSeconds={tournamentElapsed}
-                  />
-                )}
-                <Controls
-                  timerState={timer.timerState}
-                  onToggleStartPause={timer.toggleStartPause}
-                  onNext={timer.nextLevel}
-                  onPrevious={timer.previousLevel}
-                  onReset={handleResetLevel}
-                  onRestart={handleRestart}
-                  hideSecondaryControls={cleanView}
-                  cleanView={cleanView}
-                  onToggleCleanView={toggleCleanView}
-                  lastHandActive={lastHandActive}
-                  onLastHand={handleLastHand}
-                  handForHandActive={handForHandActive}
-                  onHandForHand={handleHandForHand}
-                  onNextHand={handleNextHand}
-                  showHandForHand={bubbleActive}
-                  callTheClockSeconds={settings.callTheClockSeconds}
-                  onCallTheClock={() => setShowCallTheClock(true)}
-                />
-              </div>
-
-              {/* Mobile: sidebar toggle buttons */}
-              <div className="flex md:hidden justify-center gap-2 px-3 pb-2">
-                {config.players.length > 0 && (
-                  <button
-                    onClick={() => setShowPlayerPanel((v) => !v)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      showPlayerPanel
-                        ? 'text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                    }`}
-                    style={showPlayerPanel ? { backgroundColor: 'var(--accent-700)' } : undefined}
-                  >
-                    {showPlayerPanel ? `✓ ${t('app.players')}` : t('app.players')}
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowSidebar((v) => !v)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    showSidebar
-                      ? 'text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                  }`}
-                  style={showSidebar ? { backgroundColor: 'var(--accent-700)' } : undefined}
-                >
-                  {showSidebar ? `✓ ${t('app.sidebar')}` : t('app.sidebar')}
-                </button>
-              </div>
-            </div>
-
-            {/* Sidebar (RIGHT) */}
-            {showSidebar && (
-              <aside className="w-full md:absolute md:right-0 md:top-0 md:bottom-0 md:w-60 lg:w-72 md:z-20 md:shadow-xl md:shadow-black/20 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700/30 bg-gray-50 dark:bg-gray-900/40 p-3 sm:p-4 space-y-4 sm:space-y-6 overflow-y-auto max-h-[40vh] sm:max-h-[50vh] md:max-h-none">
-                <LevelPreview timerState={timer.timerState} levels={config.levels} />
-                {config.chips.enabled && (
-                  <ChipSidebar
-                    chipConfig={config.chips}
-                    colorUpMap={colorUpMap}
-                    currentLevelIndex={timer.timerState.currentLevelIndex}
-                    levels={config.levels}
-                  />
-                )}
-                {config.tables && config.tables.length > 0 && (
-                  <MultiTablePanel
-                    config={config}
-                    recentMoves={recentTableMoves}
-                    onUpdateTables={handleUpdateTables}
-                    onTableMoves={handleTableMoves}
-                  />
-                )}
-                <SettingsPanel
-                  settings={settings}
-                  onChange={setSettings}
-                  onToggleFullscreen={toggleFullscreen}
-                  onShowInstallGuide={() => setShowInstallGuide(true)}
-                />
-                <button
-                  onClick={handleExitToSetup}
-                  className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm transition-colors"
-                >
-                  {t('app.backToSetup')}
-                </button>
-              </aside>
-            )}
-          </div>
-          </Suspense></SectionErrorBoundary>
+          <GameModeContainer
+            config={config}
+            settings={settings}
+            timer={timer}
+            cleanView={cleanView}
+            showPlayerPanel={showPlayerPanel}
+            showSidebar={showSidebar}
+            showDealerBadges={showDealerBadges}
+            rebuyActive={rebuyActive}
+            addOnWindowOpen={addOnWindowOpen}
+            currentPlayLevel={currentPlayLevel}
+            tournamentElapsed={tournamentElapsed}
+            averageStack={averageStack}
+            bubbleActive={bubbleActive}
+            showItmFlash={showItmFlash}
+            lastHandActive={lastHandActive}
+            handForHandActive={handForHandActive}
+            lateRegOpen={lateRegOpen}
+            colorUpMap={colorUpMap}
+            recentTableMoves={recentTableMoves}
+            onTogglePlayerPanel={() => setShowPlayerPanel((v) => !v)}
+            onToggleSidebar={() => setShowSidebar((v) => !v)}
+            onUpdatePlayerRebuys={updatePlayerRebuys}
+            onUpdatePlayerAddOn={updatePlayerAddOn}
+            onEliminatePlayer={eliminatePlayer}
+            onReinstatePlayer={reinstatePlayer}
+            onAdvanceDealer={handleAdvanceDealer}
+            onToggleDealerBadges={handleToggleDealerBadges}
+            onUpdatePlayerStack={updatePlayerStack}
+            onInitStacks={initStacks}
+            onClearStacks={clearStacks}
+            onAddLatePlayer={addLatePlayer}
+            onReEntryPlayer={handleReEntry}
+            onSidePotResultChange={setSidePotData}
+            onResetLevel={handleResetLevel}
+            onRestartTournament={handleRestart}
+            onToggleCleanView={toggleCleanView}
+            onLastHand={handleLastHand}
+            onHandForHand={handleHandForHand}
+            onNextHand={handleNextHand}
+            onShowCallTheClock={() => setShowCallTheClock(true)}
+            onUpdateTables={handleUpdateTables}
+            onTableMoves={handleTableMoves}
+            onSettingsChange={setSettings}
+            onToggleFullscreen={toggleFullscreen}
+            onShowInstallGuide={() => setShowInstallGuide(true)}
+            onExitToSetup={handleExitToSetup}
+          />
         )}
       </main>
 
@@ -1319,34 +958,36 @@ function App() {
 
       {/* Templates Modal */}
       {showTemplates && (
-        <TemplateManager
-          config={config}
-          onLoad={setConfig}
-          onClose={() => setShowTemplates(false)}
-        />
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
+          <TemplateManager
+            config={config}
+            onLoad={setConfig}
+            onClose={() => setShowTemplates(false)}
+          />
+        </Suspense></SectionErrorBoundary>
       )}
 
       {showHistory && (
-        <TournamentHistory onClose={() => setShowHistory(false)} />
-      )}
-
-      {showLeagues && (
-        <LeagueManager onClose={() => setShowLeagues(false)} currentConfig={config} />
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
+          <TournamentHistory onClose={() => setShowHistory(false)} />
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Setup Wizard (first-time users) */}
       {showWizard && mode === 'setup' && !pendingCheckpoint && (
-        <SetupWizard
-          onComplete={(wizardConfig) => {
-            setConfig(wizardConfig);
-            setShowWizard(false);
-            // Show onboarding tour after wizard if not already completed
-            if (!isTourCompleted()) {
-              setTimeout(() => setShowTour(true), 500);
-            }
-          }}
-          onSkip={() => setShowWizard(false)}
-        />
+        <SectionErrorBoundary><Suspense fallback={null}>
+          <SetupWizard
+            onComplete={(wizardConfig) => {
+              setConfig(wizardConfig);
+              setShowWizard(false);
+              // Show onboarding tour after wizard if not already completed
+              if (!isTourCompleted()) {
+                setTimeout(() => setShowTour(true), 500);
+              }
+            }}
+            onSkip={() => setShowWizard(false)}
+          />
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* Onboarding Tour (after wizard completion) */}
@@ -1409,7 +1050,15 @@ function App() {
           </div>
         </div>
       )}
-      <Analytics />
+      {lockedFeature && (
+        <FeatureGateModal
+          feature={lockedFeature}
+          currentTier={entitlements.tier}
+          requiredTier={getRequiredTier(lockedFeature)}
+          onClose={closeFeatureGate}
+          onUpgrade={handleUpgradeIntent}
+        />
+      )}
       <ToastContainer />
     </div>
     </>
