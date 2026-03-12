@@ -29,3 +29,10 @@ AUDIT_REPORT.md
 *.njsproj
 *.sln
 *.sw?
+
+# Vercel
+.vercel
+
+# Test artifacts
+test-results/
+playwright-report/
