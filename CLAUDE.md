@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.2.0
+**Version**: 6.3.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -313,7 +313,7 @@ public/
 - **Re-Entry Mode**: Players can re-enter after elimination (new ID, same person). `reEnterPlayer()` in players.ts. `reEntryEnabled/maxReEntries` in RebuyConfig. Re-entry button on eliminated players. Auto-seat at smallest table.
 - **Seat Locking**: Lock individual seats at multi-table setup. `Seat.locked` property. `toggleSeatLock()` in tables.ts. Locked seats skipped during distribution and balancing.
 - **Druckbare Ergebnisse**: Tournament results printable from TournamentFinished screen via PrintView.
-- **Remote Control (PeerJS)**: Smartphone remote control via PeerJS (WebRTC data channel with cloud-brokered signaling). One-scan flow: host generates peer ID (`PKR-XXXXX`), QR code contains app URL with `#remote=` hash, phone scans → opens app → auto-connects. `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + touch-optimized fullscreen controller UI (play/pause/next/prev/dealer/sound/call-the-clock). `useRemoteControl` hook manages state. Auto-reconnect (3 attempts, exponential backoff). Wake Lock on controller. Keepalive pings every 10s. Lazy-loaded ~9KB chunk.
+- **Remote Control (PeerJS)**: Smartphone remote control via PeerJS (WebRTC data channel with cloud-brokered signaling). One-scan flow: host generates peer ID (`PKR-XXXXX`), QR code contains app URL with `#remote=` hash, phone scans → opens app → auto-connects. `RemoteHost` + `RemoteController` classes in `remote.ts`. `RemoteControl.tsx` with host QR modal + touch-optimized fullscreen controller UI (play/pause/next/prev/dealer/sound/call-the-clock + **player management**: collapsible player section with elimination, rebuy, add-on buttons). Bounty-aware eliminator-picker (touch-button grid). `RemotePlayerInfo` compact protocol (~35 bytes/player). `useRemoteControl` hook manages state, `useRemoteHostBridge` bridges commands to tournament actions. Auto-reconnect (3 attempts, exponential backoff). Wake Lock on controller. Keepalive pings every 10s. Lazy-loaded ~14KB chunk.
 - **App.tsx Refactoring**: Extracted `useKeyboardShortcuts` (72 lines) and `useTournamentActions` (317 lines) hooks. App.tsx reduced from ~1543 to ~1300 lines.
 - **UI Integration Tests**: 95 component tests via `@testing-library/react` in `tests/components.test.tsx` covering 17 components/hooks (NumberStepper, CollapsibleSection, CollapsibleSubSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog, LoadingFallback, ConfigEditor, SettingsPanel, PlayerPanel).
 - **Offline-first**: Core functionality works offline. PeerJS signaling server required only for Remote Control pairing
@@ -358,6 +358,17 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.3.0 — Remote Control: Spieler-Management
+
+- **Spieler-Sektion auf Fernbedienung**: Aufklappbare Spielerliste in Controller-UI. Zeigt aktive Spieler mit Name, Rebuy-Count, Add-On-Status.
+- **Spieler eliminieren**: ❌-Button pro Spieler. Ohne Bounty: sofortige Elimination. Mit Bounty: Touch-Eliminator-Picker mit anderen aktiven Spielern.
+- **Rebuy/Add-On per Remote**: Kontextuelle Buttons pro Spieler (nur sichtbar wenn Phase aktiv).
+- **RemoteState v2**: `RemotePlayerInfo[]`, `bountyEnabled`, `rebuyActive`, `addOnWindowOpen`. Kompakte Feldnamen (~35 Bytes/Spieler).
+- **3 neue Commands**: `eliminatePlayer`, `rebuyPlayer`, `addOnPlayer` mit Payload + HMAC.
+- **14 neue Translation-Keys** (7 DE + 7 EN)
+- **RemoteControl.tsx**: ~14KB Chunk (+5KB für Player-Management)
+- **963 Tests gesamt**
 
 ### v6.2.0 — In-App Help Center
 

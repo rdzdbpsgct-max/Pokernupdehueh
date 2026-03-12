@@ -5,6 +5,23 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.3.0] – 2026-03-12
+
+### Remote Control: Spieler-Management
+
+- **Spieler-Sektion auf Fernbedienung**: Aufklappbare Spielerliste (ChevronIcon) direkt in der Controller-UI. Zeigt aktive Spieler mit Name, Rebuy-Count und Add-On-Status.
+- **Spieler eliminieren**: ❌-Button pro Spieler. Ohne Bounty: sofortige Elimination. Mit Bounty: Inline-Eliminator-Picker mit Touch-Buttons aller anderen aktiven Spieler + Abbrechen.
+- **Rebuy per Remote**: 🔄-Button pro Spieler, nur sichtbar während aktiver Rebuy-Phase (`rebuyActive`).
+- **Add-On per Remote**: Add-On-Button pro Spieler, nur sichtbar während Add-On-Fenster (`addOnWindowOpen`).
+- **RemoteState erweitert**: Spielerdaten (`RemotePlayerInfo[]`), `bountyEnabled`, `rebuyActive`, `addOnWindowOpen` im State-Protokoll. Kompakte Feldnamen (n, s, r, ao) für Message-Size-Budget (~35 Bytes/Spieler). Size-Guard: bei >18 Spielern nur aktive gesendet.
+- **3 neue Commands**: `eliminatePlayer`, `rebuyPlayer`, `addOnPlayer` mit Payload-Unterstützung. HMAC-signiert.
+- **REMOTE_STATE_CONTRACT_VERSION** von 1 auf 2 erhöht.
+- **14 neue Translation-Keys** (7 DE + 7 EN): `remote.eliminate`, `remote.rebuyShort`, `remote.addOnShort`, `remote.whoEliminated`, `remote.cancelElimination`, `remote.noPlayers`
+- **RemoteControl.tsx**: Von ~9KB auf ~14KB Chunk (neue PlayerSection + PlayerRow Sub-Components)
+- **963 Tests gesamt**
+
+---
+
 ## [6.2.0] – 2026-03-12
 
 ### In-App Help Center

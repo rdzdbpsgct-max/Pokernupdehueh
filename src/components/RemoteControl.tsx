@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { RemoteController, buildRemoteUrl } from '../domain/remote';
-import type { RemoteCommand, RemoteState, HostStatus, ControllerStatus } from '../domain/remote';
+import type { RemoteCommand, RemoteState, RemotePlayerInfo, HostStatus, ControllerStatus } from '../domain/remote';
 import { useTranslation } from '../i18n';
 import { useDialogA11y } from '../hooks/useDialogA11y';
 import { useTheme } from '../theme';
 import { formatTime } from '../domain/logic';
+import { ChevronIcon } from './ChevronIcon';
 
 // ---------------------------------------------------------------------------
 // Host Modal — pure display component (host lifecycle managed by useRemoteControl hook)
@@ -127,6 +128,10 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
   const [displaySeconds, setDisplaySeconds] = useState<number | null>(null);
   const lastStateTimeRef = useRef<number>(0);
 
+  // Player management section state
+  const [playersExpanded, setPlayersExpanded] = useState(false);
+  const [eliminatingId, setEliminatingId] = useState<string | null>(null);
+
   useEffect(() => {
     const ctrl = new RemoteController(hostPeerId, {
       onState: (s) => {
@@ -164,8 +169,8 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
     return () => clearInterval(id);
   }, [state]);
 
-  const sendCmd = useCallback((action: RemoteCommand['action']) => {
-    controllerRef.current?.sendCommand(action);
+  const sendCmd = useCallback((action: RemoteCommand['action'], payload?: Record<string, unknown>) => {
+    controllerRef.current?.sendCommand(action, payload);
   }, []);
 
   const handleRetry = useCallback(() => {
@@ -348,6 +353,30 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
             </button>
           </div>
 
+          {/* Player management section */}
+          {state?.players && state.players.length > 0 && (
+            <PlayerSection
+              players={state.players}
+              expanded={playersExpanded}
+              onToggle={() => setPlayersExpanded((v) => !v)}
+              eliminatingId={eliminatingId}
+              onStartEliminate={(id) => setEliminatingId(id)}
+              onCancelEliminate={() => setEliminatingId(null)}
+              onConfirmEliminate={(playerId, eliminatedBy) => {
+                sendCmd('eliminatePlayer', { playerId, eliminatedBy });
+                setEliminatingId(null);
+              }}
+              onRebuy={(playerId) => sendCmd('rebuyPlayer', { playerId })}
+              onAddOn={(playerId, hasAddOn) => sendCmd('addOnPlayer', { playerId, hasAddOn })}
+              bountyEnabled={state.bountyEnabled ?? false}
+              rebuyActive={state.rebuyActive ?? false}
+              addOnWindowOpen={state.addOnWindowOpen ?? false}
+              activeCount={state.activePlayerCount}
+              totalCount={state.totalPlayerCount}
+              t={t as TFn}
+            />
+          )}
+
           {/* Footer with disconnect */}
           <div className="mt-auto pt-3">
             <button
@@ -355,6 +384,218 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
               className="w-full px-4 py-3 bg-gray-800/60 text-gray-500 rounded-xl text-sm active:scale-95 transition-transform border border-gray-700/30"
             >
               {t('remote.disconnect')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Player management sub-components
+// ---------------------------------------------------------------------------
+
+type TFn = (key: string, params?: Record<string, string | number>) => string;
+
+interface PlayerSectionProps {
+  players: RemotePlayerInfo[];
+  expanded: boolean;
+  onToggle: () => void;
+  eliminatingId: string | null;
+  onStartEliminate: (playerId: string) => void;
+  onCancelEliminate: () => void;
+  onConfirmEliminate: (playerId: string, eliminatedBy: string | null) => void;
+  onRebuy: (playerId: string) => void;
+  onAddOn: (playerId: string, hasAddOn: boolean) => void;
+  bountyEnabled: boolean;
+  rebuyActive: boolean;
+  addOnWindowOpen: boolean;
+  activeCount: number;
+  totalCount: number;
+  t: TFn;
+}
+
+function PlayerSection({
+  players,
+  expanded,
+  onToggle,
+  eliminatingId,
+  onStartEliminate,
+  onCancelEliminate,
+  onConfirmEliminate,
+  onRebuy,
+  onAddOn,
+  bountyEnabled,
+  rebuyActive,
+  addOnWindowOpen,
+  activeCount,
+  totalCount,
+  t,
+}: PlayerSectionProps) {
+  const activePlayers = players.filter((p) => p.s === 'a');
+
+  return (
+    <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden mb-3">
+      {/* Collapsible header */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="group w-full flex items-center justify-between px-4 py-3 active:bg-gray-800 transition-colors"
+      >
+        <span className="text-sm font-medium text-gray-300">
+          {String.fromCodePoint(0x1F465)} {activeCount}/{totalCount} {t('remote.players')}
+        </span>
+        <ChevronIcon
+          open={expanded}
+          className="text-gray-500 group-active:text-gray-300"
+        />
+      </button>
+
+      {/* Player list */}
+      {expanded && (
+        <div className="border-t border-gray-800 max-h-[40vh] overflow-y-auto">
+          {activePlayers.length === 0 ? (
+            <div className="px-4 py-6 text-center text-sm text-gray-500">
+              {t('remote.noPlayers')}
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-800/60">
+              {activePlayers.map((player) => (
+                <PlayerRow
+                  key={player.id}
+                  player={player}
+                  isEliminating={eliminatingId === player.id}
+                  onStartEliminate={() => onStartEliminate(player.id)}
+                  onCancelEliminate={onCancelEliminate}
+                  onConfirmEliminate={(eliminatedBy) => onConfirmEliminate(player.id, eliminatedBy)}
+                  onRebuy={() => onRebuy(player.id)}
+                  onAddOn={(hasAddOn) => onAddOn(player.id, hasAddOn)}
+                  bountyEnabled={bountyEnabled}
+                  rebuyActive={rebuyActive}
+                  addOnWindowOpen={addOnWindowOpen}
+                  otherActivePlayers={activePlayers.filter((p) => p.id !== player.id)}
+                  t={t}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface PlayerRowProps {
+  player: RemotePlayerInfo;
+  isEliminating: boolean;
+  onStartEliminate: () => void;
+  onCancelEliminate: () => void;
+  onConfirmEliminate: (eliminatedBy: string | null) => void;
+  onRebuy: () => void;
+  onAddOn: (hasAddOn: boolean) => void;
+  bountyEnabled: boolean;
+  rebuyActive: boolean;
+  addOnWindowOpen: boolean;
+  otherActivePlayers: RemotePlayerInfo[];
+  t: TFn;
+}
+
+function PlayerRow({
+  player,
+  isEliminating,
+  onStartEliminate,
+  onCancelEliminate,
+  onConfirmEliminate,
+  onRebuy,
+  onAddOn,
+  bountyEnabled,
+  rebuyActive,
+  addOnWindowOpen,
+  otherActivePlayers,
+  t,
+}: PlayerRowProps) {
+  return (
+    <div className="px-4 py-2.5">
+      {/* Main row: Name + action buttons */}
+      <div className="flex items-center gap-2">
+        <span className="flex-1 min-w-0 text-sm text-gray-200 truncate">
+          {player.n}
+          {player.r > 0 && (
+            <span className="ml-1.5 text-xs text-gray-500">R{player.r}</span>
+          )}
+          {player.ao && (
+            <span className="ml-1 text-xs text-gray-500">A</span>
+          )}
+        </span>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Rebuy button — only during rebuy phase */}
+          {rebuyActive && (
+            <button
+              onClick={onRebuy}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium active:scale-95 transition-transform border"
+              style={{
+                backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)',
+                borderColor: 'color-mix(in srgb, var(--accent-500) 30%, transparent)',
+                color: 'var(--accent-400)',
+              }}
+              title={t('remote.rebuyShort')}
+            >
+              {String.fromCodePoint(0x1F504)} {t('remote.rebuyShort')}
+            </button>
+          )}
+
+          {/* Add-On toggle — only during add-on window */}
+          {addOnWindowOpen && !player.ao && (
+            <button
+              onClick={() => onAddOn(true)}
+              className="px-2.5 py-1.5 bg-amber-900/30 text-amber-400 rounded-lg text-xs font-medium active:scale-95 transition-transform border border-amber-700/40"
+              title={t('remote.addOnShort')}
+            >
+              {t('remote.addOnShort')}
+            </button>
+          )}
+
+          {/* Eliminate button */}
+          <button
+            onClick={() => {
+              if (bountyEnabled) {
+                onStartEliminate();
+              } else {
+                onConfirmEliminate(null);
+              }
+            }}
+            className="px-2.5 py-1.5 bg-red-900/30 text-red-400 rounded-lg text-xs font-medium active:scale-95 transition-transform border border-red-700/40"
+            title={t('remote.eliminate')}
+          >
+            {String.fromCodePoint(0x274C)} {t('remote.eliminate')}
+          </button>
+        </div>
+      </div>
+
+      {/* Bounty eliminator picker — shown inline when this player is being eliminated */}
+      {isEliminating && (
+        <div className="mt-2.5 pt-2.5 border-t border-gray-700/40 animate-fade-in">
+          <p className="text-xs text-gray-400 mb-2">
+            {t('remote.whoEliminated', { name: player.n })}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {otherActivePlayers.map((other) => (
+              <button
+                key={other.id}
+                onClick={() => onConfirmEliminate(other.id)}
+                className="px-3 py-2 bg-gray-800 text-gray-200 rounded-lg text-xs font-medium active:scale-95 transition-transform border border-gray-700/50 hover:bg-gray-700"
+              >
+                {other.n}
+              </button>
+            ))}
+            <button
+              onClick={onCancelEliminate}
+              className="px-3 py-2 bg-gray-800/60 text-gray-500 rounded-lg text-xs font-medium active:scale-95 transition-transform border border-gray-700/30"
+            >
+              {t('remote.cancelElimination')}
             </button>
           </div>
         </div>

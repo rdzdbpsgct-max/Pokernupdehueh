@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { SetStateAction } from 'react';
-import type { RemoteCommand } from '../domain/remote';
-import type { Settings, TimerState, TournamentConfig } from '../domain/types';
+import type { RemoteCommand, RemotePlayerInfo } from '../domain/remote';
+import type { Player, Settings, TimerState, TournamentConfig } from '../domain/types';
 import type { TranslationKey } from '../i18n';
 import { useRemoteControl } from './useRemoteControl';
 
@@ -26,10 +26,32 @@ interface UseRemoteHostBridgeParams {
   timerControls: TimerControls;
   activePlayerCount: number;
   bubbleActive: boolean;
+  rebuyActive: boolean;
+  addOnWindowOpen: boolean;
+  bountyEnabled: boolean;
   onAdvanceDealer: () => void;
+  onEliminatePlayer: (playerId: string, eliminatedBy: string | null) => void;
+  onUpdatePlayerRebuys: (playerId: string, newCount: number) => void;
+  onUpdatePlayerAddOn: (playerId: string, hasAddOn: boolean) => void;
   setShowCallTheClock: (value: SetStateAction<boolean>) => void;
   setSettings: (value: SetStateAction<Settings>) => void;
   t: Translate;
+}
+
+/** Build compact player list for remote state (short field names for message size) */
+function buildRemotePlayerList(players: Player[]): RemotePlayerInfo[] {
+  // For message-size budget: only include active players when list is large
+  const list = players.length > 18
+    ? players.filter((p) => p.status === 'active')
+    : players;
+
+  return list.map((p) => ({
+    id: p.id,
+    n: p.name.slice(0, 15),
+    s: p.status === 'eliminated' ? 'e' as const : 'a' as const,
+    r: p.rebuys,
+    ao: p.addOn,
+  }));
 }
 
 export function useRemoteHostBridge({
@@ -40,11 +62,27 @@ export function useRemoteHostBridge({
   timerControls,
   activePlayerCount,
   bubbleActive,
+  rebuyActive,
+  addOnWindowOpen,
+  bountyEnabled,
   onAdvanceDealer,
+  onEliminatePlayer,
+  onUpdatePlayerRebuys,
+  onUpdatePlayerAddOn,
   setShowCallTheClock,
   setSettings,
   t,
 }: UseRemoteHostBridgeParams) {
+  // Keep stable refs for player callbacks (avoid re-creating handleRemoteCommand on every player change)
+  const playersRef = useRef(config.players);
+  playersRef.current = config.players;
+  const eliminateRef = useRef(onEliminatePlayer);
+  eliminateRef.current = onEliminatePlayer;
+  const rebuyRef = useRef(onUpdatePlayerRebuys);
+  rebuyRef.current = onUpdatePlayerRebuys;
+  const addOnRef = useRef(onUpdatePlayerAddOn);
+  addOnRef.current = onUpdatePlayerAddOn;
+
   const handleRemoteCommand = useCallback((cmd: RemoteCommand) => {
     switch (cmd.action) {
       case 'toggle':
@@ -78,6 +116,35 @@ export function useRemoteHostBridge({
           voiceEnabled: !prev.voiceEnabled,
         }));
         break;
+      case 'eliminatePlayer': {
+        const playerId = cmd.payload?.playerId as string | undefined;
+        const eliminatedBy = (cmd.payload?.eliminatedBy as string | undefined) ?? null;
+        if (playerId) {
+          const player = playersRef.current.find((p) => p.id === playerId);
+          if (player && player.status === 'active') {
+            eliminateRef.current(playerId, eliminatedBy);
+          }
+        }
+        break;
+      }
+      case 'rebuyPlayer': {
+        const playerId = cmd.payload?.playerId as string | undefined;
+        if (playerId) {
+          const player = playersRef.current.find((p) => p.id === playerId);
+          if (player && player.status === 'active') {
+            rebuyRef.current(playerId, player.rebuys + 1);
+          }
+        }
+        break;
+      }
+      case 'addOnPlayer': {
+        const playerId = cmd.payload?.playerId as string | undefined;
+        const hasAddOn = cmd.payload?.hasAddOn as boolean | undefined;
+        if (playerId && hasAddOn !== undefined) {
+          addOnRef.current(playerId, hasAddOn);
+        }
+        break;
+      }
     }
   }, [timerControls, onAdvanceDealer, setShowCallTheClock, setSettings]);
 
@@ -123,6 +190,10 @@ export function useRemoteHostBridge({
         isBubble: bubbleActive,
         tournamentName: config.name,
         soundEnabled: settings.soundEnabled,
+        players: buildRemotePlayerList(config.players),
+        bountyEnabled,
+        rebuyActive,
+        addOnWindowOpen,
       });
     };
 
@@ -149,6 +220,9 @@ export function useRemoteHostBridge({
     config.name,
     activePlayerCount,
     bubbleActive,
+    rebuyActive,
+    addOnWindowOpen,
+    bountyEnabled,
     settings.soundEnabled,
     t,
     remoteHostRef,

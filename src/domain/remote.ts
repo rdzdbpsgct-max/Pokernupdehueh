@@ -180,12 +180,29 @@ export interface RemoteCommand {
     | 'reset'
     | 'call-the-clock'
     | 'advanceDealer'
-    | 'toggleSound';
+    | 'toggleSound'
+    | 'eliminatePlayer'
+    | 'rebuyPlayer'
+    | 'addOnPlayer';
   payload?: Record<string, unknown>;
   /** HMAC-SHA256 signature (hex) — required when secret is configured */
   hmac?: string;
   /** Timestamp (ms since epoch) — used for HMAC replay protection */
   ts?: number;
+}
+
+/** Compact player info sent in RemoteState (short field names for message size) */
+export interface RemotePlayerInfo {
+  /** Player ID (needed for commands) */
+  id: string;
+  /** Display name (truncated to 15 chars for size) */
+  n: string;
+  /** 'a' = active, 'e' = eliminated */
+  s: 'a' | 'e';
+  /** Current rebuy count */
+  r: number;
+  /** Has add-on */
+  ao: boolean;
 }
 
 /** State updates sent from Host → Controller */
@@ -205,6 +222,14 @@ export interface RemoteState {
     isBubble: boolean;
     tournamentName?: string;
     soundEnabled?: boolean;
+    /** Compact player list for remote player management */
+    players?: RemotePlayerInfo[];
+    /** Whether bounty is enabled (controller needs for eliminator selection) */
+    bountyEnabled?: boolean;
+    /** Whether rebuy phase is currently active */
+    rebuyActive?: boolean;
+    /** Whether add-on window is currently open */
+    addOnWindowOpen?: boolean;
   };
 }
 
@@ -215,12 +240,13 @@ export interface RemotePing {
 
 export type RemoteMessage = RemoteCommand | RemoteState | RemotePing;
 
-export const REMOTE_STATE_CONTRACT_VERSION = 1;
+export const REMOTE_STATE_CONTRACT_VERSION = 2;
 
 /** Valid command actions for whitelist validation */
 const VALID_COMMAND_ACTIONS: ReadonlySet<RemoteCommand['action']> = new Set([
   'play', 'pause', 'toggle', 'next', 'prev', 'reset',
   'call-the-clock', 'advanceDealer', 'toggleSound',
+  'eliminatePlayer', 'rebuyPlayer', 'addOnPlayer',
 ]);
 
 export type HostStatus = 'initializing' | 'ready' | 'connected' | 'error';
