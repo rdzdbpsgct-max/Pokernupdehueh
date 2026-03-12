@@ -101,6 +101,13 @@ export function useRemoteHostBridge({
   const addOnRef = useRef(onUpdatePlayerAddOn);
   addOnRef.current = onUpdatePlayerAddOn;
 
+  // Refs for values that change every tick — excluded from useEffect deps to avoid
+  // interval teardown, but the interval must read the CURRENT value (not stale closure).
+  const remainingSecondsRef = useRef(timerState.remainingSeconds);
+  remainingSecondsRef.current = timerState.remainingSeconds;
+  const tournamentElapsedRef = useRef(tournamentElapsed);
+  tournamentElapsedRef.current = tournamentElapsed;
+
   const handleRemoteCommand = useCallback((cmd: RemoteCommand) => {
     switch (cmd.action) {
       case 'toggle':
@@ -207,7 +214,7 @@ export function useRemoteHostBridge({
 
       host.sendState({
         timerStatus: timerState.status === 'running' ? 'running' : 'paused',
-        remainingSeconds: timerState.remainingSeconds,
+        remainingSeconds: remainingSecondsRef.current,
         currentLevelIndex: timerState.currentLevelIndex,
         levelLabel,
         smallBlind: smallBlind ?? 0,
@@ -224,7 +231,7 @@ export function useRemoteHostBridge({
         addOnWindowOpen,
         prizePool,
         avgStackBB,
-        elapsedSeconds: tournamentElapsed,
+        elapsedSeconds: tournamentElapsedRef.current,
         nextLevelLabel: buildNextLevelLabel(config.levels, timerState.currentLevelIndex, t as (key: string) => string),
         isBreak,
         isItm,
