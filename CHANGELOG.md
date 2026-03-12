@@ -5,6 +5,20 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.2.0] – 2026-03-12
+
+### In-App Help Center
+
+- **Help Center**: Vollständiges, durchsuchbares, bilinguales Hilfesystem als BottomSheet-Modal
+- **3 Tabs**: Anleitung (8 Feature-Sektionen), FAQ (14 Einträge), Tastenkürzel (11 Einträge)
+- **Live-Suche**: Filtert Sektionen und FAQ in Echtzeit (case-insensitive, Titel + Inhalt)
+- **Neue Dateien**: `src/domain/helpContent.ts` (typisierte Hilfe-Daten, DE/EN), `src/components/HelpCenter.tsx` (UI)
+- **AppHeader**: Neuer **?**-Icon-Button im Header (Setup + Liga-Modus)
+- **Lazy-loaded**: ~27KB separater Chunk, nur bei Bedarf geladen
+- **18 Translation-Keys** (9 DE + 9 EN)
+
+---
+
 ## [6.1.0] – 2026-03-12
 
 ### Audit-Hardening, Feature-Gates & Wizard-Erweiterung

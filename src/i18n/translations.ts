@@ -627,6 +627,17 @@ const de = {
   'wizard.tipVoice': 'Sprachansagen',
   'wizard.tipVoiceDesc': 'Professionelle Ansagen für Blindwechsel, Pausen und Events — umschaltbar im Header.',
 
+  // --- Help Center ---
+  'help.title': 'Hilfe & Anleitung',
+  'help.close': 'Schließen',
+  'help.search': 'Suchen...',
+  'help.guideTab': 'Anleitung',
+  'help.faqTab': 'FAQ',
+  'help.shortcutsTab': 'Tastenkürzel',
+  'help.noResults': 'Keine Ergebnisse für \u201E{q}\u201C',
+  'help.shortcutKey': 'Taste',
+  'help.shortcutAction': 'Aktion',
+
   // --- Display: Seating ---
   'display.seating': 'Sitzplan',
 
@@ -1549,6 +1560,17 @@ const en: Record<TranslationKey, string> = {
   'wizard.tipTVDesc': 'Show timer & blinds on a TV or projector — press T during game mode.',
   'wizard.tipVoice': 'Voice Announcements',
   'wizard.tipVoiceDesc': 'Professional announcements for blind changes, breaks and events — toggle in the header.',
+
+  // --- Help Center ---
+  'help.title': 'Help & Guide',
+  'help.close': 'Close',
+  'help.search': 'Search...',
+  'help.guideTab': 'Guide',
+  'help.faqTab': 'FAQ',
+  'help.shortcutsTab': 'Shortcuts',
+  'help.noResults': 'No results for \u201C{q}\u201D',
+  'help.shortcutKey': 'Key',
+  'help.shortcutAction': 'Action',
 
   // --- Display: Seating ---
   'display.seating': 'Seating',

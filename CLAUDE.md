@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.1.0
+**Version**: 6.2.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -86,6 +86,7 @@ src/
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
 │   ├── SetupPage.tsx            # Setup mode UI — collapsible sections, config editors, start button
 │   ├── SetupWizard.tsx          # Guided first-time setup wizard (6 steps)
+│   ├── HelpCenter.tsx           # In-app help center — bilingual guide, FAQ, keyboard shortcuts
 │   ├── RemoteControl.tsx        # PeerJS remote control — host QR modal + smartphone controller UI
 │   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume, call-the-clock, accent color, background
 │   ├── SidePotCalculator.tsx    # Side pot calculator modal for all-in situations
@@ -125,6 +126,7 @@ src/
 │   ├── league.ts                 # League domain logic — game days, standings, finances, tiebreaker, QR
 │   ├── tables.ts                # Multi-table management: seat-level CRUD, distribution, balancing, dissolution, final table merge, per-table dealer
 │   ├── toast.ts                  # Toast notification context and hook (useToast)
+│   ├── helpContent.ts            # Bilingual help content data — sections, FAQ, keyboard shortcuts
 │   ├── displayChannel.ts         # BroadcastChannel communication for TV display window
 │   ├── remote.ts                # PeerJS-based remote control (host + controller, signaling via PeerJS Cloud)
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
@@ -299,6 +301,7 @@ public/
 - **Mystery Bounty**: Alternative to fixed bounty — `BountyConfig.type: 'fixed' | 'mystery'`. Configurable pool of random bounty amounts (`mysteryPool: number[]`). `drawMysteryBounty()` randomly draws from pool on elimination. Voice announcement `announceMysteryBounty()` reveals drawn amount. Segmented toggle in BountyEditor with pool editor + presets. Backward-compatible via `parseConfigObject`.
 - **Printable blind structure**: `PrintView.tsx` renders print-optimized blind table, chip values, payout, and tournament info. "Print" button in SetupPage triggers `window.print()`. `@media print` CSS hides all UI except print content. Clean black-on-white design.
 - **Setup Wizard**: Guided 6-step first-time setup (`SetupWizard.tsx`, ~280 lines). Steps: Welcome → Players → Buy-In → Blind Speed → Tips (Remote, TV, Voice) → Review. Shows only on first visit (`poker-timer-wizard-completed` in localStorage). Generates full config with `defaultConfig`, `generateBlindStructure`, `defaultPlayers`. Skippable. `isWizardCompleted()` / `markWizardCompleted()` in persistence.ts.
+- **Help Center**: In-app documentation system (`HelpCenter.tsx`, ~300 lines + `helpContent.ts`, ~350 lines). Bilingual (DE/EN) with 3 tabs: Guide (8 collapsible sections covering all features), FAQ (14 entries), Keyboard Shortcuts (11 entries). Live search filters sections and FAQ. Uses `BottomSheet` for responsive modal. Accessible via **?** icon button in header (setup + league mode). Lazy-loaded ~27KB chunk.
 - **Seating Diagram**: SVG oval poker table in TV Display Mode (`SeatingScreen.tsx`, ~155 lines). Players arranged elliptically around green felt table. Shows active/eliminated status, dealer button (D), chip leader badge (CL). 6th rotating screen in DisplayMode. `viewBox="0 0 1000 600"`, responsive.
 - **Multi-Table Support**: `Table` and `TableMove` types in types.ts. `tables.ts` module with pure functions: `createTable()`, `distributePlayersToTables()`, `getActivePlayersPerTable()`, `removePlayerFromTable()`, `findPlayerTable()`, `balanceTables()` (iterative, max ±1 diff), `shouldMergeToFinalTable()`, `mergeToFinalTable()`. `MultiTablePanel.tsx` (lazy-loaded) shows table list, balance button, move announcements. Setup: CollapsibleSection with table count/seats config, distribute button. Auto-detect final table on elimination. Voice: `announceTableMove()` and `announceFinalTable()` via Web Speech API. `parseConfigObject()` handles backward-compat (undefined if missing).
 - **Tournament Presets**: 3 built-in tournament profiles ("Quick Cash Game", "Standard Home Game", "Deep Stack Tournament") for instant start. `getBuiltInPresets()` in persistence.ts. Preset buttons on SetupPage.
@@ -355,6 +358,15 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.2.0 — In-App Help Center
+
+- **Help Center**: Vollständiges, durchsuchbares, bilinguales Hilfesystem als BottomSheet-Modal. 3 Tabs: Anleitung (8 Sektionen mit allen Features), FAQ (14 Einträge), Tastenkürzel (11 Einträge). Live-Suche filtert Sektionen und FAQ. Erreichbar über **?**-Button im Header.
+- **Neue Dateien**: `src/domain/helpContent.ts` (~350 Zeilen — typisierte Datenstruktur mit DE/EN Texten), `src/components/HelpCenter.tsx` (~300 Zeilen — UI mit BottomSheet, Tabs, Accordions, Suche)
+- **18 neue Translation-Keys** (9 DE + 9 EN): `help.title`, `help.close`, `help.search`, `help.guideTab`, `help.faqTab`, `help.shortcutsTab`, `help.noResults`, `help.shortcutKey`, `help.shortcutAction`
+- **AppHeader.tsx**: Neuer `onShowHelp` Prop, **?**-Icon-Button mit SVG
+- **App.tsx**: `showHelp` State, lazy-loaded HelpCenter (~27KB Chunk)
+- **963 Tests gesamt**
 
 ### v6.1.0 — Audit-Hardening, Feature-Gates & Wizard-Erweiterung
 

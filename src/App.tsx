@@ -85,6 +85,7 @@ const RemoteHostModal = lazy(() => import('./components/RemoteControl').then(m =
 const RemoteControllerView = lazy(() => import('./components/RemoteControl').then(m => ({ default: m.RemoteControllerView })));
 const OnboardingTour = lazy(() => import('./components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
 const PWAInstallGuide = lazy(() => import('./components/PWAInstallGuide').then(m => ({ default: m.PWAInstallGuide })));
+const HelpCenter = lazy(() => import('./components/HelpCenter').then(m => ({ default: m.HelpCenter })));
 const TemplateManager = lazy(() => import('./components/TemplateManager').then(m => ({ default: m.TemplateManager })));
 const TournamentHistory = lazy(() => import('./components/TournamentHistory').then(m => ({ default: m.TournamentHistory })));
 
@@ -266,6 +267,7 @@ function App() {
   // PWA install prompt
   const { canPrompt: canInstallPrompt, isInstalled: isPWAInstalled, promptInstall } = useInstallPrompt();
   const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Online/Offline detection — show toast on status change
   const isOnline = useOnlineStatus();
@@ -821,6 +823,7 @@ function App() {
         onToggleLeagueMode={() => setMode(mode === 'league' ? 'setup' : 'league')}
         onShowHistory={() => setShowHistory(true)}
         onShowInstallGuide={() => setShowInstallGuide(true)}
+        onShowHelp={() => setShowHelp(true)}
         onOpenFeatureGate={openFeatureGate}
       />
 
@@ -995,6 +998,13 @@ function App() {
         <Suspense fallback={null}>
           <OnboardingTour onComplete={() => setShowTour(false)} />
         </Suspense>
+      )}
+
+      {/* Help Center */}
+      {showHelp && (
+        <SectionErrorBoundary><Suspense fallback={null}>
+          <HelpCenter onClose={() => setShowHelp(false)} />
+        </Suspense></SectionErrorBoundary>
       )}
 
       {/* PWA Install Guide */}
