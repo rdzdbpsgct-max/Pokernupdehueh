@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.0.0
+**Version**: 6.1.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (943 tests, single run)
+npm run test         # Vitest run (963 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -61,6 +61,8 @@ src/
 │   │   ├── SeatingScreen.tsx    # SVG oval poker table seating diagram
 │   │   ├── LeagueScreen.tsx      # League standings display for TV mode
 │   │   └── index.ts             # Barrel export
+│   ├── AppHeader.tsx            # App header: mode toggle, clock, theme/language/voice switchers, feature gates
+│   ├── FeatureGateModal.tsx     # Modal for locked features (freemium paywall)
 │   ├── ErrorBoundary.tsx        # React error boundary with reload fallback
 │   ├── LanguageSwitcher.tsx     # DE/EN toggle
 │   ├── LoadingFallback.tsx      # Suspense fallback with animated pulse dots
@@ -83,7 +85,7 @@ src/
 │   ├── RebuyStatus.tsx          # Rebuy active indicator
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
 │   ├── SetupPage.tsx            # Setup mode UI — collapsible sections, config editors, start button
-│   ├── SetupWizard.tsx          # Guided first-time setup wizard (5 steps)
+│   ├── SetupWizard.tsx          # Guided first-time setup wizard (6 steps)
 │   ├── RemoteControl.tsx        # PeerJS remote control — host QR modal + smartphone controller UI
 │   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume, call-the-clock, accent color, background
 │   ├── SidePotCalculator.tsx    # Side pot calculator modal for all-in situations
@@ -96,7 +98,12 @@ src/
 │   ├── SharedResultView.tsx     # Read-only modal for QR-shared tournament results
 │   ├── TournamentHistory.tsx    # Tournament history modal with standings, player stats, export
 │   ├── Toast.tsx                # Lightweight toast notification system (portal-based, auto-dismiss)
-│   └── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
+│   ├── TournamentStats.tsx      # Live stats bar (players, prizepool, avg BB, time)
+│   └── modes/                   # Mode container components (extracted from App.tsx)
+│       ├── GameModeContainer.tsx         # Game mode orchestrator
+│       ├── LeagueModeContainer.tsx       # League mode container
+│       ├── SetupModeContainer.tsx        # Setup mode container
+│       └── TournamentFinishedContainer.tsx # Tournament finished container
 ├── domain/                      # Business logic (no React imports)
 │   ├── types.ts                 # All TypeScript interfaces and type aliases
 │   ├── logic.ts                 # Barrel re-exports from all domain modules
@@ -122,19 +129,31 @@ src/
 │   ├── remote.ts                # PeerJS-based remote control (host + controller, signaling via PeerJS Cloud)
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
-│   └── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
+│   ├── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
+│   ├── entitlements.ts          # Feature gate / freemium entitlement checks
+│   ├── monetizationTelemetry.ts # Telemetry for feature access and trial usage
+│   ├── proBlueprint.ts          # Pro tier feature definitions
+│   ├── recovery.ts              # Error recovery and fallback strategies
+│   └── startValidation.ts       # Pre-tournament start validation
 ├── hooks/
 │   ├── useTimer.ts              # Drift-free timer hook (wall-clock based, 100ms tick)
 │   ├── useVoiceAnnouncements.ts # Voice announcement effects (extracted from App.tsx)
 │   ├── useGameEvents.ts         # Game event effects: victory, bubble, ITM sounds
 │   ├── useKeyboardShortcuts.ts  # Keyboard shortcut handler (extracted from App.tsx)
 │   ├── useTournamentActions.ts  # Tournament action callbacks (extracted from App.tsx)
-│   └── useRemoteControl.ts     # Remote control state management hook (PeerJS)
+│   ├── useRemoteControl.ts     # Remote control state management hook (PeerJS)
+│   ├── useFeatureGate.ts       # Feature gate hook (entitlement checks)
+│   ├── usePrintViewWarmup.ts   # Warm-up print view for faster capture
+│   ├── useRemoteHostBridge.ts  # Remote host bridge communication
+│   ├── useSharedPayloads.ts    # Shared payload management across modes
+│   └── useTournamentModeTransitions.ts # Tournament mode transition logic
 ├── theme/                       # Dark/Light mode system
 │   ├── index.ts                 # Public re-exports
 │   ├── ThemeContext.tsx          # React Context provider, system preference listener, localStorage persistence
 │   ├── themeContextValue.ts     # Context value type + ThemeMode type
 │   └── useTheme.ts              # Hook: mode, setMode, resolved
+├── monitoring/                  # Error tracking
+│   └── initSentry.ts           # Sentry initialization (idle-loaded in production)
 └── i18n/                        # Lightweight custom i18n (no react-i18next)
     ├── index.ts                 # Public re-exports
     ├── LanguageContext.tsx       # React Context provider, localStorage persistence
@@ -143,17 +162,21 @@ src/
     └── useTranslation.ts        # Hook: t(key, params) + language state
 
 tests/
-├── logic.test.ts                # 527 unit tests for domain logic + PeerJS remote control
+├── logic.test.ts                # 530 unit tests for domain logic + PeerJS remote control
 ├── components.test.tsx          # 95 UI component tests (NumberStepper, CollapsibleSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, CollapsibleSubSection, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog, LoadingFallback, ConfigEditor, SettingsPanel, PlayerPanel)
 ├── edge-cases.test.ts           # 88 edge case tests (timer, blinds, players, multi-table, format, tournament, validation, helpers)
 ├── sound-speech.test.ts         # 54 sound effects + speech announcement tests
+├── integration.test.ts          # 36 cross-module integration tests (checkpoint, timer, config compat, tournament flow)
 ├── tournamentActions.test.tsx   # 31 useTournamentActions hook tests
-├── hooks.test.tsx               # 26 useKeyboardShortcuts + useGameEvents tests
+├── hooks.test.tsx               # 25 useKeyboardShortcuts + useGameEvents tests
 ├── i18n.test.ts                 # 24 i18n key parity, parameters, placeholder consistency, quality
 ├── persistence.test.ts          # 24 config/settings/checkpoint save/load round-trips
 ├── controls.test.tsx            # 22 Controls component tests (buttons, callbacks, ARIA)
-├── display-channel.test.ts      # 12 BroadcastChannel serialization + communication tests
+├── display-channel.test.ts      # 14 BroadcastChannel serialization + communication tests
+├── entitlements.test.ts         # 8 feature gate / entitlement tests
 ├── toast.test.ts                # 6 toast notification system tests
+├── monetizationTelemetry.test.ts # 3 monetization telemetry tests
+├── recovery.test.ts             # 3 error recovery tests
 └── setup.ts                     # Test setup: jest-dom matchers, matchMedia mock, fake-indexeddb
 
 public/
@@ -275,7 +298,7 @@ public/
 - **Registered Player ID**: `GameDayParticipant.registeredPlayerId` links game day participants to the persistent `RegisteredPlayer` database for stable identity across name changes. Populated in `createGameDayFromResult()` (from App.tsx) and `GameDayEditor.tsx` save handler.
 - **Mystery Bounty**: Alternative to fixed bounty — `BountyConfig.type: 'fixed' | 'mystery'`. Configurable pool of random bounty amounts (`mysteryPool: number[]`). `drawMysteryBounty()` randomly draws from pool on elimination. Voice announcement `announceMysteryBounty()` reveals drawn amount. Segmented toggle in BountyEditor with pool editor + presets. Backward-compatible via `parseConfigObject`.
 - **Printable blind structure**: `PrintView.tsx` renders print-optimized blind table, chip values, payout, and tournament info. "Print" button in SetupPage triggers `window.print()`. `@media print` CSS hides all UI except print content. Clean black-on-white design.
-- **Setup Wizard**: Guided 5-step first-time setup (`SetupWizard.tsx`, ~230 lines). Steps: Welcome → Players → Buy-In → Blind Speed → Review. Shows only on first visit (`poker-timer-wizard-completed` in localStorage). Generates full config with `defaultConfig`, `generateBlindStructure`, `defaultPlayers`. Skippable. `isWizardCompleted()` / `markWizardCompleted()` in persistence.ts.
+- **Setup Wizard**: Guided 6-step first-time setup (`SetupWizard.tsx`, ~280 lines). Steps: Welcome → Players → Buy-In → Blind Speed → Tips (Remote, TV, Voice) → Review. Shows only on first visit (`poker-timer-wizard-completed` in localStorage). Generates full config with `defaultConfig`, `generateBlindStructure`, `defaultPlayers`. Skippable. `isWizardCompleted()` / `markWizardCompleted()` in persistence.ts.
 - **Seating Diagram**: SVG oval poker table in TV Display Mode (`SeatingScreen.tsx`, ~155 lines). Players arranged elliptically around green felt table. Shows active/eliminated status, dealer button (D), chip leader badge (CL). 6th rotating screen in DisplayMode. `viewBox="0 0 1000 600"`, responsive.
 - **Multi-Table Support**: `Table` and `TableMove` types in types.ts. `tables.ts` module with pure functions: `createTable()`, `distributePlayersToTables()`, `getActivePlayersPerTable()`, `removePlayerFromTable()`, `findPlayerTable()`, `balanceTables()` (iterative, max ±1 diff), `shouldMergeToFinalTable()`, `mergeToFinalTable()`. `MultiTablePanel.tsx` (lazy-loaded) shows table list, balance button, move announcements. Setup: CollapsibleSection with table count/seats config, distribute button. Auto-detect final table on elimination. Voice: `announceTableMove()` and `announceFinalTable()` via Web Speech API. `parseConfigObject()` handles backward-compat (undefined if missing).
 - **Tournament Presets**: 3 built-in tournament profiles ("Quick Cash Game", "Standard Home Game", "Deep Stack Tournament") for instant start. `getBuiltInPresets()` in persistence.ts. Preset buttons on SetupPage.
@@ -294,8 +317,8 @@ public/
 
 ## Testing
 
-- **943 tests** across 12 test files + 1 setup file
-- Core files: `logic.test.ts` (503), `components.test.tsx` (95), `edge-cases.test.ts` (88), `sound-speech.test.ts` (54), `hooks.test.tsx` (41), `integration.test.ts` (35), `tournamentActions.test.tsx` (34), `i18n.test.ts` (24), `persistence.test.ts` (24), `toast.test.ts` (18), `display-channel.test.ts` (12), `controls.test.tsx` (15)
+- **963 tests** across 15 test files + 1 setup file
+- Core files: `logic.test.ts` (530), `components.test.tsx` (95), `edge-cases.test.ts` (88), `sound-speech.test.ts` (54), `integration.test.ts` (36), `tournamentActions.test.tsx` (31), `hooks.test.tsx` (25), `i18n.test.ts` (24), `persistence.test.ts` (24), `controls.test.tsx` (22), `display-channel.test.ts` (14), `entitlements.test.ts` (8), `toast.test.ts` (6), `monetizationTelemetry.test.ts` (3), `recovery.test.ts` (3)
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
@@ -332,6 +355,17 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.1.0 — Audit-Hardening, Feature-Gates & Wizard-Erweiterung
+
+- **Mode-Container Refactoring**: App.tsx aufgeteilt in `GameModeContainer`, `SetupModeContainer`, `LeagueModeContainer`, `TournamentFinishedContainer`. Neuer `AppHeader.tsx`.
+- **Feature-Gate System**: `entitlements.ts`, `FeatureGateModal.tsx`, `useFeatureGate.ts` — Freemium-Vorbereitung mit Feature-Verfügbarkeitsprüfung.
+- **Monitoring**: Sentry-Integration (`initSentry.ts`), Monetization-Telemetrie, Recovery-Modul, Start-Validierung.
+- **5 neue Hooks**: `useFeatureGate`, `usePrintViewWarmup`, `useRemoteHostBridge`, `useSharedPayloads`, `useTournamentModeTransitions`.
+- **Setup-Wizard 6 Schritte**: Neuer „Gut zu wissen"-Schritt mit Feature-Tipps (Fernbedienung, TV-Modus, Sprachansagen). 16 neue Translation-Keys.
+- **Lint-Fix**: Lazy-imports in `renderApp()` verschoben (`react-refresh/only-export-components`).
+- **Dependencies**: GH Actions v6, @vitejs/plugin-react 5.2.0, eslint-plugin-react-refresh 0.5.2, @types/node 25, globals 17.
+- **963 Tests gesamt** (15 Dateien, +20 neue Tests)
 
 ### v6.0.0 — IndexedDB-Migration: Cache-First Storage-Architektur
 

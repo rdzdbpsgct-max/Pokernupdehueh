@@ -5,6 +5,47 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.1.0] – 2026-03-12
+
+### Audit-Hardening, Feature-Gates & Wizard-Erweiterung
+
+**App-Architektur Refactoring**
+- **Mode-Container**: App.tsx aufgeteilt in `GameModeContainer`, `SetupModeContainer`, `LeagueModeContainer`, `TournamentFinishedContainer` — klarere Trennung der Modi
+- **AppHeader**: Header-Logik in eigene Komponente `AppHeader.tsx` extrahiert
+- **Hook-Extraktion**: 5 neue Hooks — `useFeatureGate`, `usePrintViewWarmup`, `useRemoteHostBridge`, `useSharedPayloads`, `useTournamentModeTransitions`
+
+**Feature-Gate / Freemium-Vorbereitung**
+- **Entitlements-System**: `entitlements.ts` mit Feature-Verfügbarkeitsprüfung
+- **Feature-Gate-Modal**: `FeatureGateModal.tsx` für gesperrte Features
+- **Monetization-Telemetrie**: `monetizationTelemetry.ts` für Feature-Nutzungsanalyse
+- **Pro-Blueprint**: `proBlueprint.ts` definiert Pro-Tier-Features
+
+**Robustheit & Monitoring**
+- **Sentry-Integration**: `initSentry.ts` — Idle-loaded Error-Tracking in Production
+- **Recovery-Modul**: `recovery.ts` — Fehler-Recovery und Fallback-Strategien
+- **Start-Validierung**: `startValidation.ts` — Pre-Tournament-Validierung
+- **CI/CD**: GitHub Actions auf checkout v6, setup-node v6, configure-pages v5, upload-pages-artifact v4 aktualisiert
+
+**Setup-Wizard erweitert (5 → 6 Schritte)**
+- Neuer Schritt „Gut zu wissen" zwischen Blind-Speed und Zusammenfassung
+- 3 Feature-Karten: Fernbedienung (📱), TV-Modus (📺), Sprachansagen (🎙️)
+- 16 neue Translation-Keys (8 DE + 8 EN)
+
+**Lint-Fix**
+- `Analytics`/`SpeedInsights` lazy-imports aus Top-Level in `renderApp()` verschoben (`react-refresh/only-export-components`)
+
+**Dependencies aktualisiert**
+- `@vitejs/plugin-react` 5.1.4 → 5.2.0
+- `eslint-plugin-react-refresh` 0.4.26 → 0.5.2
+- `typescript-eslint` 8.56.1 → 8.57.0
+- `vitest` aktualisiert
+- `@types/node` 24 → 25
+- `globals` 16 → 17
+
+**Tests**: 963 gesamt (+20 neue: entitlements 8, monetizationTelemetry 3, recovery 3, + erweiterte logic/integration/display-channel)
+
+---
+
 ## [6.0.0] – 2026-03-09
 
 ### IndexedDB-Migration — Cache-First Storage-Architektur
