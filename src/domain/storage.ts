@@ -19,6 +19,7 @@ import type {
   RegisteredPlayer,
   League,
   GameDay,
+  TournamentEvent,
 } from './types';
 import type { TournamentTemplate } from './templatePersistence';
 
@@ -30,7 +31,7 @@ import type { TournamentTemplate } from './templatePersistence';
 type SingletonStore = 'config' | 'settings' | 'checkpoint';
 
 /** Stores that hold arrays of items with an `id` field. */
-type CollectionStore = 'templates' | 'history' | 'players' | 'leagues' | 'gameDays';
+type CollectionStore = 'templates' | 'history' | 'players' | 'leagues' | 'gameDays' | 'events';
 
 /** All store names. */
 export type StoreKey = SingletonStore | CollectionStore;
@@ -45,6 +46,7 @@ interface StoreTypeMap {
   players: RegisteredPlayer[];
   leagues: League[];
   gameDays: GameDay[];
+  events: TournamentEvent[];
 }
 
 /** Item types for collection stores (all have `id: string`). */
@@ -54,6 +56,7 @@ interface CollectionItemMap {
   players: RegisteredPlayer;
   leagues: League;
   gameDays: GameDay;
+  events: TournamentEvent;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,7 +64,7 @@ interface CollectionItemMap {
 // ---------------------------------------------------------------------------
 
 const DB_NAME = 'poker-timer-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const MIGRATED_KEY = 'poker-timer-migrated';
 
 /** localStorage keys that should be migrated to IndexedDB. */
@@ -81,7 +84,7 @@ const SINGLETON_KEY = 'current';
 
 /** Collection store names (for type narrowing). */
 const COLLECTION_STORES: ReadonlySet<string> = new Set([
-  'templates', 'history', 'players', 'leagues', 'gameDays',
+  'templates', 'history', 'players', 'leagues', 'gameDays', 'events',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -97,6 +100,7 @@ const cache: StoreTypeMap = {
   players: [],
   leagues: [],
   gameDays: [],
+  events: [],
 };
 
 let ready = false;
@@ -131,7 +135,7 @@ export async function initStorage(): Promise<void> {
           }
         }
         // Collection stores (keyPath: 'id')
-        for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays'] as const) {
+        for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays', 'events'] as const) {
           if (!database.objectStoreNames.contains(store)) {
             database.createObjectStore(store, { keyPath: 'id' });
           }
@@ -174,6 +178,7 @@ export async function resetStorage(): Promise<void> {
   cache.players = [];
   cache.leagues = [];
   cache.gameDays = [];
+  cache.events = [];
 }
 
 /** Whether the storage layer has been initialized. */
@@ -367,7 +372,7 @@ async function loadAllIntoCache(): Promise<void> {
   }
 
   // Collection stores
-  for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays'] as const) {
+  for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays', 'events'] as const) {
     try {
       const items = await db.getAll(store);
       setCacheValue(store, items ?? []);
@@ -401,4 +406,13 @@ function loadAllFromLocalStorage(): void {
       // Skip corrupt data
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Event Log helpers
+// ---------------------------------------------------------------------------
+
+/** Clears all events from cache and persists the empty array. */
+export function clearEvents(): void {
+  setCached('events', []);
 }

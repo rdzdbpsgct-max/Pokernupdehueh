@@ -22,6 +22,10 @@ export interface Player {
   reEntryCount?: number;
   /** Original player ID when this is a re-entry instance */
   originalPlayerId?: string;
+  /** Epoch ms when this player was eliminated */
+  eliminatedAt?: number;
+  /** Timestamps (epoch ms) of each rebuy taken */
+  rebuyTimestamps?: number[];
 }
 
 export type PayoutMode = 'percent' | 'euro';
@@ -201,6 +205,8 @@ export interface TournamentResult {
   addOnCost?: number;
   /** Separate rebuy pot amount (only set when RebuyConfig.separatePot is true) */
   rebuyPot?: number;
+  /** Full event log for the tournament (optional, populated from v6.5.0+) */
+  events?: TournamentEvent[];
 }
 
 export interface PlayerStat {
@@ -439,4 +445,36 @@ export interface TimerState {
   startedAt: number | null;
   /** Seconds remaining at the moment the timer was last started/resumed */
   remainingAtStart: number | null;
+}
+
+// ─── Tournament Event Log ───────────────────────────────────────────────────
+
+export type TournamentEventType =
+  | 'level_start'
+  | 'level_skip_forward'
+  | 'level_skip_backward'
+  | 'timer_paused'
+  | 'timer_resumed'
+  | 'player_eliminated'
+  | 'player_reinstated'
+  | 'rebuy_taken'
+  | 'addon_taken'
+  | 'late_registration'
+  | 're_entry'
+  | 'dealer_advanced'
+  | 'table_move'
+  | 'table_dissolved'
+  | 'call_the_clock_started'
+  | 'call_the_clock_expired'
+  | 'break_extended'
+  | 'break_skipped'
+  | 'tournament_started'
+  | 'tournament_finished';
+
+export interface TournamentEvent {
+  id: string;
+  type: TournamentEventType;
+  timestamp: number;
+  levelIndex: number;
+  data: Record<string, unknown>;
 }

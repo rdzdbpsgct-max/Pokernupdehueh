@@ -14,3 +14,4 @@ export * from './tables';
 export * from './league';
 export * from './storage';
 export * from './recovery';
+export * from './tournamentEvents';
