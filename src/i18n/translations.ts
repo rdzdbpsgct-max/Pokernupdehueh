@@ -101,6 +101,9 @@ const de = {
   'controls.handForHand': 'Hand-für-Hand',
   'controls.handForHandTooltip': 'Hand-for-Hand-Modus (H)',
   'controls.callTheClock': 'Uhr ansagen',
+  'controls.skipBreak': 'Pause überspringen',
+  'controls.extendBreak5': '+5 Min',
+  'controls.extendBreak10': '+10 Min',
   'controls.nextHand': 'Nächste Hand',
   'controls.nextHandTooltip': 'Nächste Hand starten',
 
@@ -1073,6 +1076,9 @@ const en: Record<TranslationKey, string> = {
   'controls.handForHand': 'Hand for Hand',
   'controls.handForHandTooltip': 'Hand-for-Hand mode (H)',
   'controls.callTheClock': 'Call the Clock',
+  'controls.skipBreak': 'Skip Break',
+  'controls.extendBreak5': '+5 min',
+  'controls.extendBreak10': '+10 min',
   'controls.nextHand': 'Next Hand',
   'controls.nextHandTooltip': 'Start next hand',
 

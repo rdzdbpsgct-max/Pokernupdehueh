@@ -9,6 +9,9 @@ interface Props {
   onPrevious: () => void;
   onReset: () => void;
   onRestart: () => void;
+  isBreak?: boolean;
+  onSkipBreak?: () => void;
+  onExtendBreak?: (seconds: number) => void;
   hideSecondaryControls?: boolean;
   cleanView?: boolean;
   onToggleCleanView?: () => void;
@@ -29,6 +32,9 @@ export const Controls = memo(function Controls({
   onPrevious,
   onReset,
   onRestart,
+  isBreak,
+  onSkipBreak,
+  onExtendBreak,
   hideSecondaryControls,
   cleanView,
   onToggleCleanView,
@@ -80,6 +86,39 @@ export const Controls = memo(function Controls({
           {t('controls.next')}
         </button>
       </div>
+
+      {/* Break controls: skip / extend */}
+      {isBreak && (onSkipBreak || onExtendBreak) && (
+        <div className="flex items-center gap-2">
+          {onSkipBreak && (
+            <button
+              onClick={onSkipBreak}
+              className="px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm bg-amber-600 dark:bg-amber-700 hover:bg-amber-500 dark:hover:bg-amber-600 text-white border-amber-500 dark:border-amber-600 shadow-amber-300/30 dark:shadow-amber-900/30"
+              title={t('controls.skipBreak')}
+            >
+              {t('controls.skipBreak')}
+            </button>
+          )}
+          {onExtendBreak && (
+            <>
+              <button
+                onClick={() => onExtendBreak(300)}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm bg-white dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600/40 shadow-gray-200/30 dark:shadow-black/15"
+                title={t('controls.extendBreak5')}
+              >
+                {t('controls.extendBreak5')}
+              </button>
+              <button
+                onClick={() => onExtendBreak(600)}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] border shadow-sm bg-white dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600/40 shadow-gray-200/30 dark:shadow-black/15"
+                title={t('controls.extendBreak10')}
+              >
+                {t('controls.extendBreak10')}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Hand-for-Hand: Next Hand button */}
       {handForHandActive && onNextHand && timerState.status !== 'running' && (
@@ -176,6 +215,9 @@ export const Controls = memo(function Controls({
   prev.onPrevious === next.onPrevious &&
   prev.onReset === next.onReset &&
   prev.onRestart === next.onRestart &&
+  prev.isBreak === next.isBreak &&
+  prev.onSkipBreak === next.onSkipBreak &&
+  prev.onExtendBreak === next.onExtendBreak &&
   prev.hideSecondaryControls === next.hideSecondaryControls &&
   prev.cleanView === next.cleanView &&
   prev.onToggleCleanView === next.onToggleCleanView &&

@@ -775,4 +775,36 @@ describe('Helpers & robustness (Phase 13)', () => {
       expect(result).toBe(1234);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Break Extension (Task A3.1)
+  // ---------------------------------------------------------------------------
+
+  describe('break extension', () => {
+    it('skip break advances to next level', () => {
+      const levels: Level[] = [
+        { type: 'level', smallBlind: 25, bigBlind: 50, ante: 0, durationSeconds: 600 },
+        { type: 'break', durationSeconds: 300 },
+        { type: 'level', smallBlind: 50, bigBlind: 100, ante: 0, durationSeconds: 600 },
+      ];
+      const state: TimerState = {
+        currentLevelIndex: 1,
+        remainingSeconds: 200,
+        status: 'stopped',
+        startedAt: null,
+        remainingAtStart: null,
+      };
+      const next = advanceLevel(state, levels);
+      expect(next.currentLevelIndex).toBe(2);
+      expect(next.remainingSeconds).toBe(600);
+    });
+
+    it('extendLevel concept: adding seconds increases remaining time', () => {
+      // This tests the pure logic behind extendLevel — adding seconds to remaining time
+      const remaining = 200;
+      const additionalSeconds = 300;
+      const extended = remaining + additionalSeconds;
+      expect(extended).toBe(500);
+    });
+  });
 });

@@ -432,6 +432,33 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
             </button>
           </div>
 
+          {/* Break controls: skip / extend */}
+          {state?.isBreak && (
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <button
+                onClick={() => sendCmd('skipBreak')}
+                className="px-4 py-3 bg-amber-900/30 text-amber-400 rounded-xl text-sm font-medium active:scale-95 transition-transform border border-amber-700/40"
+                title={t('controls.skipBreak')}
+              >
+                {String.fromCodePoint(0x23ED)} {t('controls.skipBreak')}
+              </button>
+              <button
+                onClick={() => sendCmd('extendBreak', { seconds: 300 })}
+                className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl text-sm font-medium active:scale-95 transition-transform border border-gray-700/40"
+                title={t('controls.extendBreak5')}
+              >
+                {t('controls.extendBreak5')}
+              </button>
+              <button
+                onClick={() => sendCmd('extendBreak', { seconds: 600 })}
+                className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl text-sm font-medium active:scale-95 transition-transform border border-gray-700/40"
+                title={t('controls.extendBreak10')}
+              >
+                {t('controls.extendBreak10')}
+              </button>
+            </div>
+          )}
+
           {/* Secondary actions */}
           <div className="grid grid-cols-2 gap-2 mb-3">
             <button

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { SetStateAction } from 'react';
 import type { RemoteCommand, RemotePlayerInfo } from '../domain/remote';
-import type { Level, Player, Settings, TimerState, TournamentConfig } from '../domain/types';
+import type { Level, Player, Settings, TimerState, TournamentConfig, TournamentEvent } from '../domain/types';
 import type { TranslationKey } from '../i18n';
-import { computePrizePool, computeAverageStackInBB } from '../domain/logic';
+import { computePrizePool, computeAverageStackInBB, createEvent } from '../domain/logic';
 import { useRemoteControl } from './useRemoteControl';
 
 type AppMode = 'setup' | 'game' | 'league';
@@ -17,6 +17,7 @@ interface TimerControls {
   nextLevel: () => void;
   previousLevel: () => void;
   resetLevel: () => void;
+  extendLevel: (additionalSeconds: number) => void;
 }
 
 interface UseRemoteHostBridgeParams {
@@ -39,6 +40,7 @@ interface UseRemoteHostBridgeParams {
   onUpdatePlayerAddOn: (playerId: string, hasAddOn: boolean) => void;
   setShowCallTheClock: (value: SetStateAction<boolean>) => void;
   setSettings: (value: SetStateAction<Settings>) => void;
+  onAppendEvent: (event: TournamentEvent) => void;
   t: Translate;
 }
 
@@ -89,6 +91,7 @@ export function useRemoteHostBridge({
   onUpdatePlayerAddOn,
   setShowCallTheClock,
   setSettings,
+  onAppendEvent,
   t,
 }: UseRemoteHostBridgeParams) {
   // Keep stable refs for player callbacks (avoid re-creating handleRemoteCommand on every player change)
@@ -100,6 +103,11 @@ export function useRemoteHostBridge({
   rebuyRef.current = onUpdatePlayerRebuys;
   const addOnRef = useRef(onUpdatePlayerAddOn);
   addOnRef.current = onUpdatePlayerAddOn;
+  const appendEventRef = useRef(onAppendEvent);
+  appendEventRef.current = onAppendEvent;
+
+  const currentLevelIndexRef = useRef(timerState.currentLevelIndex);
+  currentLevelIndexRef.current = timerState.currentLevelIndex;
 
   // Refs for values that change every tick — excluded from useEffect deps to avoid
   // interval teardown, but the interval must read the CURRENT value (not stale closure).
@@ -167,6 +175,18 @@ export function useRemoteHostBridge({
         const hasAddOn = cmd.payload?.hasAddOn as boolean | undefined;
         if (playerId && hasAddOn !== undefined) {
           addOnRef.current(playerId, hasAddOn);
+        }
+        break;
+      }
+      case 'skipBreak':
+        timerControls.nextLevel();
+        appendEventRef.current(createEvent('break_skipped', currentLevelIndexRef.current, {}));
+        break;
+      case 'extendBreak': {
+        const seconds = cmd.payload?.seconds as number | undefined;
+        if (seconds && seconds > 0) {
+          timerControls.extendLevel(seconds);
+          appendEventRef.current(createEvent('break_extended', currentLevelIndexRef.current, { seconds }));
         }
         break;
       }

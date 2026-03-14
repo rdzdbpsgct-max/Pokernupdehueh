@@ -60,6 +60,9 @@ interface Props {
   onAddLatePlayer: () => void;
   onReEntryPlayer: (playerId: string) => void;
   onSidePotResultChange: (data: { pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null) => void;
+  isBreak: boolean;
+  onSkipBreak: () => void;
+  onExtendBreak: (seconds: number) => void;
   onResetLevel: () => void;
   onRestartTournament: () => void;
   onToggleCleanView: () => void;
@@ -110,6 +113,9 @@ export function GameModeContainer({
   onAddLatePlayer,
   onReEntryPlayer,
   onSidePotResultChange,
+  isBreak,
+  onSkipBreak,
+  onExtendBreak,
   onResetLevel,
   onRestartTournament,
   onToggleCleanView,
@@ -222,6 +228,9 @@ export function GameModeContainer({
               onPrevious={timer.previousLevel}
               onReset={onResetLevel}
               onRestart={onRestartTournament}
+              isBreak={isBreak}
+              onSkipBreak={onSkipBreak}
+              onExtendBreak={onExtendBreak}
               hideSecondaryControls={cleanView}
               cleanView={cleanView}
               onToggleCleanView={onToggleCleanView}

@@ -251,6 +251,25 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
     }));
   }, [levels, clearTick]);
 
+  const extendLevel = useCallback((additionalSeconds: number) => {
+    setTimerState((prev) => {
+      if (additionalSeconds <= 0) return prev;
+      if (prev.status === 'running' && prev.remainingAtStart !== null) {
+        // Running: extend the remaining-at-start so wall-clock computation yields more time
+        return {
+          ...prev,
+          remainingAtStart: prev.remainingAtStart + additionalSeconds,
+          remainingSeconds: prev.remainingSeconds + additionalSeconds,
+        };
+      }
+      // Paused or stopped: just add to remainingSeconds
+      return {
+        ...prev,
+        remainingSeconds: prev.remainingSeconds + additionalSeconds,
+      };
+    });
+  }, []);
+
   const restoreLevel = useCallback((levelIndex: number, remaining: number) => {
     clearTick();
     lastCountdownSecRef.current = null;
@@ -275,6 +294,7 @@ export function useTimer(levels: Level[], settings: Settings, pauseAtLevelIndex?
     resetLevel,
     restart,
     setRemainingSeconds,
+    extendLevel,
     restoreLevel,
   };
 }

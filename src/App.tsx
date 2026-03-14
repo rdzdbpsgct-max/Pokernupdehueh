@@ -520,6 +520,19 @@ function App() {
     [activePlayerCount, paidPlaces],
   );
 
+  // Break detection for skip/extend buttons
+  const isBreak = config.levels[timer.timerState.currentLevelIndex]?.type === 'break';
+
+  const handleSkipBreak = useCallback(() => {
+    timer.nextLevel();
+    handleAppendEvent(createEvent('break_skipped', timer.timerState.currentLevelIndex, {}));
+  }, [timer, handleAppendEvent]);
+
+  const handleExtendBreak = useCallback((seconds: number) => {
+    timer.extendLevel(seconds);
+    handleAppendEvent(createEvent('break_extended', timer.timerState.currentLevelIndex, { seconds }));
+  }, [timer, handleAppendEvent]);
+
   // Auto-deactivate Hand-for-Hand when bubble bursts
   const prevBubbleForHfH = useRef(bubbleActive);
   useEffect(() => {
@@ -780,6 +793,7 @@ function App() {
       nextLevel: timer.nextLevel,
       previousLevel: timer.previousLevel,
       resetLevel: timer.resetLevel,
+      extendLevel: timer.extendLevel,
     },
     activePlayerCount,
     bubbleActive,
@@ -795,6 +809,7 @@ function App() {
     onUpdatePlayerAddOn: updatePlayerAddOn,
     setShowCallTheClock,
     setSettings,
+    onAppendEvent: handleAppendEvent,
     t,
   });
 
@@ -993,6 +1008,9 @@ function App() {
             onAddLatePlayer={addLatePlayer}
             onReEntryPlayer={handleReEntry}
             onSidePotResultChange={setSidePotData}
+            isBreak={isBreak}
+            onSkipBreak={handleSkipBreak}
+            onExtendBreak={handleExtendBreak}
             onResetLevel={handleResetLevel}
             onRestartTournament={handleRestart}
             onToggleCleanView={toggleCleanView}

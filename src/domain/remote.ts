@@ -183,7 +183,9 @@ export interface RemoteCommand {
     | 'toggleSound'
     | 'eliminatePlayer'
     | 'rebuyPlayer'
-    | 'addOnPlayer';
+    | 'addOnPlayer'
+    | 'skipBreak'
+    | 'extendBreak';
   payload?: Record<string, unknown>;
   /** HMAC-SHA256 signature (hex) — required when secret is configured */
   hmac?: string;
@@ -261,6 +263,7 @@ const VALID_COMMAND_ACTIONS: ReadonlySet<RemoteCommand['action']> = new Set([
   'play', 'pause', 'toggle', 'next', 'prev', 'reset',
   'call-the-clock', 'advanceDealer', 'toggleSound',
   'eliminatePlayer', 'rebuyPlayer', 'addOnPlayer',
+  'skipBreak', 'extendBreak',
 ]);
 
 export type HostStatus = 'initializing' | 'ready' | 'connected' | 'error';

@@ -6329,6 +6329,25 @@ describe('League Module', () => {
     });
   });
 
+  describe('remote — break commands', () => {
+    it('RemoteCommand action type includes skipBreak and extendBreak', () => {
+      // Type-level test: ensure the action union includes break commands
+      // This validates that the types compile correctly
+      const skipCmd: import('../src/domain/remote').RemoteCommand = {
+        type: 'command',
+        action: 'skipBreak',
+      };
+      const extendCmd: import('../src/domain/remote').RemoteCommand = {
+        type: 'command',
+        action: 'extendBreak',
+        payload: { seconds: 300 },
+      };
+      expect(skipCmd.action).toBe('skipBreak');
+      expect(extendCmd.action).toBe('extendBreak');
+      expect(extendCmd.payload?.seconds).toBe(300);
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // Sprint 4: displayChannel Tests
   // ---------------------------------------------------------------------------
