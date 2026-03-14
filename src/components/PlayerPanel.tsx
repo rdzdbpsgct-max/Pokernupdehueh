@@ -3,6 +3,7 @@ import type { Player, PayoutConfig, BountyConfig, RebuyConfig, AddOnConfig, Tabl
 import { computeTotalRebuys, computeTotalAddOns, computePrizePool, computePayouts, computeRebuyPot, findChipLeader, canPlayerRebuy, canReEntry, findPlayerSeat } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { LoadingFallback } from './LoadingFallback';
+import { NumberStepper } from './NumberStepper';
 import { SectionErrorBoundary } from './ErrorBoundary';
 
 const SidePotCalculator = lazy(() => import('./SidePotCalculator').then(m => ({ default: m.SidePotCalculator })));
@@ -322,13 +323,12 @@ export const PlayerPanel = memo(function PlayerPanel({
               {player.chips !== undefined && onUpdateStack && (
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className="text-[10px] text-gray-400 dark:text-gray-500">{t('playerPanel.stack')}</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
+                  <NumberStepper
                     value={player.chips}
-                    onChange={(e) => onUpdateStack(player.id, Math.max(0, Number(e.target.value) || 0))}
-                    className="w-20 px-1 py-0.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/40 rounded text-xs text-right font-mono text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1"
-                    style={{ '--tw-ring-color': 'var(--accent-ring)' } as React.CSSProperties}
+                    onChange={(v) => onUpdateStack(player.id, v)}
+                    min={0}
+                    step={100}
+                    inputClassName="w-20"
                   />
                 </div>
               )}

@@ -215,6 +215,9 @@ const de = {
   'settings.shortcutReset': 'Reset',
   'settings.shortcutClock': 'Clock',
   'settings.callTheClock': 'Call the Clock',
+  'settings.sectionAudio': 'Audio & Ansagen',
+  'settings.sectionTimer': 'Timer & Spielfluss',
+  'settings.sectionAppearance': 'Darstellung',
 
   // --- Call the Clock ---
   'callTheClock.title': 'Call the Clock',
@@ -1223,6 +1226,9 @@ const en: Record<TranslationKey, string> = {
   'settings.shortcutReset': 'Reset',
   'settings.shortcutClock': 'Clock',
   'settings.callTheClock': 'Call the Clock',
+  'settings.sectionAudio': 'Audio & Announcements',
+  'settings.sectionTimer': 'Timer & Game Flow',
+  'settings.sectionAppearance': 'Appearance',
 
   // --- Call the Clock ---
   'callTheClock.title': 'Call the Clock',

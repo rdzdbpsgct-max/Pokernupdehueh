@@ -28,12 +28,12 @@ describe('i18n key parity', () => {
 
   it('every DE key exists in EN', () => {
     const missingInEN = deKeys.filter((k) => !(k in translations.en));
-    expect(missingInEN).toEqual([]);
+    expect(missingInEN, `Missing EN keys: ${missingInEN.join(', ')}`).toHaveLength(0);
   });
 
   it('every EN key exists in DE', () => {
     const missingInDE = enKeys.filter((k) => !(k in translations.de));
-    expect(missingInDE).toEqual([]);
+    expect(missingInDE, `Missing DE keys: ${missingInDE.join(', ')}`).toHaveLength(0);
   });
 
   it('no translation key is an empty string in DE', () => {

@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { Settings, AccentColor, BackgroundImage } from '../domain/types';
+import { DEFAULT_DISPLAY_SCREENS, DEFAULT_ROTATION_INTERVAL } from '../domain/configPersistence';
 import { useTranslation } from '../i18n';
 import { NumberStepper } from './NumberStepper';
 import { useTheme } from '../theme';
@@ -68,138 +69,199 @@ export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, o
   return (
     <div className="space-y-3">
       <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('settings.title')}</h3>
-      <div className="space-y-2">
-        <label className="flex items-center justify-between cursor-pointer">
-          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.sound')}</span>
-          <CheckBox checked={settings.soundEnabled} onChange={() => toggle('soundEnabled')} />
-        </label>
-        {settings.soundEnabled && (
-          <div className="flex items-center gap-3 pl-1">
-            <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">{t('settings.volume')}</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              value={settings.volume}
-              onChange={(e) => onChange({ ...settings, volume: Number(e.target.value) })}
-              className="flex-1 h-1.5 cursor-pointer"
-              style={{ accentColor: 'var(--accent-500)' }}
+
+      {/* Section 1: Audio & Announcements (default open) */}
+      <CollapsibleSubSection title={t('settings.sectionAudio' as Parameters<typeof t>[0])} defaultOpen={true}>
+        <div className="space-y-2">
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.sound')}</span>
+            <CheckBox checked={settings.soundEnabled} onChange={() => toggle('soundEnabled')} />
+          </label>
+          {settings.soundEnabled && (
+            <div className="flex items-center gap-3 pl-1">
+              <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">{t('settings.volume')}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={settings.volume}
+                onChange={(e) => onChange({ ...settings, volume: Number(e.target.value) })}
+                className="flex-1 h-1.5 cursor-pointer"
+                style={{ accentColor: 'var(--accent-500)' }}
+              />
+              <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums w-8 text-right">{settings.volume}%</span>
+            </div>
+          )}
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.countdown')}</span>
+            <CheckBox checked={settings.countdownEnabled} onChange={() => toggle('countdownEnabled')} />
+          </label>
+          {/* Custom Alerts */}
+          <CollapsibleSubSection title={t('alerts.title')} defaultOpen={false}>
+            <AlertEditor
+              alerts={settings.customAlerts ?? []}
+              onChange={(alerts) => onChange({ ...settings, customAlerts: alerts })}
             />
-            <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums w-8 text-right">{settings.volume}%</span>
-          </div>
-        )}
-        <label className="flex items-center justify-between cursor-pointer">
-          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.countdown')}</span>
-          <CheckBox checked={settings.countdownEnabled} onChange={() => toggle('countdownEnabled')} />
-        </label>
-        <label className="flex items-center justify-between cursor-pointer">
-          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.autoAdvance')}</span>
-          <CheckBox checked={settings.autoAdvance} onChange={() => toggle('autoAdvance')} />
-        </label>
-        <label className="flex items-center justify-between cursor-pointer">
-          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.largeDisplay')}</span>
-          <CheckBox checked={settings.largeDisplay} onChange={() => toggle('largeDisplay')} />
-        </label>
-        {/* Call the Clock duration */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.callTheClock')}</span>
-          <div className="flex items-center gap-1">
-            <NumberStepper
-              value={settings.callTheClockSeconds}
-              onChange={(v) => onChange({ ...settings, callTheClockSeconds: Math.max(10, Math.min(300, v)) })}
-              min={10}
-              max={300}
-              step={5}
-              inputClassName="w-14"
-            />
-            <span className="text-xs text-gray-400 dark:text-gray-500">s</span>
-          </div>
+          </CollapsibleSubSection>
         </div>
-        <button
-          onClick={onToggleFullscreen}
-          className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors text-left"
-        >
-          {t('settings.fullscreen')}
-        </button>
-        {onShowInstallGuide && (
+      </CollapsibleSubSection>
+
+      {/* Section 2: Timer & Game Flow (default open) */}
+      <CollapsibleSubSection title={t('settings.sectionTimer' as Parameters<typeof t>[0])} defaultOpen={true}>
+        <div className="space-y-2">
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.autoAdvance')}</span>
+            <CheckBox checked={settings.autoAdvance} onChange={() => toggle('autoAdvance')} />
+          </label>
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.largeDisplay')}</span>
+            <CheckBox checked={settings.largeDisplay} onChange={() => toggle('largeDisplay')} />
+          </label>
+          {/* Call the Clock duration */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.callTheClock')}</span>
+            <div className="flex items-center gap-1">
+              <NumberStepper
+                value={settings.callTheClockSeconds}
+                onChange={(v) => onChange({ ...settings, callTheClockSeconds: Math.max(10, Math.min(300, v)) })}
+                min={10}
+                max={300}
+                step={5}
+                inputClassName="w-14"
+              />
+              <span className="text-xs text-gray-400 dark:text-gray-500">s</span>
+            </div>
+          </div>
           <button
-            onClick={onShowInstallGuide}
-            className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors text-left flex items-center gap-2"
+            onClick={onToggleFullscreen}
+            className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors text-left"
           >
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
-            </svg>
-            {t('settings.installApp' as Parameters<typeof t>[0])}
+            {t('settings.fullscreen')}
           </button>
-        )}
-      </div>
-
-      {/* Accent Color */}
-      <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
-        <span className="text-sm text-gray-700 dark:text-gray-300 block mb-1.5">{t('settings.accentColor')}</span>
-        <div className="flex items-center gap-2">
-          {ACCENT_OPTIONS.map((opt) => (
+          {onShowInstallGuide && (
             <button
-              key={opt.value}
-              onClick={() => setAccentColor(opt.value)}
-              className={`w-9 h-9 rounded-full transition-all duration-200 ${
-                accentColor === opt.value
-                  ? 'ring-2 scale-110'
-                  : 'opacity-60 hover:opacity-100 hover:scale-105'
-              }`}
-              style={{
-                backgroundColor: opt.color,
-                ...(accentColor === opt.value
-                  ? { ringColor: opt.color, boxShadow: `0 0 0 2px var(--accent-ring), 0 0 8px ${opt.color}40` }
-                  : {}),
-              }}
-              title={opt.label}
-              aria-label={opt.label}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Background Image */}
-      <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
-        <span className="text-sm text-gray-700 dark:text-gray-300 block mb-1.5">{t('settings.backgroundImage')}</span>
-        <div className="grid grid-cols-3 gap-1.5">
-          {BG_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setBackgroundImage(opt.value)}
-              className={`relative w-full aspect-[3/2] rounded-lg overflow-hidden transition-all duration-200 border-2 ${
-                backgroundImage === opt.value
-                  ? 'scale-[1.02]'
-                  : 'border-gray-300 dark:border-gray-700/60 hover:border-gray-400 dark:hover:border-gray-600 opacity-70 hover:opacity-100'
-              }`}
-              style={{
-                background: opt.gradient,
-                ...(backgroundImage === opt.value
-                  ? { borderColor: 'var(--accent-500)', boxShadow: `0 0 0 1px var(--accent-ring)` }
-                  : {}),
-              }}
-              title={t(opt.labelKey as Parameters<typeof t>[0])}
-              aria-label={t(opt.labelKey as Parameters<typeof t>[0])}
+              onClick={onShowInstallGuide}
+              className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors text-left flex items-center gap-2"
             >
-              <span className="absolute bottom-0 inset-x-0 text-[9px] text-center py-0.5 bg-black/30 text-white truncate">
-                {t(opt.labelKey as Parameters<typeof t>[0])}
-              </span>
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4" />
+              </svg>
+              {t('settings.installApp' as Parameters<typeof t>[0])}
             </button>
-          ))}
+          )}
         </div>
-      </div>
+      </CollapsibleSubSection>
 
-      {/* Custom Alerts */}
-      <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
-        <CollapsibleSubSection title={t('alerts.title')} defaultOpen={false}>
-          <AlertEditor
-            alerts={settings.customAlerts ?? []}
-            onChange={(alerts) => onChange({ ...settings, customAlerts: alerts })}
-          />
-        </CollapsibleSubSection>
-      </div>
+      {/* Section 3: Appearance (default closed) */}
+      <CollapsibleSubSection title={t('settings.sectionAppearance' as Parameters<typeof t>[0])} defaultOpen={false}>
+        <div className="space-y-4">
+          {/* Accent Color */}
+          <div>
+            <span className="text-sm text-gray-700 dark:text-gray-300 block mb-1.5">{t('settings.accentColor')}</span>
+            <div className="flex items-center gap-2">
+              {ACCENT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setAccentColor(opt.value)}
+                  className={`w-9 h-9 rounded-full transition-all duration-200 ${
+                    accentColor === opt.value
+                      ? 'ring-2 scale-110'
+                      : 'opacity-60 hover:opacity-100 hover:scale-105'
+                  }`}
+                  style={{
+                    backgroundColor: opt.color,
+                    ...(accentColor === opt.value
+                      ? { ringColor: opt.color, boxShadow: `0 0 0 2px var(--accent-ring), 0 0 8px ${opt.color}40` }
+                      : {}),
+                  }}
+                  title={opt.label}
+                  aria-label={opt.label}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Background Image */}
+          <div>
+            <span className="text-sm text-gray-700 dark:text-gray-300 block mb-1.5">{t('settings.backgroundImage')}</span>
+            <div className="grid grid-cols-3 gap-1.5">
+              {BG_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setBackgroundImage(opt.value)}
+                  className={`relative w-full aspect-[3/2] rounded-lg overflow-hidden transition-all duration-200 border-2 ${
+                    backgroundImage === opt.value
+                      ? 'scale-[1.02]'
+                      : 'border-gray-300 dark:border-gray-700/60 hover:border-gray-400 dark:hover:border-gray-600 opacity-70 hover:opacity-100'
+                  }`}
+                  style={{
+                    background: opt.gradient,
+                    ...(backgroundImage === opt.value
+                      ? { borderColor: 'var(--accent-500)', boxShadow: `0 0 0 1px var(--accent-ring)` }
+                      : {}),
+                  }}
+                  title={t(opt.labelKey as Parameters<typeof t>[0])}
+                  aria-label={t(opt.labelKey as Parameters<typeof t>[0])}
+                >
+                  <span className="absolute bottom-0 inset-x-0 text-[9px] text-center py-0.5 bg-black/30 text-white truncate">
+                    {t(opt.labelKey as Parameters<typeof t>[0])}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* TV Display Screen Configuration */}
+          <CollapsibleSubSection title={t('display.screenConfig' as Parameters<typeof t>[0])} defaultOpen={false}>
+            <div className="space-y-2">
+              {(DEFAULT_DISPLAY_SCREENS).map((screen) => {
+                const userScreens = settings.displayScreens ?? DEFAULT_DISPLAY_SCREENS;
+                const screenCfg = userScreens.find((s) => s.id === screen.id);
+                const isEnabled = screenCfg ? screenCfg.enabled : true;
+                return (
+                  <label key={screen.id} className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {t(`display.screen.${screen.id}` as Parameters<typeof t>[0])}
+                    </span>
+                    <CheckBox
+                      checked={isEnabled}
+                      onChange={() => {
+                        const current = settings.displayScreens ?? DEFAULT_DISPLAY_SCREENS.map((s) => ({ ...s }));
+                        const updated = current.map((s) =>
+                          s.id === screen.id ? { ...s, enabled: !s.enabled } : s,
+                        );
+                        // Ensure at least one screen stays enabled
+                        const anyEnabled = updated.some((s) => s.enabled);
+                        if (!anyEnabled) return;
+                        onChange({ ...settings, displayScreens: updated });
+                      }}
+                    />
+                  </label>
+                );
+              })}
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {t('display.rotationInterval' as Parameters<typeof t>[0])}
+                </span>
+                <div className="flex items-center gap-1">
+                  <NumberStepper
+                    value={settings.displayRotationInterval ?? DEFAULT_ROTATION_INTERVAL}
+                    onChange={(v) => onChange({ ...settings, displayRotationInterval: Math.max(5, Math.min(60, v)) })}
+                    min={5}
+                    max={60}
+                    step={5}
+                    inputClassName="w-14"
+                  />
+                  <span className="text-xs text-gray-400 dark:text-gray-500">s</span>
+                </div>
+              </div>
+            </div>
+          </CollapsibleSubSection>
+
+          {/* Dealer badges toggle */}
+        </div>
+      </CollapsibleSubSection>
 
       {/* Keyboard shortcuts reference */}
       <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
