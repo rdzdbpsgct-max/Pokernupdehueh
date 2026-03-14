@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
-import type { League, TiebreakerCriterion, Season } from '../domain/types';
+import type { League, TiebreakerCriterion, Season, RankingAlgorithm } from '../domain/types';
 import { saveLeague, createSeason } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { useDialogA11y } from '../hooks/useDialogA11y';
+import { NumberStepper } from './NumberStepper';
 
 interface Props {
   league: League;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const ALL_CRITERIA: TiebreakerCriterion[] = ['avgPlace', 'wins', 'cashes', 'headToHead', 'lastResult'];
+const RANKING_ALGORITHMS: RankingAlgorithm[] = ['points', 'elo', 'weightedPoints'];
 
 export function LeagueSettings({ league, onClose, onSaved }: Props) {
   const { t } = useTranslation();
@@ -28,6 +30,23 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
     () => [...league.pointSystem.entries],
   );
 
+  // Ranking algorithm
+  const [rankingAlgorithm, setRankingAlgorithm] = useState<RankingAlgorithm>(
+    () => league.rankingAlgorithm ?? 'points',
+  );
+  const [eloStartRating, setEloStartRating] = useState(
+    () => league.eloConfig?.startRating ?? 1500,
+  );
+  const [eloKFactor, setEloKFactor] = useState(
+    () => league.eloConfig?.kFactor ?? 32,
+  );
+  const [decayFactor, setDecayFactor] = useState(
+    () => league.weightedPointsConfig?.decayFactor ?? 0.85,
+  );
+  const [minParticipation, setMinParticipation] = useState(
+    () => league.minParticipation ?? 0,
+  );
+
   const criterionLabel = useCallback((c: TiebreakerCriterion): string => {
     switch (c) {
       case 'avgPlace': return t('league.settings.tbAvgPlace');
@@ -35,6 +54,14 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
       case 'cashes': return t('league.settings.tbCashes');
       case 'headToHead': return t('league.settings.tbH2H');
       case 'lastResult': return t('league.settings.tbLastResult');
+    }
+  }, [t]);
+
+  const rankingLabel = useCallback((algo: RankingAlgorithm): string => {
+    switch (algo) {
+      case 'points': return t('league.ranking.points');
+      case 'elo': return t('league.ranking.elo');
+      case 'weightedPoints': return t('league.ranking.weighted');
     }
   }, [t]);
 
@@ -86,10 +113,14 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
       tiebreaker: criteria.length > 0 ? { criteria } : undefined,
       seasons: seasons.length > 0 ? seasons : undefined,
       activeSeasonId,
+      rankingAlgorithm,
+      eloConfig: rankingAlgorithm === 'elo' ? { startRating: eloStartRating, kFactor: eloKFactor } : league.eloConfig,
+      weightedPointsConfig: rankingAlgorithm === 'weightedPoints' ? { decayFactor } : league.weightedPointsConfig,
+      minParticipation,
     };
     saveLeague(updated);
     onSaved();
-  }, [league, pointEntries, criteria, seasons, activeSeasonId, onSaved]);
+  }, [league, pointEntries, criteria, seasons, activeSeasonId, rankingAlgorithm, eloStartRating, eloKFactor, decayFactor, minParticipation, onSaved]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -118,6 +149,61 @@ export function LeagueSettings({ league, onClose, onSaved }: Props) {
                   <span className="text-gray-400 dark:text-gray-500 text-xs">{t('league.settings.pointsAbbr')}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Ranking Algorithm */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">{t('league.ranking.title')}</h3>
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800/60 rounded-xl p-1">
+              {RANKING_ALGORITHMS.map((algo) => (
+                <button
+                  key={algo}
+                  onClick={() => setRankingAlgorithm(algo)}
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    rankingAlgorithm === algo
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                  aria-label={rankingLabel(algo)}
+                >
+                  {rankingLabel(algo)}
+                </button>
+              ))}
+            </div>
+
+            {/* ELO Config */}
+            {rankingAlgorithm === 'elo' && (
+              <div className="mt-3 space-y-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('league.ranking.startRating')}</label>
+                  <NumberStepper value={eloStartRating} onChange={setEloStartRating} min={1000} max={2000} step={100} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('league.ranking.kFactor')}</label>
+                  <NumberStepper value={eloKFactor} onChange={setEloKFactor} min={8} max={64} step={4} />
+                </div>
+              </div>
+            )}
+
+            {/* Weighted Points Config */}
+            {rankingAlgorithm === 'weightedPoints' && (
+              <div className="mt-3 space-y-3 bg-gray-50 dark:bg-gray-800/40 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('league.ranking.decay')}</label>
+                  <NumberStepper value={decayFactor} onChange={setDecayFactor} min={0.5} max={1.0} step={0.05} />
+                </div>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">{t('league.ranking.decayHint')}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Minimum Participation */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">{t('league.ranking.minParticipation')}</h3>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex-1 pr-4">{t('league.ranking.minParticipationHint')}</p>
+              <NumberStepper value={minParticipation} onChange={setMinParticipation} min={0} max={20} step={1} />
             </div>
           </div>
 

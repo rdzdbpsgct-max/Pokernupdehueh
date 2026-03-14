@@ -9,18 +9,20 @@ import {
   loadGameDaysForSeason,
   computeExtendedStandings,
   getActiveSeason,
+  computeHeadToHeadMatrix,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { LeagueStandingsTable } from './LeagueStandingsTable';
 import { LeagueGameDays } from './LeagueGameDays';
 import { LeagueFinances } from './LeagueFinances';
+import { HeadToHeadMatrix } from './HeadToHeadMatrix';
 import { LoadingFallback } from './LoadingFallback';
 import { SectionErrorBoundary } from './ErrorBoundary';
 
 const GameDayEditor = lazy(() => import('./GameDayEditor').then((m) => ({ default: m.GameDayEditor })));
 const LeagueSettings = lazy(() => import('./LeagueSettings').then((m) => ({ default: m.LeagueSettings })));
 
-type Tab = 'standings' | 'gameDays' | 'finances';
+type Tab = 'standings' | 'gameDays' | 'finances' | 'h2h';
 
 interface Props {
   onStartTournament: (leagueId: string, options?: { quickStart?: boolean }) => void;
@@ -155,10 +157,16 @@ export function LeagueView({ onStartTournament }: Props) {
     setShowCorrectionModal(false);
   }, [selectedLeague, correctionPlayer, correctionPoints, correctionReason]);
 
+  const h2hMatrix = useMemo(
+    () => computeHeadToHeadMatrix(gameDays),
+    [gameDays],
+  );
+
   const tabs: { key: Tab; label: string }[] = [
     { key: 'standings', label: t('league.tabs.standings') },
     { key: 'gameDays', label: t('league.tabs.gameDays') },
     { key: 'finances', label: t('league.tabs.finances') },
+    { key: 'h2h', label: t('league.tabs.h2h') },
   ];
 
   return (
@@ -372,6 +380,9 @@ export function LeagueView({ onStartTournament }: Props) {
                 gameDays={gameDays}
                 standings={standings}
               />
+            )}
+            {activeTab === 'h2h' && (
+              <HeadToHeadMatrix matrix={h2hMatrix} />
             )}
           </>
         )}

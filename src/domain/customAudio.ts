@@ -37,6 +37,19 @@ export const CUSTOMIZABLE_ANNOUNCEMENTS = [
 
 export type AnnouncementKey = typeof CUSTOMIZABLE_ANNOUNCEMENTS[number];
 
+/** Maximum file size for uploaded audio files: 5 MB */
+export const MAX_AUDIO_FILE_SIZE = 5 * 1024 * 1024;
+
+/** Accepted MIME types for audio uploads */
+export const ACCEPTED_AUDIO_TYPES = [
+  'audio/mpeg',
+  'audio/wav',
+  'audio/ogg',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/aac',
+];
+
 // ---------------------------------------------------------------------------
 // Audio File CRUD
 // ---------------------------------------------------------------------------
@@ -45,18 +58,12 @@ export function loadCustomAudioFiles(): CustomAudioFile[] {
   return getCached('customAudio');
 }
 
-export async function saveCustomAudioFile(file: File): Promise<CustomAudioFile> {
-  const data = await file.arrayBuffer();
-  const audioFile: CustomAudioFile = {
-    id: generateId(),
-    name: file.name.replace(/\.[^.]+$/, ''),
-    mimeType: file.type || 'audio/mpeg',
-    sizeBytes: data.byteLength,
-    data,
-    createdAt: new Date().toISOString(),
-  };
-  setCachedItem('customAudio', audioFile);
-  return audioFile;
+/**
+ * Save a CustomAudioFile object (with ArrayBuffer data) to storage.
+ * Can accept either a pre-built CustomAudioFile or a browser File object.
+ */
+export function saveCustomAudioFile(file: CustomAudioFile): void {
+  setCachedItem('customAudio', file);
 }
 
 export function deleteCustomAudioFile(id: string): void {

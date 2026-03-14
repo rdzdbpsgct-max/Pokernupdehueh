@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import type { League, ExtendedLeagueStanding, GameDay } from '../domain/types';
+import type { League, ExtendedLeagueStanding, GameDay, RankingAlgorithm } from '../domain/types';
 import { formatLeagueStandingsAsText, formatLeagueStandingsAsCSV, encodeLeagueStandingsForQR } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme';
@@ -10,7 +10,7 @@ import { showToast } from '../domain/toast';
 
 const LeaguePlayerDetail = lazy(() => import('./LeaguePlayerDetail').then(m => ({ default: m.LeaguePlayerDetail })));
 
-type SortKey = 'rank' | 'name' | 'points' | 'tournaments' | 'wins' | 'cashes' | 'avgPlace' | 'bestPlace' | 'knockouts' | 'totalCost' | 'totalPayout' | 'netBalance' | 'participationRate';
+type SortKey = 'rank' | 'name' | 'points' | 'tournaments' | 'wins' | 'cashes' | 'avgPlace' | 'bestPlace' | 'knockouts' | 'totalCost' | 'totalPayout' | 'netBalance' | 'participationRate' | 'eloRating' | 'weightedPoints';
 type SortDir = 'asc' | 'desc';
 
 interface Props {
@@ -29,6 +29,8 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
   const [showPointSystem, setShowPointSystem] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+
+  const rankingAlgorithm: RankingAlgorithm = league.rankingAlgorithm ?? 'points';
 
   const handleSort = useCallback((key: SortKey) => {
     if (sortKey === key) {
@@ -57,6 +59,8 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
         case 'totalPayout': cmp = a.totalPayout - b.totalPayout; break;
         case 'netBalance': cmp = a.netBalance - b.netBalance; break;
         case 'participationRate': cmp = a.participationRate - b.participationRate; break;
+        case 'eloRating': cmp = (a.eloRating ?? 0) - (b.eloRating ?? 0); break;
+        case 'weightedPoints': cmp = (a.weightedPoints ?? 0) - (b.weightedPoints ?? 0); break;
       }
       return sortDir === 'desc' ? -cmp : cmp;
     });
@@ -218,7 +222,9 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
                 <tr className="border-b border-gray-200 dark:border-gray-700/40">
                   {renderSortHeader('rank', '#', 'w-10')}
                   {renderSortHeader('name', t('league.standings.name'))}
-                  {renderSortHeader('points', t('league.standings.points'))}
+                  {rankingAlgorithm === 'points' && renderSortHeader('points', t('league.standings.points'))}
+                  {rankingAlgorithm === 'elo' && renderSortHeader('eloRating', t('league.ranking.eloColumn'))}
+                  {rankingAlgorithm === 'weightedPoints' && renderSortHeader('weightedPoints', t('league.ranking.weightedColumn'))}
                   {renderSortHeader('tournaments', t('league.standings.gameDays'))}
                   {renderSortHeader('wins', t('league.standings.wins'))}
                   {renderSortHeader('cashes', t('league.standings.itm'))}
@@ -230,45 +236,58 @@ export function LeagueStandingsTable({ league, standings, gameDays, onUpdatePoin
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((s) => (
-                  <tr
-                    key={s.name}
-                    className="border-b border-gray-100 dark:border-gray-700/20 hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors"
-                  >
-                    <td className="px-2 py-2 font-medium text-gray-500 dark:text-gray-400">
-                      {medal(s.rank)}
-                    </td>
-                    <td className="px-2 py-2 font-medium text-gray-900 dark:text-white">
-                      <button
-                        onClick={() => setSelectedPlayer(s.name)}
-                        className="hover:underline hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
-                        title={t('league.playerDetail.viewDetails')}
-                      >
-                        {s.name}
-                      </button>
-                      {s.corrections !== 0 && (
-                        <span className={`ml-1 text-xs ${s.corrections > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                          ({s.corrections > 0 ? '+' : ''}{s.corrections})
-                        </span>
+                {sorted.map((s) => {
+                  const dimmed = s.meetsMinParticipation === false;
+                  return (
+                    <tr
+                      key={s.name}
+                      className={`border-b border-gray-100 dark:border-gray-700/20 hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors ${dimmed ? 'opacity-50' : ''}`}
+                      title={dimmed ? t('league.ranking.notQualified') : undefined}
+                    >
+                      <td className="px-2 py-2 font-medium text-gray-500 dark:text-gray-400">
+                        {medal(s.rank)}
+                      </td>
+                      <td className="px-2 py-2 font-medium text-gray-900 dark:text-white">
+                        <button
+                          onClick={() => setSelectedPlayer(s.name)}
+                          className="hover:underline hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
+                          title={t('league.playerDetail.viewDetails')}
+                        >
+                          {s.name}
+                        </button>
+                        {s.corrections !== 0 && (
+                          <span className={`ml-1 text-xs ${s.corrections > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            ({s.corrections > 0 ? '+' : ''}{s.corrections})
+                          </span>
+                        )}
+                        {dimmed && (
+                          <span className="ml-1 text-[10px] text-gray-400 dark:text-gray-500" title={t('league.ranking.notQualified')}>*</span>
+                        )}
+                      </td>
+                      {rankingAlgorithm === 'points' && (
+                        <td className="px-2 py-2 font-bold" style={{ color: 'var(--accent-text)' }}>{s.points}</td>
                       )}
-                    </td>
-                    <td className="px-2 py-2 font-bold" style={{ color: 'var(--accent-text)' }}>
-                      {s.points}
-                    </td>
-                    <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.tournaments}</td>
-                    <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.wins}</td>
-                    <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.cashes}</td>
-                    <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.avgPlace}</td>
-                    <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.totalCost.toFixed(0)} €</td>
-                    <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.totalPayout.toFixed(0)} €</td>
-                    <td className={`px-2 py-2 font-medium ${s.netBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {s.netBalance >= 0 ? '+' : ''}{s.netBalance.toFixed(0)} €
-                    </td>
-                    <td className="px-2 py-2 text-gray-600 dark:text-gray-300">
-                      {(s.participationRate * 100).toFixed(0)}%
-                    </td>
-                  </tr>
-                ))}
+                      {rankingAlgorithm === 'elo' && (
+                        <td className="px-2 py-2 font-bold" style={{ color: 'var(--accent-text)' }}>{Math.round(s.eloRating ?? 0)}</td>
+                      )}
+                      {rankingAlgorithm === 'weightedPoints' && (
+                        <td className="px-2 py-2 font-bold" style={{ color: 'var(--accent-text)' }}>{(s.weightedPoints ?? 0).toFixed(1)}</td>
+                      )}
+                      <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.tournaments}</td>
+                      <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.wins}</td>
+                      <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.cashes}</td>
+                      <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.avgPlace}</td>
+                      <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.totalCost.toFixed(0)} €</td>
+                      <td className="px-2 py-2 text-gray-600 dark:text-gray-300">{s.totalPayout.toFixed(0)} €</td>
+                      <td className={`px-2 py-2 font-medium ${s.netBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {s.netBalance >= 0 ? '+' : ''}{s.netBalance.toFixed(0)} €
+                      </td>
+                      <td className="px-2 py-2 text-gray-600 dark:text-gray-300">
+                        {(s.participationRate * 100).toFixed(0)}%
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

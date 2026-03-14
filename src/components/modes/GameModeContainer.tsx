@@ -77,6 +77,7 @@ interface Props {
   onSettingsChange: Dispatch<SetStateAction<Settings>>;
   onToggleFullscreen: () => void;
   onShowInstallGuide: () => void;
+  onShowCustomAudio: () => void;
   onExitToSetup: () => void;
 }
 
@@ -130,6 +131,7 @@ export function GameModeContainer({
   onSettingsChange,
   onToggleFullscreen,
   onShowInstallGuide,
+  onShowCustomAudio,
   onExitToSetup,
 }: Props) {
   const { t } = useTranslation();
@@ -309,6 +311,7 @@ export function GameModeContainer({
               onChange={onSettingsChange}
               onToggleFullscreen={onToggleFullscreen}
               onShowInstallGuide={onShowInstallGuide}
+              onShowCustomAudio={onShowCustomAudio}
             />
             <button
               onClick={onExitToSetup}

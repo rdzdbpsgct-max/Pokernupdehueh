@@ -91,6 +91,8 @@ const TemplateManager = lazy(() => import('./components/TemplateManager').then(m
 const TournamentHistory = lazy(() => import('./components/TournamentHistory').then(m => ({ default: m.TournamentHistory })));
 const TournamentLog = lazy(() => import('./components/TournamentLog').then(m => ({ default: m.TournamentLog })));
 const PayoutOverlay = lazy(() => import('./components/PayoutOverlay').then(m => ({ default: m.PayoutOverlay })));
+const SeriesManager = lazy(() => import('./components/SeriesManager').then(m => ({ default: m.SeriesManager })));
+const CustomAudioEditor = lazy(() => import('./components/CustomAudioEditor').then(m => ({ default: m.CustomAudioEditor })));
 
 type Mode = 'setup' | 'game' | 'league';
 
@@ -128,6 +130,8 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSeries, setShowSeries] = useState(false);
+  const [showCustomAudio, setShowCustomAudio] = useState(false);
   const [showWizard, setShowWizard] = useState(true);
   const [showTour, setShowTour] = useState(false);
   const printViewReady = usePrintViewWarmup();
@@ -938,6 +942,7 @@ function App() {
         onShowLog={() => setShowTournamentLog(true)}
         showLogButton={mode === 'game' && !tournamentFinished}
         onOpenFeatureGate={openFeatureGate}
+        onShowSeries={() => setShowSeries(true)}
       />
 
       {/* Main content */}
@@ -1036,6 +1041,7 @@ function App() {
             onSettingsChange={setSettings}
             onToggleFullscreen={toggleFullscreen}
             onShowInstallGuide={() => setShowInstallGuide(true)}
+            onShowCustomAudio={() => setShowCustomAudio(true)}
             onExitToSetup={handleExitToSetup}
           />
         )}
@@ -1090,6 +1096,24 @@ function App() {
       {showHistory && (
         <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
           <TournamentHistory onClose={() => setShowHistory(false)} />
+        </Suspense></SectionErrorBoundary>
+      )}
+
+      {/* Series Modal */}
+      {showSeries && (
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
+          <SeriesManager
+            onClose={() => setShowSeries(false)}
+            currentConfig={config}
+            onLinkSeries={(seriesId) => setConfig(prev => ({ ...prev, seriesId }))}
+          />
+        </Suspense></SectionErrorBoundary>
+      )}
+
+      {/* Custom Audio Editor */}
+      {showCustomAudio && (
+        <SectionErrorBoundary><Suspense fallback={null}>
+          <CustomAudioEditor onClose={() => setShowCustomAudio(false)} />
         </Suspense></SectionErrorBoundary>
       )}
 
