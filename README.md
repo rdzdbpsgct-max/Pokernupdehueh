@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-6.4.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-6.5.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/7MountainPoker/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://7mountainpoker.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-966%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-1090%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -75,7 +75,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | TV-Modus | Split-Layout: Timer permanent oben, 6 rotierende Screens unten (Spieler, Stats, Auszahlung, Blindstruktur, Chips, Sitzplan) — optimiert für TV/Beamer |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
-| Persistenz | Cache-First IndexedDB-Speicher (50 MB+) mit automatischem localStorage-Fallback |
+| Persistenz | Cache-First IndexedDB-Speicher (12 IndexedDB-Stores) mit automatischem localStorage-Fallback |
 | Turnier-Checkpoint | Automatische Spielstandsicherung, Wiederherstellung nach Browser-Crash |
 | Barrierefreiheit | ARIA-Labels, Dialog-Rollen, Auto-Fokus, Escape-zum-Schließen |
 | Kompatibilität | Safe Area Insets, dynamische Viewport-Höhe, optimierte Touch-Targets, numerische Tastatur, Tablet-Layout |
@@ -91,6 +91,11 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Liga-Modus | Homegame-Liga mit Spieltagen, Punktesystem, Tiebreaker, Saisons, Finanzen, Gastspieler, Spieler-Detailansicht, QR-Teilen, TV-Display, Druckansicht |
 | Hilfe-Center | Durchsuchbares bilinguales Hilfesystem mit Anleitung (8 Sektionen), FAQ (15 Einträge), Tastenkürzel (11 Einträge) — erreichbar über ?-Button im Header |
 | Fernsteuerung | Turnier vom Smartphone steuern via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock + Spieler-Management: Elimination, Rebuy, Add-On + Turnier-Infos: Prizepool, Avg Stack, Spielzeit) — Ein-QR-Verbindung |
+| Turnier-Serien | Serien-Management mit 3 Ranking-Modi (Punkte, Best-N, Durchschnitt), Standings, JSON Import/Export |
+| Erweitertes Liga-System | 3 Ranking-Algorithmen (Punkte, ELO, Gewichtete Punkte), Head-to-Head-Matrix, Minimum-Teilnahme |
+| Custom Audio | Eigene Audio-Dateien hochladen und 36 Announcements zuordnen (MP3/WAV/OGG, max 5 MB) |
+| PDF-Export | Turnier-Ergebnisse als professionelles PDF exportieren |
+| Turnierdauer-Prognose | Geschätzte Turnierdauer basierend auf Spieleranzahl und Blindstruktur |
 | Premium UI | Glassmorphism, Gradient-Buttons, Timer-Glow, benutzerdefinierte Animationen, taktile Interaktionen |
 | Design-System | Einheitliche Abrundungen, Border-Opacities, Focus-Glow, Custom Number-Stepper, SVG-Chevrons |
 | Validierung | Eingabeprüfung vor Turnierstart mit klaren Fehlermeldungen |
@@ -172,7 +177,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
-| Persistence | Cache-first IndexedDB storage (50 MB+) with automatic localStorage fallback |
+| Persistence | Cache-first IndexedDB storage (12 IndexedDB stores) with automatic localStorage fallback |
 | Tournament checkpoint | Auto-save game state, recovery after browser crash |
 | Tournament history | Persistent results across sessions (max 50), expandable standings, player statistics, WhatsApp text copy, CSV download |
 | Accessibility | ARIA labels, dialog roles, auto-focus, escape-to-close |
@@ -189,6 +194,11 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | League Mode | Home game league with game days, point system, tiebreaker, seasons, finances, guest players, player detail modal, QR sharing, TV display, print view |
 | Help Center | Searchable bilingual help system with guide (8 sections), FAQ (15 entries), keyboard shortcuts (11 entries) — accessible via ? button in header |
 | Remote Control | Control tournament from smartphone via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock + player management: elimination, rebuy, add-on + tournament info: prize pool, avg stack, elapsed time) — single QR scan |
+| Tournament Series | Series management with 3 ranking modes (points, best-N, average), standings, JSON import/export |
+| Extended League System | 3 ranking algorithms (points, ELO, weighted points), head-to-head matrix, minimum participation |
+| Custom Audio | Upload custom audio files and map to 36 announcements (MP3/WAV/OGG, max 5 MB) |
+| PDF Export | Export tournament results as professional PDF |
+| Duration Estimate | Estimated tournament duration based on player count and blind structure |
 | Premium UI | Glassmorphism, gradient buttons, timer glow, custom animations, tactile interactions |
 | Design system | Unified rounding, border opacities, focus glow, custom number stepper, SVG chevrons |
 | Validation | Input validation before tournament start with clear error messages |
@@ -213,13 +223,13 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-966_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-1090_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 
 - **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
 - **TypeScript 5.9** — Strikte Typisierung / Strict typing
 - **Vite 7** — Build-Tool / Build tool
 - **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
-- **Vitest** — 966 Tests / Unit tests
+- **Vitest** — 1090 Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
 - **Vercel** — Automatisches Deploy / Auto-deploy on push
 - **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
@@ -253,7 +263,7 @@ App: `http://localhost:5173/`
 
 ```bash
 npm run lint        # ESLint
-npm run test        # 966 Tests
+npm run test        # 1090 Tests
 npm run build       # Production-Build → ./dist
 ```
 
@@ -269,6 +279,9 @@ src/
     sounds.ts           # Web Audio API Sounds (Beeps, Melodien)
     speech.ts           # Sprachansagen (ElevenLabs MP3 + Web Speech API Fallback)
     audioPlayer.ts      # MP3-Playback-Engine
+    series.ts           # Turnier-Serien-Logik / Tournament series logic
+    customAudio.ts      # Custom Audio Management / Custom audio management
+    pdfExport.ts        # PDF-Export / PDF export
   hooks/
     useTimer.ts              # Timer-Hook (drift-free, shared AudioContext)
     useVoiceAnnouncements.ts # Voice-Announcement-Effects (extrahiert aus App.tsx)
@@ -311,13 +324,16 @@ src/
     ThemeSwitcher.tsx     # Dark/Light Mode Toggle
     VoiceSwitcher.tsx     # Sound/Voice Toggle im Header / Sound/voice toggle in header
     LanguageSwitcher.tsx  # DE/EN-Umschalter / Language toggle
+    SeriesManager.tsx     # Turnier-Serien-Verwaltung / Tournament series manager
+    HeadToHeadMatrix.tsx  # Head-to-Head-Matrix / Head-to-head matrix
+    CustomAudioEditor.tsx # Custom Audio Editor / Custom audio editor
     LevelPreview.tsx      # Level-Vorschau / Level preview
     RebuyStatus.tsx      # Rebuy-Anzeige / Rebuy indicator
 public/
   audio/de/             # 234 ElevenLabs MP3 Audiodateien (Deutsch, Stimme: Ava)
   audio/en/             # 234 ElevenLabs MP3 Audiodateien (Englisch)
 tests/
-  logic.test.ts         # 966 Tests
+  logic.test.ts         # 1090 Tests
 ```
 
 ## Architektur / Architecture

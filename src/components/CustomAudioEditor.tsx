@@ -22,7 +22,7 @@ interface Props {
 
 export function CustomAudioEditor({ onClose }: Props) {
   const { t, language } = useTranslation();
-  const [files, setFiles] = useState<CustomAudioFile[]>([]);
+  const [files, setFiles] = useState<CustomAudioFile[]>(() => loadCustomAudioFiles());
   const [mappings, setMappings] = useState<CustomAudioMapping[]>(() => loadAudioMappings());
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -30,11 +30,6 @@ export function CustomAudioEditor({ onClose }: Props) {
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Load files from cache on mount
-  useEffect(() => {
-    setFiles(loadCustomAudioFiles());
-  }, []);
 
   // Cleanup preview audio and blob URL on unmount
   useEffect(() => {

@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.4.0
+**Version**: 6.5.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (966 tests, single run)
+npm run test         # Vitest run (1090 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -76,6 +76,9 @@ src/
 │   ├── GameDayEditor.tsx         # Manual game day entry modal with player management
 │   ├── LeagueSettings.tsx        # League settings — tiebreaker config, seasons, point system
 │   ├── LeaguePlayerDetail.tsx    # League player detail stats modal
+│   ├── HeadToHeadMatrix.tsx      # NxN heatmap table for league player win-loss records
+│   ├── SeriesManager.tsx         # Tournament series CRUD modal with standings and export
+│   ├── CustomAudioEditor.tsx     # Drag & drop audio upload + announcement mapping editor
 │   ├── LevelPreview.tsx         # Next-level sidebar
 │   ├── NumberStepper.tsx        # Custom +/- stepper with long-press support
 │   ├── PayoutEditor.tsx         # Prize distribution config
@@ -125,6 +128,9 @@ src/
 │   ├── leaguePersistence.ts     # League CRUD, league config extraction, league JSON export/import
 │   ├── league.ts                 # League domain logic — game days, standings, finances, tiebreaker, QR
 │   ├── tables.ts                # Multi-table management: seat-level CRUD, distribution, balancing, dissolution, final table merge, per-table dealer
+│   ├── series.ts                # Tournament series management: CRUD, 3 ranking modes, standings, text/CSV/JSON export
+│   ├── customAudio.ts           # Custom audio file management: upload, mapping to announcements, playback integration
+│   ├── pdfExport.ts             # PDF export for tournament results (jsPDF + jspdf-autotable)
 │   ├── toast.ts                  # Toast notification context and hook (useToast)
 │   ├── helpContent.ts            # Bilingual help content data — sections, FAQ, keyboard shortcuts
 │   ├── displayChannel.ts         # BroadcastChannel communication for TV display window
@@ -217,7 +223,7 @@ public/
 - **Init**: `initStorage()` in `main.tsx` before React mount — only async point
 - **Migration**: On first run, copies 8 localStorage keys → IndexedDB, sets `poker-timer-migrated` flag, deletes migrated keys
 - **Fallback**: If IndexedDB unavailable → localStorage-only mode (same API, no code changes)
-- **IndexedDB schema** (`poker-timer-db`, v1): 3 singleton stores (config, settings, checkpoint) + 5 collection stores (templates, history, players, leagues, gameDays — keyPath: `id`)
+- **IndexedDB schema** (`poker-timer-db`, v4): 3 singleton stores (config, settings, checkpoint) + 9 collection stores (templates, history, players, leagues, gameDays, events, series, customAudio, audioMappings — keyPath: `id`)
 - **localStorage retains**: `poker-timer-theme`, `poker-timer-language`, `poker-timer-accent`, `poker-timer-bg`, `poker-timer-wizard-completed`, `poker-timer-migrated`
 
 ### i18n
@@ -317,11 +323,17 @@ public/
 - **App.tsx Refactoring**: Extracted `useKeyboardShortcuts` (72 lines) and `useTournamentActions` (317 lines) hooks. App.tsx reduced from ~1543 to ~1300 lines.
 - **UI Integration Tests**: 95 component tests via `@testing-library/react` in `tests/components.test.tsx` covering 17 components/hooks (NumberStepper, CollapsibleSection, CollapsibleSubSection, PrintView, CallTheClock, BubbleIndicator, RebuyStatus, ChevronIcon, LanguageSwitcher, ThemeSwitcher, ErrorBoundary, useTimer, useConfirmDialog, LoadingFallback, ConfigEditor, SettingsPanel, PlayerPanel).
 - **Offline-first**: Core functionality works offline. PeerJS signaling server required only for Remote Control pairing
+- **Tournament Series**: `TournamentSeries` type with `SeriesRankingMode` (`'points' | 'bestN' | 'average'`). `series.ts` module (~283 lines): CRUD, `computeSeriesStandings()`, text/CSV/JSON export. `SeriesManager.tsx` modal (~590 lines, lazy-loaded) for create/edit/delete, standings table, ranking mode selection. Linked to tournaments via `seriesId`. Accessible via "Serien" button in AppHeader.
+- **Extended League Rankings**: 3 algorithms in `league.ts`: Standard points, ELO rating (`computeEloRatings()` with configurable `EloConfig`), weighted points with decay (`computeWeightedPoints()` with `WeightedPointsConfig`). `RankingAlgorithm` type. `computeHeadToHeadMatrix()` for NxN win-loss records. `HeadToHeadMatrix.tsx` heatmap component (~149 lines). Minimum participation threshold with dimming in standings. `LeagueSettings.tsx` extended with ranking config UI.
+- **Custom Audio**: `customAudio.ts` (~150 lines): Upload audio files (MP3/WAV/OGG/AAC, max 5 MB) as `CustomAudioFile` (ArrayBuffer in IndexedDB). Map files to 36 `AnnouncementKey`s via `CustomAudioMapping`. `CustomAudioEditor.tsx` (~390 lines, lazy-loaded) with drag-and-drop upload, file list, announcement mapping. 3 new IndexedDB stores: `series`, `customAudio`, `audioMappings`.
+- **PDF Export**: `pdfExport.ts` (~166 lines): `exportTournamentResultAsPdf()` generates professional PDF with header, standings table, tournament info. Dependencies: `jspdf` + `jspdf-autotable`.
+- **Duration Prognosis**: `estimateTournamentDuration()` in blinds.ts estimates total tournament duration based on player count, blind structure, rebuy/addon probabilities. Displayed in TournamentStats and TV StatsScreen.
+- **Remote Session Persistence**: Peer ID stored in `sessionStorage` — remote connection survives browser refresh. `remoteResizeTable` command for table resize support.
 
 ## Testing
 
-- **966 tests** across 15 test files + 1 setup file
-- Core files: `logic.test.ts` (530), `components.test.tsx` (95), `edge-cases.test.ts` (88), `sound-speech.test.ts` (54), `integration.test.ts` (36), `tournamentActions.test.tsx` (31), `hooks.test.tsx` (25), `i18n.test.ts` (24), `persistence.test.ts` (24), `controls.test.tsx` (22), `display-channel.test.ts` (14), `entitlements.test.ts` (8), `toast.test.ts` (6), `monetizationTelemetry.test.ts` (3), `recovery.test.ts` (3)
+- **1090 tests** across 16 test files + 1 setup file
+- Core files: `logic.test.ts` (654), `components.test.tsx` (95), `edge-cases.test.ts` (88), `sound-speech.test.ts` (54), `integration.test.ts` (36), `tournamentActions.test.tsx` (31), `hooks.test.tsx` (25), `i18n.test.ts` (24), `persistence.test.ts` (24), `controls.test.tsx` (22), `display-channel.test.ts` (14), `entitlements.test.ts` (8), `toast.test.ts` (6), `monetizationTelemetry.test.ts` (3), `recovery.test.ts` (3)
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
 - When modifying `logic.ts`, add or update corresponding tests
@@ -358,6 +370,20 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.5.0 — Phase 2+3: Turnier-Serien, Erweitertes Liga-System, Custom Audio, PDF-Export
+
+- **Turnier-Serien**: `series.ts` (~283 Zeilen) — Serien-Management mit 3 Ranking-Modi (Punkte, Best-N, Durchschnitt). `SeriesManager.tsx` (~590 Zeilen, lazy-loaded) — CRUD-Modal mit Standings, JSON Import/Export, Text/CSV-Export.
+- **Erweitertes Liga-System**: 3 Ranking-Algorithmen (Punkte, ELO, Gewichtete Punkte mit Decay). `HeadToHeadMatrix.tsx` (~149 Zeilen) — NxN Heatmap als 4. Tab in LeagueView. LeagueSettings + LeagueStandingsTable erweitert.
+- **Custom Audio**: `customAudio.ts` (~150 Zeilen) — Audio-Upload + Announcement-Mapping. `CustomAudioEditor.tsx` (~390 Zeilen) — Drag-&-Drop-Editor. 3 neue IndexedDB-Stores.
+- **PDF-Export**: `pdfExport.ts` (~166 Zeilen) — Turnier-Ergebnisse als PDF (jsPDF + jspdf-autotable).
+- **Turnierdauer-Prognose**: `estimateTournamentDuration()` in blinds.ts. Anzeige in TournamentStats + TV StatsScreen.
+- **Remote Session-Persistenz**: Peer-ID in sessionStorage — Verbindung überlebt Browser-Refresh.
+- **Tisch-Resize**: `resizeTable()` in tables.ts + Remote-Command-Support.
+- **IndexedDB v4**: 12 Stores (3 Singleton + 9 Collection). 3 neue: `series`, `customAudio`, `audioMappings`.
+- **Neue Dependencies**: `jspdf`, `jspdf-autotable`
+- **~75 neue Translation-Keys** (DE + EN)
+- **124 neue Tests** — **1090 Tests gesamt** (16 Testdateien)
 
 ### v6.4.0 — Dokumentation, Help-Center & Sound-Vervollständigung
 

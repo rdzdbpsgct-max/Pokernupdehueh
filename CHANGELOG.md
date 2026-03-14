@@ -5,6 +5,51 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.5.0] – 2026-03-14
+
+### Phase 2+3 — Turnier-Serien, Erweitertes Liga-System, Custom Audio, PDF-Export & mehr
+
+**Neue Domain-Module:**
+- **Turnier-Serien** (`series.ts`, ~283 Zeilen): Serien-Management mit 3 Ranking-Modi (Punkte-Summe, Best-N, Durchschnitt). CRUD, Standings-Berechnung, Text/CSV-Export, JSON Import/Export. Typ: `TournamentSeries` mit `SeriesRankingMode`.
+- **Custom Audio** (`customAudio.ts`, ~150 Zeilen): Upload eigener Audio-Dateien (MP3/WAV/OGG/AAC, max 5 MB) und Zuordnung zu 36 Announcements. ArrayBuffer-Speicherung in IndexedDB. `CustomAudioFile` + `CustomAudioMapping` Types.
+- **PDF-Export** (`pdfExport.ts`, ~166 Zeilen): Turnier-Ergebnisse als PDF exportieren (jsPDF + jspdf-autotable). Enthält Header, Standings-Tabelle, Turnier-Infos. Neues async `exportTournamentResultAsPdf()`.
+- **Turnierdauer-Prognose** (in `blinds.ts`): `estimateTournamentDuration()` berechnet prognostizierte Turnierdauer basierend auf Spielerzahl, Blindstruktur und Rebuy-/Addon-Wahrscheinlichkeiten. Anzeige in TournamentStats und Display StatsScreen.
+
+**Erweitertes Liga-System** (in `league.ts`, +226 Zeilen):
+- **3 Ranking-Algorithmen**: Standard-Punkte, ELO-Rating (`computeEloRatings()` mit konfigurierbarem Start-Rating und K-Faktor), gewichtete Punkte mit Decay (`computeWeightedPoints()`).
+- **Head-to-Head-Matrix**: `computeHeadToHeadMatrix()` berechnet NxN Win/Loss-Bilanz aus GameDay-Paarvergleichen.
+- **Minimum-Teilnahme**: Spieler unter Schwelle werden in Standings als nicht qualifiziert markiert (dimmed).
+- **Neue Types**: `RankingAlgorithm`, `EloConfig`, `WeightedPointsConfig`, `HeadToHeadRecord`.
+
+**Remote Control Erweiterungen** (in `remote.ts`):
+- **Session-Persistenz**: Remote-Verbindung überlebt Browser-Refresh — Peer-ID wird in sessionStorage gespeichert und bei Neustart wiederverwendet.
+- **Tisch-Resize-Support**: `remoteResizeTable` Command + Handler im Remote-Protokoll.
+
+**Neue UI-Komponenten:**
+- **`SeriesManager.tsx`** (~590 Zeilen): Vollständiges CRUD-Modal für Turnier-Serien. Erstellen/Bearbeiten/Löschen, Standings-Tabelle, Ranking-Modus-Auswahl, JSON Import/Export, Text/CSV-Kopieren. Lazy-loaded, erreichbar über „Serien"-Button im AppHeader.
+- **`HeadToHeadMatrix.tsx`** (~149 Zeilen): NxN Heatmap-Tabelle für Liga-Spieler-Bilanz. Farbcodierte Zellen (grün/rot/neutral), Hover-Tooltips, Sort-Toggle, Sticky-Spalte. Integriert als 4. Tab „H2H" in LeagueView.
+- **`CustomAudioEditor.tsx`** (~390 Zeilen): Drag-&-Drop Audio-Upload + Announcement-Mapping-Editor. Dateiliste mit Größenanzeige, 36 zuordenbare Announcements, Sprach-Filter (DE/EN/Alle). Erreichbar über Button in SettingsPanel Audio-Sektion.
+
+**Bestehende Komponenten erweitert:**
+- **LeagueView.tsx**: Neuer H2H-Tab mit Head-to-Head-Matrix.
+- **LeagueSettings.tsx**: Ranking-Algorithmus-Auswahl (3-Segment-Toggle: Punkte/ELO/Gewichtet), ELO-Config (Start-Rating, K-Faktor), Weighted-Config (Decay-Faktor), Minimum-Teilnahme.
+- **LeagueStandingsTable.tsx**: Dynamische Ranking-Spalte je nach Algorithmus, Dimming für nicht qualifizierte Spieler, neue Sort-Keys (eloRating, weightedPoints).
+- **TournamentStats.tsx**: Turnierdauer-Prognose-Anzeige.
+- **TournamentFinished.tsx**: PDF-Export-Button.
+- **SetupPage.tsx**: Serien-Verknüpfung für Turniere.
+- **SettingsPanel.tsx**: Custom-Audio-Button in Audio-Sektion.
+- **StatsScreen.tsx** (TV-Display): Geschätzte Restzeit-Anzeige.
+
+**Infrastruktur:**
+- **IndexedDB v4**: 3 neue Collection-Stores (`series`, `customAudio`, `audioMappings`). 12 Stores gesamt.
+- **Custom Audio Playback**: `audioPlayer.ts` erweitert um Blob-URL-Wiedergabe für benutzerdefinierte Audio-Dateien.
+- **Neue Dependencies**: `jspdf` + `jspdf-autotable` für PDF-Export.
+- **~75 neue Translation-Keys** (DE + EN): Serien, H2H, Ranking-Algorithmen, Custom Audio UI + 36 Announcement-Labels.
+- **i18n-Test-Anpassung**: Schwelle für identische DE/EN-Keys von 90 auf 120 erhöht. Hyphens in Key-Segmenten erlaubt.
+- **124 neue Tests** — **1090 Tests gesamt** (16 Testdateien)
+
+---
+
 ## [6.4.0] – 2026-03-12
 
 ### Dokumentation, Help-Center & Sound-Vervollständigung

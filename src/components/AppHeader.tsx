@@ -32,6 +32,7 @@ interface Props {
   onShowLog?: () => void;
   showLogButton?: boolean;
   onOpenFeatureGate: (feature: AppFeature) => void;
+  onShowSeries?: () => void;
 }
 
 function lockedTitle(featureName: string): string {
@@ -62,6 +63,7 @@ export function AppHeader({
   onShowLog,
   showLogButton,
   onOpenFeatureGate,
+  onShowSeries,
 }: Props) {
   const { t } = useTranslation();
 
@@ -182,6 +184,16 @@ export function AppHeader({
             >
               {t('app.leagues')} {!canUseLeagueMode ? ` ${String.fromCodePoint(0x1F512)}` : ''}
             </button>
+
+            {mode === 'setup' && onShowSeries && (
+              <button
+                onClick={onShowSeries}
+                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm transition-all duration-200 border border-gray-300 dark:border-gray-700/30"
+                title={t('app.series')}
+              >
+                {t('app.series')}
+              </button>
+            )}
 
             <button
               onClick={onShowHistory}
