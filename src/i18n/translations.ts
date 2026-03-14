@@ -957,6 +957,13 @@ const de = {
   'pwa.desktop.step4': 'Bestätige mit „Installieren".',
   'pwa.desktop.step5': 'Die App startet künftig in einem eigenen Fenster.',
   'settings.installApp': 'App installieren',
+  'payout.overlay.title': 'Auszahlungs-Simulator',
+  'payout.overlay.playersLeft': 'Verbleibende Spieler',
+  'payout.overlay.currentPrizePool': 'Aktueller Preispool',
+  'payout.overlay.place': 'Platz',
+  'payout.overlay.amount': 'Betrag',
+  'payout.overlay.close': 'Schließen',
+  'payout.overlay.hint': 'Passe die Spielerzahl an, um die Auszahlung zu simulieren',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -1915,6 +1922,13 @@ const en: Record<TranslationKey, string> = {
   'pwa.desktop.step4': 'Confirm by clicking "Install".',
   'pwa.desktop.step5': 'The app will launch in its own window.',
   'settings.installApp': 'Install App',
+  'payout.overlay.title': 'Payout Simulator',
+  'payout.overlay.playersLeft': 'Players Remaining',
+  'payout.overlay.currentPrizePool': 'Current Prize Pool',
+  'payout.overlay.place': 'Place',
+  'payout.overlay.amount': 'Amount',
+  'payout.overlay.close': 'Close',
+  'payout.overlay.hint': 'Adjust player count to simulate payouts',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

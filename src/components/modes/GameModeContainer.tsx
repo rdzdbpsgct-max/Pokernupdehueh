@@ -67,6 +67,7 @@ interface Props {
   onHandForHand: () => void;
   onNextHand: () => void;
   onShowCallTheClock: () => void;
+  onShowPayoutOverlay: () => void;
   onUpdateTables: (tables: Table[]) => void;
   onTableMoves: (moves: TableMove[]) => void;
   onSettingsChange: Dispatch<SetStateAction<Settings>>;
@@ -116,6 +117,7 @@ export function GameModeContainer({
   onHandForHand,
   onNextHand,
   onShowCallTheClock,
+  onShowPayoutOverlay,
   onUpdateTables,
   onTableMoves,
   onSettingsChange,
@@ -157,6 +159,7 @@ export function GameModeContainer({
               onReEntryPlayer={onReEntryPlayer}
               tables={config.tables}
               onSidePotResultChange={onSidePotResultChange}
+              onShowPayoutOverlay={onShowPayoutOverlay}
             />
           </aside>
         )}

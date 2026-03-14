@@ -90,6 +90,7 @@ const HelpCenter = lazy(() => import('./components/HelpCenter').then(m => ({ def
 const TemplateManager = lazy(() => import('./components/TemplateManager').then(m => ({ default: m.TemplateManager })));
 const TournamentHistory = lazy(() => import('./components/TournamentHistory').then(m => ({ default: m.TournamentHistory })));
 const TournamentLog = lazy(() => import('./components/TournamentLog').then(m => ({ default: m.TournamentLog })));
+const PayoutOverlay = lazy(() => import('./components/PayoutOverlay').then(m => ({ default: m.PayoutOverlay })));
 
 type Mode = 'setup' | 'game' | 'league';
 
@@ -279,6 +280,7 @@ function App() {
   });
   const [showHelp, setShowHelp] = useState(false);
   const [showTournamentLog, setShowTournamentLog] = useState(false);
+  const [showPayoutOverlay, setShowPayoutOverlay] = useState(false);
 
   // Online/Offline detection — show toast on status change
   const isOnline = useOnlineStatus();
@@ -998,6 +1000,7 @@ function App() {
             onHandForHand={handleHandForHand}
             onNextHand={handleNextHand}
             onShowCallTheClock={() => setShowCallTheClock(true)}
+            onShowPayoutOverlay={() => setShowPayoutOverlay(true)}
             onUpdateTables={handleUpdateTables}
             onTableMoves={handleTableMoves}
             onSettingsChange={setSettings}
@@ -1098,6 +1101,17 @@ function App() {
             events={tournamentEvents}
             players={config.players}
             onClose={() => setShowTournamentLog(false)}
+          />
+        </Suspense></SectionErrorBoundary>
+      )}
+
+      {/* Payout Overlay */}
+      {showPayoutOverlay && mode === 'game' && (
+        <SectionErrorBoundary><Suspense fallback={null}>
+          <PayoutOverlay
+            config={config}
+            players={config.players}
+            onClose={() => setShowPayoutOverlay(false)}
           />
         </Suspense></SectionErrorBoundary>
       )}

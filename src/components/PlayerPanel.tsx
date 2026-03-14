@@ -33,6 +33,7 @@ interface Props {
   onReEntryPlayer?: (playerId: string) => void;
   tables?: Table[];
   onSidePotResultChange?: (data: { pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null) => void;
+  onShowPayoutOverlay?: () => void;
 }
 
 export const PlayerPanel = memo(function PlayerPanel({
@@ -61,6 +62,7 @@ export const PlayerPanel = memo(function PlayerPanel({
   onReEntryPlayer,
   tables,
   onSidePotResultChange,
+  onShowPayoutOverlay,
 }: Props) {
   const { t } = useTranslation();
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
@@ -257,6 +259,14 @@ export const PlayerPanel = memo(function PlayerPanel({
             >
               {t('sidePot.title')}
             </button>
+            {onShowPayoutOverlay && (
+              <button
+                onClick={onShowPayoutOverlay}
+                className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+              >
+                {t('payout.overlay.title')}
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-1 space-y-1">
