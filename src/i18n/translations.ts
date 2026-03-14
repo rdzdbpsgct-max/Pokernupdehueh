@@ -207,6 +207,7 @@ const de = {
   'remote.versionMismatchHint': 'Bitte lade die App neu, um die Fernbedienung zu nutzen.',
   'remote.reload': 'App neu laden',
   'remote.syncing': 'Synchronisiere...',
+  'remote.sessionRestored': 'Remote-Sitzung wiederhergestellt',
 
   'settings.shortcuts': 'Tastenkürzel',
   'settings.shortcutStartPause': 'Start/Pause',
@@ -397,6 +398,12 @@ const de = {
   'stats.elapsed': 'Spielzeit',
   'stats.remaining': 'Restzeit',
   'stats.liveEstimate': 'Gesch. Restzeit',
+  'stats.historicalEstimate': '~{time} (historisch)',
+  'stats.basedOnTournaments': 'Basierend auf {n} ähnlichen Turnieren',
+  'stats.structureEstimate': '~{time} (Struktur)',
+  'stats.confidenceHigh': 'Hohe Konfidenz',
+  'stats.confidenceMedium': 'Mittlere Konfidenz',
+  'stats.confidenceLow': 'Niedrige Konfidenz',
 
   // --- Bubble ---
   'bubble.bubble': 'BUBBLE!',
@@ -500,7 +507,15 @@ const de = {
   'finished.textCopied': 'Kopiert!',
   'finished.downloadCSV': 'CSV herunterladen',
   'finished.print': 'Ergebnis drucken',
+  'finished.downloadPDF': 'PDF herunterladen',
   'finished.qrApp': 'App installieren',
+
+  // --- PDF Export ---
+  'pdf.title': 'Turnierergebnis',
+  'pdf.generatedBy': 'Erstellt mit 7Mountain Poker',
+  'pdf.place': 'Platz',
+  'pdf.payout': 'Auszahlung',
+  'pdf.playerName': 'Name',
 
   // --- Shared Result ---
   'shared.title': 'Geteiltes Turnierergebnis',
@@ -845,6 +860,8 @@ const de = {
   'multiTable.lockSeat': 'Sitz sperren',
   'multiTable.unlockSeat': 'Sitz entsperren',
   'multiTable.advanceDealer': 'Dealer weiter',
+  'multiTable.seatsAtTable': 'Sitze an {table}',
+  'multiTable.cannotResize': 'Tisch kann nicht verkleinert werden – Sitze sind belegt',
 
   // --- Presets ---
   'preset.title': 'Schnellstart',
@@ -1008,6 +1025,61 @@ const de = {
   'alerts.level': 'Level-Nummer',
   'alerts.seconds': 'Sekunden vorher',
   'alerts.playerCount': 'Spieleranzahl',
+
+  // --- Tournament Series ---
+  'series.title': 'Turnierserie',
+  'series.create': 'Serie erstellen',
+  'series.name': 'Serienname',
+  'series.startDate': 'Startdatum',
+  'series.endDate': 'Enddatum',
+  'series.standings': 'Gesamtwertung',
+  'series.tournaments': 'Turniere',
+  'series.playerOfSeries': 'Spieler der Serie',
+  'series.rankingMode': 'Wertungsmodus',
+  'series.rankingPoints': 'Punkte',
+  'series.rankingBalance': 'Bilanz',
+  'series.rankingAvgPlace': '\u00D8 Platzierung',
+  'series.minTournaments': 'Min. Turniere',
+  'series.export': 'Serie exportieren',
+  'series.import': 'Serie importieren',
+  'series.linkTournament': 'Turnier verkn\u00FCpfen',
+  'series.unlinkTournament': 'Verkn\u00FCpfung l\u00F6sen',
+  'series.noTournaments': 'Noch keine Turniere verkn\u00FCpft',
+  'series.qualified': 'qualifiziert',
+  'series.notQualified': 'nicht qualifiziert',
+  'series.delete': 'Serie l\u00F6schen',
+  'series.deleteConfirm': 'Serie "{name}" wirklich l\u00F6schen?',
+  'series.textCopied': 'Serientext kopiert',
+
+  // --- Extended League ---
+  'league.h2h.title': 'Head-to-Head',
+  'league.h2h.wins': 'Siege',
+  'league.h2h.losses': 'Niederlagen',
+  'league.h2h.meetings': 'Begegnungen',
+  'league.h2h.winRate': 'Siegquote',
+  'league.ranking.algorithm': 'Wertungsalgorithmus',
+  'league.ranking.points': 'Punkte',
+  'league.ranking.elo': 'ELO-Rating',
+  'league.ranking.weighted': 'Gewichtete Punkte',
+  'league.ranking.kFactor': 'K-Faktor',
+  'league.ranking.startRating': 'Start-Rating',
+  'league.ranking.decay': 'Abklingfaktor',
+  'league.ranking.minParticipation': 'Min. Spieltage',
+
+  // --- Custom Audio ---
+  'customAudio.title': 'Eigene Audiodateien',
+  'customAudio.upload': 'Datei hochladen',
+  'customAudio.noFiles': 'Keine eigenen Audiodateien',
+  'customAudio.delete': 'Datei löschen',
+  'customAudio.mapping': 'Zuordnung',
+  'customAudio.announcement': 'Ansage',
+  'customAudio.file': 'Datei',
+  'customAudio.language': 'Sprache',
+  'customAudio.all': 'Alle Sprachen',
+  'customAudio.preview': 'Vorschau',
+  'customAudio.maxSize': 'Max. 5 MB pro Datei',
+  'customAudio.unsupportedFormat': 'Nicht unterstütztes Format',
+  'customAudio.remove': 'Zuordnung entfernen',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -1219,6 +1291,7 @@ const en: Record<TranslationKey, string> = {
   'remote.versionMismatchHint': 'Please reload the app to use the remote control.',
   'remote.reload': 'Reload App',
   'remote.syncing': 'Syncing...',
+  'remote.sessionRestored': 'Remote session restored',
 
   'settings.shortcuts': 'Keyboard Shortcuts',
   'settings.shortcutStartPause': 'Start/Pause',
@@ -1409,6 +1482,12 @@ const en: Record<TranslationKey, string> = {
   'stats.elapsed': 'Elapsed',
   'stats.remaining': 'Remaining',
   'stats.liveEstimate': 'Est. remaining',
+  'stats.historicalEstimate': '~{time} (historical)',
+  'stats.basedOnTournaments': 'Based on {n} similar tournaments',
+  'stats.structureEstimate': '~{time} (structure)',
+  'stats.confidenceHigh': 'High confidence',
+  'stats.confidenceMedium': 'Medium confidence',
+  'stats.confidenceLow': 'Low confidence',
 
   // --- Bubble ---
   'bubble.bubble': 'BUBBLE!',
@@ -1512,7 +1591,15 @@ const en: Record<TranslationKey, string> = {
   'finished.textCopied': 'Copied!',
   'finished.downloadCSV': 'Download CSV',
   'finished.print': 'Print Results',
+  'finished.downloadPDF': 'Download PDF',
   'finished.qrApp': 'Install App',
+
+  // --- PDF Export ---
+  'pdf.title': 'Tournament Result',
+  'pdf.generatedBy': 'Generated by 7Mountain Poker',
+  'pdf.place': 'Place',
+  'pdf.payout': 'Payout',
+  'pdf.playerName': 'Name',
 
   // --- Shared Result ---
   'shared.title': 'Shared Tournament Result',
@@ -1854,6 +1941,8 @@ const en: Record<TranslationKey, string> = {
   'multiTable.lockSeat': 'Lock seat',
   'multiTable.unlockSeat': 'Unlock seat',
   'multiTable.advanceDealer': 'Advance dealer',
+  'multiTable.seatsAtTable': 'Seats at {table}',
+  'multiTable.cannotResize': 'Cannot resize table – seats are occupied',
 
   // --- Presets ---
   'preset.title': 'Quick Start',
@@ -2017,6 +2106,61 @@ const en: Record<TranslationKey, string> = {
   'alerts.level': 'Level number',
   'alerts.seconds': 'Seconds before',
   'alerts.playerCount': 'Player count',
+
+  // --- Tournament Series ---
+  'series.title': 'Tournament Series',
+  'series.create': 'Create Series',
+  'series.name': 'Series Name',
+  'series.startDate': 'Start Date',
+  'series.endDate': 'End Date',
+  'series.standings': 'Overall Standings',
+  'series.tournaments': 'Tournaments',
+  'series.playerOfSeries': 'Player of the Series',
+  'series.rankingMode': 'Ranking Mode',
+  'series.rankingPoints': 'Points',
+  'series.rankingBalance': 'Balance',
+  'series.rankingAvgPlace': 'Avg Place',
+  'series.minTournaments': 'Min. Tournaments',
+  'series.export': 'Export Series',
+  'series.import': 'Import Series',
+  'series.linkTournament': 'Link Tournament',
+  'series.unlinkTournament': 'Unlink Tournament',
+  'series.noTournaments': 'No tournaments linked yet',
+  'series.qualified': 'qualified',
+  'series.notQualified': 'not qualified',
+  'series.delete': 'Delete Series',
+  'series.deleteConfirm': 'Really delete series "{name}"?',
+  'series.textCopied': 'Series text copied',
+
+  // --- Extended League ---
+  'league.h2h.title': 'Head-to-Head',
+  'league.h2h.wins': 'Wins',
+  'league.h2h.losses': 'Losses',
+  'league.h2h.meetings': 'Meetings',
+  'league.h2h.winRate': 'Win Rate',
+  'league.ranking.algorithm': 'Ranking Algorithm',
+  'league.ranking.points': 'Points',
+  'league.ranking.elo': 'ELO Rating',
+  'league.ranking.weighted': 'Weighted Points',
+  'league.ranking.kFactor': 'K-Factor',
+  'league.ranking.startRating': 'Start Rating',
+  'league.ranking.decay': 'Decay Factor',
+  'league.ranking.minParticipation': 'Min. Game Days',
+
+  // --- Custom Audio ---
+  'customAudio.title': 'Custom Audio Files',
+  'customAudio.upload': 'Upload File',
+  'customAudio.noFiles': 'No custom audio files',
+  'customAudio.delete': 'Delete File',
+  'customAudio.mapping': 'Mapping',
+  'customAudio.announcement': 'Announcement',
+  'customAudio.file': 'File',
+  'customAudio.language': 'Language',
+  'customAudio.all': 'All Languages',
+  'customAudio.preview': 'Preview',
+  'customAudio.maxSize': 'Max 5 MB per file',
+  'customAudio.unsupportedFormat': 'Unsupported format',
+  'customAudio.remove': 'Remove mapping',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

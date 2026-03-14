@@ -526,6 +526,58 @@ export function mergeToFinalTable(
 }
 
 // ---------------------------------------------------------------------------
+// Resize a table (change maxSeats safely)
+// ---------------------------------------------------------------------------
+
+/**
+ * Resize a table's seat count. When growing, appends new empty seats.
+ * When shrinking, removes seats from the end — but only if those seats are
+ * empty and unlocked. If any seat that would be removed is occupied or locked,
+ * the table is returned unchanged and `warning` is set.
+ */
+export function resizeTable(
+  tables: Table[],
+  tableId: string,
+  newMaxSeats: number,
+): { tables: Table[]; warning?: string } {
+  const table = tables.find(t => t.id === tableId);
+  if (!table) return { tables };
+
+  const currentMax = table.maxSeats;
+
+  if (newMaxSeats === currentMax) return { tables };
+
+  if (newMaxSeats > currentMax) {
+    // Growing: append empty seats
+    const newSeats: Seat[] = [...table.seats];
+    for (let i = currentMax + 1; i <= newMaxSeats; i++) {
+      newSeats.push({ seatNumber: i, playerId: null });
+    }
+    return {
+      tables: tables.map(t =>
+        t.id === tableId ? { ...t, maxSeats: newMaxSeats, seats: newSeats } : t,
+      ),
+    };
+  }
+
+  // Shrinking: check if seats to be removed are all empty and unlocked
+  const seatsToRemove = table.seats.slice(newMaxSeats);
+  const hasOccupied = seatsToRemove.some(s => s.playerId !== null);
+  const hasLocked = seatsToRemove.some(s => s.locked);
+
+  if (hasOccupied || hasLocked) {
+    return { tables, warning: 'cannotResize' };
+  }
+
+  const trimmedSeats = table.seats.slice(0, newMaxSeats);
+  return {
+    tables: tables.map(t =>
+      t.id === tableId ? { ...t, maxSeats: newMaxSeats, seats: trimmedSeats } : t,
+    ),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Random seating (shuffle players to tables)
 // ---------------------------------------------------------------------------
 

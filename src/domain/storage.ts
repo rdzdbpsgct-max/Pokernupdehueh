@@ -20,6 +20,9 @@ import type {
   League,
   GameDay,
   TournamentEvent,
+  TournamentSeries,
+  CustomAudioFile,
+  CustomAudioMapping,
 } from './types';
 import type { TournamentTemplate } from './templatePersistence';
 
@@ -31,7 +34,7 @@ import type { TournamentTemplate } from './templatePersistence';
 type SingletonStore = 'config' | 'settings' | 'checkpoint';
 
 /** Stores that hold arrays of items with an `id` field. */
-type CollectionStore = 'templates' | 'history' | 'players' | 'leagues' | 'gameDays' | 'events';
+type CollectionStore = 'templates' | 'history' | 'players' | 'leagues' | 'gameDays' | 'events' | 'series' | 'customAudio' | 'audioMappings';
 
 /** All store names. */
 export type StoreKey = SingletonStore | CollectionStore;
@@ -47,6 +50,9 @@ interface StoreTypeMap {
   leagues: League[];
   gameDays: GameDay[];
   events: TournamentEvent[];
+  series: TournamentSeries[];
+  customAudio: CustomAudioFile[];
+  audioMappings: CustomAudioMapping[];
 }
 
 /** Item types for collection stores (all have `id: string`). */
@@ -57,6 +63,9 @@ interface CollectionItemMap {
   leagues: League;
   gameDays: GameDay;
   events: TournamentEvent;
+  series: TournamentSeries;
+  customAudio: CustomAudioFile;
+  audioMappings: CustomAudioMapping;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,7 +73,7 @@ interface CollectionItemMap {
 // ---------------------------------------------------------------------------
 
 const DB_NAME = 'poker-timer-db';
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 const MIGRATED_KEY = 'poker-timer-migrated';
 
 /** localStorage keys that should be migrated to IndexedDB. */
@@ -84,7 +93,7 @@ const SINGLETON_KEY = 'current';
 
 /** Collection store names (for type narrowing). */
 const COLLECTION_STORES: ReadonlySet<string> = new Set([
-  'templates', 'history', 'players', 'leagues', 'gameDays', 'events',
+  'templates', 'history', 'players', 'leagues', 'gameDays', 'events', 'series', 'customAudio', 'audioMappings',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -101,6 +110,9 @@ const cache: StoreTypeMap = {
   leagues: [],
   gameDays: [],
   events: [],
+  series: [],
+  customAudio: [],
+  audioMappings: [],
 };
 
 let ready = false;
@@ -135,7 +147,7 @@ export async function initStorage(): Promise<void> {
           }
         }
         // Collection stores (keyPath: 'id')
-        for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays', 'events'] as const) {
+        for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays', 'events', 'series', 'customAudio', 'audioMappings'] as const) {
           if (!database.objectStoreNames.contains(store)) {
             database.createObjectStore(store, { keyPath: 'id' });
           }
@@ -179,6 +191,9 @@ export async function resetStorage(): Promise<void> {
   cache.leagues = [];
   cache.gameDays = [];
   cache.events = [];
+  cache.series = [];
+  cache.customAudio = [];
+  cache.audioMappings = [];
 }
 
 /** Whether the storage layer has been initialized. */
@@ -372,7 +387,7 @@ async function loadAllIntoCache(): Promise<void> {
   }
 
   // Collection stores
-  for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays', 'events'] as const) {
+  for (const store of ['templates', 'history', 'players', 'leagues', 'gameDays', 'events', 'series', 'customAudio', 'audioMappings'] as const) {
     try {
       const items = await db.getAll(store);
       setCacheValue(store, items ?? []);

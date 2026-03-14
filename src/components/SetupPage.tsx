@@ -16,6 +16,7 @@ import {
   getBuiltInPresets,
   toggleSeatLock,
   shufflePlayersToTables,
+  resizeTable,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { ConfigEditor } from './ConfigEditor';
@@ -151,19 +152,20 @@ export function SetupPage({
     });
   }, [setConfig, t]);
 
+  const [resizeWarningTableId, setResizeWarningTableId] = useState<string | null>(null);
+
   const handleSetTableSeats = useCallback((tableId: string, maxSeats: number) => {
-    setConfig((prev) => ({
-      ...prev,
-      tables: prev.tables?.map(tbl => {
-        if (tbl.id !== tableId) return tbl;
-        // Resize seats array: keep existing, add or remove as needed
-        const newSeats = Array.from({ length: maxSeats }, (_, i) => {
-          const existing = tbl.seats[i];
-          return existing ? { ...existing, seatNumber: i + 1 } : { seatNumber: i + 1, playerId: null };
-        });
-        return { ...tbl, maxSeats, seats: newSeats };
-      }),
-    }));
+    setConfig((prev) => {
+      if (!prev.tables) return prev;
+      const result = resizeTable(prev.tables, tableId, maxSeats);
+      if (result.warning) {
+        setResizeWarningTableId(tableId);
+        setTimeout(() => setResizeWarningTableId(null), 3000);
+        return prev;
+      }
+      setResizeWarningTableId(null);
+      return { ...prev, tables: result.tables };
+    });
   }, [setConfig]);
 
   const handleDistributePlayers = useCallback(() => {
@@ -519,17 +521,22 @@ export function SetupPage({
                       />
                     </div>
                     {config.tables.map((tbl) => (
-                      <div key={tbl.id} className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[80px]">{tbl.name}</span>
-                        <label className="text-xs text-gray-400 dark:text-gray-500">{t('multiTable.seats')}</label>
-                        <NumberStepper
-                          value={tbl.maxSeats}
-                          onChange={(v) => handleSetTableSeats(tbl.id, v)}
-                          min={2}
-                          max={12}
-                          step={1}
-                          inputClassName="w-16"
-                        />
+                      <div key={tbl.id} className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[80px]">{tbl.name}</span>
+                          <label className="text-xs text-gray-400 dark:text-gray-500">{t('multiTable.seatsAtTable', { table: tbl.name })}</label>
+                          <NumberStepper
+                            value={tbl.maxSeats}
+                            onChange={(v) => handleSetTableSeats(tbl.id, v)}
+                            min={2}
+                            max={14}
+                            step={1}
+                            inputClassName="w-16"
+                          />
+                        </div>
+                        {resizeWarningTableId === tbl.id && (
+                          <p className="text-xs text-red-600 dark:text-red-400 pl-[80px] ml-2">{t('multiTable.cannotResize')}</p>
+                        )}
                       </div>
                     ))}
                     <div className="flex items-center gap-2">

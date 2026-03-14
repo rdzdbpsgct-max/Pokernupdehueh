@@ -202,6 +202,7 @@ export function useRemoteHostBridge({
     controllerPeerId,
     controllerSecret,
     startHost: startRemoteHost,
+    hostResumed: remoteHostResumed,
   } = useRemoteControl({
     onCommand: handleRemoteCommand,
     enabled: mode === 'game',
@@ -300,5 +301,6 @@ export function useRemoteHostBridge({
     controllerPeerId,
     controllerSecret,
     startRemoteHost,
+    remoteHostResumed,
   };
 }

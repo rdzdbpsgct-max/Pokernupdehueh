@@ -131,6 +131,7 @@ export interface TournamentConfig {
   startingChips: number;
   lateRegistration?: LateRegistrationConfig;
   leagueId?: string;
+  seriesId?: string;
   multiTable?: MultiTableConfig;
   tables?: Table[];
 }
@@ -276,6 +277,38 @@ export interface LeagueCorrection {
   date: string; // ISO date
 }
 
+export type RankingAlgorithm = 'points' | 'elo' | 'weightedPoints';
+
+export interface EloConfig {
+  /** Starting ELO rating. Default: 1200 */
+  startRating: number;
+  /** K-factor. Default: 32 */
+  kFactor: number;
+}
+
+export interface WeightedPointsConfig {
+  /** Decay factor per tournament (0–1). Default: 0.9 */
+  decayFactor: number;
+}
+
+export interface HeadToHeadEntry {
+  /** How often playerA finished above playerB */
+  wins: number;
+  /** How often playerB finished above playerA */
+  losses: number;
+  /** Total times both appeared in same game day */
+  meetings: number;
+  /** wins / meetings, or null if no meetings */
+  winRate: number | null;
+}
+
+export interface HeadToHeadMatrix {
+  /** Ordered list of player names (row/column labels) */
+  players: string[];
+  /** matrix[i][j] = playerA(players[i]) vs playerB(players[j]) */
+  matrix: (HeadToHeadEntry | null)[][];
+}
+
 export interface League {
   id: string;
   name: string;
@@ -291,6 +324,14 @@ export interface League {
   tiebreaker?: TiebreakerConfig;
   /** Manual point corrections (bonus/penalty) */
   corrections?: LeagueCorrection[];
+  /** Ranking algorithm for standings computation */
+  rankingAlgorithm?: RankingAlgorithm;
+  /** ELO configuration (only used when rankingAlgorithm === 'elo') */
+  eloConfig?: EloConfig;
+  /** Weighted points config (only used when rankingAlgorithm === 'weightedPoints') */
+  weightedPointsConfig?: WeightedPointsConfig;
+  /** Minimum game days to appear in standings (absolute count) */
+  minParticipation?: number;
 }
 
 export interface LeagueStanding {
@@ -314,6 +355,12 @@ export interface ExtendedLeagueStanding extends LeagueStanding {
   corrections: number;
   /** 1-based rank in standings */
   rank: number;
+  /** ELO rating (set when rankingAlgorithm === 'elo') */
+  eloRating?: number;
+  /** Weighted points (set when rankingAlgorithm === 'weightedPoints') */
+  weightedPoints?: number;
+  /** Whether player meets minimum participation threshold */
+  meetsMinParticipation?: boolean;
 }
 
 export interface GameDayParticipant {
@@ -483,6 +530,35 @@ export interface AlertConfig {
   sound: 'beep' | 'chime' | 'none';
 }
 
+// ---------------------------------------------------------------------------
+// Custom Audio
+// ---------------------------------------------------------------------------
+
+/** A custom audio file uploaded by the user */
+export interface CustomAudioFile {
+  id: string;
+  /** Human-readable name (e.g. "My Level Change Sound") */
+  name: string;
+  /** MIME type (audio/mpeg, audio/wav, etc.) */
+  mimeType: string;
+  /** File size in bytes */
+  sizeBytes: number;
+  /** The audio data as an ArrayBuffer */
+  data: ArrayBuffer;
+  createdAt: string; // ISO timestamp
+}
+
+/** Maps an announcement key to a custom audio file */
+export interface CustomAudioMapping {
+  id: string;
+  /** The announcement key (e.g. 'shuffle-up', 'level-change', 'break-start') */
+  announcementKey: string;
+  /** The custom audio file ID */
+  audioFileId: string;
+  /** Language this mapping applies to ('de' | 'en' | 'all') */
+  language: 'de' | 'en' | 'all';
+}
+
 export type TimerStatus = 'stopped' | 'running' | 'paused';
 
 export interface TimerState {
@@ -525,4 +601,44 @@ export interface TournamentEvent {
   timestamp: number;
   levelIndex: number;
   data: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// Tournament Series
+// ---------------------------------------------------------------------------
+
+export type SeriesRankingMode = 'points' | 'netBalance' | 'avgPlace';
+
+export interface TournamentSeries {
+  id: string;
+  name: string;
+  startDate: string;          // ISO date
+  endDate?: string;           // ISO date
+  /** Ordered list of linked TournamentResult IDs */
+  tournamentIds: string[];
+  /** Point system — reuses the same PointSystem type as leagues */
+  pointSystem: PointSystem;
+  /** How "Player of the Series" is determined */
+  rankingMode: SeriesRankingMode;
+  /** Minimum tournaments played to qualify for standings */
+  minTournaments?: number;
+  notes?: string;
+  createdAt: string;          // ISO timestamp
+}
+
+export interface SeriesStanding {
+  name: string;
+  points: number;
+  tournaments: number;
+  wins: number;
+  cashes: number;
+  avgPlace: number;
+  bestPlace: number;
+  totalCost: number;
+  totalPayout: number;
+  netBalance: number;
+  knockouts: number;
+  rank: number;
+  /** true when player met minTournaments threshold */
+  qualified: boolean;
 }

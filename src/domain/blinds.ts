@@ -1,4 +1,4 @@
-import type { Level, AnteMode } from './types';
+import type { Level, AnteMode, TournamentResult } from './types';
 import { generateId } from './helpers';
 import { t as moduleT } from '../i18n/translations';
 
@@ -438,4 +438,69 @@ export function estimateAllDurations(
       totalSeconds: estimateDuration(playedLevels),
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Historical Duration Estimate
+// ---------------------------------------------------------------------------
+
+export type DurationConfidence = 'high' | 'medium' | 'low';
+
+export interface HistoricalDurationEstimate {
+  estimateSeconds: number;
+  confidence: DurationConfidence;
+  sampleSize: number;
+}
+
+/**
+ * Compute tournament duration estimate using historical data from past tournaments.
+ * Falls back to null if insufficient history (< 3 similar tournaments).
+ *
+ * Uses median duration per player from tournaments with similar player counts (±30%).
+ */
+export function computeHistoricalDurationEstimate(
+  playerCount: number,
+  history: TournamentResult[],
+): HistoricalDurationEstimate | null {
+  if (playerCount <= 0 || history.length === 0) return null;
+
+  // Filter for valid tournaments with elapsed time and player count
+  const valid = history.filter(
+    (t) => t.elapsedSeconds > 0 && t.playerCount > 0,
+  );
+
+  // Filter for similar size: playerCount within ±30%
+  const lowerBound = playerCount * 0.7;
+  const upperBound = playerCount * 1.3;
+  const similar = valid.filter(
+    (t) => t.playerCount >= lowerBound && t.playerCount <= upperBound,
+  );
+
+  if (similar.length < 3) return null;
+
+  // Compute seconds per player for each match
+  const perPlayer = similar
+    .map((t) => t.elapsedSeconds / t.playerCount)
+    .sort((a, b) => a - b);
+
+  // Median
+  const mid = Math.floor(perPlayer.length / 2);
+  const median =
+    perPlayer.length % 2 === 1
+      ? perPlayer[mid]
+      : (perPlayer[mid - 1] + perPlayer[mid]) / 2;
+
+  const estimateSeconds = Math.round(median * playerCount);
+
+  // Confidence based on sample size
+  let confidence: DurationConfidence;
+  if (similar.length >= 8) {
+    confidence = 'high';
+  } else if (similar.length >= 5) {
+    confidence = 'medium';
+  } else {
+    confidence = 'low';
+  }
+
+  return { estimateSeconds, confidence, sampleSize: similar.length };
 }

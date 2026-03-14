@@ -2,6 +2,7 @@
 
 import type { Language, TranslationKey } from '../i18n/translations';
 import { playAudioSequence, cancelAudioPlayback, setAudioLanguage } from './audioPlayer';
+import { getCustomAudioForAnnouncement } from './customAudio';
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -263,6 +264,25 @@ function audioOrSpeech(
 }
 
 // ---------------------------------------------------------------------------
+// Custom audio check — user-uploaded MP3 overrides built-in announcements
+// ---------------------------------------------------------------------------
+
+/**
+ * Play a custom audio file if one is mapped for this announcement key.
+ * Returns true if custom audio was found and enqueued, false otherwise.
+ */
+function enqueueCustomAudioIfAvailable(announcementKey: string): boolean {
+  const customFile = getCustomAudioForAnnouncement(announcementKey, voiceLanguage);
+  if (!customFile) return false;
+
+  // Create a blob URL from the ArrayBuffer and enqueue as audio
+  const blob = new Blob([customFile.data], { type: customFile.mimeType });
+  const url = URL.createObjectURL(blob);
+  enqueue({ mode: 'audio', files: [url] });
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // Convenience functions — both DE and EN have MP3 audio files
 // ---------------------------------------------------------------------------
 
@@ -274,6 +294,7 @@ export function announceLevelChange(
   ante: number | undefined,
   t: TranslateFn,
 ): void {
+  if (enqueueCustomAudioIfAvailable('level-change')) return;
   const pairKey = `${smallBlind}-${bigBlind}`;
   const canMp3 = levelNumber >= 1 && levelNumber <= MAX_LEVEL && BLIND_PAIRS.has(pairKey);
   const anteOk = !ante || ante <= 0 || ANTE_VALUES.has(String(ante));
@@ -305,6 +326,7 @@ export function announceBreakStart(
   t: TranslateFn,
   label?: string,
 ): void {
+  if (enqueueCustomAudioIfAvailable('break-start')) return;
   if (durationMinutes >= 1 && durationMinutes <= MAX_BREAK_MINUTES) {
     const file = `breaks/break-${String(durationMinutes).padStart(2, '0')}min.mp3`;
     enqueue(audioOrSpeech([file], t('voice.breakStart', { minutes: durationMinutes })));
@@ -323,6 +345,7 @@ export function announceBreakStart(
 
 /** Break warning — "30 seconds left in the break" */
 export function announceBreakWarning(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('break-warning')) return;
   enqueue(audioOrSpeech(['fixed/break-warning.mp3'], t('voice.breakWarning')));
 }
 
@@ -342,21 +365,25 @@ export function announceCountdown(second: number): boolean {
 
 /** Bubble — "We're on the bubble!" */
 export function announceBubble(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('bubble')) return;
   enqueue(audioOrSpeech(['fixed/bubble.mp3'], t('voice.bubble')));
 }
 
 /** In The Money — "In the money! Congratulations!" */
 export function announceInTheMoney(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('itm')) return;
   enqueue(audioOrSpeech(['fixed/itm.mp3'], t('voice.inTheMoney')));
 }
 
 /** Player eliminated — generic announcement without player name */
 export function announceElimination(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('elimination')) return;
   enqueue(audioOrSpeech(['fixed/player-eliminated.mp3'], t('voice.playerEliminated')));
 }
 
 /** Tournament winner — generic announcement without player name */
 export function announceWinner(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('winner')) return;
   enqueue(audioOrSpeech(['fixed/tournament-winner.mp3'], t('voice.winner')));
 }
 
@@ -367,6 +394,7 @@ export function announceBounty(t: TranslateFn): void {
 
 /** Add-On available */
 export function announceAddOn(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('addon')) return;
   enqueue(audioOrSpeech(['fixed/addon-available.mp3'], t('voice.addOnAvailable')));
 }
 
@@ -377,11 +405,13 @@ export function announceRebuyAvailable(t: TranslateFn): void {
 
 /** Rebuy phase ended */
 export function announceRebuyEnded(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('rebuy-ended')) return;
   enqueue(audioOrSpeech(['fixed/rebuy-ended.mp3'], t('voice.rebuyEnded')));
 }
 
 /** Color-Up — "Color-Up: Chips will be colored up" */
 export function announceColorUp(chipLabels: string, t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('color-up')) return;
   enqueue(audioOrSpeech(
     ['building-blocks/color-up.mp3', 'fixed/colorup-action.mp3'],
     t('voice.colorUp', { chips: chipLabels }),
@@ -390,16 +420,19 @@ export function announceColorUp(chipLabels: string, t: TranslateFn): void {
 
 /** Tournament start — "Shuffle up and deal!" */
 export function announceTournamentStart(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('shuffle-up')) return;
   enqueue(audioOrSpeech(['fixed/shuffle-up-and-deal.mp3'], t('voice.tournamentStart')));
 }
 
 /** Heads-Up — "Heads-Up!" */
 export function announceHeadsUp(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('heads-up')) return;
   enqueue(audioOrSpeech(['fixed/heads-up.mp3'], t('voice.headsUp')));
 }
 
 /** Last hand of the level (or before break) */
 export function announceLastHand(nextIsBreak: boolean, t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('last-hand')) return;
   if (nextIsBreak) {
     enqueue(audioOrSpeech(['fixed/last-hand-before-break.mp3'], t('voice.lastHandBeforeBreak')));
   } else {
@@ -409,6 +442,7 @@ export function announceLastHand(nextIsBreak: boolean, t: TranslateFn): void {
 
 /** Five minutes remaining in this level */
 export function announceFiveMinutes(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('five-minutes')) return;
   enqueue(audioOrSpeech(['fixed/five-minutes.mp3'], t('voice.fiveMinutes')));
 }
 
@@ -431,48 +465,57 @@ export function announcePlayersRemaining(count: number, t: TranslateFn): void {
 
 /** Break is over — please take your seats */
 export function announceBreakOver(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('break-over')) return;
   enqueue(audioOrSpeech(['fixed/break-over.mp3'], t('voice.breakOver')));
 }
 
 /** Color-Up warning — next break */
 export function announceColorUpWarning(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('color-up-warning')) return;
   enqueue(audioOrSpeech(['fixed/colorup-next-break.mp3'], t('voice.colorUpNextBreak')));
 }
 
 /** Timer paused */
 export function announceTimerPaused(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('timer-paused')) return;
   enqueue(audioOrSpeech(['fixed/paused.mp3'], t('voice.paused')));
 }
 
 /** Timer resumed */
 export function announceTimerResumed(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('timer-resumed')) return;
   enqueue(audioOrSpeech(['fixed/resumed.mp3'], t('voice.resumed')));
 }
 
 /** Hand-for-Hand mode activated */
 export function announceHandForHand(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('hand-for-hand')) return;
   enqueue(audioOrSpeech(['fixed/hand-for-hand.mp3'], t('voice.handForHand')));
 }
 
 /** Rebuy taken — a player took a rebuy */
 export function announceRebuyTaken(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('rebuy-taken')) return;
   enqueue(audioOrSpeech(['fixed/rebuy-taken.mp3'], t('voice.rebuyTaken')));
 }
 
 /** Table move — player moves to a different table (with seat info) */
 export function announceTableMove(playerName: string, tableName: string, toSeat: number, t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('table-move')) return;
   enqueue(audioOrSpeech(['fixed/table-move.mp3'], t('voice.tableMoveIntro')));
   enqueue({ mode: 'speech', text: t('voice.tableMove', { player: playerName, table: tableName, seat: toSeat }) });
 }
 
 /** Table dissolution — a table is being broken */
 export function announceTableDissolution(tableName: string, t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('table-dissolved')) return;
   enqueue(audioOrSpeech(['fixed/table-dissolved.mp3'], t('voice.tableDissolutionIntro')));
   enqueue({ mode: 'speech', text: t('voice.tableDissolution', { table: tableName }) });
 }
 
 /** Final Table — all players at one table */
 export function announceFinalTable(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('final-table')) return;
   enqueue(audioOrSpeech(['fixed/final-table.mp3'], t('voice.finalTable')));
 }
 
@@ -484,6 +527,7 @@ export function announceMysteryBounty(amount: number, t: TranslateFn): void {
 
 /** Call the Clock — MP3 intro + seconds duration MP3 */
 export function announceCallTheClock(seconds: number, t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('call-the-clock')) return;
   enqueue(audioOrSpeech(['fixed/call-the-clock.mp3'], t('voice.callTheClock', { seconds })));
   // Use dedicated seconds MP3 (e.g. "60 Sekunden" / "60 seconds")
   if (CTC_SECONDS.has(seconds)) {
@@ -510,11 +554,13 @@ export function announceCallTheClockCountdown(second: number): void {
 
 /** Call the Clock expired — time's up */
 export function announceCallTheClockExpired(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('call-the-clock-expired')) return;
   enqueue(audioOrSpeech(['fixed/time-expired.mp3'], t('voice.callTheClockExpired')));
 }
 
 /** Late registration closed — window ended */
 export function announceLateRegistrationClosed(t: TranslateFn): void {
+  if (enqueueCustomAudioIfAvailable('late-reg-closed')) return;
   enqueue(audioOrSpeech(['fixed/late-registration-closed.mp3'], t('voice.lateRegistrationClosed')));
 }
 

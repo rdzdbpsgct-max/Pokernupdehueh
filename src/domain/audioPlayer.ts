@@ -188,9 +188,28 @@ function playWithHtmlAudio(files: string[], basePath: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /**
+ * Check whether a file path is an absolute URL (blob:, http:, https:).
+ * Absolute URLs are used directly without prepending the base path.
+ */
+function isAbsoluteUrl(path: string): boolean {
+  return path.startsWith('blob:') || path.startsWith('http:') || path.startsWith('https:');
+}
+
+/**
+ * Resolve file paths to full URLs. Relative paths get the base path prepended,
+ * absolute URLs (blob:, http:, https:) are used as-is.
+ */
+function resolveFilePaths(files: string[], basePath: string): string[] {
+  return files.map(f => isAbsoluteUrl(f) ? f : basePath + f);
+}
+
+/**
  * Play a sequence of MP3 files. Tries Web Audio API first (gapless),
  * falls back to HTMLAudioElement (sequential) if decoding fails.
  * Resolves when all files have finished. Rejects only when both methods fail.
+ *
+ * File paths can be relative (prepended with language-based base path)
+ * or absolute URLs (blob:, http:, https: — used as-is).
  */
 export function playAudioSequence(files: string[]): Promise<void> {
   if (files.length === 0) return Promise.resolve();
@@ -201,8 +220,12 @@ export function playAudioSequence(files: string[]): Promise<void> {
   cancelRequested = false;
   const basePath = getBasePath();
 
+  // Resolve all file paths to full URLs
+  const resolvedFiles = resolveFilePaths(files, basePath);
+
   // Try Web Audio API first (gapless playback)
-  return playWithWebAudio(files, basePath).catch((webAudioErr) => {
+  // Pass empty basePath since files are already resolved
+  return playWithWebAudio(resolvedFiles, '').catch((webAudioErr) => {
     if (cancelRequested) return;
 
     console.warn(
@@ -211,7 +234,7 @@ export function playAudioSequence(files: string[]): Promise<void> {
     );
 
     // Fallback: HTMLAudioElement (sequential, no gapless but maximum compat)
-    return playWithHtmlAudio(files, basePath);
+    return playWithHtmlAudio(resolvedFiles, '');
   });
 }
 

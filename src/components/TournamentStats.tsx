@@ -1,5 +1,12 @@
-import type { Player, Level } from '../domain/types';
-import { formatElapsedTime, computeAverageStackInBB, computeLiveRemainingDuration } from '../domain/logic';
+import { useMemo } from 'react';
+import type { Player, Level, TournamentResult } from '../domain/types';
+import {
+  formatElapsedTime,
+  computeAverageStackInBB,
+  computeLiveRemainingDuration,
+  computeHistoricalDurationEstimate,
+} from '../domain/logic';
+import { getCached } from '../domain/logic';
 import { useTranslation } from '../i18n';
 
 interface Props {
@@ -37,6 +44,28 @@ export function TournamentStats({
     levels, currentLevelIndex, remainingSeconds, activePlayers,
   );
 
+  const history = useMemo(() => (getCached('history') as TournamentResult[]) ?? [], []);
+  const historicalEstimate = useMemo(
+    () => computeHistoricalDurationEstimate(totalPlayers, history),
+    [totalPlayers, history],
+  );
+
+  const confidenceIndicator = historicalEstimate
+    ? historicalEstimate.confidence === 'high'
+      ? '\u{1F7E2}'
+      : historicalEstimate.confidence === 'medium'
+        ? '\u{1F7E1}'
+        : '\u{1F534}'
+    : null;
+
+  const confidenceLabel = historicalEstimate
+    ? historicalEstimate.confidence === 'high'
+      ? t('stats.confidenceHigh')
+      : historicalEstimate.confidence === 'medium'
+        ? t('stats.confidenceMedium')
+        : t('stats.confidenceLow')
+    : null;
+
   return (
     <div className="w-full max-w-xl flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-3 py-2 bg-gray-100/80 dark:bg-gray-800/40 backdrop-blur-sm rounded-xl text-xs border border-gray-200 dark:border-gray-700/30 shadow-md shadow-gray-200/30 dark:shadow-black/10">
       <StatItem label={t('stats.players')} value={`${activePlayers}/${totalPlayers}`} />
@@ -48,15 +77,25 @@ export function TournamentStats({
         <StatItem label={t('stats.avgStackBB')} value={`${avgStackBB} BB`} />
       )}
       <StatItem label={t('stats.elapsed')} value={formatElapsedTime(elapsedSeconds)} />
-      <StatItem label={t('stats.remaining')} value={`~${formatElapsedTime(estimatedRemainingSeconds)}`} />
+      <StatItem
+        label={t('stats.remaining')}
+        value={t('stats.structureEstimate', { time: formatElapsedTime(estimatedRemainingSeconds) })}
+      />
       <StatItem label={t('stats.liveEstimate')} value={`~${formatElapsedTime(liveEstimate)}`} />
+      {historicalEstimate && (
+        <StatItem
+          label={`${confidenceIndicator} Hist.`}
+          value={t('stats.historicalEstimate', { time: formatElapsedTime(historicalEstimate.estimateSeconds) })}
+          tooltip={`${t('stats.basedOnTournaments', { n: String(historicalEstimate.sampleSize) })} — ${confidenceLabel}`}
+        />
+      )}
     </div>
   );
 }
 
-function StatItem({ label, value }: { label: string; value: string }) {
+function StatItem({ label, value, tooltip }: { label: string; value: string; tooltip?: string }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1" title={tooltip}>
       <span className="text-gray-500 dark:text-gray-500">{label}:</span>
       <span className="text-gray-800 dark:text-gray-100 font-medium font-mono">{value}</span>
     </div>

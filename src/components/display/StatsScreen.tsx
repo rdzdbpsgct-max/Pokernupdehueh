@@ -1,8 +1,9 @@
-import type { Player, Level, RebuyConfig, AddOnConfig, BountyConfig } from '../../domain/types';
+import { useMemo } from 'react';
+import type { Player, Level, RebuyConfig, AddOnConfig, BountyConfig, TournamentResult } from '../../domain/types';
 import {
   computePrizePool, computeTotalRebuys, computeTotalAddOns, computeRebuyPot,
   computeAverageStackInBB, formatElapsedTime, computeEstimatedRemainingSeconds,
-  computeLiveRemainingDuration,
+  computeLiveRemainingDuration, computeHistoricalDurationEstimate, getCached,
 } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
 
@@ -53,6 +54,12 @@ export function StatsScreen({
   const totalRebuys = rebuy.enabled ? computeTotalRebuys(players) : 0;
   const totalAddOns = addOn.enabled ? computeTotalAddOns(players) : 0;
 
+  const history = useMemo(() => (getCached('history') as TournamentResult[]) ?? [], []);
+  const historicalEstimate = useMemo(
+    () => computeHistoricalDurationEstimate(totalPlayerCount, history),
+    [totalPlayerCount, history],
+  );
+
   const stats: { label: string; value: string }[] = [
     { label: t('display.prizePool'), value: `${prizePool.toLocaleString()} ${t('unit.eur')}` },
     { label: t('display.activePlayers'), value: `${activePlayerCount} / ${totalPlayerCount}` },
@@ -63,6 +70,14 @@ export function StatsScreen({
   stats.push({ label: t('display.elapsed'), value: formatElapsedTime(tournamentElapsed) });
   stats.push({ label: t('display.remaining'), value: `~${formatElapsedTime(estRemaining)}` });
   stats.push({ label: t('stats.liveEstimate'), value: `~${formatElapsedTime(liveEstimate)}` });
+  if (historicalEstimate) {
+    const indicator = historicalEstimate.confidence === 'high' ? '\u{1F7E2}'
+      : historicalEstimate.confidence === 'medium' ? '\u{1F7E1}' : '\u{1F534}';
+    stats.push({
+      label: `${indicator} Hist.`,
+      value: t('stats.historicalEstimate', { time: formatElapsedTime(historicalEstimate.estimateSeconds) }),
+    });
+  }
   if (rebuy.enabled && totalRebuys > 0) {
     stats.push({ label: t('display.totalRebuys'), value: String(totalRebuys) });
   }

@@ -123,6 +123,47 @@ export class RateLimiter {
 }
 
 // ---------------------------------------------------------------------------
+// Host session persistence (survives page refresh via sessionStorage)
+// ---------------------------------------------------------------------------
+
+const SESSION_PEER_ID_KEY = 'poker-remote-peerId';
+const SESSION_SECRET_KEY = 'poker-remote-secret';
+
+/** Persist host peerId and secret to sessionStorage (tab lifetime). */
+export function persistHostSession(peerId: string, secret: string): void {
+  try {
+    sessionStorage.setItem(SESSION_PEER_ID_KEY, peerId);
+    sessionStorage.setItem(SESSION_SECRET_KEY, secret);
+  } catch {
+    // Private browsing or quota exceeded — ignore
+  }
+}
+
+/** Load a previously persisted host session. Returns null if nothing stored. */
+export function loadHostSession(): { peerId: string; secret: string } | null {
+  try {
+    const peerId = sessionStorage.getItem(SESSION_PEER_ID_KEY);
+    const secret = sessionStorage.getItem(SESSION_SECRET_KEY);
+    if (peerId && secret) {
+      return { peerId, secret };
+    }
+  } catch {
+    // Private browsing — ignore
+  }
+  return null;
+}
+
+/** Remove persisted host session from sessionStorage. */
+export function clearHostSession(): void {
+  try {
+    sessionStorage.removeItem(SESSION_PEER_ID_KEY);
+    sessionStorage.removeItem(SESSION_SECRET_KEY);
+  } catch {
+    // Private browsing — ignore
+  }
+}
+
+// ---------------------------------------------------------------------------
 // URL helpers
 // ---------------------------------------------------------------------------
 
@@ -279,6 +320,13 @@ export interface RemoteHostCallbacks {
   onError?: (error: string) => void;
 }
 
+export interface RemoteHostOptions {
+  /** Re-use an existing peer ID (e.g. from a persisted session) */
+  peerId?: string;
+  /** Re-use an existing secret (e.g. from a persisted session) */
+  secret?: string;
+}
+
 export class RemoteHost {
   private peer: Peer | null = null;
   private conn: DataConnection | null = null;
@@ -287,15 +335,18 @@ export class RemoteHost {
   private _status: HostStatus = 'initializing';
   private _peerId: string;
   private _secret: string;
+  private _resumed: boolean;
   private hmacKey: CryptoKey | null = null;
   private rateLimiter = new RateLimiter();
   /** Most recently built state message for immediate snapshot on reconnect */
   private lastBuiltState: RemoteState | null = null;
 
-  constructor(callbacks: RemoteHostCallbacks) {
+  constructor(callbacks: RemoteHostCallbacks, options?: RemoteHostOptions) {
     this.callbacks = callbacks;
-    this._peerId = generatePeerId();
-    this._secret = generateSecret();
+    this._peerId = options?.peerId || generatePeerId();
+    this._secret = options?.secret || generateSecret();
+    this._resumed = !!(options?.peerId && options?.secret);
+    persistHostSession(this._peerId, this._secret);
     this.initHmacKey();
     this.init();
   }
@@ -314,6 +365,11 @@ export class RemoteHost {
 
   get connected(): boolean {
     return this._status === 'connected';
+  }
+
+  /** True if this host was created from a persisted session (page refresh). */
+  get resumed(): boolean {
+    return this._resumed;
   }
 
   private async initHmacKey(): Promise<void> {
@@ -347,6 +403,8 @@ export class RemoteHost {
         // If ID is taken, generate a new one and retry
         if (err.type === 'unavailable-id') {
           this._peerId = generatePeerId();
+          this._resumed = false;
+          persistHostSession(this._peerId, this._secret);
           this.peer?.destroy();
           this.peer = null;
           this.init();
@@ -507,6 +565,7 @@ export class RemoteHost {
   /** Close the connection and destroy peer */
   destroy(): void {
     this.stopKeepalive();
+    clearHostSession();
     if (this.conn) {
       try { this.conn.close(); } catch { /* ignore */ }
       this.conn = null;

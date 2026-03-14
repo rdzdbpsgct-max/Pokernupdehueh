@@ -783,6 +783,7 @@ function App() {
     controllerPeerId,
     controllerSecret,
     startRemoteHost,
+    remoteHostResumed,
   } = useRemoteHostBridge({
     mode,
     config,
@@ -814,6 +815,15 @@ function App() {
     onAppendEvent: handleAppendEvent,
     t,
   });
+
+  // Show toast when remote session is restored after page refresh
+  const remoteResumedToastShown = useRef(false);
+  useEffect(() => {
+    if (remoteHostResumed && remoteHostStatus === 'ready' && !remoteResumedToastShown.current) {
+      remoteResumedToastShown.current = true;
+      showToast(t('remote.sessionRestored'));
+    }
+  }, [remoteHostResumed, remoteHostStatus, t]);
 
   const {
     showSeatingOverlay,

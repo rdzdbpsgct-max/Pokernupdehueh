@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { RemoteHost, parseRemoteHash } from '../domain/remote';
+import { RemoteHost, parseRemoteHash, loadHostSession } from '../domain/remote';
 import type { RemoteCommand, HostStatus } from '../domain/remote';
 
 interface UseRemoteControlOptions {
@@ -23,6 +23,8 @@ interface UseRemoteControlReturn {
   controllerSecret: string | null;
   /** Start hosting (create RemoteHost if not already running) */
   startHost: () => void;
+  /** True if the host was resumed from a persisted session (page refresh) */
+  hostResumed: boolean;
 }
 
 /**
@@ -36,6 +38,7 @@ export function useRemoteControl({ onCommand, enabled }: UseRemoteControlOptions
   const hostRef = useRef<RemoteHost | null>(null);
   const [showRemoteModalRaw, setShowRemoteModal] = useState(false);
   const [hostStatusRaw, setHostStatusRaw] = useState<HostStatus | null>(null);
+  const [hostResumed, setHostResumed] = useState(false);
 
   // Keep onCommand ref fresh so the host always calls the latest handler
   const onCommandRef = useRef(onCommand);
@@ -73,11 +76,17 @@ export function useRemoteControl({ onCommand, enabled }: UseRemoteControlOptions
       return;
     }
 
-    const host = new RemoteHost({
-      onCommand: (cmd) => onCommandRef.current(cmd),
-      onStatusChange: (s) => setHostStatusRaw(s),
-    });
+    // Check for persisted session from a previous page load (same tab)
+    const persisted = loadHostSession();
+    const host = new RemoteHost(
+      {
+        onCommand: (cmd) => onCommandRef.current(cmd),
+        onStatusChange: (s) => setHostStatusRaw(s),
+      },
+      persisted ? { peerId: persisted.peerId, secret: persisted.secret } : undefined,
+    );
     hostRef.current = host;
+    setHostResumed(host.resumed);
     setShowRemoteModal(true);
   }, []);
 
@@ -99,5 +108,6 @@ export function useRemoteControl({ onCommand, enabled }: UseRemoteControlOptions
     controllerPeerId,
     controllerSecret,
     startHost,
+    hostResumed,
   };
 }

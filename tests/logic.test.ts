@@ -101,6 +101,7 @@ import {
   findTableToDissolve,
   dissolveTable,
   advanceTableDealer,
+  resizeTable,
   exportLeagueToJSON,
   parseLeagueFile,
   extractLeagueConfig,
@@ -141,6 +142,21 @@ import {
   resetStorage,
   isStorageReady,
   createEvent,
+  computeHistoricalDurationEstimate,
+  createSeries,
+  addTournamentToSeries,
+  removeTournamentFromSeries,
+  computeSeriesStandings,
+  formatSeriesStandingsAsText,
+  formatSeriesStandingsAsCSV,
+  parseSeriesFile,
+  exportSeriesToJSON,
+  computeHeadToHeadMatrix,
+  computeEloRatings,
+  computeWeightedPoints,
+  getCustomAudioForAnnouncement,
+  formatFileSize,
+  CUSTOMIZABLE_ANNOUNCEMENTS,
 } from '../src/domain/logic';
 import {
   applyChipPreset,
@@ -151,8 +167,9 @@ import {
   scheduleToColorUpMap,
   CHIP_COLORS,
 } from '../src/domain/chips';
-import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment, RegisteredPlayer, ChipDenomination } from '../src/domain/types';
-import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE, REMOTE_STATE_CONTRACT_VERSION } from '../src/domain/remote';
+import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment, RegisteredPlayer, ChipDenomination, SeriesStanding } from '../src/domain/types';
+import type { SeriesExport } from '../src/domain/series';
+import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE, REMOTE_STATE_CONTRACT_VERSION, persistHostSession, loadHostSession, clearHostSession } from '../src/domain/remote';
 import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
 
 // Helper to create a full TournamentConfig for tests
@@ -4095,6 +4112,55 @@ describe('Multi-Table', () => {
     expect(result.dealerSeat).toBe(3);
   });
 
+  // --- resizeTable ---
+
+  it('resizeTable growing a table adds empty seats', () => {
+    const tables = [mkTable('t1', 'T1', 4, ['p1', 'p2'])];
+    const result = resizeTable(tables, 't1', 6);
+    expect(result.warning).toBeUndefined();
+    expect(result.tables[0].maxSeats).toBe(6);
+    expect(result.tables[0].seats).toHaveLength(6);
+    // Original seats preserved
+    expect(result.tables[0].seats[0].playerId).toBe('p1');
+    expect(result.tables[0].seats[1].playerId).toBe('p2');
+    // New seats are empty
+    expect(result.tables[0].seats[4].playerId).toBeNull();
+    expect(result.tables[0].seats[4].seatNumber).toBe(5);
+    expect(result.tables[0].seats[5].playerId).toBeNull();
+    expect(result.tables[0].seats[5].seatNumber).toBe(6);
+  });
+
+  it('resizeTable shrinking a table removes empty seats from the end', () => {
+    const tables = [mkTable('t1', 'T1', 6, ['p1', 'p2'])];
+    // p1 at seat 1, p2 at seat 2, seats 3-6 empty
+    const result = resizeTable(tables, 't1', 4);
+    expect(result.warning).toBeUndefined();
+    expect(result.tables[0].maxSeats).toBe(4);
+    expect(result.tables[0].seats).toHaveLength(4);
+    expect(result.tables[0].seats[0].playerId).toBe('p1');
+    expect(result.tables[0].seats[1].playerId).toBe('p2');
+  });
+
+  it('resizeTable cannot shrink past occupied seats', () => {
+    const tables = [mkTable('t1', 'T1', 6, ['p1', 'p2', 'p3', 'p4', 'p5'])];
+    // p1-p5 at seats 1-5, seat 6 empty — try to shrink to 4
+    const result = resizeTable(tables, 't1', 4);
+    expect(result.warning).toBe('cannotResize');
+    // Tables unchanged
+    expect(result.tables[0].maxSeats).toBe(6);
+    expect(result.tables[0].seats).toHaveLength(6);
+  });
+
+  it('resizeTable cannot shrink past locked seats', () => {
+    const tables = [mkTable('t1', 'T1', 6, [])];
+    // Lock seat 5
+    tables[0].seats[4] = { seatNumber: 5, playerId: null, locked: true };
+    const result = resizeTable(tables, 't1', 4);
+    expect(result.warning).toBe('cannotResize');
+    expect(result.tables[0].maxSeats).toBe(6);
+    expect(result.tables[0].seats).toHaveLength(6);
+  });
+
   // --- Backward compatibility ---
 
   it('parseConfigObject migrates old Table format (playerIds[]) to new (seats[])', () => {
@@ -4988,6 +5054,29 @@ describe('parseRemoteHash', () => {
   it('returns null secret when &s= is empty', () => {
     const result = parseRemoteHash('#remote=PKR-ABC23&s=');
     expect(result).toEqual({ peerId: 'PKR-ABC23', secret: null });
+  });
+});
+
+describe('Host Session Persistence', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  it('round-trips peerId and secret via persistHostSession / loadHostSession', () => {
+    persistHostSession('PKR-ABC23', 'mySecretValue');
+    const loaded = loadHostSession();
+    expect(loaded).toEqual({ peerId: 'PKR-ABC23', secret: 'mySecretValue' });
+  });
+
+  it('returns null when nothing is persisted', () => {
+    expect(loadHostSession()).toBeNull();
+  });
+
+  it('clearHostSession removes persisted data', () => {
+    persistHostSession('PKR-XYZ99', 'anotherSecret');
+    expect(loadHostSession()).not.toBeNull();
+    clearHostSession();
+    expect(loadHostSession()).toBeNull();
   });
 });
 
@@ -6640,5 +6729,539 @@ describe('drawMysteryBounty edge cases', () => {
     const copy = [...pool];
     drawMysteryBounty(pool);
     expect(pool).toEqual(copy);
+  });
+});
+
+// ─── computeHistoricalDurationEstimate ──────────────────────────────────────
+
+describe('computeHistoricalDurationEstimate', () => {
+  function makeResult(playerCount: number, elapsedSeconds: number): TournamentResult {
+    return {
+      id: `t-${Math.random()}`,
+      name: 'Test',
+      date: new Date().toISOString(),
+      playerCount,
+      buyIn: 10,
+      prizePool: playerCount * 10,
+      players: [],
+      bountyEnabled: false,
+      bountyAmount: 0,
+      rebuyEnabled: false,
+      totalRebuys: 0,
+      addOnEnabled: false,
+      totalAddOns: 0,
+      elapsedSeconds,
+      levelsPlayed: 10,
+    };
+  }
+
+  it('returns null for fewer than 3 matching tournaments', () => {
+    const history = [makeResult(10, 7200), makeResult(10, 7800)];
+    expect(computeHistoricalDurationEstimate(10, history)).toBeNull();
+  });
+
+  it('returns null for empty history', () => {
+    expect(computeHistoricalDurationEstimate(10, [])).toBeNull();
+  });
+
+  it('returns null for playerCount <= 0', () => {
+    const history = [makeResult(10, 7200), makeResult(10, 7800), makeResult(10, 8400)];
+    expect(computeHistoricalDurationEstimate(0, history)).toBeNull();
+  });
+
+  it('ignores tournaments with elapsedSeconds === 0', () => {
+    const history = [
+      makeResult(10, 0),
+      makeResult(10, 0),
+      makeResult(10, 0),
+      makeResult(10, 7200),
+      makeResult(10, 7800),
+    ];
+    // Only 2 valid tournaments → null
+    expect(computeHistoricalDurationEstimate(10, history)).toBeNull();
+  });
+
+  it('ignores tournaments with playerCount === 0', () => {
+    const history = [
+      makeResult(0, 7200),
+      makeResult(0, 7800),
+      makeResult(0, 8400),
+      makeResult(10, 7200),
+    ];
+    // Only 1 valid similar tournament → null
+    expect(computeHistoricalDurationEstimate(10, history)).toBeNull();
+  });
+
+  it('filters by ±30% player count range', () => {
+    // Current: 10 players → range 7–13
+    const history = [
+      makeResult(5, 3600),   // too small (5 < 7)
+      makeResult(15, 10800), // too large (15 > 13)
+      makeResult(10, 7200),
+      makeResult(10, 7200),
+      makeResult(10, 7200),
+    ];
+    const result = computeHistoricalDurationEstimate(10, history);
+    expect(result).not.toBeNull();
+    expect(result!.sampleSize).toBe(3); // only the 3 with playerCount=10
+  });
+
+  it('includes tournaments at exact boundary of ±30%', () => {
+    // Current: 10 → lowerBound=7, upperBound=13
+    const history = [
+      makeResult(7, 5040),   // exactly at lower bound (7 >= 7)
+      makeResult(13, 9360),  // exactly at upper bound (13 <= 13)
+      makeResult(10, 7200),
+    ];
+    const result = computeHistoricalDurationEstimate(10, history);
+    expect(result).not.toBeNull();
+    expect(result!.sampleSize).toBe(3);
+  });
+
+  it('computes median correctly for odd sample size', () => {
+    // 3 tournaments, 10 players each
+    // perPlayer: 600, 720, 840 → median = 720
+    const history = [
+      makeResult(10, 6000),  // 600/player
+      makeResult(10, 7200),  // 720/player
+      makeResult(10, 8400),  // 840/player
+    ];
+    const result = computeHistoricalDurationEstimate(10, history);
+    expect(result).not.toBeNull();
+    expect(result!.estimateSeconds).toBe(7200); // 720 * 10
+  });
+
+  it('computes median correctly for even sample size', () => {
+    // 4 tournaments, 10 players each
+    // perPlayer: 600, 700, 800, 900 → median = (700+800)/2 = 750
+    const history = [
+      makeResult(10, 6000),
+      makeResult(10, 7000),
+      makeResult(10, 8000),
+      makeResult(10, 9000),
+    ];
+    const result = computeHistoricalDurationEstimate(10, history);
+    expect(result).not.toBeNull();
+    expect(result!.estimateSeconds).toBe(7500); // 750 * 10
+  });
+
+  it('returns low confidence for 3-4 matches', () => {
+    const history = [
+      makeResult(10, 7200),
+      makeResult(10, 7200),
+      makeResult(10, 7200),
+    ];
+    const result = computeHistoricalDurationEstimate(10, history);
+    expect(result!.confidence).toBe('low');
+    expect(result!.sampleSize).toBe(3);
+  });
+
+  it('returns medium confidence for 5-7 matches', () => {
+    const history = Array.from({ length: 5 }, () => makeResult(10, 7200));
+    const result = computeHistoricalDurationEstimate(10, history);
+    expect(result!.confidence).toBe('medium');
+    expect(result!.sampleSize).toBe(5);
+  });
+
+  it('returns high confidence for >= 8 matches', () => {
+    const history = Array.from({ length: 8 }, () => makeResult(10, 7200));
+    const result = computeHistoricalDurationEstimate(10, history);
+    expect(result!.confidence).toBe('high');
+    expect(result!.sampleSize).toBe(8);
+  });
+
+  it('scales estimate by current player count', () => {
+    // History: 10-player tournaments, 720s/player median
+    // Current: 8 players → 720 * 8 = 5760
+    const history = [
+      makeResult(10, 7200),
+      makeResult(10, 7200),
+      makeResult(10, 7200),
+    ];
+    const result = computeHistoricalDurationEstimate(8, history);
+    expect(result).not.toBeNull();
+    expect(result!.estimateSeconds).toBe(5760); // 720 * 8
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tournament Series
+// ---------------------------------------------------------------------------
+
+describe('Tournament Series', () => {
+  // helper to create mock TournamentResult
+  function mockResult(id: string, players: Array<{ name: string; place: number; payout: number; rebuys: number; addOn: boolean; knockouts: number; netBalance: number; bountyEarned: number }>): TournamentResult {
+    return {
+      id,
+      name: 'Test Tournament',
+      date: new Date().toISOString(),
+      playerCount: players.length,
+      buyIn: 10,
+      prizePool: players.length * 10,
+      players,
+      bountyEnabled: false,
+      bountyAmount: 0,
+      rebuyEnabled: false,
+      totalRebuys: 0,
+      addOnEnabled: false,
+      totalAddOns: 0,
+      elapsedSeconds: 3600,
+      levelsPlayed: 5,
+    };
+  }
+
+  it('createSeries returns valid series', () => {
+    const s = createSeries('Weekend Festival', '2026-03-14');
+    expect(s.id).toBeTruthy();
+    expect(s.name).toBe('Weekend Festival');
+    expect(s.tournamentIds).toEqual([]);
+    expect(s.rankingMode).toBe('points');
+  });
+
+  it('addTournamentToSeries links a result', () => {
+    const s = createSeries('Fest', '2026-01-01');
+    const linked = addTournamentToSeries(s, 'result-1');
+    expect(linked.tournamentIds).toEqual(['result-1']);
+    // Adding same ID again is idempotent
+    const again = addTournamentToSeries(linked, 'result-1');
+    expect(again.tournamentIds).toEqual(['result-1']);
+  });
+
+  it('removeTournamentFromSeries unlinks a result', () => {
+    let s = createSeries('Fest', '2026-01-01');
+    s = addTournamentToSeries(s, 'r1');
+    s = addTournamentToSeries(s, 'r2');
+    s = removeTournamentFromSeries(s, 'r1');
+    expect(s.tournamentIds).toEqual(['r2']);
+  });
+
+  it('computeSeriesStandings aggregates across tournaments', () => {
+    const s = createSeries('Series', '2026-01-01');
+    s.tournamentIds = ['r1', 'r2'];
+
+    const results = [
+      mockResult('r1', [
+        { name: 'Alice', place: 1, payout: 30, rebuys: 0, addOn: false, knockouts: 2, netBalance: 20, bountyEarned: 0 },
+        { name: 'Bob', place: 2, payout: 20, rebuys: 1, addOn: false, knockouts: 1, netBalance: 0, bountyEarned: 0 },
+      ]),
+      mockResult('r2', [
+        { name: 'Bob', place: 1, payout: 30, rebuys: 0, addOn: false, knockouts: 1, netBalance: 20, bountyEarned: 0 },
+        { name: 'Alice', place: 3, payout: 0, rebuys: 0, addOn: false, knockouts: 0, netBalance: -10, bountyEarned: 0 },
+      ]),
+    ];
+
+    const standings = computeSeriesStandings(s, results);
+    expect(standings.length).toBe(2);
+
+    // Both have 1 win each, Alice has 10+5=15 pts (1st=10, 3rd=5), Bob has 7+10=17 pts (2nd=7, 1st=10)
+    const bob = standings.find(st => st.name === 'Bob')!;
+    const alice = standings.find(st => st.name === 'Alice')!;
+    expect(bob.points).toBe(17);
+    expect(alice.points).toBe(15);
+    expect(bob.rank).toBe(1);
+    expect(alice.rank).toBe(2);
+  });
+
+  it('computeSeriesStandings respects minTournaments', () => {
+    const s = createSeries('Series', '2026-01-01');
+    s.tournamentIds = ['r1', 'r2'];
+    s.minTournaments = 2;
+
+    const results = [
+      mockResult('r1', [
+        { name: 'Alice', place: 1, payout: 30, rebuys: 0, addOn: false, knockouts: 0, netBalance: 20, bountyEarned: 0 },
+        { name: 'Bob', place: 2, payout: 0, rebuys: 0, addOn: false, knockouts: 0, netBalance: -10, bountyEarned: 0 },
+      ]),
+      mockResult('r2', [
+        { name: 'Bob', place: 1, payout: 30, rebuys: 0, addOn: false, knockouts: 0, netBalance: 20, bountyEarned: 0 },
+      ]),
+    ];
+
+    const standings = computeSeriesStandings(s, results);
+    const alice = standings.find(st => st.name === 'Alice')!;
+    const bob = standings.find(st => st.name === 'Bob')!;
+    expect(alice.qualified).toBe(false);
+    expect(bob.qualified).toBe(true);
+    // Bob should be ranked above Alice despite fewer points because qualified first
+    expect(bob.rank).toBeLessThan(alice.rank);
+  });
+
+  it('computeSeriesStandings returns empty for no matching results', () => {
+    const s = createSeries('Series', '2026-01-01');
+    s.tournamentIds = ['nonexistent'];
+    expect(computeSeriesStandings(s, [])).toEqual([]);
+  });
+
+  it('formatSeriesStandingsAsText produces readable output', () => {
+    const s = createSeries('Weekend', '2026-03-14');
+    const standings: SeriesStanding[] = [
+      { name: 'Alice', points: 10, tournaments: 2, wins: 1, cashes: 2, avgPlace: 1.5, bestPlace: 1, totalCost: 20, totalPayout: 40, netBalance: 20, knockouts: 3, rank: 1, qualified: true },
+    ];
+    const text = formatSeriesStandingsAsText(s, standings);
+    expect(text).toContain('Weekend');
+    expect(text).toContain('Alice');
+    expect(text).toContain('10 Pts');
+  });
+
+  it('formatSeriesStandingsAsCSV includes all columns', () => {
+    const s = createSeries('Fest', '2026-01-01');
+    const standings: SeriesStanding[] = [
+      { name: 'Bob', points: 7, tournaments: 1, wins: 0, cashes: 1, avgPlace: 2, bestPlace: 2, totalCost: 10, totalPayout: 20, netBalance: 10, knockouts: 1, rank: 1, qualified: true },
+    ];
+    const csv = formatSeriesStandingsAsCSV(s, standings);
+    expect(csv).toContain('Rank,Name,Points');
+    expect(csv).toContain('"Bob"');
+  });
+
+  it('exportSeriesToJSON and parseSeriesFile round-trip', () => {
+    const s = createSeries('Round Trip', '2026-01-01');
+    s.tournamentIds = ['r1'];
+    const results: TournamentResult[] = [
+      mockResult('r1', [
+        { name: 'Alice', place: 1, payout: 20, rebuys: 0, addOn: false, knockouts: 1, netBalance: 10, bountyEarned: 0 },
+      ]),
+    ];
+    const json = exportSeriesToJSON(s, results);
+    const parsed = parseSeriesFile(json);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.series.name).toBe('Round Trip');
+    expect(parsed!.results.length).toBe(1);
+  });
+
+  it('parseSeriesFile validates structure', () => {
+    expect(parseSeriesFile('invalid')).toBeNull();
+    expect(parseSeriesFile('{}')).toBeNull();
+    expect(parseSeriesFile('{"version":2}')).toBeNull();
+
+    const valid: SeriesExport = {
+      version: 1,
+      series: createSeries('Test', '2026-01-01'),
+      results: [],
+      exportedAt: new Date().toISOString(),
+    };
+    const parsed = parseSeriesFile(JSON.stringify(valid));
+    expect(parsed).not.toBeNull();
+    expect(parsed!.series.name).toBe('Test');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Extended League: Head-to-Head, ELO, Weighted Points
+// ---------------------------------------------------------------------------
+
+describe('Extended League', () => {
+  function mockGameDay(
+    id: string,
+    leagueId: string,
+    date: string,
+    participants: Array<{ name: string; place: number; points: number }>,
+  ): GameDay {
+    return {
+      id,
+      leagueId,
+      date,
+      participants: participants.map((p) => ({
+        name: p.name,
+        place: p.place,
+        points: p.points,
+        buyIn: 10,
+        rebuys: 0,
+        addOnCost: 0,
+        payout: p.place === 1 ? 30 : 0,
+        netBalance: p.place === 1 ? 20 : -10,
+      })),
+      totalPrizePool: 30,
+      totalBuyIns: 30,
+      cashBalance: 0,
+    };
+  }
+
+  const gd1 = mockGameDay('gd1', 'L1', '2026-01-01', [
+    { name: 'Alice', place: 1, points: 10 },
+    { name: 'Bob', place: 2, points: 7 },
+    { name: 'Charlie', place: 3, points: 5 },
+  ]);
+
+  const gd2 = mockGameDay('gd2', 'L1', '2026-01-08', [
+    { name: 'Bob', place: 1, points: 10 },
+    { name: 'Charlie', place: 2, points: 7 },
+    { name: 'Alice', place: 3, points: 5 },
+  ]);
+
+  const baseLeague: League = {
+    id: 'L1',
+    name: 'Test League',
+    pointSystem: {
+      entries: [
+        { place: 1, points: 10 },
+        { place: 2, points: 7 },
+        { place: 3, points: 5 },
+      ],
+    },
+    createdAt: '2026-01-01T00:00:00Z',
+  };
+
+  describe('computeHeadToHeadMatrix', () => {
+    it('computes wins/losses/meetings/winRate for 3 players across 2 game days', () => {
+      const result = computeHeadToHeadMatrix([gd1, gd2]);
+      expect(result.players).toHaveLength(3);
+
+      // Find Alice and Bob indices
+      const ai = result.players.indexOf('Alice');
+      const bi = result.players.indexOf('Bob');
+      const ci = result.players.indexOf('Charlie');
+      expect(ai).toBeGreaterThanOrEqual(0);
+      expect(bi).toBeGreaterThanOrEqual(0);
+      expect(ci).toBeGreaterThanOrEqual(0);
+
+      // Alice vs Bob: gd1 Alice wins, gd2 Bob wins -> 1-1
+      const aliceVsBob = result.matrix[ai][bi]!;
+      expect(aliceVsBob.meetings).toBe(2);
+      expect(aliceVsBob.wins).toBe(1);
+      expect(aliceVsBob.losses).toBe(1);
+      expect(aliceVsBob.winRate).toBe(0.5);
+
+      // Alice vs Charlie: gd1 Alice wins, gd2 Charlie wins -> 1-1
+      const aliceVsCharlie = result.matrix[ai][ci]!;
+      expect(aliceVsCharlie.meetings).toBe(2);
+      expect(aliceVsCharlie.wins).toBe(1);
+      expect(aliceVsCharlie.losses).toBe(1);
+    });
+
+    it('filters to specified players when filterPlayers provided', () => {
+      const result = computeHeadToHeadMatrix([gd1, gd2], ['Alice', 'Bob']);
+      expect(result.players).toHaveLength(2);
+      expect(result.players).toContain('Alice');
+      expect(result.players).toContain('Bob');
+      // Charlie should not be in the matrix
+      expect(result.players).not.toContain('Charlie');
+    });
+
+    it('has null diagonal entries', () => {
+      const result = computeHeadToHeadMatrix([gd1, gd2]);
+      for (let i = 0; i < result.players.length; i++) {
+        expect(result.matrix[i][i]).toBeNull();
+      }
+    });
+  });
+
+  describe('computeEloRatings', () => {
+    it('produces ratings that diverge from start after 2 game days', () => {
+      const ratings = computeEloRatings([gd1, gd2]);
+      const alice = ratings.get('alice')!;
+      const bob = ratings.get('bob')!;
+      const charlie = ratings.get('charlie')!;
+      // All should exist
+      expect(alice).toBeDefined();
+      expect(bob).toBeDefined();
+      expect(charlie).toBeDefined();
+      // Not all equal to start (1200)
+      const allEqual = alice === 1200 && bob === 1200 && charlie === 1200;
+      expect(allEqual).toBe(false);
+    });
+
+    it('gives higher rating to winner and lower to loser in single game day', () => {
+      const singleGd = mockGameDay('gd_single', 'L1', '2026-01-01', [
+        { name: 'Winner', place: 1, points: 10 },
+        { name: 'Loser', place: 2, points: 7 },
+      ]);
+      const ratings = computeEloRatings([singleGd]);
+      expect(ratings.get('winner')!).toBeGreaterThan(1200);
+      expect(ratings.get('loser')!).toBeLessThan(1200);
+    });
+
+    it('uses default params when none provided', () => {
+      const ratings = computeEloRatings([gd1]);
+      // Should not throw and should return results
+      expect(ratings.size).toBe(3);
+    });
+  });
+
+  describe('computeWeightedPoints', () => {
+    it('gives higher weight to more recent tournaments', () => {
+      const wp = computeWeightedPoints([gd1, gd2], baseLeague.pointSystem, 0.5);
+      // gd1 is older (index 0), weight = 0.5^(2-1-0) = 0.5
+      // gd2 is newer (index 1), weight = 0.5^(2-1-1) = 1.0
+      // Alice: gd1=10*0.5 + gd2=5*1.0 = 10.0
+      // Bob: gd1=7*0.5 + gd2=10*1.0 = 13.5
+      expect(wp.get('alice')).toBeCloseTo(10.0);
+      expect(wp.get('bob')).toBeCloseTo(13.5);
+    });
+
+    it('with decayFactor 1.0 equals simple sum of points', () => {
+      const wp = computeWeightedPoints([gd1, gd2], baseLeague.pointSystem, 1.0);
+      // Alice: 10 + 5 = 15
+      // Bob: 7 + 10 = 17
+      // Charlie: 5 + 7 = 12
+      expect(wp.get('alice')).toBeCloseTo(15);
+      expect(wp.get('bob')).toBeCloseTo(17);
+      expect(wp.get('charlie')).toBeCloseTo(12);
+    });
+  });
+
+  describe('computeExtendedStandings with ranking algorithms', () => {
+    it('populates eloRating when rankingAlgorithm is elo', () => {
+      const league: League = { ...baseLeague, rankingAlgorithm: 'elo' };
+      const standings = computeExtendedStandings(league, [gd1, gd2]);
+      expect(standings.length).toBe(3);
+      for (const s of standings) {
+        expect(s.eloRating).toBeDefined();
+        expect(typeof s.eloRating).toBe('number');
+      }
+      // Should be sorted by ELO descending
+      for (let i = 1; i < standings.length; i++) {
+        expect(standings[i - 1].eloRating!).toBeGreaterThanOrEqual(standings[i].eloRating!);
+      }
+    });
+
+    it('sets meetsMinParticipation based on minParticipation threshold', () => {
+      const league: League = { ...baseLeague, minParticipation: 2 };
+      // gd3 has only Alice and Bob (Charlie absent)
+      const gd3 = mockGameDay('gd3', 'L1', '2026-01-15', [
+        { name: 'Alice', place: 1, points: 10 },
+        { name: 'Bob', place: 2, points: 7 },
+      ]);
+      const standings = computeExtendedStandings(league, [gd1, gd3]);
+      const alice = standings.find((s) => s.name === 'Alice')!;
+      const charlie = standings.find((s) => s.name === 'Charlie')!;
+      // Alice: 2 game days, meets threshold
+      expect(alice.meetsMinParticipation).toBe(true);
+      // Charlie: 1 game day, does not meet threshold
+      expect(charlie.meetsMinParticipation).toBe(false);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Custom Audio
+// ---------------------------------------------------------------------------
+
+describe('Custom Audio', () => {
+  it('getCustomAudioForAnnouncement returns null when no mapping exists', () => {
+    expect(getCustomAudioForAnnouncement('shuffle-up', 'de')).toBeNull();
+    expect(getCustomAudioForAnnouncement('level-change', 'en')).toBeNull();
+    expect(getCustomAudioForAnnouncement('nonexistent-key', 'de')).toBeNull();
+  });
+
+  it('formatFileSize returns correct format for various sizes', () => {
+    expect(formatFileSize(500)).toBe('500 B');
+    expect(formatFileSize(1024)).toBe('1.0 KB');
+    expect(formatFileSize(1536)).toBe('1.5 KB');
+    expect(formatFileSize(1024 * 1024)).toBe('1.0 MB');
+    expect(formatFileSize(2.5 * 1024 * 1024)).toBe('2.5 MB');
+    expect(formatFileSize(0)).toBe('0 B');
+  });
+
+  it('CUSTOMIZABLE_ANNOUNCEMENTS contains expected keys', () => {
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('shuffle-up');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('level-change');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('break-start');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('bubble');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('itm');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('elimination');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('winner');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('last-hand');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS).toContain('final-table');
+    expect(CUSTOMIZABLE_ANNOUNCEMENTS.length).toBe(26);
   });
 });

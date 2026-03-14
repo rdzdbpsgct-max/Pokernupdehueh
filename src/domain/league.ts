@@ -6,6 +6,9 @@ import type {
   TournamentResult,
   TiebreakerConfig,
   Season,
+  HeadToHeadEntry,
+  HeadToHeadMatrix,
+  PointSystem,
 } from './types';
 import { csvSafe } from './tournament';
 import { getCached, setCachedItem, deleteCachedItem } from './storage';
@@ -131,6 +134,186 @@ export function createGameDayFromResult(
 }
 
 // ---------------------------------------------------------------------------
+// Head-to-Head Matrix
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute head-to-head comparison matrix from game day data.
+ * For each pair of players who both participated in a game day,
+ * tracks who finished above whom.
+ */
+export function computeHeadToHeadMatrix(
+  gameDays: GameDay[],
+  filterPlayers?: string[],
+): HeadToHeadMatrix {
+  // Collect all player names (normalized → display name)
+  const nameMap = new Map<string, string>();
+  const meetingsMap = new Map<string, { wins: number; losses: number; meetings: number }>();
+
+  const pairKey = (a: string, b: string) => `${a}|||${b}`;
+
+  for (const gd of gameDays) {
+    const participants = gd.participants;
+    for (let i = 0; i < participants.length; i++) {
+      const pi = participants[i];
+      const keyI = normalizePlayerName(pi.name);
+      if (!nameMap.has(keyI)) nameMap.set(keyI, pi.name);
+
+      for (let j = i + 1; j < participants.length; j++) {
+        const pj = participants[j];
+        const keyJ = normalizePlayerName(pj.name);
+        if (!nameMap.has(keyJ)) nameMap.set(keyJ, pj.name);
+
+        // Update i vs j
+        const keyIJ = pairKey(keyI, keyJ);
+        let entryIJ = meetingsMap.get(keyIJ);
+        if (!entryIJ) { entryIJ = { wins: 0, losses: 0, meetings: 0 }; meetingsMap.set(keyIJ, entryIJ); }
+        entryIJ.meetings++;
+        if (pi.place < pj.place) entryIJ.wins++;
+        else if (pj.place < pi.place) entryIJ.losses++;
+
+        // Update j vs i
+        const keyJI = pairKey(keyJ, keyI);
+        let entryJI = meetingsMap.get(keyJI);
+        if (!entryJI) { entryJI = { wins: 0, losses: 0, meetings: 0 }; meetingsMap.set(keyJI, entryJI); }
+        entryJI.meetings++;
+        if (pj.place < pi.place) entryJI.wins++;
+        else if (pi.place < pj.place) entryJI.losses++;
+      }
+    }
+  }
+
+  // Determine player list
+  let playerKeys = [...nameMap.keys()];
+  if (filterPlayers) {
+    const filterSet = new Set(filterPlayers.map(normalizePlayerName));
+    playerKeys = playerKeys.filter((k) => filterSet.has(k));
+  }
+
+  // Count total meetings per player for sorting
+  const totalMeetings = new Map<string, number>();
+  for (const key of playerKeys) {
+    let total = 0;
+    for (const otherKey of playerKeys) {
+      if (key === otherKey) continue;
+      const entry = meetingsMap.get(pairKey(key, otherKey));
+      if (entry) total += entry.meetings;
+    }
+    totalMeetings.set(key, total);
+  }
+
+  // Sort by total meetings DESC
+  playerKeys.sort((a, b) => (totalMeetings.get(b) ?? 0) - (totalMeetings.get(a) ?? 0));
+
+  const players = playerKeys.map((k) => nameMap.get(k)!);
+  const matrix: (HeadToHeadEntry | null)[][] = [];
+
+  for (let i = 0; i < playerKeys.length; i++) {
+    const row: (HeadToHeadEntry | null)[] = [];
+    for (let j = 0; j < playerKeys.length; j++) {
+      if (i === j) {
+        row.push(null);
+        continue;
+      }
+      const entry = meetingsMap.get(pairKey(playerKeys[i], playerKeys[j]));
+      if (!entry || entry.meetings === 0) {
+        row.push({ wins: 0, losses: 0, meetings: 0, winRate: null });
+      } else {
+        row.push({
+          wins: entry.wins,
+          losses: entry.losses,
+          meetings: entry.meetings,
+          winRate: entry.wins / entry.meetings,
+        });
+      }
+    }
+    matrix.push(row);
+  }
+
+  return { players, matrix };
+}
+
+// ---------------------------------------------------------------------------
+// ELO Rating System
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute ELO ratings from game day history.
+ * Processes game days chronologically, running pairwise ELO updates
+ * for all player pairs where one finished above the other.
+ */
+export function computeEloRatings(
+  gameDays: GameDay[],
+  startRating: number = 1200,
+  kFactor: number = 32,
+): Map<string, number> {
+  const ratings = new Map<string, number>();
+  const sorted = [...gameDays].sort((a, b) => a.date.localeCompare(b.date));
+
+  // Initialize all players with startRating
+  for (const gd of sorted) {
+    for (const p of gd.participants) {
+      const key = normalizePlayerName(p.name);
+      if (!ratings.has(key)) ratings.set(key, startRating);
+    }
+  }
+
+  // Process each game day
+  for (const gd of sorted) {
+    const participants = gd.participants;
+    for (let i = 0; i < participants.length; i++) {
+      for (let j = i + 1; j < participants.length; j++) {
+        const pi = participants[i];
+        const pj = participants[j];
+        if (pi.place === pj.place) continue; // tie — skip
+
+        const winnerKey = pi.place < pj.place ? normalizePlayerName(pi.name) : normalizePlayerName(pj.name);
+        const loserKey = pi.place < pj.place ? normalizePlayerName(pj.name) : normalizePlayerName(pi.name);
+
+        const ratingWinner = ratings.get(winnerKey)!;
+        const ratingLoser = ratings.get(loserKey)!;
+
+        const expectedWin = 1 / (1 + Math.pow(10, (ratingLoser - ratingWinner) / 400));
+        ratings.set(winnerKey, ratingWinner + kFactor * (1 - expectedWin));
+        ratings.set(loserKey, ratingLoser + kFactor * (0 - (1 - expectedWin)));
+      }
+    }
+  }
+
+  return ratings;
+}
+
+// ---------------------------------------------------------------------------
+// Weighted Points
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute weighted points where more recent tournaments are worth more.
+ * weight = decayFactor^(totalGameDays - 1 - index) where index 0 = oldest.
+ */
+export function computeWeightedPoints(
+  gameDays: GameDay[],
+  pointSystem: PointSystem,
+  decayFactor: number = 0.9,
+): Map<string, number> {
+  const pointMap = new Map(pointSystem.entries.map((e) => [e.place, e.points]));
+  const sorted = [...gameDays].sort((a, b) => a.date.localeCompare(b.date));
+  const total = sorted.length;
+  const result = new Map<string, number>();
+
+  for (let i = 0; i < total; i++) {
+    const weight = Math.pow(decayFactor, total - 1 - i);
+    for (const p of sorted[i].participants) {
+      const key = normalizePlayerName(p.name);
+      const pts = pointMap.get(p.place) ?? p.points;
+      result.set(key, (result.get(key) ?? 0) + pts * weight);
+    }
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Extended League Standings
 // ---------------------------------------------------------------------------
 
@@ -204,12 +387,45 @@ export function computeExtendedStandings(
     s.participationRate = totalGameDays > 0 ? s.tournaments / totalGameDays : 0;
   }
 
-  // Primary sort: points DESC, then avgPlace ASC
-  standings.sort((a, b) => b.points - a.points || a.avgPlace - b.avgPlace);
+  // Apply minimum participation flag
+  if (league.minParticipation != null && league.minParticipation > 0) {
+    for (const s of standings) {
+      s.meetsMinParticipation = s.tournaments >= league.minParticipation!;
+    }
+  }
 
-  // Apply tiebreaker if configured
-  if (league.tiebreaker) {
-    applyTiebreaker(standings, gameDays, league.tiebreaker);
+  const algorithm = league.rankingAlgorithm ?? 'points';
+
+  if (algorithm === 'elo') {
+    // Compute ELO ratings and attach to standings
+    const eloConfig = league.eloConfig;
+    const eloMap = computeEloRatings(
+      gameDays,
+      eloConfig?.startRating ?? 1200,
+      eloConfig?.kFactor ?? 32,
+    );
+    for (const s of standings) {
+      s.eloRating = eloMap.get(normalizePlayerName(s.name)) ?? (eloConfig?.startRating ?? 1200);
+    }
+    // Sort by ELO rating DESC
+    standings.sort((a, b) => (b.eloRating ?? 0) - (a.eloRating ?? 0));
+  } else if (algorithm === 'weightedPoints') {
+    // Compute weighted points and attach to standings
+    const decay = league.weightedPointsConfig?.decayFactor ?? 0.9;
+    const wpMap = computeWeightedPoints(gameDays, league.pointSystem, decay);
+    for (const s of standings) {
+      s.weightedPoints = wpMap.get(normalizePlayerName(s.name)) ?? 0;
+    }
+    // Sort by weighted points DESC
+    standings.sort((a, b) => (b.weightedPoints ?? 0) - (a.weightedPoints ?? 0));
+  } else {
+    // Default: points DESC, then avgPlace ASC
+    standings.sort((a, b) => b.points - a.points || a.avgPlace - b.avgPlace);
+
+    // Apply tiebreaker if configured (only for points mode)
+    if (league.tiebreaker) {
+      applyTiebreaker(standings, gameDays, league.tiebreaker);
+    }
   }
 
   // Assign ranks
