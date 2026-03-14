@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { playBeep } from '../domain/sounds';
-import { announceCallTheClock, announceCallTheClockExpired } from '../domain/speech';
+import { announceCallTheClock, announceCallTheClockExpired, announceCallTheClockCountdown } from '../domain/speech';
 import { useTranslation } from '../i18n';
 import { useDialogA11y } from '../hooks/useDialogA11y';
 
@@ -31,14 +31,18 @@ export function CallTheClock({ durationSeconds, soundEnabled, voiceEnabled, onCl
     return () => clearInterval(id);
   }, [durationSeconds, voiceEnabled, t]);
 
-  // Tension beeps in last 10 seconds
+  // Tension beeps + voice countdown in last 10 seconds
   useEffect(() => {
     const secs = Math.ceil(remaining);
-    if (soundEnabled && secs <= 10 && secs > 0 && secs !== lastBeepRef.current) {
+    if (secs <= 10 && secs > 0 && secs !== lastBeepRef.current) {
       lastBeepRef.current = secs;
-      playBeep(secs <= 3 ? 880 : 660, 80);
+      if (voiceEnabled) {
+        announceCallTheClockCountdown(secs);
+      } else if (soundEnabled) {
+        playBeep(secs <= 3 ? 880 : 660, 80);
+      }
     }
-  }, [remaining, soundEnabled]);
+  }, [remaining, soundEnabled, voiceEnabled]);
 
   // Auto-close at 0 — fire only once
   useEffect(() => {

@@ -274,7 +274,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium px-1">
             <span className="w-24 shrink-0">{t('sidePot.headerName')}</span>
             <span className="flex-1">{t('sidePot.headerInvested')}</span>
-            <span className="w-20 shrink-0 text-center">{t('sidePot.headerStatus')}</span>
+            <span className="w-28 shrink-0 text-center">{t('sidePot.headerStatus')}</span>
             <span className="w-7 shrink-0" />
           </div>
 
@@ -304,7 +304,7 @@ export function SidePotCalculator({ onClose, onResultChange }: Props) {
               </div>
 
               {/* Status selector */}
-              <div className="w-20 shrink-0 flex items-center justify-center">
+              <div className="w-28 shrink-0 flex items-center justify-center">
                 <select
                   value={player.status}
                   onChange={(e) => handleChangeStatus(player.id, e.target.value as PlayerPotStatus)}

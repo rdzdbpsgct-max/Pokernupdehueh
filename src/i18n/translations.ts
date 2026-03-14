@@ -898,6 +898,7 @@ const de = {
   'voice.mysteryBounty': 'Misteri Baunti: {amount} Euro!',
   'voice.callTheClock': 'Call the Clock! {seconds} Sekunden.',
   'voice.callTheClockExpired': 'Zeit abgelaufen!',
+  'voice.seconds': '{n} Sekunden',
   'voice.lateRegistrationClosed': 'Die Late Registration ist geschlossen.',
 
   // --- Accessibility ---
@@ -1906,6 +1907,7 @@ const en: Record<TranslationKey, string> = {
   'voice.mysteryBounty': 'Mystery Bounty: {amount}!',
   'voice.callTheClock': 'Call the Clock! {seconds} seconds.',
   'voice.callTheClockExpired': 'Time is up!',
+  'voice.seconds': '{n} seconds',
   'voice.lateRegistrationClosed': 'Late registration is now closed.',
 
   // --- Accessibility ---

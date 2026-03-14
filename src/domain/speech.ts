@@ -44,6 +44,14 @@ const MAX_BREAK_MINUTES = 30;
 const MAX_LEVEL = 25;
 const MAX_COUNTDOWN = 10;
 
+// Call the Clock seconds values that have pre-recorded MP3s (10–300, step 5)
+const CTC_SECONDS = new Set([
+  10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,
+  105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,
+  185,190,195,200,205,210,215,220,225,230,235,240,245,250,
+  255,260,265,270,275,280,285,290,295,300,
+]);
+
 // ---------------------------------------------------------------------------
 // Unified speech queue — supports both MP3 audio and Web Speech API
 // ---------------------------------------------------------------------------
@@ -59,16 +67,34 @@ let isSpeaking = false;
 // Voice selection (Web Speech API fallback)
 // ---------------------------------------------------------------------------
 
+/** Known female voice names across platforms (case-insensitive matching). */
+const FEMALE_VOICE_HINTS = [
+  'female', 'samantha', 'victoria', 'allison', 'ava', 'karen', 'moira',
+  'tessa', 'fiona', 'veena', 'zira', 'anna', 'hedda', 'katja', 'helena',
+  'google uk english female', 'google us english female', 'google deutsch',
+];
+
+function isFemaleVoice(voice: SpeechSynthesisVoice): boolean {
+  const name = voice.name.toLowerCase();
+  return FEMALE_VOICE_HINTS.some(hint => name.includes(hint));
+}
+
 function findVoice(lang: Language): SpeechSynthesisVoice | null {
   if (typeof window === 'undefined' || !window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices();
   const langPrefix = lang === 'de' ? 'de' : 'en';
 
-  const localMatch = voices.find(v => v.lang.startsWith(langPrefix) && v.localService);
-  if (localMatch) return localMatch;
-  const anyMatch = voices.find(v => v.lang.startsWith(langPrefix));
-  if (anyMatch) return anyMatch;
-  return null;
+  const langVoices = voices.filter(v => v.lang.startsWith(langPrefix));
+  if (langVoices.length === 0) return null;
+
+  // Prefer female local voice → female any voice → any local voice → any voice
+  const femaleLocal = langVoices.find(v => v.localService && isFemaleVoice(v));
+  if (femaleLocal) return femaleLocal;
+  const femaleAny = langVoices.find(v => isFemaleVoice(v));
+  if (femaleAny) return femaleAny;
+  const localAny = langVoices.find(v => v.localService);
+  if (localAny) return localAny;
+  return langVoices[0];
 }
 
 function ensureVoice(): void {
@@ -285,9 +311,13 @@ export function announceBreakStart(
   } else {
     enqueue({ mode: 'speech', text: t('voice.breakStart', { minutes: durationMinutes }) });
   }
-  // Announce custom label via speech if present
+  // Announce custom label via speech — skip generic "Break"/"Pause" defaults
   if (label) {
-    enqueue({ mode: 'speech', text: label });
+    const normalized = label.trim().toLowerCase();
+    const isDefault = normalized === 'break' || normalized === 'pause';
+    if (!isDefault) {
+      enqueue({ mode: 'speech', text: label });
+    }
   }
 }
 
@@ -452,10 +482,30 @@ export function announceMysteryBounty(amount: number, t: TranslateFn): void {
   enqueue({ mode: 'speech', text: `${amount}` });
 }
 
-/** Call the Clock — MP3 intro + speech with dynamic seconds */
+/** Call the Clock — MP3 intro + seconds duration MP3 */
 export function announceCallTheClock(seconds: number, t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/call-the-clock.mp3'], t('voice.callTheClock', { seconds })));
-  enqueue({ mode: 'speech', text: `${seconds}` });
+  // Use dedicated seconds MP3 (e.g. "60 Sekunden" / "60 seconds")
+  if (CTC_SECONDS.has(seconds)) {
+    const file = `seconds/seconds-${seconds}.mp3`;
+    enqueue(audioOrSpeech([file], t('voice.seconds', { n: seconds })));
+  } else if (seconds >= 1 && seconds <= MAX_COUNTDOWN) {
+    const file = `countdown/countdown-${String(seconds).padStart(2, '0')}.mp3`;
+    enqueue(audioOrSpeech([file], `${seconds}`));
+  } else {
+    enqueue({ mode: 'speech', text: t('voice.seconds', { n: seconds }) });
+  }
+}
+
+/**
+ * Call the Clock countdown — last 10 seconds voice countdown.
+ * Uses immediate mode to cut through any queued announcements.
+ */
+export function announceCallTheClockCountdown(second: number): void {
+  if (second >= 1 && second <= MAX_COUNTDOWN) {
+    const file = `countdown/countdown-${String(second).padStart(2, '0')}.mp3`;
+    enqueueImmediate(audioOrSpeech([file], String(second), { rate: 0.85 }));
+  }
 }
 
 /** Call the Clock expired — time's up */
