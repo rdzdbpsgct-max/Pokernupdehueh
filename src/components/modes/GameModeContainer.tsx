@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type {
   ChipDenomination,
@@ -10,6 +10,7 @@ import type {
   TournamentConfig,
 } from '../../domain/types';
 import type { useTimer } from '../../hooks/useTimer';
+import { advanceTableDealer } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
 import { SectionErrorBoundary } from '../ErrorBoundary';
 import { LoadingFallback } from '../LoadingFallback';
@@ -132,6 +133,14 @@ export function GameModeContainer({
   onExitToSetup,
 }: Props) {
   const { t } = useTranslation();
+
+  const handleAdvanceTableDealer = useCallback((tableId: string) => {
+    const tables = config.tables ?? [];
+    const table = tables.find(tbl => tbl.id === tableId);
+    if (!table) return;
+    const updated = advanceTableDealer(table, config.players);
+    onUpdateTables(tables.map(tbl => tbl.id === tableId ? updated : tbl));
+  }, [config.tables, config.players, onUpdateTables]);
 
   return (
     <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
@@ -292,6 +301,7 @@ export function GameModeContainer({
                 recentMoves={recentTableMoves}
                 onUpdateTables={onUpdateTables}
                 onTableMoves={onTableMoves}
+                onAdvanceTableDealer={handleAdvanceTableDealer}
               />
             )}
             <SettingsPanel

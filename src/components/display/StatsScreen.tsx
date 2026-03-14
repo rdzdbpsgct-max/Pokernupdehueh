@@ -2,6 +2,7 @@ import type { Player, Level, RebuyConfig, AddOnConfig, BountyConfig } from '../.
 import {
   computePrizePool, computeTotalRebuys, computeTotalAddOns, computeRebuyPot,
   computeAverageStackInBB, formatElapsedTime, computeEstimatedRemainingSeconds,
+  computeLiveRemainingDuration,
 } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
 
@@ -47,6 +48,7 @@ export function StatsScreen({
   const currentBB = currentLevel?.type === 'level' ? (currentLevel.bigBlind ?? 0) : 0;
   const avgBB = currentBB > 0 ? computeAverageStackInBB(averageStack, currentBB) : 0;
   const estRemaining = computeEstimatedRemainingSeconds(levels, currentLevelIndex, remainingSeconds);
+  const liveEstimate = computeLiveRemainingDuration(levels, currentLevelIndex, remainingSeconds, activePlayerCount);
 
   const totalRebuys = rebuy.enabled ? computeTotalRebuys(players) : 0;
   const totalAddOns = addOn.enabled ? computeTotalAddOns(players) : 0;
@@ -60,6 +62,7 @@ export function StatsScreen({
   }
   stats.push({ label: t('display.elapsed'), value: formatElapsedTime(tournamentElapsed) });
   stats.push({ label: t('display.remaining'), value: `~${formatElapsedTime(estRemaining)}` });
+  stats.push({ label: t('stats.liveEstimate'), value: `~${formatElapsedTime(liveEstimate)}` });
   if (rebuy.enabled && totalRebuys > 0) {
     stats.push({ label: t('display.totalRebuys'), value: String(totalRebuys) });
   }

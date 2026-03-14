@@ -526,8 +526,34 @@ export function mergeToFinalTable(
 }
 
 // ---------------------------------------------------------------------------
+// Random seating (shuffle players to tables)
+// ---------------------------------------------------------------------------
+
+/**
+ * Shuffle players randomly across tables using Fisher-Yates shuffle,
+ * then distribute them via the existing round-robin distributePlayersToTables.
+ */
+export function shufflePlayersToTables(playerIds: string[], tables: Table[]): Table[] {
+  // Fisher-Yates shuffle
+  const shuffled = [...playerIds];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return distributePlayersToTables(shuffled, tables);
+}
+
+// ---------------------------------------------------------------------------
 // Per-table dealer
 // ---------------------------------------------------------------------------
+
+/** Get the player who is the current dealer at a table, or undefined if no dealer set */
+export function getTableDealer(table: Table, players: Player[]): Player | undefined {
+  if (table.dealerSeat === null) return undefined;
+  const seat = table.seats.find(s => s.seatNumber === table.dealerSeat);
+  if (!seat || !seat.playerId) return undefined;
+  return players.find(p => p.id === seat.playerId);
+}
 
 /** Advance dealer at a specific table — skip empty seats and eliminated players */
 export function advanceTableDealer(table: Table, players: Player[]): Table {

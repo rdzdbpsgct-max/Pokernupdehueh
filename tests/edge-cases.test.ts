@@ -24,6 +24,7 @@ import {
   computeDefaultAnte,
   applyDefaultAntes,
   estimateDuration,
+  computeLiveRemainingDuration,
   // Players (Phase 6)
   defaultPlayers,
   shufflePlayers,
@@ -65,6 +66,8 @@ import {
   advanceTableDealer,
   findPlayerSeat,
   seatPlayerAtSmallestTable,
+  shufflePlayersToTables,
+  getTableDealer,
 } from '../src/domain/logic';
 import type { Level, Player, TimerState, Table } from '../src/domain/types';
 
@@ -805,6 +808,125 @@ describe('Helpers & robustness (Phase 13)', () => {
       const additionalSeconds = 300;
       const extended = remaining + additionalSeconds;
       expect(extended).toBe(500);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // computeLiveRemainingDuration
+  // -------------------------------------------------------------------------
+
+  describe('computeLiveRemainingDuration', () => {
+    const levels: Level[] = [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 },
+      { id: '2', type: 'break', durationSeconds: 300 },
+      { id: '3', type: 'level', durationSeconds: 600, smallBlind: 50, bigBlind: 100 },
+      { id: '4', type: 'level', durationSeconds: 600, smallBlind: 100, bigBlind: 200 },
+    ];
+
+    it('returns correct sum of remaining levels with 9 players (factor 1.0)', () => {
+      // At level 0 with 200s remaining: 200 + 300 + 600 + 600 = 1700
+      const result = computeLiveRemainingDuration(levels, 0, 200, 9);
+      expect(result).toBe(Math.round(1700 * 1.0));
+    });
+
+    it('scales with player count (4 players → less)', () => {
+      const result9 = computeLiveRemainingDuration(levels, 0, 200, 9);
+      const result4 = computeLiveRemainingDuration(levels, 0, 200, 4);
+      expect(result4).toBeLessThan(result9);
+      // 4/9 ≈ 0.444
+      expect(result4).toBe(Math.round(1700 * (4 / 9)));
+    });
+
+    it('handles last level (no future levels)', () => {
+      const result = computeLiveRemainingDuration(levels, 3, 100, 9);
+      // Only 100s remaining in current level, no future levels
+      expect(result).toBe(Math.round(100 * 1.0));
+    });
+
+    it('returns 0 when currentLevelIndex beyond array', () => {
+      const result = computeLiveRemainingDuration(levels, 10, 200, 9);
+      expect(result).toBe(0);
+    });
+
+    it('clamps player factor to minimum 0.3', () => {
+      // 1 player → 1/9 ≈ 0.11 → clamped to 0.3
+      const result = computeLiveRemainingDuration(levels, 0, 200, 1);
+      expect(result).toBe(Math.round(1700 * 0.3));
+    });
+
+    it('clamps player factor to maximum 2.0', () => {
+      // 20 players → 20/9 ≈ 2.22 → clamped to 2.0
+      const result = computeLiveRemainingDuration(levels, 0, 200, 20);
+      expect(result).toBe(Math.round(1700 * 2.0));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // shufflePlayersToTables
+  // -------------------------------------------------------------------------
+
+  describe('shufflePlayersToTables', () => {
+    const mkTable = (id: string, maxSeats: number): Table => ({
+      id,
+      name: `Table ${id}`,
+      maxSeats,
+      seats: Array.from({ length: maxSeats }, (_, i) => ({ seatNumber: i + 1, playerId: null })),
+      status: 'active',
+      dealerSeat: null,
+    });
+
+    it('distributes all players across tables', () => {
+      const playerIds = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
+      const tables = [mkTable('t1', 4), mkTable('t2', 4)];
+      const result = shufflePlayersToTables(playerIds, tables);
+      const allSeated = result.flatMap(t => t.seats.filter(s => s.playerId !== null).map(s => s.playerId!));
+      expect(allSeated.sort()).toEqual([...playerIds].sort());
+    });
+
+    it('produces no duplicates', () => {
+      const playerIds = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'];
+      const tables = [mkTable('t1', 5), mkTable('t2', 5)];
+      const result = shufflePlayersToTables(playerIds, tables);
+      const allSeated = result.flatMap(t => t.seats.filter(s => s.playerId !== null).map(s => s.playerId!));
+      expect(new Set(allSeated).size).toBe(playerIds.length);
+    });
+
+    it('roughly equal distribution across tables', () => {
+      const playerIds = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
+      const tables = [mkTable('t1', 5), mkTable('t2', 5)];
+      const result = shufflePlayersToTables(playerIds, tables);
+      const count1 = result[0].seats.filter(s => s.playerId !== null).length;
+      const count2 = result[1].seats.filter(s => s.playerId !== null).length;
+      expect(Math.abs(count1 - count2)).toBeLessThanOrEqual(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // getTableDealer
+  // -------------------------------------------------------------------------
+
+  describe('getTableDealer', () => {
+    it('returns undefined when no dealer set', () => {
+      const table: Table = {
+        id: 't1', name: 'T1', maxSeats: 5, dealerSeat: null, status: 'active',
+        seats: [{ seatNumber: 1, playerId: 'p1' }, { seatNumber: 2, playerId: null }, { seatNumber: 3, playerId: null }, { seatNumber: 4, playerId: null }, { seatNumber: 5, playerId: null }],
+      };
+      const players: Player[] = [{ id: 'p1', name: 'A', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 }];
+      expect(getTableDealer(table, players)).toBeUndefined();
+    });
+
+    it('returns the dealer player', () => {
+      const table: Table = {
+        id: 't1', name: 'T1', maxSeats: 5, dealerSeat: 1, status: 'active',
+        seats: [{ seatNumber: 1, playerId: 'p1' }, { seatNumber: 2, playerId: 'p2' }, { seatNumber: 3, playerId: null }, { seatNumber: 4, playerId: null }, { seatNumber: 5, playerId: null }],
+      };
+      const players: Player[] = [
+        { id: 'p1', name: 'A', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 },
+        { id: 'p2', name: 'B', rebuys: 0, addOn: false, status: 'active', placement: null, eliminatedBy: null, knockouts: 0 },
+      ];
+      const dealer = getTableDealer(table, players);
+      expect(dealer).toBeDefined();
+      expect(dealer!.id).toBe('p1');
     });
   });
 });

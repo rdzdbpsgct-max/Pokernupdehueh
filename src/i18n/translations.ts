@@ -232,6 +232,7 @@ const de = {
   'playerManager.shuffleConfirm': 'Sitzreihenfolge zufällig mischen?',
   'playerManager.shuffleWarning': 'Die aktuelle Reihenfolge wird überschrieben und kann nicht rückgängig gemacht werden.',
   'playerManager.shuffleConfirmBtn': 'Jetzt mischen',
+  'players.shuffleToTables': 'Zufällig auslosen',
   'playerManager.setDealer': 'Als Dealer setzen',
   'playerManager.dealer': 'Dealer',
   'playerManager.dragTooltip': 'Ziehen zum Sortieren',
@@ -392,6 +393,7 @@ const de = {
   'stats.avgStackBB': 'Ø Stack',
   'stats.elapsed': 'Spielzeit',
   'stats.remaining': 'Restzeit',
+  'stats.liveEstimate': 'Gesch. Restzeit',
 
   // --- Bubble ---
   'bubble.bubble': 'BUBBLE!',
@@ -839,6 +841,7 @@ const de = {
   'multiTable.notDistributed': 'Spieler wurden noch nicht verteilt. Bei Turnierstart erfolgt die Verteilung automatisch.',
   'multiTable.lockSeat': 'Sitz sperren',
   'multiTable.unlockSeat': 'Sitz entsperren',
+  'multiTable.advanceDealer': 'Dealer weiter',
 
   // --- Presets ---
   'preset.title': 'Schnellstart',
@@ -910,6 +913,17 @@ const de = {
   // --- Misc ---
   'league.settings.pointsAbbr': 'Pkt',
   'display.rebuyActive': 'Rebuy ✓',
+
+  // --- Display: Screen Configuration ---
+  'display.screenConfig': 'TV-Screens konfigurieren',
+  'display.rotationInterval': 'Wechselintervall',
+  'display.screen.players': 'Spieler',
+  'display.screen.stats': 'Statistiken',
+  'display.screen.payout': 'Auszahlung',
+  'display.screen.schedule': 'Blindstruktur',
+  'display.screen.chips': 'Chips',
+  'display.screen.seating': 'Sitzplan',
+  'display.screen.league': 'Liga',
 
   // --- Side Pot warnings (domain) ---
   'sidePot.warnZeroPlayers': '{n} Spieler mit 0 Einsatz werden ignoriert.',
@@ -1226,6 +1240,7 @@ const en: Record<TranslationKey, string> = {
   'playerManager.shuffleConfirm': 'Randomly shuffle seating order?',
   'playerManager.shuffleWarning': 'The current order will be overwritten and cannot be undone.',
   'playerManager.shuffleConfirmBtn': 'Shuffle now',
+  'players.shuffleToTables': 'Random seating',
   'playerManager.setDealer': 'Set as Dealer',
   'playerManager.dealer': 'Dealer',
   'playerManager.dragTooltip': 'Drag to reorder',
@@ -1386,6 +1401,7 @@ const en: Record<TranslationKey, string> = {
   'stats.avgStackBB': 'Avg Stack',
   'stats.elapsed': 'Elapsed',
   'stats.remaining': 'Remaining',
+  'stats.liveEstimate': 'Est. remaining',
 
   // --- Bubble ---
   'bubble.bubble': 'BUBBLE!',
@@ -1830,6 +1846,7 @@ const en: Record<TranslationKey, string> = {
   'multiTable.notDistributed': 'Players not distributed yet. Distribution happens automatically at tournament start.',
   'multiTable.lockSeat': 'Lock seat',
   'multiTable.unlockSeat': 'Unlock seat',
+  'multiTable.advanceDealer': 'Advance dealer',
 
   // --- Presets ---
   'preset.title': 'Quick Start',
@@ -1901,6 +1918,17 @@ const en: Record<TranslationKey, string> = {
   // --- Misc ---
   'league.settings.pointsAbbr': 'Pts',
   'display.rebuyActive': 'Rebuy ✓',
+
+  // --- Display: Screen Configuration ---
+  'display.screenConfig': 'Configure TV Screens',
+  'display.rotationInterval': 'Rotation Interval',
+  'display.screen.players': 'Players',
+  'display.screen.stats': 'Statistics',
+  'display.screen.payout': 'Payouts',
+  'display.screen.schedule': 'Blind Structure',
+  'display.screen.chips': 'Chips',
+  'display.screen.seating': 'Seating',
+  'display.screen.league': 'League',
 
   // --- Side Pot warnings (domain) ---
   'sidePot.warnZeroPlayers': '{n} player(s) with 0 investment ignored.',

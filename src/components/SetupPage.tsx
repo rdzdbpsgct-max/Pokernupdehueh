@@ -15,6 +15,7 @@ import {
   importLeague,
   getBuiltInPresets,
   toggleSeatLock,
+  shufflePlayersToTables,
 } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { ConfigEditor } from './ConfigEditor';
@@ -466,6 +467,13 @@ export function SetupPage({
                 payout: defaultPayoutForPlayerCount(players.length),
               }))
             }
+            multiTableEnabled={config.multiTable?.enabled}
+            onShuffleToTables={() => {
+              if (!config.tables || config.tables.length === 0) return;
+              const playerIds = config.players.map(p => p.id);
+              const updated = shufflePlayersToTables(playerIds, config.tables);
+              setConfig(prev => ({ ...prev, tables: updated }));
+            }}
           />
 
           {/* Multi-Table hint for >10 players */}

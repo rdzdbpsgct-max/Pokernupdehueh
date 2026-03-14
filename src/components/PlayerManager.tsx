@@ -8,13 +8,15 @@ interface Props {
   players: Player[];
   dealerIndex: number;
   onChange: (players: Player[], dealerIndex: number) => void;
+  multiTableEnabled?: boolean;
+  onShuffleToTables?: () => void;
 }
 
 /**
  * Inner component that owns drag state.
  * Re-keyed externally when players.length changes.
  */
-function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
+function PlayerManagerInner({ players, dealerIndex, onChange, multiTableEnabled, onShuffleToTables }: Props) {
   const { t } = useTranslation();
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -247,6 +249,15 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
           </div>
         </div>
       )}
+      {multiTableEnabled && onShuffleToTables && players.length >= 2 && (
+        <button
+          onClick={onShuffleToTables}
+          className="px-4 py-2 text-white rounded-lg text-sm font-medium transition-all duration-200"
+          style={{ backgroundColor: 'var(--accent-600)' }}
+        >
+          🎲 {t('players.shuffleToTables')}
+        </button>
+      )}
     </div>
   );
 }
@@ -254,13 +265,15 @@ function PlayerManagerInner({ players, dealerIndex, onChange }: Props) {
 /**
  * Wrapper that re-keys the inner component when players.length changes.
  */
-export function PlayerManager({ players, dealerIndex, onChange }: Props) {
+export function PlayerManager({ players, dealerIndex, onChange, multiTableEnabled, onShuffleToTables }: Props) {
   return (
     <PlayerManagerInner
       key={players.length}
       players={players}
       dealerIndex={dealerIndex}
       onChange={onChange}
+      multiTableEnabled={multiTableEnabled}
+      onShuffleToTables={onShuffleToTables}
     />
   );
 }

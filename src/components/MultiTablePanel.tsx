@@ -8,6 +8,7 @@ interface Props {
   recentMoves: TableMove[];
   onUpdateTables: (tables: Table[]) => void;
   onTableMoves: (moves: TableMove[]) => void;
+  onAdvanceTableDealer?: (tableId: string) => void;
 }
 
 const reasonKey: Record<TableMoveReason, string> = {
@@ -18,7 +19,7 @@ const reasonKey: Record<TableMoveReason, string> = {
   manual: 'multiTable.reasonBalance',
 };
 
-export function MultiTablePanel({ config, recentMoves, onUpdateTables, onTableMoves }: Props) {
+export function MultiTablePanel({ config, recentMoves, onUpdateTables, onTableMoves, onAdvanceTableDealer }: Props) {
   const { t } = useTranslation();
 
   const tables = useMemo(() => config.tables ?? [], [config.tables]);
@@ -94,6 +95,16 @@ export function MultiTablePanel({ config, recentMoves, onUpdateTables, onTableMo
                     <span className="text-[10px] text-red-500 dark:text-red-400 font-bold">
                       D:{tbl.dealerSeat}
                     </span>
+                  )}
+                  {onAdvanceTableDealer && (
+                    <button
+                      onClick={() => onAdvanceTableDealer(tbl.id)}
+                      className="px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/40 rounded hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                      aria-label={t('multiTable.advanceDealer')}
+                      title={t('multiTable.advanceDealer')}
+                    >
+                      D→
+                    </button>
                   )}
                 </div>
                 <span className="text-xs text-gray-500 dark:text-gray-400">

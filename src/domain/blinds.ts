@@ -349,6 +349,35 @@ function generateBlindStructureWithDuration(
 }
 
 // ---------------------------------------------------------------------------
+// Live remaining duration prognosis
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute a live estimate of remaining tournament duration in seconds,
+ * adjusted by active player count. More players → longer estimate,
+ * fewer players → shorter.
+ *
+ * Player factor: clamp(activePlayers / 9, 0.3, 2.0)
+ * 9 players → factor 1.0 (baseline), 4 players → ~0.44, 18 → 2.0
+ */
+export function computeLiveRemainingDuration(
+  levels: Level[],
+  currentLevelIndex: number,
+  remainingCurrentLevelSeconds: number,
+  activePlayers: number,
+): number {
+  if (currentLevelIndex >= levels.length) return 0;
+
+  let totalSeconds = remainingCurrentLevelSeconds;
+  for (let i = currentLevelIndex + 1; i < levels.length; i++) {
+    totalSeconds += levels[i].durationSeconds;
+  }
+
+  const playerFactor = Math.max(0.3, Math.min(2.0, activePlayers / 9));
+  return Math.round(totalSeconds * playerFactor);
+}
+
+// ---------------------------------------------------------------------------
 // Duration estimates
 // ---------------------------------------------------------------------------
 
