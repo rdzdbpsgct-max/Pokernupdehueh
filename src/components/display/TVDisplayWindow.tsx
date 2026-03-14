@@ -139,6 +139,8 @@ export function TVDisplayWindow() {
         leagueName={state.leagueName}
         leagueStandings={state.leagueStandings}
         sidePotData={state.sidePotData}
+        displayScreens={state.displayScreens}
+        displayRotationInterval={state.displayRotationInterval}
       />
       {ctcPayload && (
         <Suspense fallback={null}>

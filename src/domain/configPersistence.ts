@@ -13,6 +13,7 @@ import type {
   Table,
   Seat,
   MultiTableConfig,
+  DisplayScreenConfig,
 } from './types';
 import { generateBlindStructure } from './blinds';
 import { defaultChipConfig } from './chips';
@@ -49,6 +50,20 @@ export function defaultAddOnConfig(buyIn = 10, startingChips = 20000): AddOnConf
 export function defaultBountyConfig(): BountyConfig {
   return { enabled: false, amount: 5, type: 'fixed' };
 }
+
+/** Default TV Display Mode secondary screens (all enabled). */
+export const DEFAULT_DISPLAY_SCREENS: DisplayScreenConfig[] = [
+  { id: 'players', enabled: true },
+  { id: 'stats', enabled: true },
+  { id: 'payout', enabled: true },
+  { id: 'schedule', enabled: true },
+  { id: 'chips', enabled: true },
+  { id: 'seating', enabled: true },
+  { id: 'league', enabled: true },
+];
+
+/** Default rotation interval for TV Display Mode in seconds. */
+export const DEFAULT_ROTATION_INTERVAL = 15;
 
 /** Create default application settings (sound, voice, auto-advance all enabled). */
 export function defaultSettings(): Settings {

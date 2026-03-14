@@ -135,6 +135,20 @@ export interface TournamentConfig {
   tables?: Table[];
 }
 
+export type DisplayScreenId =
+  | 'players'
+  | 'stats'
+  | 'payout'
+  | 'schedule'
+  | 'chips'
+  | 'seating'
+  | 'league';
+
+export interface DisplayScreenConfig {
+  id: DisplayScreenId;
+  enabled: boolean;
+}
+
 export type AccentColor = 'emerald' | 'blue' | 'purple' | 'red' | 'amber' | 'cyan';
 
 export type BackgroundImage = 'none' | 'felt-green' | 'felt-blue' | 'felt-red' | 'casino' | 'dark-wood' | 'abstract' | 'midnight' | 'sunset';
@@ -153,6 +167,10 @@ export interface Settings {
   backgroundImage?: BackgroundImage;
   /** User-defined custom alerts/announcements. */
   customAlerts?: AlertConfig[];
+  /** Which secondary screens to show in TV Display Mode. undefined = all enabled. */
+  displayScreens?: DisplayScreenConfig[];
+  /** Rotation interval for TV Display Mode secondary screens in seconds. Default: 15. */
+  displayRotationInterval?: number;
 }
 
 export interface TournamentCheckpoint {

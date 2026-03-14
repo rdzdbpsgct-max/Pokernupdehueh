@@ -588,7 +588,9 @@ function App() {
     leagueName: leagueDisplayData?.name,
     leagueStandings: leagueDisplayData?.standings,
     sidePotData: sidePotData ?? undefined,
-  }), [config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed, showDealerBadges, leagueDisplayData, sidePotData]);
+    displayScreens: settings.displayScreens,
+    displayRotationInterval: settings.displayRotationInterval,
+  }), [config, colorUpMap, activePlayerCount, bubbleActive, lastHandActive, handForHandActive, averageStack, tournamentElapsed, showDealerBadges, leagueDisplayData, sidePotData, settings.displayScreens, settings.displayRotationInterval]);
 
   // TV Display: BroadcastChannel sync + window management
   const { tvWindowActive, openTVWindow, closeTVWindow } = useTVDisplay({

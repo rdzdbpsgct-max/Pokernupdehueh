@@ -1,5 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo } from 'react';
-import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table, ExtendedLeagueStanding } from '../../domain/types';
+import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table, ExtendedLeagueStanding, DisplayScreenConfig } from '../../domain/types';
+import { DEFAULT_DISPLAY_SCREENS, DEFAULT_ROTATION_INTERVAL } from '../../domain/configPersistence';
 import { formatTime, getLevelLabel, getBlindsText, computePrizePool, computeAverageStackInBB, computeRebuyPot, isRebuyActive } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
 import { PlayersScreen } from './PlayersScreen';
@@ -40,9 +41,11 @@ interface Props {
   leagueName?: string;
   leagueStandings?: ExtendedLeagueStanding[];
   sidePotData?: SidePotDisplayData;
+  displayScreens?: DisplayScreenConfig[];
+  displayRotationInterval?: number;
 }
 
-const ROTATION_INTERVAL = 15_000;
+// Removed static ROTATION_INTERVAL — now configurable via props
 
 /**
  * Seamless infinite ticker banner — pixel-perfect rAF scrolling.
@@ -171,18 +174,36 @@ export function DisplayMode({
   leagueName,
   leagueStandings,
   sidePotData,
+  displayScreens,
+  displayRotationInterval,
 }: Props) {
   const { t } = useTranslation();
 
+  const rotationIntervalMs = (displayRotationInterval ?? DEFAULT_ROTATION_INTERVAL) * 1000;
+
+  // Resolve which screens the user has enabled (default: all)
+  const enabledScreenIds = useMemo(() => {
+    const cfg = displayScreens ?? DEFAULT_DISPLAY_SCREENS;
+    const enabled = cfg.filter((s) => s.enabled).map((s) => s.id);
+    // Fallback: if none enabled, show all
+    return enabled.length > 0 ? new Set(enabled) : new Set(DEFAULT_DISPLAY_SCREENS.map((s) => s.id));
+  }, [displayScreens]);
+
   // Build available secondary screens in order (memoized to avoid stale closures)
   const secondaryScreens = useMemo<SecondaryScreen[]>(() => {
-    const screens: SecondaryScreen[] = ['players', 'stats', 'payout', 'schedule'];
-    if (chipConfig?.enabled) screens.push('chips');
-    if (players.length > 0) screens.push('seating');
-    if (leagueStandings && leagueStandings.length > 0) screens.push('league');
+    const screens: SecondaryScreen[] = [];
+    if (enabledScreenIds.has('players')) screens.push('players');
+    if (enabledScreenIds.has('stats')) screens.push('stats');
+    if (enabledScreenIds.has('payout')) screens.push('payout');
+    if (enabledScreenIds.has('schedule')) screens.push('schedule');
+    if (enabledScreenIds.has('chips') && chipConfig?.enabled) screens.push('chips');
+    if (enabledScreenIds.has('seating') && players.length > 0) screens.push('seating');
+    if (enabledScreenIds.has('league') && leagueStandings && leagueStandings.length > 0) screens.push('league');
     if (sidePotData && sidePotData.pots.length > 0) screens.push('sidepot');
+    // Fallback: ensure at least one screen
+    if (screens.length === 0) screens.push('players');
     return screens;
-  }, [chipConfig?.enabled, players.length, leagueStandings, sidePotData]);
+  }, [enabledScreenIds, chipConfig?.enabled, players.length, leagueStandings, sidePotData]);
 
   const screensRef = useRef(secondaryScreens);
   useEffect(() => {
@@ -191,7 +212,7 @@ export function DisplayMode({
 
   const [activeSecondary, setActiveSecondary] = useState<SecondaryScreen>('players');
 
-  // Auto-rotate secondary area every 15 seconds
+  // Auto-rotate secondary area at configured interval
   useEffect(() => {
     if (secondaryScreens.length <= 1) return;
     const id = setInterval(() => {
@@ -200,9 +221,9 @@ export function DisplayMode({
         const idx = screens.indexOf(prev);
         return screens[(idx + 1) % screens.length];
       });
-    }, ROTATION_INTERVAL);
+    }, rotationIntervalMs);
     return () => clearInterval(id);
-  }, [secondaryScreens]);
+  }, [secondaryScreens, rotationIntervalMs]);
 
   // Keyboard: Arrow keys for manual secondary navigation, T/Escape to exit
   const handleKeyDown = useCallback(
@@ -465,7 +486,7 @@ export function DisplayMode({
       <div className="px-6 py-1 border-t border-gray-800/60 text-center">
         <p className="text-gray-600 text-[10px]">
           {secondaryScreens.length > 1
-            ? `${t('display.rotationHint', { n: ROTATION_INTERVAL / 1000 })} · ← → ${t('display.navigate')}`
+            ? `${t('display.rotationHint', { n: rotationIntervalMs / 1000 })} · ← → ${t('display.navigate')}`
             : `← → ${t('display.navigate')}`
           }
         </p>

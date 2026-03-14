@@ -12,6 +12,7 @@ import type {
   ExtendedLeagueStanding,
   PotResult,
   PlayerPayout,
+  DisplayScreenConfig,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -45,6 +46,10 @@ export interface DisplayStatePayload {
   leagueStandings?: ExtendedLeagueStanding[];
   /** Side pot calculator data for TV display (only present when calculator is active) */
   sidePotData?: { pots: PotResult[]; total: number; payouts?: PlayerPayout[] };
+  /** Which secondary screens to show (user-configured). undefined = all enabled. */
+  displayScreens?: DisplayScreenConfig[];
+  /** Rotation interval in seconds. undefined = default 15. */
+  displayRotationInterval?: number;
 }
 
 // ---------------------------------------------------------------------------

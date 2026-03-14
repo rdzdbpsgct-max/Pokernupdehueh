@@ -21,6 +21,8 @@ import {
   parseConfigObject,
   exportConfigJSON,
   importConfigJSON,
+  DEFAULT_DISPLAY_SCREENS,
+  DEFAULT_ROTATION_INTERVAL,
 } from '../src/domain/configPersistence';
 import type { TournamentCheckpoint } from '../src/domain/types';
 
@@ -46,6 +48,23 @@ describe('Default configs', () => {
     expect(s.volume).toBe(100);
     expect(s.callTheClockSeconds).toBe(30);
     expect(s.autoAdvance).toBe(true);
+  });
+
+  it('DEFAULT_DISPLAY_SCREENS contains all 7 screen IDs', () => {
+    expect(DEFAULT_DISPLAY_SCREENS).toHaveLength(7);
+    expect(DEFAULT_DISPLAY_SCREENS.every(s => s.enabled)).toBe(true);
+    const ids = DEFAULT_DISPLAY_SCREENS.map(s => s.id);
+    expect(ids).toContain('players');
+    expect(ids).toContain('stats');
+    expect(ids).toContain('payout');
+    expect(ids).toContain('schedule');
+    expect(ids).toContain('chips');
+    expect(ids).toContain('seating');
+    expect(ids).toContain('league');
+  });
+
+  it('DEFAULT_ROTATION_INTERVAL is 15 seconds', () => {
+    expect(DEFAULT_ROTATION_INTERVAL).toBe(15);
   });
 
   it('defaultRebuyConfig uses buyIn and startingChips params', () => {
