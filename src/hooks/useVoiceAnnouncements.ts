@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import type { TournamentConfig, Settings, TimerState, ChipDenomination } from '../domain/types';
+import type { TournamentConfig, Settings, TimerState, ChipDenomination, AlertConfig } from '../domain/types';
 import type { TranslationKey } from '../i18n/translations';
 import {
   announceLevelChange,
@@ -20,7 +20,10 @@ import {
   announceHeadsUp,
   announceTimerPaused,
   announceTimerResumed,
+  speakCustomText,
 } from '../domain/speech';
+import { shouldFireAlert, interpolateAlertText } from '../domain/alertEngine';
+import { playBeep, playChimeSound } from '../domain/sounds';
 
 interface Params {
   mode: 'setup' | 'game' | 'league';
@@ -227,10 +230,110 @@ export function useVoiceAnnouncements({
     prevTotalRebuysRef.current = totalRebuys;
   }, [mode, settings.voiceEnabled, totalRebuys, t]);
 
+  // ── Custom Alert Engine ──────────────────────────────────────────────────
+  const customAlerts = settings.customAlerts ?? [];
+  const firedAlertsRef = useRef<Set<string>>(new Set());
+
+  // Helper to fire a single alert (sound + voice)
+  const fireAlert = useCallback((alert: AlertConfig, levelIdx: number, players: number) => {
+    if (alert.sound === 'beep') playBeep(880, 200);
+    if (alert.sound === 'chime') void playChimeSound();
+    if (alert.voice && alert.text) {
+      const interpolated = interpolateAlertText(alert.text, {
+        levelIndex: levelIdx,
+        config,
+        activePlayers: players,
+      });
+      speakCustomText(interpolated);
+    }
+  }, [config]);
+
+  // Reset fired alerts on level change
+  const prevLevelForAlertsRef = useRef(timerState.currentLevelIndex);
+  useEffect(() => {
+    if (timerState.currentLevelIndex !== prevLevelForAlertsRef.current) {
+      firedAlertsRef.current = new Set();
+      prevLevelForAlertsRef.current = timerState.currentLevelIndex;
+    }
+  }, [timerState.currentLevelIndex]);
+
+  // Custom alerts: level_start + break_start
+  useEffect(() => {
+    if (mode !== 'game' || customAlerts.length === 0) return;
+    const idx = timerState.currentLevelIndex;
+    const level = config.levels[idx];
+    if (!level) return;
+
+    const triggerType = level.type === 'break' ? 'break_start' : 'level_start';
+
+    for (const alert of customAlerts) {
+      if (firedAlertsRef.current.has(alert.id)) continue;
+      if (shouldFireAlert(alert, triggerType, {
+        levelIndex: idx,
+        remainingSeconds: displaySeconds,
+        activePlayers: activePlayerCount,
+        prevActivePlayers: activePlayerCount,
+      })) {
+        firedAlertsRef.current.add(alert.id);
+        fireAlert(alert, idx, activePlayerCount);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerState.currentLevelIndex]);
+
+  // Custom alerts: time_remaining
+  useEffect(() => {
+    if (mode !== 'game' || customAlerts.length === 0) return;
+    const idx = timerState.currentLevelIndex;
+
+    for (const alert of customAlerts) {
+      if (alert.trigger !== 'time_remaining') continue;
+      if (firedAlertsRef.current.has(alert.id)) continue;
+      if (shouldFireAlert(alert, 'time_remaining', {
+        levelIndex: idx,
+        remainingSeconds: displaySeconds,
+        activePlayers: activePlayerCount,
+        prevActivePlayers: activePlayerCount,
+      })) {
+        firedAlertsRef.current.add(alert.id);
+        fireAlert(alert, idx, activePlayerCount);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displaySeconds]);
+
+  // Custom alerts: player_count
+  const prevActiveForAlertsRef = useRef(activePlayerCount);
+  useEffect(() => {
+    if (mode !== 'game' || customAlerts.length === 0) {
+      prevActiveForAlertsRef.current = activePlayerCount;
+      return;
+    }
+    const prev = prevActiveForAlertsRef.current;
+    const idx = timerState.currentLevelIndex;
+
+    for (const alert of customAlerts) {
+      if (alert.trigger !== 'player_count') continue;
+      if (firedAlertsRef.current.has(alert.id)) continue;
+      if (shouldFireAlert(alert, 'player_count', {
+        levelIndex: idx,
+        remainingSeconds: displaySeconds,
+        activePlayers: activePlayerCount,
+        prevActivePlayers: prev,
+      })) {
+        firedAlertsRef.current.add(alert.id);
+        fireAlert(alert, idx, activePlayerCount);
+      }
+    }
+    prevActiveForAlertsRef.current = activePlayerCount;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePlayerCount]);
+
   // Reset function for switchToSetup
   const reset = useCallback(() => {
     fiveMinWarningRef.current = false;
     breakWarningRef.current = false;
+    firedAlertsRef.current = new Set();
   }, []);
 
   return { reset };

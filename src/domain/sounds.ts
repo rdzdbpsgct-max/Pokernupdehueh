@@ -97,6 +97,20 @@ export function playBubbleSound(): Promise<void> {
   }
 }
 
+/** Two-note chime for custom alerts. Resolves after sound finishes (~500ms). */
+export function playChimeSound(): Promise<void> {
+  try {
+    const ctx = getAudioContext();
+    const t = ctx.currentTime;
+    playNote(ctx, 659, t, 0.2, 0.25, 'triangle');        // E5
+    playNote(ctx, 880, t + 0.2, 0.3, 0.25, 'triangle');   // A5
+    return new Promise(resolve => setTimeout(resolve, 500));
+  } catch (err) {
+    console.warn('[audio] playChimeSound failed:', err);
+    return Promise.resolve();
+  }
+}
+
 /** Short celebratory fanfare for reaching In The Money. Resolves after sound finishes (~700ms). */
 export function playInTheMoneySound(): Promise<void> {
   try {

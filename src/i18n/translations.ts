@@ -971,6 +971,25 @@ const de = {
   'payout.overlay.amount': 'Betrag',
   'payout.overlay.close': 'Schließen',
   'payout.overlay.hint': 'Passe die Spielerzahl an, um die Auszahlung zu simulieren',
+  // --- Custom Alerts ---
+  'alerts.title': 'Benutzerdefinierte Ansagen',
+  'alerts.add': 'Ansage hinzufügen',
+  'alerts.empty': 'Keine Ansagen konfiguriert',
+  'alerts.triggerLevelStart': 'Level-Start',
+  'alerts.triggerTimeRemaining': 'X Sekunden vor Ende',
+  'alerts.triggerBreakStart': 'Pause beginnt',
+  'alerts.triggerPlayerCount': 'Spieleranzahl erreicht',
+  'alerts.text': 'Ansagetext',
+  'alerts.textHint': 'Variablen: {level}, {bigBlind}, {smallBlind}, {ante}, {players}',
+  'alerts.voice': 'Sprachausgabe',
+  'alerts.sound': 'Sound',
+  'alerts.soundNone': 'Keiner',
+  'alerts.soundBeep': 'Beep',
+  'alerts.soundChime': 'Chime',
+  'alerts.delete': 'Löschen',
+  'alerts.level': 'Level-Nummer',
+  'alerts.seconds': 'Sekunden vorher',
+  'alerts.playerCount': 'Spieleranzahl',
 } as const;
 
 export type TranslationKey = keyof typeof de;
@@ -1943,6 +1962,25 @@ const en: Record<TranslationKey, string> = {
   'payout.overlay.amount': 'Amount',
   'payout.overlay.close': 'Close',
   'payout.overlay.hint': 'Adjust player count to simulate payouts',
+  // --- Custom Alerts ---
+  'alerts.title': 'Custom Announcements',
+  'alerts.add': 'Add Announcement',
+  'alerts.empty': 'No announcements configured',
+  'alerts.triggerLevelStart': 'Level Start',
+  'alerts.triggerTimeRemaining': 'X seconds before end',
+  'alerts.triggerBreakStart': 'Break starts',
+  'alerts.triggerPlayerCount': 'Player count reached',
+  'alerts.text': 'Announcement text',
+  'alerts.textHint': 'Variables: {level}, {bigBlind}, {smallBlind}, {ante}, {players}',
+  'alerts.voice': 'Text-to-Speech',
+  'alerts.sound': 'Sound',
+  'alerts.soundNone': 'None',
+  'alerts.soundBeep': 'Beep',
+  'alerts.soundChime': 'Chime',
+  'alerts.delete': 'Delete',
+  'alerts.level': 'Level number',
+  'alerts.seconds': 'Seconds before',
+  'alerts.playerCount': 'Player count',
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { de, en };

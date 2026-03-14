@@ -151,6 +151,8 @@ export interface Settings {
   callTheClockSeconds: number;
   /** Background image/pattern. Default: 'none'. */
   backgroundImage?: BackgroundImage;
+  /** User-defined custom alerts/announcements. */
+  customAlerts?: AlertConfig[];
 }
 
 export interface TournamentCheckpoint {
@@ -435,6 +437,32 @@ export interface SidePotPayoutResult {
   /** Odd chips that couldn't be evenly split (remainder per pot) */
   oddChips: { potIndex: number; remainder: number; awardedTo: string }[];
   total: number;
+}
+
+// ---------------------------------------------------------------------------
+// Custom Alert Engine
+// ---------------------------------------------------------------------------
+
+export type AlertTrigger =
+  | 'level_start'
+  | 'time_remaining'
+  | 'break_start'
+  | 'player_count';
+
+export interface AlertConfig {
+  id: string;
+  enabled: boolean;
+  trigger: AlertTrigger;
+  /** For 'level_start': which level (0-based) */
+  levelIndex?: number;
+  /** For 'time_remaining': seconds before level end */
+  secondsBefore?: number;
+  /** For 'player_count': target count */
+  playerCount?: number;
+  /** Template with {level}, {bigBlind}, {smallBlind}, {ante}, {players} */
+  text: string;
+  voice: boolean;
+  sound: 'beep' | 'chime' | 'none';
 }
 
 export type TimerStatus = 'stopped' | 'running' | 'paused';

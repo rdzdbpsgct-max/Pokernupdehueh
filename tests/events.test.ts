@@ -7,7 +7,12 @@ import {
   formatEventTimestamp,
   formatEventAsText,
 } from '../src/domain/tournamentEvents';
-import type { TournamentEvent } from '../src/domain/types';
+import {
+  createDefaultAlert,
+  interpolateAlertText,
+  shouldFireAlert,
+} from '../src/domain/alertEngine';
+import type { TournamentEvent, TournamentConfig, AlertConfig } from '../src/domain/types';
 
 // ---------------------------------------------------------------------------
 // createEvent
@@ -316,5 +321,174 @@ describe('formatEventAsText', () => {
     const event = createEvent('rebuy_taken', 1, { playerId: 'unknown_player' });
     const text = formatEventAsText(event, names);
     expect(text).toContain('unknown_player');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Alert Engine — createDefaultAlert
+// ---------------------------------------------------------------------------
+
+describe('createDefaultAlert', () => {
+  it('creates an alert with unique id and enabled=true', () => {
+    const alert = createDefaultAlert('level_start');
+    expect(alert.id).toBeTruthy();
+    expect(alert.enabled).toBe(true);
+    expect(alert.trigger).toBe('level_start');
+    expect(alert.voice).toBe(true);
+    expect(alert.sound).toBe('beep');
+    expect(alert.text).toBe('');
+  });
+
+  it('creates two alerts with different IDs', () => {
+    const a1 = createDefaultAlert('level_start');
+    const a2 = createDefaultAlert('level_start');
+    expect(a1.id).not.toBe(a2.id);
+  });
+
+  it('sets levelIndex for level_start trigger', () => {
+    const alert = createDefaultAlert('level_start');
+    expect(alert.levelIndex).toBe(0);
+  });
+
+  it('sets secondsBefore for time_remaining trigger', () => {
+    const alert = createDefaultAlert('time_remaining');
+    expect(alert.secondsBefore).toBe(60);
+  });
+
+  it('sets playerCount for player_count trigger', () => {
+    const alert = createDefaultAlert('player_count');
+    expect(alert.playerCount).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Alert Engine — interpolateAlertText
+// ---------------------------------------------------------------------------
+
+describe('interpolateAlertText', () => {
+  const mockConfig: TournamentConfig = {
+    name: 'Test',
+    levels: [
+      { id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50, ante: 5 },
+      { id: '2', type: 'break', durationSeconds: 300 },
+      { id: '3', type: 'level', durationSeconds: 600, smallBlind: 50, bigBlind: 100, ante: 10 },
+    ],
+    anteEnabled: true,
+    anteMode: 'standard',
+    players: [],
+    dealerIndex: 0,
+    payout: { mode: 'percent', entries: [] },
+    rebuy: { enabled: false, limitType: 'levels', levelLimit: 3, timeLimit: 3600, rebuyCost: 10, rebuyChips: 1000 },
+    addOn: { enabled: false, cost: 10, chips: 1000 },
+    bounty: { enabled: false, amount: 0, type: 'fixed' },
+    chips: { enabled: false, colorUpEnabled: false, denominations: [], colorUpSchedule: [] },
+    buyIn: 10,
+    startingChips: 1000,
+  };
+
+  it('replaces all 5 variables correctly', () => {
+    const result = interpolateAlertText(
+      'Level {level}: Blinds {smallBlind}/{bigBlind}, Ante {ante}, {players} Spieler',
+      { levelIndex: 0, config: mockConfig, activePlayers: 8 },
+    );
+    expect(result).toBe('Level 1: Blinds 25/50, Ante 5, 8 Spieler');
+  });
+
+  it('computes correct play-level number skipping breaks', () => {
+    const result = interpolateAlertText('{level}', {
+      levelIndex: 2, config: mockConfig, activePlayers: 5,
+    });
+    expect(result).toBe('2'); // levels[0] is level 1, levels[1] is break, levels[2] is level 2
+  });
+
+  it('handles text without variables', () => {
+    const result = interpolateAlertText('Pause beginnt!', {
+      levelIndex: 1, config: mockConfig, activePlayers: 6,
+    });
+    expect(result).toBe('Pause beginnt!');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Alert Engine — shouldFireAlert
+// ---------------------------------------------------------------------------
+
+describe('shouldFireAlert', () => {
+  const baseAlert: AlertConfig = {
+    id: 'test-1',
+    enabled: true,
+    trigger: 'level_start',
+    text: 'test',
+    voice: true,
+    sound: 'beep',
+  };
+
+  it('returns false when alert is disabled', () => {
+    const alert = { ...baseAlert, enabled: false };
+    expect(shouldFireAlert(alert, 'level_start', {
+      levelIndex: 0, remainingSeconds: 300, activePlayers: 5, prevActivePlayers: 5,
+    })).toBe(false);
+  });
+
+  it('returns false when trigger type does not match', () => {
+    expect(shouldFireAlert(baseAlert, 'break_start', {
+      levelIndex: 0, remainingSeconds: 300, activePlayers: 5, prevActivePlayers: 5,
+    })).toBe(false);
+  });
+
+  it('level_start: matches correct level index', () => {
+    const alert = { ...baseAlert, trigger: 'level_start' as const, levelIndex: 3 };
+    expect(shouldFireAlert(alert, 'level_start', {
+      levelIndex: 3, remainingSeconds: 300, activePlayers: 5, prevActivePlayers: 5,
+    })).toBe(true);
+  });
+
+  it('level_start: does not match wrong level index', () => {
+    const alert = { ...baseAlert, trigger: 'level_start' as const, levelIndex: 3 };
+    expect(shouldFireAlert(alert, 'level_start', {
+      levelIndex: 2, remainingSeconds: 300, activePlayers: 5, prevActivePlayers: 5,
+    })).toBe(false);
+  });
+
+  it('time_remaining: matches exact seconds', () => {
+    const alert = { ...baseAlert, trigger: 'time_remaining' as const, secondsBefore: 60 };
+    expect(shouldFireAlert(alert, 'time_remaining', {
+      levelIndex: 0, remainingSeconds: 60, activePlayers: 5, prevActivePlayers: 5,
+    })).toBe(true);
+  });
+
+  it('time_remaining: does not match different seconds', () => {
+    const alert = { ...baseAlert, trigger: 'time_remaining' as const, secondsBefore: 60 };
+    expect(shouldFireAlert(alert, 'time_remaining', {
+      levelIndex: 0, remainingSeconds: 59, activePlayers: 5, prevActivePlayers: 5,
+    })).toBe(false);
+  });
+
+  it('break_start: always matches when trigger type is break_start', () => {
+    const alert = { ...baseAlert, trigger: 'break_start' as const };
+    expect(shouldFireAlert(alert, 'break_start', {
+      levelIndex: 1, remainingSeconds: 300, activePlayers: 5, prevActivePlayers: 5,
+    })).toBe(true);
+  });
+
+  it('player_count: matches on transition down to target', () => {
+    const alert = { ...baseAlert, trigger: 'player_count' as const, playerCount: 4 };
+    expect(shouldFireAlert(alert, 'player_count', {
+      levelIndex: 0, remainingSeconds: 300, activePlayers: 4, prevActivePlayers: 5,
+    })).toBe(true);
+  });
+
+  it('player_count: does not match when not transitioning', () => {
+    const alert = { ...baseAlert, trigger: 'player_count' as const, playerCount: 4 };
+    expect(shouldFireAlert(alert, 'player_count', {
+      levelIndex: 0, remainingSeconds: 300, activePlayers: 4, prevActivePlayers: 4,
+    })).toBe(false);
+  });
+
+  it('player_count: does not match wrong count', () => {
+    const alert = { ...baseAlert, trigger: 'player_count' as const, playerCount: 4 };
+    expect(shouldFireAlert(alert, 'player_count', {
+      levelIndex: 0, remainingSeconds: 300, activePlayers: 3, prevActivePlayers: 4,
+    })).toBe(false);
   });
 });

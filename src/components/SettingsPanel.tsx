@@ -3,6 +3,8 @@ import type { Settings, AccentColor, BackgroundImage } from '../domain/types';
 import { useTranslation } from '../i18n';
 import { NumberStepper } from './NumberStepper';
 import { useTheme } from '../theme';
+import { CollapsibleSubSection } from './CollapsibleSubSection';
+import { AlertEditor } from './AlertEditor';
 
 interface Props {
   settings: Settings;
@@ -187,6 +189,16 @@ export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, o
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Custom Alerts */}
+      <div className="pt-2 border-t border-gray-200 dark:border-gray-700/40">
+        <CollapsibleSubSection title={t('alerts.title')} defaultOpen={false}>
+          <AlertEditor
+            alerts={settings.customAlerts ?? []}
+            onChange={(alerts) => onChange({ ...settings, customAlerts: alerts })}
+          />
+        </CollapsibleSubSection>
       </div>
 
       {/* Keyboard shortcuts reference */}

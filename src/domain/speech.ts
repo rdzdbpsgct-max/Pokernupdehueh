@@ -472,3 +472,8 @@ export function announceLateRegistrationClosed(t: TranslateFn): void {
 export function announceTournamentWinner(playerName: string, t: TranslateFn): void {
   enqueue(audioOrSpeech(['fixed/tournament-winner.mp3'], t('voice.tournamentWinner', { name: playerName })));
 }
+
+/** Speak arbitrary text via Web Speech API (used for custom user alerts). */
+export function speakCustomText(text: string): void {
+  enqueue({ mode: 'speech', text });
+}
