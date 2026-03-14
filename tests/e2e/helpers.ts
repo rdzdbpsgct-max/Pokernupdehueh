@@ -34,7 +34,11 @@ export async function completeWizard(page: Page) {
   await page.waitForTimeout(300);
   await page.locator('button:has-text("Weiter")').first().click();
 
-  // Step 5: Review — click "Turnier starten!" (wizard.start)
+  // Step 5: Tips — leave default, click next
+  await page.waitForTimeout(300);
+  await page.locator('button:has-text("Weiter")').first().click();
+
+  // Step 6: Review — click "Turnier starten!" (wizard.start)
   await page.waitForTimeout(300);
   await page.locator('button:has-text("Turnier starten!")').first().click();
 
