@@ -209,6 +209,8 @@ export interface RemotePlayerInfo {
 export interface RemoteState {
   type: 'state';
   version: number;
+  /** Contract version for mismatch detection across app versions */
+  _v: number;
   data: {
     timerStatus: 'running' | 'paused' | 'finished';
     remainingSeconds: number;
@@ -284,6 +286,8 @@ export class RemoteHost {
   private _secret: string;
   private hmacKey: CryptoKey | null = null;
   private rateLimiter = new RateLimiter();
+  /** Most recently built state message for immediate snapshot on reconnect */
+  private lastBuiltState: RemoteState | null = null;
 
   constructor(callbacks: RemoteHostCallbacks) {
     this.callbacks = callbacks;
@@ -370,6 +374,14 @@ export class RemoteHost {
       this.setStatus('connected');
       this.startKeepalive();
       this.rateLimiter.reset();
+      // Send immediate state snapshot so controller doesn't wait for next periodic update
+      if (this.lastBuiltState && conn.open) {
+        try {
+          conn.send(JSON.stringify(this.lastBuiltState));
+        } catch {
+          // Connection not ready yet
+        }
+      }
     });
 
     conn.on('data', (raw) => {
@@ -474,13 +486,16 @@ export class RemoteHost {
 
   /** Send state update to connected controller */
   sendState(state: RemoteState['data']): void {
+    const msg: RemoteState = {
+      type: 'state',
+      version: REMOTE_STATE_CONTRACT_VERSION,
+      _v: REMOTE_STATE_CONTRACT_VERSION,
+      data: state,
+    };
+    this.lastBuiltState = msg;
     if (!this.conn?.open) return;
     try {
-      this.conn.send(JSON.stringify({
-        type: 'state',
-        version: REMOTE_STATE_CONTRACT_VERSION,
-        data: state,
-      } satisfies RemoteState));
+      this.conn.send(JSON.stringify(msg));
     } catch {
       // Connection lost
     }
@@ -508,6 +523,8 @@ export interface RemoteControllerCallbacks {
   onState: (state: RemoteState['data']) => void;
   onStatusChange: (status: ControllerStatus) => void;
   onError?: (error: string) => void;
+  /** Called when a state update has a different contract version than expected */
+  onVersionMismatch?: (remoteVersion: number) => void;
 }
 
 export class RemoteController {
@@ -603,6 +620,12 @@ export class RemoteController {
       try {
         const msg = (typeof raw === 'string' ? JSON.parse(raw) : raw) as RemoteMessage;
         if (msg.type === 'state') {
+          // Check contract version — notify UI on mismatch instead of silently dropping
+          const remoteV = (msg as RemoteState)._v;
+          if (remoteV != null && remoteV !== REMOTE_STATE_CONTRACT_VERSION) {
+            this.callbacks.onVersionMismatch?.(remoteV);
+            return;
+          }
           if (msg.version !== REMOTE_STATE_CONTRACT_VERSION) return;
           this.callbacks.onState(msg.data);
         } else if (msg.type === 'ping') {

@@ -152,7 +152,7 @@ import {
   CHIP_COLORS,
 } from '../src/domain/chips';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment, RegisteredPlayer, ChipDenomination } from '../src/domain/types';
-import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE } from '../src/domain/remote';
+import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE, REMOTE_STATE_CONTRACT_VERSION } from '../src/domain/remote';
 import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
 
 // Helper to create a full TournamentConfig for tests
@@ -4940,6 +4940,14 @@ describe('generatePeerId', () => {
     }
     // With 30^5 = 24,300,000 possibilities, 100 should be unique
     expect(ids.size).toBe(100);
+  });
+});
+
+describe('REMOTE_STATE_CONTRACT_VERSION', () => {
+  it('is a positive integer', () => {
+    expect(typeof REMOTE_STATE_CONTRACT_VERSION).toBe('number');
+    expect(REMOTE_STATE_CONTRACT_VERSION).toBeGreaterThan(0);
+    expect(Number.isInteger(REMOTE_STATE_CONTRACT_VERSION)).toBe(true);
   });
 });
 

@@ -200,6 +200,10 @@ const de = {
   'remote.nextLevel': 'Nächstes',
   'remote.avgStackShort': 'Ø',
   'remote.breakLabel': 'Pause',
+  'remote.versionMismatch': 'App-Version veraltet',
+  'remote.versionMismatchHint': 'Bitte lade die App neu, um die Fernbedienung zu nutzen.',
+  'remote.reload': 'App neu laden',
+  'remote.syncing': 'Synchronisiere...',
 
   'settings.shortcuts': 'Tastenkürzel',
   'settings.shortcutStartPause': 'Start/Pause',
@@ -1168,6 +1172,10 @@ const en: Record<TranslationKey, string> = {
   'remote.nextLevel': 'Next',
   'remote.avgStackShort': 'Avg',
   'remote.breakLabel': 'Break',
+  'remote.versionMismatch': 'App Version Outdated',
+  'remote.versionMismatchHint': 'Please reload the app to use the remote control.',
+  'remote.reload': 'Reload App',
+  'remote.syncing': 'Syncing...',
 
   'settings.shortcuts': 'Keyboard Shortcuts',
   'settings.shortcutStartPause': 'Start/Pause',

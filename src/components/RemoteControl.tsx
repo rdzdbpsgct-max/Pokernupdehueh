@@ -133,6 +133,13 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
   const levelIndexRef = useRef<number>(-1);
   const forceUpdateRef = useRef(false);
 
+  // Version mismatch detection
+  const [versionMismatch, setVersionMismatch] = useState(false);
+
+  // Syncing indicator after reconnect
+  const [isSyncing, setIsSyncing] = useState(false);
+  const prevStatusRef = useRef<ControllerStatus>('connecting');
+
   // Player management section state
   const [playersExpanded, setPlayersExpanded] = useState(false);
   const [eliminatingId, setEliminatingId] = useState<string | null>(null);
@@ -141,6 +148,8 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
     const ctrl = new RemoteController(hostPeerId, {
       onState: (s) => {
         setState(s);
+        // Clear syncing indicator on first state update after reconnect
+        setIsSyncing(false);
         // Detect level change or status change → force display update (allow jump to any value)
         if (s.currentLevelIndex !== levelIndexRef.current || s.timerStatus !== timerStatusRef.current) {
           forceUpdateRef.current = true;
@@ -152,6 +161,7 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
         levelIndexRef.current = s.currentLevelIndex;
       },
       onStatusChange: (s) => setStatus(s),
+      onVersionMismatch: () => setVersionMismatch(true),
     }, secret);
     controllerRef.current = ctrl;
 
@@ -204,6 +214,14 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
     controllerRef.current?.retry();
   }, []);
 
+  // Detect reconnect → connected transition to show syncing indicator
+  useEffect(() => {
+    if (status === 'connected' && prevStatusRef.current === 'reconnecting') {
+      setIsSyncing(true);
+    }
+    prevStatusRef.current = status;
+  }, [status]);
+
   // Force dark mode on controller via class
   useEffect(() => {
     document.documentElement.classList.add('dark');
@@ -220,15 +238,34 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
       className="min-h-screen bg-gray-950 text-white flex flex-col select-none"
       style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
+      {/* Version mismatch warning */}
+      {versionMismatch && (
+        <div className="flex-1 flex items-center justify-center px-6">
+          <div className="text-center space-y-4">
+            <div className="bg-amber-500/20 border border-amber-500/40 rounded-2xl p-6 space-y-3">
+              <div className="text-3xl">{String.fromCodePoint(0x26A0, 0xFE0F)}</div>
+              <h3 className="text-lg font-bold text-amber-400">{t('remote.versionMismatch')}</h3>
+              <p className="text-sm text-amber-300/80">{t('remote.versionMismatchHint')}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-amber-600 text-white rounded-xl text-sm font-medium active:scale-95 transition-transform mt-2"
+              >
+                {t('remote.reload')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Connection status banner */}
-      {status === 'reconnecting' && (
+      {!versionMismatch && status === 'reconnecting' && (
         <div className="bg-amber-500/20 border-b border-amber-500/30 px-4 py-2 text-center text-sm text-amber-400">
           {t('remote.reconnecting')}
         </div>
       )}
 
       {/* Connecting state */}
-      {status === 'connecting' && (
+      {!versionMismatch && status === 'connecting' && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4 animate-pulse">
             <div className="text-5xl">{String.fromCodePoint(0x1F4F1)}</div>
@@ -238,7 +275,7 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
       )}
 
       {/* Error state */}
-      {status === 'error' && (
+      {!versionMismatch && status === 'error' && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4 px-6">
             <div className="text-5xl">{String.fromCodePoint(0x274C)}</div>
@@ -263,7 +300,7 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
       )}
 
       {/* Connected state — full controller UI */}
-      {(status === 'connected' || (status === 'reconnecting' && state)) && (
+      {!versionMismatch && (status === 'connected' || (status === 'reconnecting' && state)) && (
         <div className="flex-1 flex flex-col px-4 py-3 max-w-md mx-auto w-full">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
@@ -282,6 +319,13 @@ export function RemoteControllerView({ hostPeerId, secret, onClose }: Controller
               </span>
             </div>
           </div>
+
+          {/* Syncing indicator after reconnect */}
+          {isSyncing && (
+            <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl px-4 py-2 text-center text-sm text-blue-400 mb-3 animate-pulse">
+              {t('remote.syncing')}
+            </div>
+          )}
 
           {/* Timer display */}
           {state && (
