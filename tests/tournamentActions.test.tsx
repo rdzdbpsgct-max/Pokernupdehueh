@@ -17,6 +17,7 @@ import * as logicMod from '../src/domain/logic';
 // Mocks — domain logic + speech
 // ---------------------------------------------------------------------------
 
+let eventIdSeq = 0;
 vi.mock('../src/domain/logic', () => ({
   computeNextPlacement: vi.fn(() => 3),
   drawMysteryBounty: vi.fn(() => ({ amount: 50, remainingPool: [25] })),
@@ -45,6 +46,13 @@ vi.mock('../src/domain/logic', () => ({
       knockouts: 0,
     },
   ]),
+  createEvent: vi.fn((type: string, levelIndex: number, data: Record<string, unknown>) => ({
+    id: `evt_test_${eventIdSeq++}`,
+    type,
+    timestamp: Date.now(),
+    levelIndex,
+    data,
+  })),
 }));
 
 vi.mock('../src/domain/speech', () => ({
@@ -104,9 +112,10 @@ function makeConfig(overrides?: Partial<TournamentConfig>): TournamentConfig {
 /**
  * Render the hook with mocked setConfig, return helpers for assertions.
  */
-function renderActions(config: TournamentConfig) {
+function renderActions(config: TournamentConfig, currentLevelIndex = 2) {
   const setConfig = vi.fn();
   const setRecentTableMoves = vi.fn();
+  const onAppendEvent = vi.fn();
   const mockT = vi.fn((key: string) => key) as never;
 
   const { result } = renderHook(() =>
@@ -117,6 +126,8 @@ function renderActions(config: TournamentConfig) {
       settings: { voiceEnabled: true },
       t: mockT,
       setRecentTableMoves,
+      currentLevelIndex,
+      onAppendEvent,
     }),
   );
 
@@ -127,7 +138,7 @@ function renderActions(config: TournamentConfig) {
     return typeof updater === 'function' ? updater(prev) : updater;
   }
 
-  return { result, setConfig, setRecentTableMoves, applyUpdate };
+  return { result, setConfig, setRecentTableMoves, onAppendEvent, applyUpdate };
 }
 
 // ---------------------------------------------------------------------------
@@ -721,6 +732,187 @@ describe('useTournamentActions', () => {
       // No other player should have increased knockouts
       const others = next.players.filter((p: Player) => p.id !== 'p1');
       expect(others.every((p: Player) => p.knockouts === 0)).toBe(true);
+    });
+
+    it('sets eliminatedAt timestamp on the eliminated player', () => {
+      const config = makeConfig();
+      const { result, applyUpdate } = renderActions(config);
+      const before = Date.now();
+
+      act(() => {
+        result.current.eliminatePlayer('p1', 'p2');
+      });
+
+      const next = applyUpdate(config);
+      const p1 = next.players.find((p: Player) => p.id === 'p1')!;
+      expect(p1.eliminatedAt).toBeGreaterThanOrEqual(before);
+      expect(p1.eliminatedAt).toBeLessThanOrEqual(Date.now());
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Event logging
+  // -----------------------------------------------------------------------
+  describe('event logging', () => {
+    it('creates player_eliminated event when eliminating a player', () => {
+      const config = makeConfig();
+      const { result, onAppendEvent } = renderActions(config, 3);
+
+      act(() => {
+        result.current.eliminatePlayer('p1', 'p2');
+      });
+
+      expect(onAppendEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'player_eliminated',
+          levelIndex: 3,
+          data: expect.objectContaining({ playerId: 'p1', eliminatorId: 'p2' }),
+        }),
+      );
+    });
+
+    it('creates rebuy_taken event when doing a rebuy', () => {
+      const config = makeConfig({
+        players: [makePlayer({ id: 'p1', rebuys: 0 })],
+      });
+      const { result, onAppendEvent } = renderActions(config, 1);
+
+      act(() => {
+        result.current.updatePlayerRebuys('p1', 1);
+      });
+
+      expect(onAppendEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'rebuy_taken',
+          levelIndex: 1,
+          data: expect.objectContaining({ playerId: 'p1' }),
+        }),
+      );
+    });
+
+    it('creates multiple rebuy_taken events for multi-rebuy increase', () => {
+      const config = makeConfig({
+        players: [makePlayer({ id: 'p1', rebuys: 0 })],
+      });
+      const { result, onAppendEvent } = renderActions(config, 1);
+
+      act(() => {
+        result.current.updatePlayerRebuys('p1', 3);
+      });
+
+      const rebuyCalls = onAppendEvent.mock.calls.filter(
+        (call: unknown[]) => (call[0] as { type: string }).type === 'rebuy_taken',
+      );
+      expect(rebuyCalls).toHaveLength(3);
+    });
+
+    it('creates addon_taken event for add-ons', () => {
+      const config = makeConfig({
+        players: [makePlayer({ id: 'p1', addOn: false })],
+      });
+      const { result, onAppendEvent } = renderActions(config, 4);
+
+      act(() => {
+        result.current.updatePlayerAddOn('p1', true);
+      });
+
+      expect(onAppendEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'addon_taken',
+          levelIndex: 4,
+          data: expect.objectContaining({ playerId: 'p1' }),
+        }),
+      );
+    });
+
+    it('does NOT create addon_taken event when revoking add-on', () => {
+      const config = makeConfig({
+        players: [makePlayer({ id: 'p1', addOn: true })],
+      });
+      const { result, onAppendEvent } = renderActions(config, 4);
+
+      act(() => {
+        result.current.updatePlayerAddOn('p1', false);
+      });
+
+      expect(onAppendEvent).not.toHaveBeenCalled();
+    });
+
+    it('creates player_reinstated event when reinstating', () => {
+      const config = makeConfig({
+        players: [
+          makePlayer({ id: 'p1', status: 'eliminated', placement: 3, eliminatedBy: 'p2' }),
+          makePlayer({ id: 'p2', knockouts: 1 }),
+        ],
+      });
+      const { result, onAppendEvent } = renderActions(config, 5);
+
+      act(() => {
+        result.current.reinstatePlayer('p1');
+      });
+
+      expect(onAppendEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'player_reinstated',
+          levelIndex: 5,
+          data: expect.objectContaining({ playerId: 'p1' }),
+        }),
+      );
+    });
+
+    it('creates late_registration event when adding late player', () => {
+      const config = makeConfig();
+      const { result, onAppendEvent } = renderActions(config, 2);
+
+      act(() => {
+        result.current.addLatePlayer();
+      });
+
+      expect(onAppendEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'late_registration',
+          levelIndex: 2,
+          data: expect.objectContaining({ playerId: 'new-player-id' }),
+        }),
+      );
+    });
+
+    it('creates re_entry event for re-entry', () => {
+      const config = makeConfig({
+        players: [
+          makePlayer({ id: 'p1', status: 'eliminated', placement: 3 }),
+          makePlayer({ id: 'p2' }),
+        ],
+      });
+      const { result, onAppendEvent } = renderActions(config, 6);
+
+      act(() => {
+        result.current.handleReEntry('p1');
+      });
+
+      expect(onAppendEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 're_entry',
+          levelIndex: 6,
+          data: expect.objectContaining({ playerId: 'p1', originalPlayerId: 'p1' }),
+        }),
+      );
+    });
+
+    it('creates dealer_advanced event when advancing dealer', () => {
+      const config = makeConfig();
+      const { result, onAppendEvent } = renderActions(config, 0);
+
+      act(() => {
+        result.current.handleAdvanceDealer();
+      });
+
+      expect(onAppendEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'dealer_advanced',
+          levelIndex: 0,
+        }),
+      );
     });
   });
 });

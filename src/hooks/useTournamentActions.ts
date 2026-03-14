@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect, startTransition } from 'react';
-import type { TournamentConfig, TableMove } from '../domain/types';
+import type { TournamentConfig, TableMove, TournamentEvent } from '../domain/types';
 import {
   computeNextPlacement,
   drawMysteryBounty,
@@ -14,6 +14,7 @@ import {
   generatePlayerId,
   initializePlayerStacks,
   reEnterPlayer,
+  createEvent,
 } from '../domain/logic';
 import {
   announceTableMove,
@@ -31,6 +32,8 @@ interface UseTournamentActionsParams {
   settings: { voiceEnabled: boolean };
   t: TranslationFn;
   setRecentTableMoves: React.Dispatch<React.SetStateAction<TableMove[]>>;
+  currentLevelIndex: number;
+  onAppendEvent: (event: TournamentEvent) => void;
 }
 
 export function useTournamentActions({
@@ -40,6 +43,8 @@ export function useTournamentActions({
   settings,
   t,
   setRecentTableMoves,
+  currentLevelIndex,
+  onAppendEvent,
 }: UseTournamentActionsParams) {
   // --- Stack tracking handlers ---
   const updatePlayerStack = useCallback((playerId: string, chips: number) => {
@@ -72,19 +77,34 @@ export function useTournamentActions({
 
   // --- Rebuy update handler ---
   const updatePlayerRebuys = useCallback((playerId: string, newCount: number) => {
-    setConfig((prev) => ({
-      ...prev,
-      players: prev.players.map((p) => {
-        if (p.id !== playerId) return p;
-        const diff = newCount - p.rebuys;
-        const updated = { ...p, rebuys: newCount };
-        if (p.chips !== undefined && diff !== 0) {
-          updated.chips = Math.max(0, p.chips + diff * prev.rebuy.rebuyChips);
-        }
-        return updated;
-      }),
-    }));
-  }, [setConfig]);
+    setConfig((prev) => {
+      const player = prev.players.find((p) => p.id === playerId);
+      const diff = player ? newCount - player.rebuys : 0;
+      return {
+        ...prev,
+        players: prev.players.map((p) => {
+          if (p.id !== playerId) return p;
+          const updated = { ...p, rebuys: newCount };
+          // Track rebuy timestamps
+          if (diff > 0) {
+            const timestamps = [...(p.rebuyTimestamps ?? [])];
+            for (let i = 0; i < diff; i++) timestamps.push(Date.now());
+            updated.rebuyTimestamps = timestamps;
+          }
+          if (p.chips !== undefined && diff !== 0) {
+            updated.chips = Math.max(0, p.chips + diff * prev.rebuy.rebuyChips);
+          }
+          return updated;
+        }),
+      };
+    });
+    // Log one event per rebuy added
+    const player = config.players.find((p) => p.id === playerId);
+    const diff = player ? newCount - player.rebuys : 0;
+    for (let i = 0; i < diff; i++) {
+      onAppendEvent(createEvent('rebuy_taken', currentLevelIndex, { playerId }));
+    }
+  }, [setConfig, config.players, currentLevelIndex, onAppendEvent]);
 
   // --- Add-on update handler ---
   const updatePlayerAddOn = useCallback((playerId: string, hasAddOn: boolean) => {
@@ -101,7 +121,10 @@ export function useTournamentActions({
         return updated;
       }),
     }));
-  }, [setConfig]);
+    if (hasAddOn) {
+      onAppendEvent(createEvent('addon_taken', currentLevelIndex, { playerId }));
+    }
+  }, [setConfig, currentLevelIndex, onAppendEvent]);
 
   // --- Advance dealer ---
   const handleAdvanceDealer = useCallback(() => {
@@ -109,7 +132,8 @@ export function useTournamentActions({
       ...prev,
       dealerIndex: advanceDealer(prev.players, prev.dealerIndex),
     }));
-  }, [setConfig]);
+    onAppendEvent(createEvent('dealer_advanced', currentLevelIndex, {}));
+  }, [setConfig, currentLevelIndex, onAppendEvent]);
 
   // --- Late registration: add player during tournament ---
   const addLatePlayer = useCallback(() => {
@@ -140,7 +164,8 @@ export function useTournamentActions({
 
       return { ...prev, players: updatedPlayers, tables: updatedTables };
     });
-  }, [config.players.length, t, setConfig]);
+    onAppendEvent(createEvent('late_registration', currentLevelIndex, { playerId: newId, playerName: name }));
+  }, [config.players.length, t, setConfig, currentLevelIndex, onAppendEvent]);
 
   // --- Re-Entry handler ---
   const handleReEntry = useCallback((playerId: string) => {
@@ -162,7 +187,8 @@ export function useTournamentActions({
 
       return { ...prev, players: newPlayers, tables: updatedTables };
     });
-  }, [setConfig]);
+    onAppendEvent(createEvent('re_entry', currentLevelIndex, { playerId, originalPlayerId: playerId }));
+  }, [setConfig, currentLevelIndex, onAppendEvent]);
 
   // --- Reinstate (undo elimination) handler ---
   const reinstatePlayer = useCallback((playerId: string) => {
@@ -197,12 +223,14 @@ export function useTournamentActions({
 
       return { ...prev, players: updated, tables: updatedTables };
     });
-  }, [setConfig]);
+    onAppendEvent(createEvent('player_reinstated', currentLevelIndex, { playerId }));
+  }, [setConfig, currentLevelIndex, onAppendEvent]);
 
   // --- Eliminate player handler ---
   const lastMysteryDrawRef = useRef<number | null>(null);
   const pendingTableMovesRef = useRef<TableMove[]>([]);
   const pendingDissolutionRef = useRef<string | null>(null);
+  const lastPlacementRef = useRef<number | null>(null);
 
   const eliminatePlayer = useCallback((playerId: string, eliminatedBy: string | null) => {
     pendingTableMovesRef.current = [];
@@ -211,6 +239,7 @@ export function useTournamentActions({
     startTransition(() => {
     setConfig((prev) => {
       const placement = computeNextPlacement(prev.players);
+      lastPlacementRef.current = placement;
 
       // Mystery bounty: draw from pool if applicable
       let updatedBounty = prev.bounty;
@@ -222,7 +251,7 @@ export function useTournamentActions({
 
       const updatedPlayers = prev.players.map((p) => {
         if (p.id === playerId) {
-          return { ...p, status: 'eliminated' as const, placement, eliminatedBy, chips: p.chips !== undefined ? 0 : undefined };
+          return { ...p, status: 'eliminated' as const, placement, eliminatedBy, eliminatedAt: Date.now(), chips: p.chips !== undefined ? 0 : undefined };
         }
         if (eliminatedBy && p.id === eliminatedBy) {
           return { ...p, knockouts: p.knockouts + 1 };
@@ -277,7 +306,8 @@ export function useTournamentActions({
       };
     });
     }); // end startTransition
-  }, [setConfig]);
+    onAppendEvent(createEvent('player_eliminated', currentLevelIndex, { playerId, eliminatorId: eliminatedBy, placement: lastPlacementRef.current }));
+  }, [setConfig, currentLevelIndex, onAppendEvent]);
 
   // Voice: Mystery bounty draw
   useEffect(() => {

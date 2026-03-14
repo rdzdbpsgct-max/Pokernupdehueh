@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
-import type { TournamentConfig, Settings, TournamentCheckpoint, Table, TableMove, PotResult, PlayerPayout } from './domain/types';
+import type { TournamentConfig, Settings, TournamentCheckpoint, Table, TableMove, PotResult, PlayerPayout, TournamentEvent } from './domain/types';
 import { serializeColorUpMap } from './domain/displayChannel';
 import type { DisplayStatePayload } from './domain/displayChannel';
 import {
@@ -26,6 +26,7 @@ import {
   computeExtendedStandings,
   loadGameDaysForLeague,
   loadPlayerDatabase,
+  createEvent,
 } from './domain/logic';
 import { useTimer } from './hooks/useTimer';
 import { useVoiceAnnouncements } from './hooks/useVoiceAnnouncements';
@@ -141,6 +142,7 @@ function App() {
   const [showDealerBadges, setShowDealerBadges] = useState(true);
   const [sidePotData, setSidePotData] = useState<{ pots: PotResult[]; total: number; payouts?: PlayerPayout[] } | null>(null);
   const [recentTableMoves, setRecentTableMoves] = useState<TableMove[]>([]);
+  const [tournamentEvents, setTournamentEvents] = useState<TournamentEvent[]>([]);
   const { confirmAction, dialogRef: confirmDialogRef, confirm: confirmBeforeAction, dismiss: dismissConfirm, execute: executeConfirm } = useConfirmDialog();
 
   const [pendingCheckpoint, setPendingCheckpoint] = useState<TournamentCheckpoint | null>(() => loadCheckpoint());
@@ -238,6 +240,7 @@ function App() {
           remainingSeconds: timer.timerState.remainingSeconds,
         },
         savedAt: new Date().toISOString(),
+        events: tournamentEvents,
       });
     };
     // Debounce save to avoid blocking during rapid config mutations (e.g. elimination cascade)
@@ -259,7 +262,7 @@ function App() {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- remainingSeconds intentionally excluded: interval handles periodic saves
-  }, [mode, config, settings, timer.timerState.currentLevelIndex, timer.timerState.status]);
+  }, [mode, config, settings, timer.timerState.currentLevelIndex, timer.timerState.status, tournamentEvents]);
 
   // Wake Lock: prevent screen from sleeping during active tournament
   useWakeLock(mode === 'game' && timer.timerState.status === 'running');
@@ -299,6 +302,11 @@ function App() {
       }
       return next;
     });
+  }, []);
+
+  // Append a tournament event to the log
+  const handleAppendEvent = useCallback((event: TournamentEvent) => {
+    setTournamentEvents((prev) => [...prev, event]);
   }, []);
 
   // Toggle last hand announcement
@@ -344,6 +352,8 @@ function App() {
     settings,
     t,
     setRecentTableMoves,
+    currentLevelIndex: timer.timerState.currentLevelIndex,
+    onAppendEvent: handleAppendEvent,
   });
 
   // Keyboard shortcuts (only in game mode)
@@ -697,6 +707,31 @@ function App() {
     t,
   });
 
+  // --- Tournament event log: timer events ---
+  const prevLevelForEventsRef = useRef(timer.timerState.currentLevelIndex);
+  const prevTimerStatusForEventsRef = useRef(timer.timerState.status);
+  useEffect(() => {
+    if (mode !== 'game') return;
+    const lvl = timer.timerState.currentLevelIndex;
+    if (lvl !== prevLevelForEventsRef.current) {
+      prevLevelForEventsRef.current = lvl;
+      handleAppendEvent(createEvent('level_start', lvl, { levelNumber: lvl + 1 }));
+    }
+  }, [mode, timer.timerState.currentLevelIndex, handleAppendEvent]);
+
+  useEffect(() => {
+    if (mode !== 'game') return;
+    const status = timer.timerState.status;
+    const prev = prevTimerStatusForEventsRef.current;
+    prevTimerStatusForEventsRef.current = status;
+    if (prev === status) return;
+    if (status === 'paused' && prev === 'running') {
+      handleAppendEvent(createEvent('timer_paused', timer.timerState.currentLevelIndex, {}));
+    } else if (status === 'running' && prev === 'paused') {
+      handleAppendEvent(createEvent('timer_resumed', timer.timerState.currentLevelIndex, {}));
+    }
+  }, [mode, timer.timerState.status, timer.timerState.currentLevelIndex, handleAppendEvent]);
+
   // --- Multi-table handlers ---
   const prevTableCountRef = useRef<number>(config.tables?.length ?? 0);
   useEffect(() => {
@@ -788,11 +823,41 @@ function App() {
     setLastHandActive,
     setHandForHandActive,
     setShowRemoteControl,
+    setTournamentEvents,
     closeTVWindow,
     resetGameEvents,
     resetVoice,
     confirmBeforeAction,
   });
+
+  // --- Tournament event log: mode transition events ---
+  const prevModeForEventsRef = useRef(mode);
+  useEffect(() => {
+    const prev = prevModeForEventsRef.current;
+    prevModeForEventsRef.current = mode;
+    if (mode === 'game' && prev !== 'game') {
+      // Clear events when starting a new tournament (not restoring from checkpoint)
+      if (!pendingCheckpoint) {
+        setTournamentEvents([]);
+      }
+      handleAppendEvent(createEvent('tournament_started', 0, {}));
+    }
+    if (mode === 'setup' && prev === 'game') {
+      setTournamentEvents([]);
+    }
+  }, [mode, handleAppendEvent, pendingCheckpoint]);
+
+  // Tournament finished event
+  const finishedEventLoggedRef = useRef(false);
+  useEffect(() => {
+    if (mode === 'game' && tournamentFinished && !finishedEventLoggedRef.current) {
+      finishedEventLoggedRef.current = true;
+      handleAppendEvent(createEvent('tournament_finished', timer.timerState.currentLevelIndex, {}));
+    }
+    if (!tournamentFinished) {
+      finishedEventLoggedRef.current = false;
+    }
+  }, [mode, tournamentFinished, timer.timerState.currentLevelIndex, handleAppendEvent]);
 
   // Remote Controller Mode — render ONLY the controller view, skip all other UI
   if (isControllerMode && controllerPeerId) {

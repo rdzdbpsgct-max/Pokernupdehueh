@@ -162,6 +162,8 @@ export interface TournamentCheckpoint {
     remainingSeconds: number;
   };
   savedAt: string; // ISO timestamp
+  /** Tournament event log (optional, populated from v6.5.0+) */
+  events?: TournamentEvent[];
 }
 
 export interface RegisteredPlayer {

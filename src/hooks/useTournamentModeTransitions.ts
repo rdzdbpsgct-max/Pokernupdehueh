@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { SetStateAction } from 'react';
-import type { Settings, TableMove, TournamentCheckpoint, TournamentConfig } from '../domain/types';
+import type { Settings, TableMove, TournamentCheckpoint, TournamentConfig, TournamentEvent } from '../domain/types';
 import { clearCheckpoint, distributePlayersToTables, loadLeagues, sanitizeRecoveredConfig } from '../domain/logic';
 import { announceTournamentStart, cancelSpeech, initSpeech } from '../domain/speech';
 import { showToast } from '../domain/toast';
@@ -42,6 +42,7 @@ interface UseTournamentModeTransitionsParams {
   setLastHandActive: (value: SetStateAction<boolean>) => void;
   setHandForHandActive: (value: SetStateAction<boolean>) => void;
   setShowRemoteControl: (value: boolean) => void;
+  setTournamentEvents: (value: SetStateAction<TournamentEvent[]>) => void;
   closeTVWindow: () => void;
   resetGameEvents: () => void;
   resetVoice: () => void;
@@ -79,6 +80,7 @@ export function useTournamentModeTransitions({
   setLastHandActive,
   setHandForHandActive,
   setShowRemoteControl,
+  setTournamentEvents,
   closeTVWindow,
   resetGameEvents,
   resetVoice,
@@ -194,6 +196,10 @@ export function useTournamentModeTransitions({
       pendingCheckpoint.timer.currentLevelIndex,
       pendingCheckpoint.timer.remainingSeconds,
     );
+    // Restore tournament events from checkpoint (if available)
+    if (pendingCheckpoint.events) {
+      setTournamentEvents(pendingCheckpoint.events);
+    }
 
     setPendingCheckpoint(null);
     setShowSeatingOverlay(false);
@@ -207,6 +213,7 @@ export function useTournamentModeTransitions({
     setSettings,
     timer,
     setPendingCheckpoint,
+    setTournamentEvents,
     setCleanView,
     setShowPlayerPanel,
     setShowSidebar,
