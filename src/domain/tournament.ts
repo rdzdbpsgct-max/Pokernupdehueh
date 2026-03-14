@@ -1,6 +1,7 @@
 import type {
   TournamentConfig,
   TournamentResult,
+  TournamentEvent,
   PlayerResult,
   PayoutConfig,
   Player,
@@ -365,6 +366,7 @@ export function buildTournamentResult(
   config: TournamentConfig,
   elapsedSeconds: number,
   levelsPlayed: number,
+  events?: TournamentEvent[],
 ): TournamentResult {
   const prizePool = computePrizePool(
     config.players, config.buyIn,
@@ -456,6 +458,7 @@ export function buildTournamentResult(
     rebuyPot: config.rebuy.separatePot
       ? computeRebuyPot(config.players, config.rebuy.enabled ? config.rebuy.rebuyCost : config.buyIn)
       : undefined,
+    events: events ?? [],
   };
 }
 

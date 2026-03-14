@@ -29,6 +29,8 @@ interface Props {
   onShowHistory: () => void;
   onShowInstallGuide: () => void;
   onShowHelp: () => void;
+  onShowLog?: () => void;
+  showLogButton?: boolean;
   onOpenFeatureGate: (feature: AppFeature) => void;
 }
 
@@ -57,6 +59,8 @@ export function AppHeader({
   onShowHistory,
   onShowInstallGuide,
   onShowHelp,
+  onShowLog,
+  showLogButton,
   onOpenFeatureGate,
 }: Props) {
   const { t } = useTranslation();
@@ -111,6 +115,17 @@ export function AppHeader({
             >
               📺 {!canUseTVDisplay ? String.fromCodePoint(0x1F512) : ''}
             </button>
+
+            {showLogButton && onShowLog && (
+              <button
+                onClick={onShowLog}
+                className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700/80 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30 rounded-lg text-sm font-medium transition-all duration-200"
+                title={t('log.title' as Parameters<typeof t>[0])}
+                aria-label={t('log.title' as Parameters<typeof t>[0])}
+              >
+                {String.fromCodePoint(0x1F4CB)}
+              </button>
+            )}
           </>
         )}
 

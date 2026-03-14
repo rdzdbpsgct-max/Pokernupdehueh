@@ -650,6 +650,18 @@ const de = {
   'help.shortcutKey': 'Taste',
   'help.shortcutAction': 'Aktion',
 
+  // --- Tournament Log ---
+  'log.title': 'Turnier-Log',
+  'log.close': 'Schlie\u00DFen',
+  'log.empty': 'Noch keine Ereignisse',
+  'log.copyText': 'Log kopieren',
+  'log.copied': 'Kopiert!',
+  'log.filter.all': 'Alle',
+  'log.filter.eliminations': 'Eliminierungen',
+  'log.filter.rebuys': 'Rebuys',
+  'log.filter.levels': 'Level',
+  'log.eventCount': '{n} Events',
+
   // --- Display: Seating ---
   'display.seating': 'Sitzplan',
 
@@ -1595,6 +1607,18 @@ const en: Record<TranslationKey, string> = {
   'help.noResults': 'No results for \u201C{q}\u201D',
   'help.shortcutKey': 'Key',
   'help.shortcutAction': 'Action',
+
+  // --- Tournament Log ---
+  'log.title': 'Tournament Log',
+  'log.close': 'Close',
+  'log.empty': 'No events yet',
+  'log.copyText': 'Copy Log',
+  'log.copied': 'Copied!',
+  'log.filter.all': 'All',
+  'log.filter.eliminations': 'Eliminations',
+  'log.filter.rebuys': 'Rebuys',
+  'log.filter.levels': 'Levels',
+  'log.eventCount': '{n} Events',
 
   // --- Display: Seating ---
   'display.seating': 'Seating',

@@ -140,6 +140,7 @@ import {
   initStorage,
   resetStorage,
   isStorageReady,
+  createEvent,
 } from '../src/domain/logic';
 import {
   applyChipPreset,
@@ -2716,6 +2717,38 @@ describe('Tournament History persistence', () => {
     expect(loadTournamentHistory()).toHaveLength(1);
     clearTournamentHistory();
     expect(loadTournamentHistory()).toHaveLength(0);
+  });
+
+  it('includes events when provided', () => {
+    const config = makeConfig({
+      name: 'Event Test',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
+      buyIn: 10,
+      players: [
+        makePlayer({ id: '1', name: 'Alice', status: 'active' }),
+        makePlayer({ id: '2', name: 'Bob', status: 'eliminated', placement: 2 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
+    });
+    const events = [createEvent('player_eliminated', 2, { playerId: 'p1' })];
+    const result = buildTournamentResult(config, 3600, 8, events);
+    expect(result.events).toHaveLength(1);
+    expect(result.events![0].type).toBe('player_eliminated');
+  });
+
+  it('defaults to empty events when not provided', () => {
+    const config = makeConfig({
+      name: 'No Events',
+      levels: [{ id: '1', type: 'level', durationSeconds: 600, smallBlind: 25, bigBlind: 50 }],
+      buyIn: 10,
+      players: [
+        makePlayer({ id: '1', name: 'Alice', status: 'active' }),
+        makePlayer({ id: '2', name: 'Bob', status: 'eliminated', placement: 2 }),
+      ],
+      payout: { mode: 'percent', entries: [{ place: 1, value: 100 }] },
+    });
+    const result = buildTournamentResult(config, 3600, 8);
+    expect(result.events).toEqual([]);
   });
 });
 

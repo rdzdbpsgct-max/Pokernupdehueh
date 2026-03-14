@@ -89,6 +89,7 @@ const PWAInstallGuide = lazy(() => import('./components/PWAInstallGuide').then(m
 const HelpCenter = lazy(() => import('./components/HelpCenter').then(m => ({ default: m.HelpCenter })));
 const TemplateManager = lazy(() => import('./components/TemplateManager').then(m => ({ default: m.TemplateManager })));
 const TournamentHistory = lazy(() => import('./components/TournamentHistory').then(m => ({ default: m.TournamentHistory })));
+const TournamentLog = lazy(() => import('./components/TournamentLog').then(m => ({ default: m.TournamentLog })));
 
 type Mode = 'setup' | 'game' | 'league';
 
@@ -277,6 +278,7 @@ function App() {
     return false;
   });
   const [showHelp, setShowHelp] = useState(false);
+  const [showTournamentLog, setShowTournamentLog] = useState(false);
 
   // Online/Offline detection — show toast on status change
   const isOnline = useOnlineStatus();
@@ -634,7 +636,7 @@ function App() {
       clearCheckpoint();
       if (!resultSavedRef.current) {
         resultSavedRef.current = true;
-        const result = buildTournamentResult(config, tournamentElapsed, currentPlayLevel);
+        const result = buildTournamentResult(config, tournamentElapsed, currentPlayLevel, tournamentEvents);
         saveTournamentResult(result);
         // Auto-create GameDay when tournament is linked to a league
         if (config.leagueId) {
@@ -650,7 +652,7 @@ function App() {
     if (!tournamentFinished) {
       resultSavedRef.current = false;
     }
-  }, [mode, tournamentFinished, config, tournamentElapsed, currentPlayLevel]);
+  }, [mode, tournamentFinished, config, tournamentElapsed, currentPlayLevel, tournamentEvents]);
 
   // Warn before navigating away during active tournament
   useEffect(() => {
@@ -668,8 +670,8 @@ function App() {
   // Build the tournament result for direct use (avoids localStorage timing issues)
   const finishedResult = useMemo(() => {
     if (!tournamentFinished) return null;
-    return buildTournamentResult(config, tournamentElapsed, currentPlayLevel);
-  }, [tournamentFinished, config, tournamentElapsed, currentPlayLevel]);
+    return buildTournamentResult(config, tournamentElapsed, currentPlayLevel, tournamentEvents);
+  }, [tournamentFinished, config, tournamentElapsed, currentPlayLevel, tournamentEvents]);
 
   const startErrors = useMemo(() => collectStartErrors(config, t), [config, t]);
 
@@ -904,6 +906,8 @@ function App() {
         onShowHistory={() => setShowHistory(true)}
         onShowInstallGuide={() => setShowInstallGuide(true)}
         onShowHelp={() => setShowHelp(true)}
+        onShowLog={() => setShowTournamentLog(true)}
+        showLogButton={mode === 'game' && !tournamentFinished}
         onOpenFeatureGate={openFeatureGate}
       />
 
@@ -1084,6 +1088,17 @@ function App() {
       {showHelp && (
         <SectionErrorBoundary><Suspense fallback={null}>
           <HelpCenter onClose={() => setShowHelp(false)} />
+        </Suspense></SectionErrorBoundary>
+      )}
+
+      {/* Tournament Log */}
+      {showTournamentLog && mode === 'game' && (
+        <SectionErrorBoundary><Suspense fallback={null}>
+          <TournamentLog
+            events={tournamentEvents}
+            players={config.players}
+            onClose={() => setShowTournamentLog(false)}
+          />
         </Suspense></SectionErrorBoundary>
       )}
 
