@@ -874,6 +874,7 @@ const de = {
 
   // --- Side Pot ---
   'sidePot.title': 'Side-Pot-Rechner',
+  'sidePot.titleShort': 'Side Pot',
   'sidePot.mainPot': 'Main Pot',
   'sidePot.sidePot': 'Side Pot {n}',
   'sidePot.addPlayer': 'Spieler hinzufügen',
@@ -1000,6 +1001,7 @@ const de = {
   'pwa.desktop.step5': 'Die App startet künftig in einem eigenen Fenster.',
   'settings.installApp': 'App installieren',
   'payout.overlay.title': 'Auszahlungs-Simulator',
+  'payout.overlay.titleShort': 'Payout',
   'payout.overlay.playersLeft': 'Verbleibende Spieler',
   'payout.overlay.currentPrizePool': 'Aktueller Preispool',
   'payout.overlay.place': 'Platz',
@@ -2016,6 +2018,7 @@ const en: Record<TranslationKey, string> = {
 
   // --- Side Pot ---
   'sidePot.title': 'Side Pot Calculator',
+  'sidePot.titleShort': 'Side Pot',
   'sidePot.mainPot': 'Main Pot',
   'sidePot.sidePot': 'Side Pot {n}',
   'sidePot.addPlayer': 'Add Player',
@@ -2142,6 +2145,7 @@ const en: Record<TranslationKey, string> = {
   'pwa.desktop.step5': 'The app will launch in its own window.',
   'settings.installApp': 'Install App',
   'payout.overlay.title': 'Payout Simulator',
+  'payout.overlay.titleShort': 'Payout',
   'payout.overlay.playersLeft': 'Players Remaining',
   'payout.overlay.currentPrizePool': 'Current Prize Pool',
   'payout.overlay.place': 'Place',

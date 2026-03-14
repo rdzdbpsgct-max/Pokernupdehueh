@@ -220,16 +220,17 @@ export const PlayerPanel = memo(function PlayerPanel({
 
       {/* Active Players */}
       <div>
-        <div className="flex items-center justify-between gap-1">
+        <div className="space-y-1">
           <h3 className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
             {t('playerPanel.activePlayers')} ({activePlayers.length})
           </h3>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             {lateRegOpen && onAddLatePlayer && (
               <button
                 onClick={onAddLatePlayer}
-                className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors"
+                className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors"
                 style={{ backgroundColor: 'color-mix(in srgb, var(--accent-500) 15%, transparent)', color: 'var(--accent-text)', border: '1px solid color-mix(in srgb, var(--accent-500) 30%, transparent)' }}
+                title={t('lateReg.addPlayer')}
               >
                 + {t('lateReg.addPlayer')}
               </button>
@@ -237,35 +238,39 @@ export const PlayerPanel = memo(function PlayerPanel({
             {onToggleDealerBadges && (
               <button
                 onClick={onToggleDealerBadges}
-                className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors border ${
+                className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors border ${
                   showDealerBadges
                     ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700/40'
                     : 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700/40'
                 }`}
+                title={t('playerPanel.dealer')}
               >
-                {t('playerPanel.dealer')}
+                D
               </button>
             )}
             {showDealerBadges && activePlayers.length > 1 && (
               <button
                 onClick={onAdvanceDealer}
-                className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+                className="px-2 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+                title={t('playerPanel.advanceDealer')}
               >
-                {t('playerPanel.advanceDealer')}
+                D →
               </button>
             )}
             <button
               onClick={() => setShowSidePot(true)}
-              className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+              className="px-2 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+              title={t('sidePot.title')}
             >
-              {t('sidePot.title')}
+              {t('sidePot.titleShort')}
             </button>
             {onShowPayoutOverlay && (
               <button
                 onClick={onShowPayoutOverlay}
-                className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+                className="px-2 py-1 rounded-md text-[10px] font-medium bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-gray-200 dark:border-gray-700/40"
+                title={t('payout.overlay.title')}
               >
-                {t('payout.overlay.title')}
+                {t('payout.overlay.titleShort')}
               </button>
             )}
           </div>
@@ -449,9 +454,9 @@ export const PlayerPanel = memo(function PlayerPanel({
             {eliminatedPlayers.map((player) => (
                 <div
                   key={player.id}
-                  className="flex items-center justify-between px-3 py-1.5 bg-gray-100/50 dark:bg-gray-800/20 rounded-lg opacity-40"
+                  className="px-3 py-1.5 bg-gray-100/50 dark:bg-gray-800/20 rounded-lg opacity-40 space-y-0.5"
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span className="text-xs text-gray-400 dark:text-gray-500 font-bold w-6 text-right shrink-0">
                       {player.placement}.
                     </span>
@@ -459,7 +464,7 @@ export const PlayerPanel = memo(function PlayerPanel({
                       {player.name}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center flex-wrap gap-1.5">
                     {bountyConfig.enabled && (
                       <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                         {player.knockouts > 0 && (

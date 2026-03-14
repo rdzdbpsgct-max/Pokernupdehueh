@@ -83,6 +83,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Dark/Light Mode | 3-Wege-Umschalter (System/Hell/Dunkel), folgt Systemeinstellung, merkt sich Auswahl |
 | Turnier-Presets | 3 vordefinierte Profile (Schnelles Cashgame, Standard, Deep Stack) für sofortigen Start |
 | Side-Pot-Rechner | Berechnung von Haupt- und Nebenpötten bei All-In-Situationen |
+| Auszahlungs-Simulator | Live-Vorschau der Auszahlungen per Slider — „Was bekommt Platz X bei Y verbleibenden Spielern?" |
 | Akzentfarbe | 6 wählbare Farbthemen (Emerald, Blue, Purple, Red, Amber, Cyan) |
 | Hintergrundbilder | 6 CSS-Gradient-Backgrounds (Filz, Casino, Holz, Abstrakt) |
 | Blinds nach Endzeit | Blindstruktur automatisch generieren basierend auf gewünschter Turnierdauer |
@@ -93,7 +94,7 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | Fernsteuerung | Turnier vom Smartphone steuern via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock + Spieler-Management: Elimination, Rebuy, Add-On + Turnier-Infos: Prizepool, Avg Stack, Spielzeit) — Ein-QR-Verbindung |
 | Turnier-Serien | Serien-Management mit 3 Ranking-Modi (Punkte, Best-N, Durchschnitt), Standings, JSON Import/Export |
 | Erweitertes Liga-System | 3 Ranking-Algorithmen (Punkte, ELO, Gewichtete Punkte), Head-to-Head-Matrix, Minimum-Teilnahme |
-| Custom Audio | Eigene Audio-Dateien hochladen und 36 Announcements zuordnen (MP3/WAV/OGG, max 5 MB) |
+| Eigene Ansagen | Eigene Audio-Dateien (MP3/WAV/OGG, max 5 MB) hochladen und beliebigen der 36 Sprachansagen zuordnen — ersetzt die Standard-Stimme für einzelne Events |
 | PDF-Export | Turnier-Ergebnisse als professionelles PDF exportieren |
 | Turnierdauer-Prognose | Geschätzte Turnierdauer basierend auf Spieleranzahl und Blindstruktur |
 | Premium UI | Glassmorphism, Gradient-Buttons, Timer-Glow, benutzerdefinierte Animationen, taktile Interaktionen |
@@ -186,6 +187,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Dark/Light mode | 3-way toggle (System/Light/Dark), follows system preference, remembers selection |
 | Tournament Presets | 3 built-in profiles (Quick Cash Game, Standard, Deep Stack) for instant start |
 | Side-Pot Calculator | Calculate main and side pots for all-in situations |
+| Payout Simulator | Live payout preview via slider — "What does place X get with Y players remaining?" |
 | Accent Color | 6 selectable color themes (Emerald, Blue, Purple, Red, Amber, Cyan) |
 | Backgrounds | 6 CSS gradient backgrounds (felt, casino, wood, abstract) |
 | Blinds by End Time | Auto-generate blind structure based on target tournament duration |
@@ -196,7 +198,7 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Remote Control | Control tournament from smartphone via PeerJS (Play/Pause/Next/Dealer/Sound/Call the Clock + player management: elimination, rebuy, add-on + tournament info: prize pool, avg stack, elapsed time) — single QR scan |
 | Tournament Series | Series management with 3 ranking modes (points, best-N, average), standings, JSON import/export |
 | Extended League System | 3 ranking algorithms (points, ELO, weighted points), head-to-head matrix, minimum participation |
-| Custom Audio | Upload custom audio files and map to 36 announcements (MP3/WAV/OGG, max 5 MB) |
+| Custom Announcements | Upload custom audio files (MP3/WAV/OGG, max 5 MB) and assign them to any of the 36 voice announcements — replaces the default voice for individual events |
 | PDF Export | Export tournament results as professional PDF |
 | Duration Estimate | Estimated tournament duration based on player count and blind structure |
 | Premium UI | Glassmorphism, gradient buttons, timer glow, custom animations, tactile interactions |
