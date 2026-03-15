@@ -899,7 +899,7 @@ describe('SettingsPanel', () => {
     );
     // CheckBox components have role="switch"
     const switches = screen.getAllByRole('switch');
-    expect(switches.length).toBeGreaterThanOrEqual(4); // sound, countdown, autoAdvance, largeDisplay
+    expect(switches.length).toBeGreaterThanOrEqual(3); // sound, autoAdvance, largeDisplay (countdown moved to setup)
   });
 
   it('calls onChange when toggling sound', () => {

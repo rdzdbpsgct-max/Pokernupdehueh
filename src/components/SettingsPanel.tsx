@@ -106,8 +106,8 @@ export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, o
             <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.largeDisplay')}</span>
             <CheckBox checked={settings.largeDisplay} onChange={() => toggle('largeDisplay')} />
           </label>
-          {/* Call the Clock duration */}
-          <div className="flex items-center justify-between">
+          {/* Call the Clock duration — label on own line, stepper below */}
+          <div className="space-y-1">
             <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.callTheClock')}</span>
             <div className="flex items-center gap-1">
               <NumberStepper
@@ -116,7 +116,7 @@ export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, o
                 min={10}
                 max={300}
                 step={5}
-                inputClassName="w-14"
+                inputClassName="w-16"
               />
               <span className="text-xs text-gray-400 dark:text-gray-500">s</span>
             </div>
@@ -228,7 +228,7 @@ export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, o
                   </label>
                 );
               })}
-              <div className="flex items-center justify-between pt-1">
+              <div className="space-y-1 pt-1">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {t('display.rotationInterval' as Parameters<typeof t>[0])}
                 </span>
@@ -239,7 +239,7 @@ export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, o
                     min={5}
                     max={60}
                     step={5}
-                    inputClassName="w-14"
+                    inputClassName="w-16"
                   />
                   <span className="text-xs text-gray-400 dark:text-gray-500">s</span>
                 </div>
