@@ -16,6 +16,7 @@ import {
   DISPLAY_CONTRACT_VERSION,
 } from '../src/domain/displayChannel';
 import type { ChipDenomination } from '../src/domain/types';
+import type { DisplayStatePayload } from '../src/domain/displayChannel';
 
 // ---------------------------------------------------------------------------
 // serializeColorUpMap / deserializeColorUpMap
@@ -167,5 +168,49 @@ describe('display contract metadata', () => {
     expect(
       isDisplayMessage({ type: 'timer-tick', payload: { remainingSeconds: 10, status: 'running', currentLevelIndex: 0 } }),
     ).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cross-device display message validation
+// ---------------------------------------------------------------------------
+
+describe('display message for cross-device', () => {
+  it('full-state message is valid DisplayMessage', () => {
+    const msg = withDisplayContract({
+      type: 'full-state',
+      payload: {
+        timerState: { currentLevelIndex: 0, remainingSeconds: 600, status: 'running', startedAt: null, remainingAtStart: null },
+        levels: [],
+      } as unknown as DisplayStatePayload,
+    });
+    expect(isDisplayMessage(msg)).toBe(true);
+    expect(msg.type).toBe('full-state');
+  });
+
+  it('timer-tick message is valid DisplayMessage', () => {
+    const msg = withDisplayContract({
+      type: 'timer-tick',
+      payload: { remainingSeconds: 300, status: 'running', currentLevelIndex: 2 },
+    });
+    expect(isDisplayMessage(msg)).toBe(true);
+  });
+
+  it('call-the-clock message is valid DisplayMessage', () => {
+    const msg = withDisplayContract({
+      type: 'call-the-clock',
+      payload: { durationSeconds: 60, soundEnabled: true, voiceEnabled: false },
+    });
+    expect(isDisplayMessage(msg)).toBe(true);
+  });
+
+  it('close message is valid DisplayMessage', () => {
+    const msg = withDisplayContract({ type: 'close' });
+    expect(isDisplayMessage(msg)).toBe(true);
+  });
+
+  it('call-the-clock-dismiss message is valid DisplayMessage', () => {
+    const msg = withDisplayContract({ type: 'call-the-clock-dismiss' });
+    expect(isDisplayMessage(msg)).toBe(true);
   });
 });
