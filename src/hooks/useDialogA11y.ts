@@ -14,6 +14,10 @@ const FOCUSABLE_SELECTOR =
 export function useDialogA11y(onClose: () => void) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  // Store onClose in a ref so the keydown handler always uses the latest version
+  // without re-running the effect (which would re-focus and scroll to top)
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     // Remember the element that was focused before the dialog opened
@@ -22,13 +26,13 @@ export function useDialogA11y(onClose: () => void) {
     const el = dialogRef.current;
     if (!el) return;
 
-    // Focus the first interactive element inside the dialog
+    // Focus the first interactive element inside the dialog (once on mount)
     const focusable = el.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
     focusable?.focus();
 
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -65,7 +69,8 @@ export function useDialogA11y(onClose: () => void) {
       // Return focus to the previously focused element
       previousFocusRef.current?.focus();
     };
-  }, [onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- onClose stored in ref, effect runs once on mount
+  }, []);
 
   return dialogRef;
 }
