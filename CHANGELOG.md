@@ -5,6 +5,26 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.7.1] – 2026-03-15
+
+### Phase B: Tech Debt
+
+**GameModeContainer Props-Konsolidierung:**
+- 51 flache Props → 6 typisierte Objekte (`config`, `settings`, `timer`, `state`, `ui`, `actions`)
+- 3 exportierte Interfaces: `GameModeState` (13 Felder), `GameModeUiState` (4 Felder), `GameModeActions` (29 Callbacks)
+- Call-Site in App.tsx baut Objekte inline — keine Laufzeit-Overhead
+- React-Compiler-kompatibel: Destructuring von Objekt-Properties vor `useCallback` für korrekte Dependency-Inference
+
+**Audio Queue Timeout-Fallback:**
+- Web Audio API: Safety-Timeout (`totalDuration + 2s`) nach letztem Buffer-`onended`
+- HTMLAudioElement: 15s Safety-Timeout pro Datei mit `done`-Flag gegen doppelte Resolves
+- Verhindert hängende Promises bei Browser-Audio-Bugs (Safari, Chrome Background-Tabs)
+
+**Keine neuen Tests, keine neuen Dateien** — rein internes Refactoring
+**1118 Tests gesamt** (16 Testdateien)
+
+---
+
 ## [6.7.0] – 2026-03-15
 
 ### Phase 2: Display-Layouts, Plattform-Guides & Presentation API

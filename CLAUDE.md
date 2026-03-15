@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.7.0
+**Version**: 6.7.1
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -142,7 +142,7 @@ src/
 │   ├── remote.ts                # PeerJS-based remote control (host + controller, signaling via PeerJS Cloud)
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
-│   ├── audioPlayer.ts           # MP3 playback engine — sequential file playback for pre-recorded audio
+│   ├── audioPlayer.ts           # MP3 playback engine — sequential file playback with timeout fallbacks
 │   ├── entitlements.ts          # Feature gate / freemium entitlement checks
 │   ├── monetizationTelemetry.ts # Telemetry for feature access and trial usage
 │   ├── proBlueprint.ts          # Pro tier feature definitions
@@ -204,7 +204,7 @@ public/
 ### State Management
 - **App.tsx** owns all tournament state (config, settings, mode) via `useState`
 - **useTimer** hook manages timer state with drift-free wall-clock computation
-- **Props drilling** for passing state and callbacks to child components
+- **Props drilling** for passing state and callbacks to child components; large components use **grouped prop objects** (e.g., `GameModeContainer` receives `state: GameModeState`, `ui: GameModeUiState`, `actions: GameModeActions` instead of 51 flat props)
 - **React Context** for i18n (language selection) and theme (dark/light mode)
 - **Storage**: Cache-First IndexedDB architecture (see Storage Architecture below). Simple values remain in localStorage: `poker-timer-theme`, `poker-timer-language`, `poker-timer-accent`, `poker-timer-bg`, `poker-timer-wizard-completed`, `poker-timer-migrated`
 
@@ -381,6 +381,12 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.7.1 — Phase B: Tech Debt
+
+- **GameModeContainer Props-Konsolidierung**: 51 flache Props → 6 typisierte Objekte (`config`, `settings`, `timer`, `state`, `ui`, `actions`). 3 exportierte Interfaces: `GameModeState` (13 Felder), `GameModeUiState` (4 Felder), `GameModeActions` (29 Callbacks). Call-Site in App.tsx baut Objekte inline. React-Compiler-kompatibel durch Destructuring vor `useCallback`.
+- **Audio Queue Timeout-Fallback**: Web Audio API Pfad: Safety-Timeout (`totalDuration + 2s`) nach letztem Buffer-`onended`. HTMLAudioElement Pfad: 15s Safety-Timeout pro Datei mit `done`-Flag gegen doppelte Resolves. Verhindert hängende Promises bei Browser-Audio-Bugs.
+- **Keine neuen Tests, keine neuen Dateien** — rein internes Refactoring. **1118 Tests gesamt**.
 
 ### v6.7.0 — Phase 2: Display-Layouts, Plattform-Guides & Presentation API
 
