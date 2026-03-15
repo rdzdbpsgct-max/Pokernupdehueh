@@ -348,6 +348,7 @@ export function CrossDeviceDisplay({ hostPeerId }: Props) {
         sidePotData={state.sidePotData}
         displayScreens={state.displayScreens}
         displayRotationInterval={state.displayRotationInterval}
+        displayLayout={state.displayLayout}
       />
       {ctcPayload && (
         <Suspense fallback={null}>

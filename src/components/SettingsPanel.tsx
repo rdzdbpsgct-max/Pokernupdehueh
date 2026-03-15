@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { Settings, AccentColor, BackgroundImage } from '../domain/types';
 import { DEFAULT_DISPLAY_SCREENS, DEFAULT_ROTATION_INTERVAL } from '../domain/configPersistence';
+import { DISPLAY_LAYOUTS } from '../domain/logic';
 import { useTranslation } from '../i18n';
 import { NumberStepper } from './NumberStepper';
 import { useTheme } from '../theme';
@@ -246,6 +247,29 @@ export const SettingsPanel = memo(function SettingsPanel({ settings, onChange, o
               </div>
             </div>
           </CollapsibleSubSection>
+
+          {/* Display Layout */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('settings.displayLayout' as Parameters<typeof t>[0])}
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {DISPLAY_LAYOUTS.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => onChange({ ...settings, displayLayout: l.id })}
+                  className={`p-2 rounded-lg border text-left text-xs transition-all ${
+                    (settings.displayLayout ?? 'standard') === l.id
+                      ? 'border-[var(--accent-500)] bg-[color-mix(in_srgb,var(--accent-500)_10%,transparent)]'
+                      : 'border-gray-300 dark:border-gray-700/60 hover:border-gray-400 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="font-medium text-gray-900 dark:text-gray-100">{t(l.labelKey as Parameters<typeof t>[0])}</div>
+                  <div className="text-gray-500 dark:text-gray-400 mt-0.5">{t(l.descKey as Parameters<typeof t>[0])}</div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Dealer badges toggle */}
         </div>

@@ -983,6 +983,15 @@ const de = {
   'display.screen.chips': 'Chips',
   'display.screen.seating': 'Sitzplan',
   'display.screen.league': 'Liga',
+  'display.layout.standard': 'Standard',
+  'display.layout.standardDesc': 'Timer oben (55%), rotierende Infos unten (45%)',
+  'display.layout.compact': 'Kompakt',
+  'display.layout.compactDesc': 'Kleinerer Timer (40%), mehr Platz für Infos (60%)',
+  'display.layout.timerOnly': 'Nur Timer',
+  'display.layout.timerOnlyDesc': 'Maximaler Timer, keine Sekundäranzeige',
+  'display.layout.ultraLarge': 'Ultra Large',
+  'display.layout.ultraLargeDesc': 'Übergroßer Timer (70%), kompakte Infos (30%)',
+  'settings.displayLayout': 'Display-Layout',
 
   // --- Side Pot warnings (domain) ---
   'sidePot.warnZeroPlayers': '{n} Spieler mit 0 Einsatz werden ignoriert.',
@@ -2164,6 +2173,15 @@ const en: Record<TranslationKey, string> = {
   'display.screen.chips': 'Chips',
   'display.screen.seating': 'Seating',
   'display.screen.league': 'League',
+  'display.layout.standard': 'Standard',
+  'display.layout.standardDesc': 'Timer top (55%), rotating info bottom (45%)',
+  'display.layout.compact': 'Compact',
+  'display.layout.compactDesc': 'Smaller timer (40%), more space for info (60%)',
+  'display.layout.timerOnly': 'Timer Only',
+  'display.layout.timerOnlyDesc': 'Maximum timer, no secondary screens',
+  'display.layout.ultraLarge': 'Ultra Large',
+  'display.layout.ultraLargeDesc': 'Oversized timer (70%), compact info (30%)',
+  'settings.displayLayout': 'Display Layout',
 
   // --- Side Pot warnings (domain) ---
   'sidePot.warnZeroPlayers': '{n} player(s) with 0 investment ignored.',

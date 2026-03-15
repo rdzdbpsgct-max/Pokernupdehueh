@@ -141,6 +141,7 @@ export function TVDisplayWindow() {
         sidePotData={state.sidePotData}
         displayScreens={state.displayScreens}
         displayRotationInterval={state.displayRotationInterval}
+        displayLayout={state.displayLayout}
       />
       {ctcPayload && (
         <Suspense fallback={null}>

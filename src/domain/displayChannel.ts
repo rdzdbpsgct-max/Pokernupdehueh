@@ -13,6 +13,7 @@ import type {
   PotResult,
   PlayerPayout,
   DisplayScreenConfig,
+  DisplayLayout,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,8 @@ export interface DisplayStatePayload {
   displayScreens?: DisplayScreenConfig[];
   /** Rotation interval in seconds. undefined = default 15. */
   displayRotationInterval?: number;
+  /** Display layout variant. undefined = 'standard'. */
+  displayLayout?: DisplayLayout;
 }
 
 // ---------------------------------------------------------------------------
