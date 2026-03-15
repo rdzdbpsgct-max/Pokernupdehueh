@@ -1027,53 +1027,59 @@ function App() {
             config={config}
             settings={settings}
             timer={timer}
-            cleanView={cleanView}
-            showPlayerPanel={showPlayerPanel}
-            showSidebar={showSidebar}
-            showDealerBadges={showDealerBadges}
-            rebuyActive={rebuyActive}
-            addOnWindowOpen={addOnWindowOpen}
-            currentPlayLevel={currentPlayLevel}
-            tournamentElapsed={tournamentElapsed}
-            averageStack={averageStack}
-            bubbleActive={bubbleActive}
-            showItmFlash={showItmFlash}
-            lastHandActive={lastHandActive}
-            handForHandActive={handForHandActive}
-            lateRegOpen={lateRegOpen}
-            colorUpMap={colorUpMap}
-            recentTableMoves={recentTableMoves}
-            onTogglePlayerPanel={() => setShowPlayerPanel((v) => !v)}
-            onToggleSidebar={() => setShowSidebar((v) => !v)}
-            onUpdatePlayerRebuys={updatePlayerRebuys}
-            onUpdatePlayerAddOn={updatePlayerAddOn}
-            onEliminatePlayer={eliminatePlayer}
-            onReinstatePlayer={reinstatePlayer}
-            onAdvanceDealer={handleAdvanceDealer}
-            onToggleDealerBadges={handleToggleDealerBadges}
-            onUpdatePlayerStack={updatePlayerStack}
-            onInitStacks={initStacks}
-            onClearStacks={clearStacks}
-            onAddLatePlayer={addLatePlayer}
-            onReEntryPlayer={handleReEntry}
-            onSidePotResultChange={setSidePotData}
-            isBreak={isBreak}
-            onSkipBreak={handleSkipBreak}
-            onExtendBreak={handleExtendBreak}
-            onResetLevel={handleResetLevel}
-            onRestartTournament={handleRestart}
-            onToggleCleanView={toggleCleanView}
-            onLastHand={handleLastHand}
-            onHandForHand={handleHandForHand}
-            onNextHand={handleNextHand}
-            onShowCallTheClock={() => setShowCallTheClock(true)}
-            onShowPayoutOverlay={() => setShowPayoutOverlay(true)}
-            onUpdateTables={handleUpdateTables}
-            onTableMoves={handleTableMoves}
-            onSettingsChange={setSettings}
-            onToggleFullscreen={toggleFullscreen}
-            onShowInstallGuide={() => setShowInstallGuide(true)}
-            onExitToSetup={handleExitToSetup}
+            state={{
+              rebuyActive,
+              addOnWindowOpen,
+              currentPlayLevel,
+              tournamentElapsed,
+              averageStack,
+              bubbleActive,
+              showItmFlash,
+              lastHandActive,
+              handForHandActive,
+              lateRegOpen,
+              colorUpMap,
+              recentTableMoves,
+              isBreak,
+            }}
+            ui={{
+              cleanView,
+              showPlayerPanel,
+              showSidebar,
+              showDealerBadges,
+            }}
+            actions={{
+              onTogglePlayerPanel: () => setShowPlayerPanel((v) => !v),
+              onToggleSidebar: () => setShowSidebar((v) => !v),
+              onUpdatePlayerRebuys: updatePlayerRebuys,
+              onUpdatePlayerAddOn: updatePlayerAddOn,
+              onEliminatePlayer: eliminatePlayer,
+              onReinstatePlayer: reinstatePlayer,
+              onAdvanceDealer: handleAdvanceDealer,
+              onToggleDealerBadges: handleToggleDealerBadges,
+              onUpdatePlayerStack: updatePlayerStack,
+              onInitStacks: initStacks,
+              onClearStacks: clearStacks,
+              onAddLatePlayer: addLatePlayer,
+              onReEntryPlayer: handleReEntry,
+              onSidePotResultChange: setSidePotData,
+              onSkipBreak: handleSkipBreak,
+              onExtendBreak: handleExtendBreak,
+              onResetLevel: handleResetLevel,
+              onRestartTournament: handleRestart,
+              onToggleCleanView: toggleCleanView,
+              onLastHand: handleLastHand,
+              onHandForHand: handleHandForHand,
+              onNextHand: handleNextHand,
+              onShowCallTheClock: () => setShowCallTheClock(true),
+              onShowPayoutOverlay: () => setShowPayoutOverlay(true),
+              onUpdateTables: handleUpdateTables,
+              onTableMoves: handleTableMoves,
+              onSettingsChange: setSettings,
+              onToggleFullscreen: toggleFullscreen,
+              onShowInstallGuide: () => setShowInstallGuide(true),
+              onExitToSetup: handleExitToSetup,
+            }}
           />
         )}
       </main>
