@@ -61,6 +61,7 @@ import { setAudioVolume } from './domain/audioPlayer';
 import { isTourCompleted, isWizardCompleted } from './domain/configPersistence';
 import { ToastContainer } from './components/Toast';
 import { useRemoteHostBridge } from './hooks/useRemoteHostBridge';
+import { useDisplaySession } from './hooks/useDisplaySession';
 import { collectStartErrors } from './domain/startValidation';
 import { SectionErrorBoundary } from './components/ErrorBoundary';
 import { LoadingFallback } from './components/LoadingFallback';
@@ -93,6 +94,7 @@ const TournamentLog = lazy(() => import('./components/TournamentLog').then(m => 
 const PayoutOverlay = lazy(() => import('./components/PayoutOverlay').then(m => ({ default: m.PayoutOverlay })));
 const SeriesManager = lazy(() => import('./components/SeriesManager').then(m => ({ default: m.SeriesManager })));
 const CustomAudioEditor = lazy(() => import('./components/CustomAudioEditor').then(m => ({ default: m.CustomAudioEditor })));
+const ShareHub = lazy(() => import('./components/ShareHub').then(m => ({ default: m.ShareHub })));
 
 type Mode = 'setup' | 'game' | 'league';
 
@@ -285,6 +287,13 @@ function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [showTournamentLog, setShowTournamentLog] = useState(false);
   const [showPayoutOverlay, setShowPayoutOverlay] = useState(false);
+  const [showShareHub, setShowShareHub] = useState(() => {
+    if (window.location.hash === '#share') {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      return true;
+    }
+    return false;
+  });
 
   // Online/Offline detection — show toast on status change
   const isOnline = useOnlineStatus();
@@ -829,6 +838,20 @@ function App() {
     }
   }, [remoteHostResumed, remoteHostStatus, t]);
 
+  // Display session: broadcast state to connected display peers (TV windows via PeerJS)
+  const { displayCount } = useDisplaySession({
+    hostRef: remoteHostRef,
+    enabled: mode === 'game' && remoteHostStatus !== null,
+    buildFullStatePayload,
+    remainingSeconds: timer.timerState.remainingSeconds,
+    timerStatus: timer.timerState.status,
+    currentLevelIndex: timer.timerState.currentLevelIndex,
+    showCallTheClock,
+    callTheClockSeconds: settings.callTheClockSeconds,
+    soundEnabled: settings.soundEnabled,
+    voiceEnabled: settings.voiceEnabled,
+  });
+
   const {
     showSeatingOverlay,
     switchToGame,
@@ -943,6 +966,11 @@ function App() {
         showLogButton={mode === 'game' && !tournamentFinished}
         onOpenFeatureGate={openFeatureGate}
         onShowSeries={() => setShowSeries(true)}
+        onShowShareHub={() => {
+          if (!remoteHostRef.current) startRemoteHost();
+          setShowShareHub(true);
+        }}
+        displayCount={displayCount}
       />
 
       {/* Main content */}
@@ -1068,6 +1096,22 @@ function App() {
             secret={remoteHostRef.current?.secret}
             status={remoteHostStatus}
             onClose={() => setShowRemoteControl(false)}
+          />
+        </Suspense></SectionErrorBoundary>
+      )}
+
+      {/* Share Hub Modal */}
+      {showShareHub && (
+        <SectionErrorBoundary><Suspense fallback={<LoadingFallback />}>
+          <ShareHub
+            sessionId={remoteHostRef.current?.peerId ?? null}
+            secret={remoteHostRef.current?.secret}
+            displayCount={displayCount}
+            remoteConnected={remoteHostStatus === 'connected'}
+            localTVActive={tvWindowActive}
+            onOpenLocalTV={handleToggleTVWindow}
+            onToggleFullscreen={toggleFullscreen}
+            onClose={() => setShowShareHub(false)}
           />
         </Suspense></SectionErrorBoundary>
       )}
