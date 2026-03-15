@@ -58,7 +58,7 @@ import {
 import { setMasterVolume } from './domain/sounds';
 import { setAudioVolume } from './domain/audioPlayer';
 // Setup-mode components (static imports — used immediately on load)
-import { isTourCompleted } from './domain/configPersistence';
+import { isTourCompleted, isWizardCompleted } from './domain/configPersistence';
 import { ToastContainer } from './components/Toast';
 import { useRemoteHostBridge } from './hooks/useRemoteHostBridge';
 import { collectStartErrors } from './domain/startValidation';
@@ -132,7 +132,7 @@ function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showSeries, setShowSeries] = useState(false);
   const [showCustomAudio, setShowCustomAudio] = useState(false);
-  const [showWizard, setShowWizard] = useState(true);
+  const [showWizard, setShowWizard] = useState(() => !isWizardCompleted());
   const [showTour, setShowTour] = useState(false);
   const printViewReady = usePrintViewWarmup();
   const {

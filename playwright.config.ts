@@ -24,10 +24,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  timeout: process.env.CI ? 60000 : 30000,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
+    actionTimeout: process.env.CI ? 15000 : 10000,
   },
   projects,
   webServer: {
