@@ -1,5 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo } from 'react';
-import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table, ExtendedLeagueStanding, DisplayScreenConfig } from '../../domain/types';
+import type { TimerState, Level, ChipConfig, ChipDenomination, Player, PayoutConfig, RebuyConfig, AddOnConfig, BountyConfig, Table, ExtendedLeagueStanding, DisplayScreenConfig, DisplayLayout } from '../../domain/types';
+import { getLayoutConfig } from '../../domain/displayLayouts';
 import { DEFAULT_DISPLAY_SCREENS, DEFAULT_ROTATION_INTERVAL } from '../../domain/configPersistence';
 import { formatTime, getLevelLabel, getBlindsText, computePrizePool, computeAverageStackInBB, computeRebuyPot, isRebuyActive } from '../../domain/logic';
 import { useTranslation } from '../../i18n';
@@ -43,6 +44,7 @@ interface Props {
   sidePotData?: SidePotDisplayData;
   displayScreens?: DisplayScreenConfig[];
   displayRotationInterval?: number;
+  displayLayout?: DisplayLayout;
 }
 
 // Removed static ROTATION_INTERVAL — now configurable via props
@@ -176,8 +178,10 @@ export function DisplayMode({
   sidePotData,
   displayScreens,
   displayRotationInterval,
+  displayLayout,
 }: Props) {
   const { t } = useTranslation();
+  const layoutConfig = getLayoutConfig(displayLayout);
 
   const rotationIntervalMs = (displayRotationInterval ?? DEFAULT_ROTATION_INTERVAL) * 1000;
 
@@ -296,6 +300,14 @@ export function DisplayMode({
   const nextIdx = timerState.currentLevelIndex + 1;
   const nextLevel = nextIdx < levels.length ? levels[nextIdx] : null;
 
+  const blindsStyle = layoutConfig.blindsFontScale !== 1
+    ? { fontSize: `clamp(${3 * layoutConfig.blindsFontScale}rem, ${10 * layoutConfig.blindsFontScale}vw, ${7 * layoutConfig.blindsFontScale}rem)` }
+    : undefined;
+
+  const timerStyle = layoutConfig.timerFontScale !== 1
+    ? { fontSize: `clamp(${4 * layoutConfig.timerFontScale}rem, ${12 * layoutConfig.timerFontScale}vw, ${8 * layoutConfig.timerFontScale}rem)` }
+    : undefined;
+
   return (
     <div className="fixed inset-0 z-50 bg-gray-950 text-white flex flex-col select-none overflow-hidden">
       {/* Top bar: tournament name + players + exit */}
@@ -335,7 +347,7 @@ export function DisplayMode({
       </div>
 
       {/* TIMER — always visible (top ~55% of screen) */}
-      <div className="flex flex-col items-center justify-center px-6 py-3 flex-[55]">
+      <div className="flex flex-col items-center justify-center px-6 py-3" style={{ flex: layoutConfig.timerFlex }}>
         {/* Banners */}
         <div className="flex items-center gap-3 mb-2 min-h-[2.5rem]">
           {isLastHand && (
@@ -368,7 +380,7 @@ export function DisplayMode({
         {/* Blinds */}
         {currentLevel.type === 'level' && (
           <div className="text-center">
-            <p className="text-[3rem] sm:text-[5rem] lg:text-[7rem] font-bold tabular-nums tracking-wide leading-none drop-shadow-[0_0_20px_rgba(255,255,255,0.08)]">
+            <p className="text-[3rem] sm:text-[5rem] lg:text-[7rem] font-bold tabular-nums tracking-wide leading-none drop-shadow-[0_0_20px_rgba(255,255,255,0.08)]" style={blindsStyle}>
               {currentLevel.smallBlind ?? 0} / {currentLevel.bigBlind ?? 0}
             </p>
             {currentLevel.ante != null && currentLevel.ante > 0 && (
@@ -391,7 +403,7 @@ export function DisplayMode({
             : remaining <= 0
             ? 'text-gray-500'
             : 'animate-timer-glow'
-        }`}>
+        }`} style={timerStyle}>
           {formatTime(remaining)}
         </p>
 
@@ -414,7 +426,7 @@ export function DisplayMode({
         </div>
 
         {/* Next level */}
-        {nextLevel && (
+        {layoutConfig.showNextLevel && nextLevel && (
           <div className="text-center mt-1">
             <span className="text-gray-500 text-xs uppercase tracking-wider">{t('display.nextLevel')}: </span>
             {nextLevel.type === 'break' ? (
@@ -428,69 +440,73 @@ export function DisplayMode({
         )}
       </div>
 
-      {/* Separator */}
-      <div className="border-t border-gray-800/60" />
-
-      {/* SECONDARY AREA — rotates between 5 screens (bottom ~45%) */}
-      <div className="flex-[45] overflow-hidden px-6 py-3 animate-fade-in" key={activeSecondary}>
-        {activeSecondary === 'players' && (
-          <PlayersScreen players={players} />
-        )}
-        {activeSecondary === 'stats' && (
-          <StatsScreen
-            players={players}
-            levels={levels}
-            currentLevelIndex={timerState.currentLevelIndex}
-            remainingSeconds={timerState.remainingSeconds}
-            buyIn={buyIn}
-            rebuy={rebuy}
-            addOn={addOn}
-            bounty={bounty}
-            averageStack={averageStack}
-            tournamentElapsed={tournamentElapsed}
-            activePlayerCount={activePlayerCount}
-            totalPlayerCount={totalPlayerCount}
-          />
-        )}
-        {activeSecondary === 'payout' && (
-          <PayoutScreen
-            players={players}
-            buyIn={buyIn}
-            payout={payout}
-            rebuy={rebuy}
-            addOn={addOn}
-            isBubble={isBubble}
-          />
-        )}
-        {activeSecondary === 'schedule' && (
-          <ScheduleScreen levels={levels} currentLevelIndex={timerState.currentLevelIndex} />
-        )}
-        {activeSecondary === 'chips' && chipConfig && colorUpMap && (
-          <ChipsScreen chipConfig={chipConfig} colorUpMap={colorUpMap} currentLevelIndex={timerState.currentLevelIndex} levels={levels} />
-        )}
-        {activeSecondary === 'seating' && (
-          <SeatingScreen players={players} dealerIndex={dealerIndex} tables={tables} showDealerBadges={showDealerBadges} />
-        )}
-        {activeSecondary === 'league' && leagueName && leagueStandings && (
-          <LeagueScreen leagueName={leagueName} standings={leagueStandings} />
-        )}
-        {activeSecondary === 'sidepot' && sidePotData && (
-          <SidePotScreen data={sidePotData} />
-        )}
-      </div>
+      {/* Separator + SECONDARY AREA — rotates between screens (bottom area) */}
+      {layoutConfig.showSecondary && (
+        <>
+          <div className="border-t border-gray-800/60" />
+          <div className="overflow-hidden px-6 py-3 animate-fade-in" style={{ flex: layoutConfig.secondaryFlex }} key={activeSecondary}>
+            {activeSecondary === 'players' && (
+              <PlayersScreen players={players} />
+            )}
+            {activeSecondary === 'stats' && (
+              <StatsScreen
+                players={players}
+                levels={levels}
+                currentLevelIndex={timerState.currentLevelIndex}
+                remainingSeconds={timerState.remainingSeconds}
+                buyIn={buyIn}
+                rebuy={rebuy}
+                addOn={addOn}
+                bounty={bounty}
+                averageStack={averageStack}
+                tournamentElapsed={tournamentElapsed}
+                activePlayerCount={activePlayerCount}
+                totalPlayerCount={totalPlayerCount}
+              />
+            )}
+            {activeSecondary === 'payout' && (
+              <PayoutScreen
+                players={players}
+                buyIn={buyIn}
+                payout={payout}
+                rebuy={rebuy}
+                addOn={addOn}
+                isBubble={isBubble}
+              />
+            )}
+            {activeSecondary === 'schedule' && (
+              <ScheduleScreen levels={levels} currentLevelIndex={timerState.currentLevelIndex} />
+            )}
+            {activeSecondary === 'chips' && chipConfig && colorUpMap && (
+              <ChipsScreen chipConfig={chipConfig} colorUpMap={colorUpMap} currentLevelIndex={timerState.currentLevelIndex} levels={levels} />
+            )}
+            {activeSecondary === 'seating' && (
+              <SeatingScreen players={players} dealerIndex={dealerIndex} tables={tables} showDealerBadges={showDealerBadges} />
+            )}
+            {activeSecondary === 'league' && leagueName && leagueStandings && (
+              <LeagueScreen leagueName={leagueName} standings={leagueStandings} />
+            )}
+            {activeSecondary === 'sidepot' && sidePotData && (
+              <SidePotScreen data={sidePotData} />
+            )}
+          </div>
+        </>
+      )}
 
       {/* Ticker banner */}
-      <TickerBanner items={tickerItems} />
+      {layoutConfig.showTicker && <TickerBanner items={tickerItems} />}
 
       {/* Bottom bar: rotation hint */}
-      <div className="px-6 py-1 border-t border-gray-800/60 text-center">
-        <p className="text-gray-600 text-[10px]">
-          {secondaryScreens.length > 1
-            ? `${t('display.rotationHint', { n: rotationIntervalMs / 1000 })} · ← → ${t('display.navigate')}`
-            : `← → ${t('display.navigate')}`
-          }
-        </p>
-      </div>
+      {layoutConfig.showRotationHint && (
+        <div className="px-6 py-1 border-t border-gray-800/60 text-center">
+          <p className="text-gray-600 text-[10px]">
+            {secondaryScreens.length > 1
+              ? `${t('display.rotationHint', { n: rotationIntervalMs / 1000 })} · ← → ${t('display.navigate')}`
+              : `← → ${t('display.navigate')}`
+            }
+          </p>
+        </div>
+      )}
     </div>
   );
 }
