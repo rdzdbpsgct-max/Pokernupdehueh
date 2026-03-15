@@ -81,32 +81,34 @@ export function CrossDeviceDisplay({ hostPeerId }: Props) {
 
         conn.on('data', (raw: unknown) => {
           if (destroyedRef.current) return;
-          if (!isDisplayMessage(raw)) return;
+          // PeerJS delivers JSON strings (binary serialization preserves type) — parse before checking
+          const msg = typeof raw === 'string' ? (() => { try { return JSON.parse(raw); } catch { return raw; } })() : raw;
+          if (!isDisplayMessage(msg)) return;
 
-          switch (raw.type) {
+          switch (msg.type) {
             case 'full-state':
-              setState(raw.payload);
+              setState(msg.payload);
               // Reset tick on full-state, update interpolation refs
-              remainingRef.current = raw.payload.timerState.remainingSeconds;
-              timerStatusRef.current = raw.payload.timerState.status;
+              remainingRef.current = msg.payload.timerState.remainingSeconds;
+              timerStatusRef.current = msg.payload.timerState.status;
               lastStateTimeRef.current = Date.now();
-              if (raw.payload.timerState.currentLevelIndex !== levelIndexRef.current) {
+              if (msg.payload.timerState.currentLevelIndex !== levelIndexRef.current) {
                 forceUpdateRef.current = true;
               }
-              levelIndexRef.current = raw.payload.timerState.currentLevelIndex;
+              levelIndexRef.current = msg.payload.timerState.currentLevelIndex;
               break;
             case 'timer-tick':
               // Detect level or status change
-              if (raw.payload.currentLevelIndex !== levelIndexRef.current || raw.payload.status !== timerStatusRef.current) {
+              if (msg.payload.currentLevelIndex !== levelIndexRef.current || msg.payload.status !== timerStatusRef.current) {
                 forceUpdateRef.current = true;
               }
-              remainingRef.current = raw.payload.remainingSeconds;
-              timerStatusRef.current = raw.payload.status;
+              remainingRef.current = msg.payload.remainingSeconds;
+              timerStatusRef.current = msg.payload.status;
               lastStateTimeRef.current = Date.now();
-              levelIndexRef.current = raw.payload.currentLevelIndex;
+              levelIndexRef.current = msg.payload.currentLevelIndex;
               break;
             case 'call-the-clock':
-              setCtcPayload(raw.payload);
+              setCtcPayload(msg.payload);
               break;
             case 'call-the-clock-dismiss':
               setCtcPayload(null);
