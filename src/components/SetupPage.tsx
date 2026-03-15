@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, lazy, Suspense } from 'react';
-import type { TournamentConfig, TournamentCheckpoint, League, Table, MultiTableConfig } from '../domain/types';
+import type { TournamentConfig, TournamentCheckpoint, League, Table, MultiTableConfig, Settings } from '../domain/types';
 import {
   stripAnteFromLevels,
   applyDefaultAntes,
@@ -30,11 +30,15 @@ import { BlindGenerator } from './BlindGenerator';
 import { CollapsibleSection } from './CollapsibleSection';
 import { CollapsibleSubSection } from './CollapsibleSubSection';
 import { NumberStepper } from './NumberStepper';
+import { AlertEditor } from './AlertEditor';
 const SetupQRCode = lazy(() => import('./SetupQRCode').then(m => ({ default: m.SetupQRCode })));
 
 interface Props {
   config: TournamentConfig;
   setConfig: React.Dispatch<React.SetStateAction<TournamentConfig>>;
+  settings: Settings;
+  onSettingsChange: (s: Settings) => void;
+  onShowCustomAudio: () => void;
   pendingCheckpoint: TournamentCheckpoint | null;
   onRestoreCheckpoint: () => void;
   onDismissCheckpoint: () => void;
@@ -46,6 +50,9 @@ interface Props {
 export function SetupPage({
   config,
   setConfig,
+  settings,
+  onSettingsChange,
+  onShowCustomAudio,
   pendingCheckpoint,
   onRestoreCheckpoint,
   onDismissCheckpoint,
@@ -97,6 +104,11 @@ export function SetupPage({
     if (!config.tables || config.tables.length === 0) return t('section.allDisabled');
     return t('multiTable.tableCount', { n: config.tables.length });
   }, [config.tables, t]);
+
+  const audioSummary = useMemo(() => {
+    if (!settings.soundEnabled) return t('setup.audioSummary.off' as Parameters<typeof t>[0]);
+    return t('setup.audioSummary.on' as Parameters<typeof t>[0], { volume: settings.volume });
+  }, [settings.soundEnabled, settings.volume, t]);
 
   const setupGuideSteps = useMemo(() => ([
     {
@@ -822,6 +834,90 @@ export function SetupPage({
               </p>
             </div>
           )}
+        </CollapsibleSection>
+
+        {/* Audio & Ansagen (collapsed by default) */}
+        <CollapsibleSection title={t('settings.sectionAudio' as Parameters<typeof t>[0])} summary={audioSummary} defaultOpen={false}>
+          <div className="space-y-3">
+            {/* Sound toggle */}
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.sound')}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.soundEnabled}
+                onClick={() => onSettingsChange({ ...settings, soundEnabled: !settings.soundEnabled })}
+                className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-all duration-200 ${
+                  settings.soundEnabled
+                    ? 'shadow-sm'
+                    : 'bg-gray-200 dark:bg-gray-700/80 border border-gray-300 dark:border-gray-600/60'
+                }`}
+                style={settings.soundEnabled ? { background: 'linear-gradient(to bottom, var(--accent-400), var(--accent-600))', boxShadow: `0 1px 2px var(--accent-glow)` } : undefined}
+              >
+                {settings.soundEnabled && (
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            </label>
+            {/* Volume slider */}
+            {settings.soundEnabled && (
+              <div className="flex items-center gap-3 pl-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">{t('settings.volume')}</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={settings.volume}
+                  onChange={(e) => onSettingsChange({ ...settings, volume: Number(e.target.value) })}
+                  className="flex-1 h-1.5 cursor-pointer"
+                  style={{ accentColor: 'var(--accent-500)' }}
+                />
+                <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums w-8 text-right">{settings.volume}%</span>
+              </div>
+            )}
+            {/* Countdown toggle */}
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-sm text-gray-700 dark:text-gray-300">{t('settings.countdown')}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.countdownEnabled}
+                onClick={() => onSettingsChange({ ...settings, countdownEnabled: !settings.countdownEnabled })}
+                className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-all duration-200 ${
+                  settings.countdownEnabled
+                    ? 'shadow-sm'
+                    : 'bg-gray-200 dark:bg-gray-700/80 border border-gray-300 dark:border-gray-600/60'
+                }`}
+                style={settings.countdownEnabled ? { background: 'linear-gradient(to bottom, var(--accent-400), var(--accent-600))', boxShadow: `0 1px 2px var(--accent-glow)` } : undefined}
+              >
+                {settings.countdownEnabled && (
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            </label>
+            {/* Custom Alerts */}
+            <CollapsibleSubSection title={t('alerts.title')} defaultOpen={false}>
+              <AlertEditor
+                alerts={settings.customAlerts ?? []}
+                onChange={(alerts) => onSettingsChange({ ...settings, customAlerts: alerts })}
+              />
+            </CollapsibleSubSection>
+            {/* Custom Audio Files */}
+            <button
+              onClick={onShowCustomAudio}
+              className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors text-left flex items-center gap-2"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+              </svg>
+              {t('customAudio.title')}
+            </button>
+          </div>
         </CollapsibleSection>
 
         {/* Validation */}

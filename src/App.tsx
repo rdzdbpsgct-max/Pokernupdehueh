@@ -969,6 +969,9 @@ function App() {
           <SetupModeContainer
             config={config}
             setConfig={setConfig}
+            settings={settings}
+            onSettingsChange={setSettings}
+            onShowCustomAudio={() => setShowCustomAudio(true)}
             pendingCheckpoint={pendingCheckpoint}
             onRestoreCheckpoint={restoreFromCheckpoint}
             onDismissCheckpoint={dismissCheckpoint}
@@ -1041,7 +1044,6 @@ function App() {
             onSettingsChange={setSettings}
             onToggleFullscreen={toggleFullscreen}
             onShowInstallGuide={() => setShowInstallGuide(true)}
-            onShowCustomAudio={() => setShowCustomAudio(true)}
             onExitToSetup={handleExitToSetup}
           />
         )}

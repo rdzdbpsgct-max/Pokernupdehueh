@@ -528,6 +528,8 @@ const de = {
   'section.colorUpActive': 'Color-Up aktiv',
   'section.payoutSummary': '{places} Plätze, {mode}',
   'section.allDisabled': 'Alles deaktiviert',
+  'setup.audioSummary.on': 'Sound, {volume}%',
+  'setup.audioSummary.off': 'Sound aus',
 
   // --- Setup UX ---
   'app.tournamentBasics': 'Turnier-Grundlagen',
@@ -1675,6 +1677,8 @@ const en: Record<TranslationKey, string> = {
   'section.colorUpActive': 'Color-Up active',
   'section.payoutSummary': '{places} places, {mode}',
   'section.allDisabled': 'All disabled',
+  'setup.audioSummary.on': 'Sound, {volume}%',
+  'setup.audioSummary.off': 'Sound off',
 
   // --- Setup UX ---
   'app.tournamentBasics': 'Tournament Basics',

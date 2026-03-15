@@ -1,10 +1,13 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { TournamentConfig, TournamentCheckpoint } from '../../domain/types';
+import type { TournamentConfig, TournamentCheckpoint, Settings } from '../../domain/types';
 import { SetupPage } from '../SetupPage';
 
 interface Props {
   config: TournamentConfig;
   setConfig: Dispatch<SetStateAction<TournamentConfig>>;
+  settings: Settings;
+  onSettingsChange: (s: Settings) => void;
+  onShowCustomAudio: () => void;
   pendingCheckpoint: TournamentCheckpoint | null;
   onRestoreCheckpoint: () => void;
   onDismissCheckpoint: () => void;
@@ -16,6 +19,9 @@ interface Props {
 export function SetupModeContainer({
   config,
   setConfig,
+  settings,
+  onSettingsChange,
+  onShowCustomAudio,
   pendingCheckpoint,
   onRestoreCheckpoint,
   onDismissCheckpoint,
@@ -27,6 +33,9 @@ export function SetupModeContainer({
     <SetupPage
       config={config}
       setConfig={setConfig}
+      settings={settings}
+      onSettingsChange={onSettingsChange}
+      onShowCustomAudio={onShowCustomAudio}
       pendingCheckpoint={pendingCheckpoint}
       onRestoreCheckpoint={onRestoreCheckpoint}
       onDismissCheckpoint={onDismissCheckpoint}
