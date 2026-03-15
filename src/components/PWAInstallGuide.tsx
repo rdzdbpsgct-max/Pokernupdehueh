@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from '../i18n';
+import { detectPlatform } from '../domain/platform';
+import type { Platform } from '../domain/platform';
 import { BottomSheet } from './BottomSheet';
 import { ChevronIcon } from './ChevronIcon';
 
@@ -8,15 +10,6 @@ interface Props {
   canPrompt: boolean;
   isInstalled: boolean;
   onPromptInstall: () => Promise<boolean>;
-}
-
-type Platform = 'android' | 'ios' | 'desktop';
-
-function detectPlatform(): Platform {
-  const ua = navigator.userAgent;
-  if (/android/i.test(ua)) return 'android';
-  if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
-  return 'desktop';
 }
 
 const PLATFORM_ORDER: Record<Platform, Platform[]> = {

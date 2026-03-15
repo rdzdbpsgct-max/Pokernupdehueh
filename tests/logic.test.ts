@@ -173,6 +173,7 @@ import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Pl
 import type { SeriesExport } from '../src/domain/series';
 import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE, REMOTE_STATE_CONTRACT_VERSION, persistHostSession, loadHostSession, clearHostSession, buildDisplayUrl, parseDisplayHash, isHelloMessage } from '../src/domain/remote';
 import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
+import { detectPlatform, detectDesktopOS } from '../src/domain/platform';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -7366,5 +7367,49 @@ describe('displayLayouts', () => {
       expect(l.labelKey).toBeTruthy();
       expect(l.descKey).toBeTruthy();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Platform detection
+// ---------------------------------------------------------------------------
+
+describe('platform detection', () => {
+  const originalUA = navigator.userAgent;
+  const originalPlatform = navigator.platform;
+
+  afterEach(() => {
+    Object.defineProperty(navigator, 'userAgent', { value: originalUA, configurable: true });
+    Object.defineProperty(navigator, 'platform', { value: originalPlatform, configurable: true });
+  });
+
+  it('detectPlatform returns desktop by default', () => {
+    expect(detectPlatform()).toBe('desktop');
+  });
+
+  it('detectPlatform returns android for Android UA', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36',
+      configurable: true,
+    });
+    expect(detectPlatform()).toBe('android');
+  });
+
+  it('detectPlatform returns ios for iPhone UA', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)',
+      configurable: true,
+    });
+    expect(detectPlatform()).toBe('ios');
+  });
+
+  it('detectDesktopOS returns macos for Mac platform', () => {
+    Object.defineProperty(navigator, 'platform', { value: 'MacIntel', configurable: true });
+    expect(detectDesktopOS()).toBe('macos');
+  });
+
+  it('detectDesktopOS returns windows for Win32 platform', () => {
+    Object.defineProperty(navigator, 'platform', { value: 'Win32', configurable: true });
+    expect(detectDesktopOS()).toBe('windows');
   });
 });

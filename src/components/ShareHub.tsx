@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useTranslation } from '../i18n';
 import { useDialogA11y } from '../hooks/useDialogA11y';
 import { useTheme } from '../theme';
+import { detectPlatform, detectDesktopOS } from '../domain/platform';
 
 interface Props {
   sessionId: string | null;
@@ -266,38 +267,125 @@ function ShareHubInner({
           title={t('shareHub.cableTitle' as TKey)}
           description={t('shareHub.cableDesc' as TKey)}
         >
-          <div className="space-y-1">
-            <details className="group">
-              <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 py-1.5 hover:text-gray-900 dark:hover:text-white transition-colors">
-                AirPlay / Screen Mirroring
-              </summary>
-              <div className="text-xs text-gray-500 dark:text-gray-400 pl-4 pb-2 space-y-1">
-                <p>{t('shareHub.airplayIphone' as TKey)}</p>
-                <p>{t('shareHub.airplayMac' as TKey)}</p>
-              </div>
-            </details>
-            <details className="group">
-              <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 py-1.5 hover:text-gray-900 dark:hover:text-white transition-colors">
-                Chromecast / Google Cast
-              </summary>
-              <div className="text-xs text-gray-500 dark:text-gray-400 pl-4 pb-2 space-y-1">
-                <p>{t('shareHub.chromecast' as TKey)}</p>
-              </div>
-            </details>
-            <details className="group">
-              <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 py-1.5 hover:text-gray-900 dark:hover:text-white transition-colors">
-                HDMI / {t('shareHub.cable' as TKey)}
-              </summary>
-              <div className="text-xs text-gray-500 dark:text-gray-400 pl-4 pb-2 space-y-1">
-                <p>{t('shareHub.hdmi' as TKey)}</p>
-              </div>
-            </details>
-          </div>
+          <PlatformGuides />
         </SectionCard>
       </div>
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Platform-aware wireless guides
+// ---------------------------------------------------------------------------
+
+const PlatformGuides = memo(function PlatformGuides() {
+  const { t } = useTranslation();
+  const platform = useMemo(() => detectPlatform(), []);
+  const desktopOS = useMemo(() => detectDesktopOS(), []);
+
+  const guides = useMemo(() => {
+    const list: { id: string; title: string; steps: string[]; defaultOpen: boolean }[] = [];
+
+    if (platform === 'ios') {
+      list.push({
+        id: 'airplay',
+        title: 'AirPlay / Screen Mirroring',
+        steps: [
+          t('shareHub.guide.airplay.step1' as TKey),
+          t('shareHub.guide.airplay.step2' as TKey),
+          t('shareHub.guide.airplay.step3' as TKey),
+        ],
+        defaultOpen: true,
+      });
+      list.push({
+        id: 'chromecast',
+        title: 'Chromecast / Google Cast',
+        steps: [
+          t('shareHub.guide.chromecast.step1' as TKey),
+          t('shareHub.guide.chromecast.step2' as TKey),
+          t('shareHub.guide.chromecast.step3' as TKey),
+        ],
+        defaultOpen: false,
+      });
+    } else if (platform === 'android') {
+      list.push({
+        id: 'chromecast',
+        title: 'Chromecast / Google Cast',
+        steps: [
+          t('shareHub.guide.chromecast.step1' as TKey),
+          t('shareHub.guide.chromecast.step2' as TKey),
+          t('shareHub.guide.chromecast.step3' as TKey),
+        ],
+        defaultOpen: true,
+      });
+      list.push({
+        id: 'airplay',
+        title: 'AirPlay / Screen Mirroring',
+        steps: [
+          t('shareHub.guide.airplay.step1' as TKey),
+          t('shareHub.guide.airplay.step2' as TKey),
+          t('shareHub.guide.airplay.step3' as TKey),
+        ],
+        defaultOpen: false,
+      });
+    } else {
+      // Desktop
+      if (desktopOS === 'macos') {
+        list.push({
+          id: 'airplay',
+          title: 'AirPlay / Screen Mirroring',
+          steps: [
+            t('shareHub.guide.airplayMac.step1' as TKey),
+            t('shareHub.guide.airplayMac.step2' as TKey),
+            t('shareHub.guide.airplayMac.step3' as TKey),
+          ],
+          defaultOpen: true,
+        });
+      }
+      list.push({
+        id: 'chromecast',
+        title: 'Chromecast / Google Cast',
+        steps: [
+          t('shareHub.guide.chromecastDesktop.step1' as TKey),
+          t('shareHub.guide.chromecastDesktop.step2' as TKey),
+          t('shareHub.guide.chromecastDesktop.step3' as TKey),
+        ],
+        defaultOpen: desktopOS !== 'macos',
+      });
+    }
+
+    // HDMI always last, never auto-open
+    list.push({
+      id: 'hdmi',
+      title: `HDMI / ${t('shareHub.cable' as TKey)}`,
+      steps: [
+        t('shareHub.guide.hdmi.step1' as TKey),
+        t('shareHub.guide.hdmi.step2' as TKey),
+        t('shareHub.guide.hdmi.step3' as TKey),
+      ],
+      defaultOpen: false,
+    });
+
+    return list;
+  }, [platform, desktopOS, t]);
+
+  return (
+    <div className="space-y-1">
+      {guides.map((g) => (
+        <details key={g.id} className="group" open={g.defaultOpen || undefined}>
+          <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 py-1.5 hover:text-gray-900 dark:hover:text-white transition-colors">
+            {g.title}
+          </summary>
+          <ol className="text-xs text-gray-500 dark:text-gray-400 pl-4 pb-2 space-y-1 list-decimal list-inside">
+            {g.steps.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </details>
+      ))}
+    </div>
+  );
+});
 
 // ---------------------------------------------------------------------------
 // Sub-components
