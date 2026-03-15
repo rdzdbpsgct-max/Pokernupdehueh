@@ -7313,3 +7313,10 @@ describe('Custom Audio', () => {
     expect(CUSTOMIZABLE_ANNOUNCEMENTS.length).toBe(26);
   });
 });
+
+describe('DisplayLayout type', () => {
+  it('should accept valid display layout values', () => {
+    const layouts: import('../src/domain/types').DisplayLayout[] = ['standard', 'compact', 'timer-only', 'ultra-large'];
+    expect(layouts).toHaveLength(4);
+  });
+});

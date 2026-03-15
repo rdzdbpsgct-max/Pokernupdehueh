@@ -150,6 +150,8 @@ export interface DisplayScreenConfig {
   enabled: boolean;
 }
 
+export type DisplayLayout = 'standard' | 'compact' | 'timer-only' | 'ultra-large';
+
 export type AccentColor = 'emerald' | 'blue' | 'purple' | 'red' | 'amber' | 'cyan';
 
 export type BackgroundImage = 'none' | 'felt-green' | 'felt-blue' | 'felt-red' | 'casino' | 'dark-wood' | 'abstract' | 'midnight' | 'sunset';
@@ -172,6 +174,8 @@ export interface Settings {
   displayScreens?: DisplayScreenConfig[];
   /** Rotation interval for TV Display Mode secondary screens in seconds. Default: 15. */
   displayRotationInterval?: number;
+  /** Display layout for TV mode. Default: 'standard'. */
+  displayLayout?: DisplayLayout;
 }
 
 export interface TournamentCheckpoint {
