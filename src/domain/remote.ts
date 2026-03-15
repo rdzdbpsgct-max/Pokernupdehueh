@@ -359,6 +359,8 @@ export interface RemoteHostCallbacks {
   onStatusChange: (status: HostStatus) => void;
   onError?: (error: string) => void;
   onDisplayCountChange?: (count: number) => void;
+  /** Called when a new display peer connects — host should push full DisplayMessage */
+  onDisplayConnected?: () => void;
 }
 
 export interface RemoteHostOptions {
@@ -381,6 +383,8 @@ export class RemoteHost {
   private rateLimiter = new RateLimiter();
   /** Most recently built state message for immediate snapshot on reconnect */
   private lastBuiltState: RemoteState | null = null;
+  /** Most recently sent display message for immediate snapshot on display connect */
+  private lastDisplayMessage: string | null = null;
   /** Connected display peers (TV windows, projectors) */
   private displayConnections: Map<string, DataConnection> = new Map();
 
@@ -474,10 +478,12 @@ export class RemoteHost {
                 this.callbacks.onDisplayCountChange?.(this.displayConnections.size);
               });
 
-              // Send immediate state snapshot to display
-              if (this.lastBuiltState && conn.open) {
-                try { conn.send(JSON.stringify(this.lastBuiltState)); } catch { /* ignore */ }
+              // Send immediate display state snapshot (correct DisplayMessage format)
+              if (this.lastDisplayMessage && conn.open) {
+                try { conn.send(this.lastDisplayMessage); } catch { /* ignore */ }
               }
+              // Notify host to build and push fresh full-state
+              this.callbacks.onDisplayConnected?.();
               return;
             }
             if (isHelloMessage(msg) && msg.role === 'remote') {
@@ -486,6 +492,10 @@ export class RemoteHost {
               conn.off('data', onFirstData);
               this.conn = conn;
               this.setupConnection(conn);
+              // Send immediate state snapshot (connection is already open at hello time)
+              if (this.lastBuiltState && conn.open) {
+                try { conn.send(JSON.stringify(this.lastBuiltState)); } catch { /* ignore */ }
+              }
               return;
             }
           } catch { /* not a hello — fall through to remote */ }
@@ -677,8 +687,10 @@ export class RemoteHost {
 
   /** Broadcast a state payload to all connected display peers */
   sendDisplayState(payload: unknown): void {
-    if (this.displayConnections.size === 0) return;
     const json = JSON.stringify(payload);
+    // Cache last display message for immediate snapshot on new display connect
+    this.lastDisplayMessage = json;
+    if (this.displayConnections.size === 0) return;
     for (const [peerId, conn] of this.displayConnections) {
       if (conn.open) {
         try { conn.send(json); } catch {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DisplayStatePayload } from '../domain/displayChannel';
 import { withDisplayContract } from '../domain/displayChannel';
 import type { RemoteHost } from '../domain/remote';
@@ -34,6 +34,26 @@ export function useDisplaySession({
 }: UseDisplaySessionOptions): UseDisplaySessionReturn {
   const [displayCount, setDisplayCount] = useState(0);
   const lastPayloadRef = useRef<string>('');
+  // Counter that increments when a new display connects — triggers full-state push
+  const [displayConnectTrigger, setDisplayConnectTrigger] = useState(0);
+
+  // Callback for RemoteHost.onDisplayConnected — push full state immediately
+  const onDisplayConnected = useCallback(() => {
+    setDisplayConnectTrigger((c) => c + 1);
+  }, []);
+
+  // Register onDisplayConnected callback on the host
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!enabled || !host) return;
+    // Patch the callback onto the host's callbacks
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (host as any).callbacks.onDisplayConnected = onDisplayConnected;
+    return () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((host as any).callbacks) (host as any).callbacks.onDisplayConnected = undefined;
+    };
+  }, [enabled, hostRef, onDisplayConnected]);
 
   // Poll display count from host
   useEffect(() => {
@@ -46,16 +66,22 @@ export function useDisplaySession({
     return () => clearInterval(interval);
   }, [hostRef, enabled]);
 
-  // Send full state when payload changes
+  // Track last trigger value to detect new display connections
+  const lastTriggerRef = useRef(0);
+
+  // Send full state when payload changes OR when a new display connects
   useEffect(() => {
     const host = hostRef.current;
     if (!enabled || !host || host.displayCount === 0) return;
     const payload = buildFullStatePayload();
     const key = JSON.stringify(payload);
-    if (key === lastPayloadRef.current) return;
+    const triggerChanged = displayConnectTrigger !== lastTriggerRef.current;
+    lastTriggerRef.current = displayConnectTrigger;
+    // Skip if payload unchanged AND no new display connected
+    if (key === lastPayloadRef.current && !triggerChanged) return;
     lastPayloadRef.current = key;
     host.sendDisplayState(withDisplayContract({ type: 'full-state', payload }));
-  }, [enabled, hostRef, buildFullStatePayload]);
+  }, [enabled, hostRef, buildFullStatePayload, displayConnectTrigger]);
 
   // Timer ticks every 500ms
   useEffect(() => {
