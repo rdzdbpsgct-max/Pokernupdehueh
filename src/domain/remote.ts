@@ -492,7 +492,14 @@ export class RemoteHost {
               conn.off('data', onFirstData);
               this.conn = conn;
               this.setupConnection(conn);
-              // Send immediate state snapshot (connection is already open at hello time)
+              // Connection is already open at hello time — PeerJS won't re-fire 'open'.
+              // Manually trigger what on('open') would have done:
+              if (conn.open) {
+                this.setStatus('connected');
+                this.startKeepalive();
+                this.rateLimiter.reset();
+              }
+              // Send immediate state snapshot
               if (this.lastBuiltState && conn.open) {
                 try { conn.send(JSON.stringify(this.lastBuiltState)); } catch { /* ignore */ }
               }
@@ -505,6 +512,12 @@ export class RemoteHost {
           conn.off('data', onFirstData);
           this.conn = conn;
           this.setupConnection(conn);
+          // Connection is already open (data was received) — manually activate
+          if (conn.open) {
+            this.setStatus('connected');
+            this.startKeepalive();
+            this.rateLimiter.reset();
+          }
           // Re-process this first message through normal handler
           this.handleIncoming(raw);
         };
@@ -518,6 +531,12 @@ export class RemoteHost {
             conn.off('data', onFirstData);
             this.conn = conn;
             this.setupConnection(conn);
+            // Connection may already be open — manually activate
+            if (conn.open) {
+              this.setStatus('connected');
+              this.startKeepalive();
+              this.rateLimiter.reset();
+            }
           }
         }, 2000);
       });
