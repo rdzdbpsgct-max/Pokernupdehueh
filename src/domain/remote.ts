@@ -490,6 +490,10 @@ export class RemoteHost {
               // Remote controller hello — register and set up, but don't re-process the hello
               identified = true;
               conn.off('data', onFirstData);
+              // Close previous remote connection cleanly (prevents ghost close handlers)
+              if (this.conn && this.conn !== conn) {
+                try { this.conn.close(); } catch { /* ignore */ }
+              }
               this.conn = conn;
               this.setupConnection(conn);
               // Connection is already open at hello time — PeerJS won't re-fire 'open'.
@@ -828,6 +832,13 @@ export class RemoteController {
 
       this.peer.on('disconnected', () => {
         if (this.destroyed) return;
+        // 'disconnected' means the PeerJS signaling server connection dropped,
+        // NOT the WebRTC data channel. If the data channel is still open,
+        // just try to reconnect the signaling server — don't destroy the connection.
+        if (this.conn?.open) {
+          try { this.peer?.reconnect(); } catch { /* ignore */ }
+          return;
+        }
         this.handleDisconnect();
       });
     } catch {
