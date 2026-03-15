@@ -5,13 +5,16 @@ import { ThemeProvider } from './theme'
 import { LanguageProvider } from './i18n'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import App from './App.tsx'
-import { TVDisplayWindow } from './components/display'
+import { TVDisplayWindow, CrossDeviceDisplay } from './components/display'
 import { initStorage } from './domain/storage'
 
-const isDisplayWindow = window.location.hash === '#display';
+const hash = window.location.hash;
+const isLocalDisplayWindow = hash === '#display';
+const isRemoteDisplayWindow = hash.startsWith('#display=');
+const remoteDisplayPeerId = isRemoteDisplayWindow ? hash.slice('#display='.length) : null;
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
-if (sentryDsn && import.meta.env.PROD && !isDisplayWindow) {
+if (sentryDsn && import.meta.env.PROD && !isLocalDisplayWindow && !isRemoteDisplayWindow) {
   const initSentryOnIdle = () => {
     import('./monitoring/initSentry')
       .then(({ initSentry }) => initSentry({
@@ -44,7 +47,7 @@ function renderApp() {
     const [enabled, setEnabled] = useState(false);
 
     useEffect(() => {
-      if (!import.meta.env.PROD || isDisplayWindow) return;
+      if (!import.meta.env.PROD || isLocalDisplayWindow || isRemoteDisplayWindow) return;
       // Delay monitoring bundle loading to protect initial render performance.
       const id = window.setTimeout(() => setEnabled(true), 2000);
       return () => window.clearTimeout(id);
@@ -64,8 +67,10 @@ function renderApp() {
       <ErrorBoundary>
         <ThemeProvider>
           <LanguageProvider>
-            {isDisplayWindow ? (
+            {isLocalDisplayWindow ? (
               <TVDisplayWindow />
+            ) : isRemoteDisplayWindow && remoteDisplayPeerId ? (
+              <CrossDeviceDisplay hostPeerId={remoteDisplayPeerId} />
             ) : (
               <>
                 <App />
