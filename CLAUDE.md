@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.5.0
+**Version**: 6.5.1
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -87,11 +87,11 @@ src/
 │   ├── RebuyEditor.tsx          # Rebuy limit config
 │   ├── RebuyStatus.tsx          # Rebuy active indicator
 │   ├── BubbleIndicator.tsx      # Bubble / In The Money visual banner
-│   ├── SetupPage.tsx            # Setup mode UI — collapsible sections, config editors, start button
+│   ├── SetupPage.tsx            # Setup mode UI — collapsible sections, config editors, audio settings, start button
 │   ├── SetupWizard.tsx          # Guided first-time setup wizard (6 steps)
 │   ├── HelpCenter.tsx           # In-app help center — bilingual guide, FAQ, keyboard shortcuts
 │   ├── RemoteControl.tsx        # PeerJS remote control — host QR modal + smartphone controller UI
-│   ├── SettingsPanel.tsx        # Sound, countdown, auto-advance, fullscreen, volume, call-the-clock, accent color, background
+│   ├── SettingsPanel.tsx        # Quick-access sound/volume, auto-advance, fullscreen, call-the-clock, accent color, background, TV screen config
 │   ├── SidePotCalculator.tsx    # Side pot calculator modal for all-in situations
 │   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
 │   ├── ThemeSwitcher.tsx        # System/Light/Dark 3-way toggle
@@ -370,6 +370,16 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.5.1 — Audio-Setup & Sidebar-Lesbarkeit
+
+- **Audio-Einstellungen auf Setup-Seite**: Neue CollapsibleSection „Audio & Ansagen" auf der Setup-Seite — Sound an/aus, Lautstärke, Countdown-Toggle, AlertEditor (benutzerdefinierte Hinweise), Custom-Audio-Button. Konfigurierbar VOR Turnierstart.
+- **SettingsPanel verschlankt**: Audio-Sektion im Spielmodus nur noch Quick-Access (Sound-Toggle + Lautstärke-Slider). Countdown-Toggle, AlertEditor und Custom-Audio-Button entfernt (nur noch im Setup).
+- **NumberStepper vertikales Layout**: Call-the-Clock und TV-Wechselintervall — Label auf eigener Zeile, Stepper darunter. Input-Breite `w-14` → `w-16`. +/- Buttons nie mehr abgeschnitten.
+- **Sidebar-Dimensionen erweitert**: Desktop `w-60` → `w-64`, Mobile `max-h-[40vh]` → `max-h-[60vh]`, SM `max-h-[50vh]` → `max-h-[70vh]`.
+- **E2E-Tests stabilisiert**: Alle 14 Playwright-Tests bestehen — Wizard-Skip, OnboardingTour-Unterdrückung, robustere Selektoren, höhere Timeouts für CI.
+- **4 neue Translation-Keys** (2 DE + 2 EN): `setup.audioSummary.on`, `setup.audioSummary.off`
+- **1090 Tests gesamt** (1090 Unit + 14 E2E)
 
 ### v6.5.0 — Phase 2+3: Turnier-Serien, Erweitertes Liga-System, Custom Audio, PDF-Export
 

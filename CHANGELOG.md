@@ -5,6 +5,44 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.5.1] – 2026-03-15
+
+### Audio-Setup & Sidebar-Lesbarkeit
+
+**Audio-Einstellungen auf Setup-Seite:**
+- Neue CollapsibleSection „Audio & Ansagen" auf der Setup-Seite (nach Chips, vor Start-Button). Sound an/aus, Lautstärke-Slider, Countdown-Toggle, AlertEditor (benutzerdefinierte Hinweise), Custom-Audio-Button — alles konfigurierbar VOR Turnierstart.
+- Summary-Badge im eingeklappten Zustand: „Sound, 80%" oder „Sound aus".
+
+**Spielmodus-Sidebar verschlankt:**
+- Audio-Sektion nur noch Quick-Access: Sound-Toggle + Lautstärke-Slider.
+- Entfernt aus Spielmodus: Countdown-Toggle, AlertEditor, Custom-Audio-Button (nur noch im Setup).
+
+**Sidebar-Layout-Fixes:**
+- **NumberStepper vertikales Layout**: Call-the-Clock und TV-Wechselintervall — Label auf eigener Zeile, Stepper darunter. +/- Buttons immer vollständig sichtbar.
+- **NumberStepper-Dimensionen**: Input-Breite `w-14` → `w-16` (64px).
+- **Sidebar-Dimensionen**: Desktop `w-60` → `w-64` (256px). Mobile `max-h-[40vh]` → `max-h-[60vh]`, SM `max-h-[50vh]` → `max-h-[70vh]`.
+
+**E2E-Tests stabilisiert:**
+- Alle 14 Playwright-Tests bestehen zuverlässig.
+- Wizard-Skip via `isWizardCompleted()` + localStorage, OnboardingTour-Unterdrückung, robustere Selektoren (`button:has-text("▶")`), höhere Timeouts für CI (60s global, 15s action).
+- Neue Helpers: `skipWizard`, `completeWizard`, `goToSetup`, `startTournament`, `startTournamentFast`.
+
+**Geänderte Dateien:**
+- `SetupPage.tsx` — neue Audio-CollapsibleSection mit Sound/Volume/Countdown/AlertEditor/CustomAudio
+- `SettingsPanel.tsx` — Audio-Sektion verschlankt, NumberStepper vertikal, `w-16`
+- `GameModeContainer.tsx` — Sidebar `w-64`, `max-h-[60vh]`, `onShowCustomAudio` entfernt
+- `SetupModeContainer.tsx` — 3 neue Props (settings, onSettingsChange, onShowCustomAudio)
+- `App.tsx` — Settings-Props an SetupModeContainer, `isWizardCompleted()` Import
+- `translations.ts` — 4 neue Keys (setup.audioSummary.on/off, DE + EN)
+- `components.test.tsx` — SettingsPanel-Assertion angepasst (4 → 3 Switches)
+- `playwright.config.ts` — CI-Timeouts erhöht
+- 6 E2E-Testdateien + helpers.ts — komplett überarbeitet
+
+- **4 neue Translation-Keys** (2 DE + 2 EN)
+- **1090 Unit-Tests + 14 E2E-Tests** bestehen
+
+---
+
 ## [6.5.0] – 2026-03-14
 
 ### Phase 2+3 — Turnier-Serien, Erweitertes Liga-System, Custom Audio, PDF-Export & mehr
