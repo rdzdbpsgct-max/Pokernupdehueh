@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.6.0
+**Version**: 6.7.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -136,6 +136,9 @@ src/
 │   ├── toast.ts                  # Toast notification context and hook (useToast)
 │   ├── helpContent.ts            # Bilingual help content data — sections, FAQ, keyboard shortcuts
 │   ├── displayChannel.ts         # BroadcastChannel communication for TV display window
+│   ├── displayLayouts.ts         # Display layout variants (Standard, Compact, Timer-Only, Ultra Large)
+│   ├── platform.ts               # Platform detection utility (detectPlatform, detectDesktopOS)
+│   ├── presentationApi.ts        # Presentation API progressive enhancement for second-screen
 │   ├── remote.ts                # PeerJS-based remote control (host + controller, signaling via PeerJS Cloud)
 │   ├── sounds.ts                # Web Audio API sound effects (beeps, victory, bubble, ITM)
 │   ├── speech.ts                # Voice announcements — ElevenLabs MP3 (German) + Web Speech API fallback
@@ -318,6 +321,9 @@ public/
 - **Ticker Banner**: Scrolling info bar at bottom of TV Display Mode. Shows rotating tournament info (next level, avg stack, player count, prizepool). Pure CSS animation (`animate-ticker-scroll`).
 - **Custom Accent Color**: 6 selectable accent colors (emerald, blue, purple, red, amber, cyan). CSS custom properties (`--accent-500/600/400/700/900/ring/glow/glow-strong`). Picker in SettingsPanel. `AccentColor` type in types.ts. All components fully migrated from hardcoded `emerald-*` classes to `var(--accent-*)` — via inline styles, `color-mix()` for semi-transparent variants, 3 CSS `@utility` classes (`btn-accent-gradient`, `bg-accent-700`, `bg-accent-800`) for common button patterns, and Tailwind arbitrary values (`hover:border-[var(--accent-600)]`) for hover states.
 - **Background Patterns**: 9 selectable CSS gradient backgrounds (none, felt-green, felt-blue, felt-red, casino, dark-wood, abstract, midnight, sunset). `--bg-pattern` CSS custom property. Picker in SettingsPanel. `BackgroundImage` type in types.ts.
+- **Display Layout Variants**: 4 TV display layouts — Standard (55/45 split), Compact (40/60, more info), Timer-Only (100/0, no secondary), Ultra Large (70/30, oversized timer). `displayLayouts.ts` with `LayoutConfig` interface, `getLayoutConfig()`, `DISPLAY_LAYOUTS`. DisplayMode.tsx parameterized with dynamic flex, clamp-based font scales, visibility flags. Layout picker in SettingsPanel.
+- **Platform Detection**: `platform.ts` with `detectPlatform()` (android/ios/desktop) and `detectDesktopOS()` (macos/windows/chromeos/linux). Extracted from PWAInstallGuide, shared with ShareHub for platform-aware wireless guides.
+- **Presentation API**: `presentationApi.ts` — progressive enhancement for browser second-screen API. `isPresentationApiAvailable()` capability check. Button in ShareHub only visible in Chrome/Edge. Opens display URL on external screen.
 - **Blinds by End Time**: `generateBlindsByEndTime()` in blinds.ts generates blind structure targeting a specific tournament duration. Tab in BlindGenerator with time picker + live preview.
 - **Re-Entry Mode**: Players can re-enter after elimination (new ID, same person). `reEnterPlayer()` in players.ts. `reEntryEnabled/maxReEntries` in RebuyConfig. Re-entry button on eliminated players. Auto-seat at smallest table.
 - **Seat Locking**: Lock individual seats at multi-table setup. `Seat.locked` property. `toggleSeatLock()` in tables.ts. Locked seats skipped during distribution and balancing.
@@ -337,7 +343,7 @@ public/
 
 ## Testing
 
-- **1103 tests** across 16 test files + 1 setup file
+- **1118 tests** across 16 test files + 1 setup file
 - Core files: `logic.test.ts` (654), `components.test.tsx` (95), `edge-cases.test.ts` (88), `sound-speech.test.ts` (54), `integration.test.ts` (36), `tournamentActions.test.tsx` (31), `hooks.test.tsx` (25), `i18n.test.ts` (24), `persistence.test.ts` (24), `controls.test.tsx` (22), `display-channel.test.ts` (14), `entitlements.test.ts` (8), `toast.test.ts` (6), `monetizationTelemetry.test.ts` (3), `recovery.test.ts` (3)
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
@@ -375,6 +381,14 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.7.0 — Phase 2: Display-Layouts, Plattform-Guides & Presentation API
+
+- **4 Display-Layout-Varianten**: Standard (55/45), Kompakt (40/60), Timer-Only (100/0), Ultra Large (70/30). `displayLayouts.ts` (~80 Zeilen). DisplayMode.tsx parameterized. Layout-Picker im SettingsPanel.
+- **Plattform-spezifische Guides**: `platform.ts` — `detectPlatform()` + `detectDesktopOS()`. ShareHub erkennt Plattform, zeigt relevante Anleitung zuerst mit Schritt-für-Schritt-Instruktionen.
+- **Presentation API**: `presentationApi.ts` — Browser Second-Screen-Support. Button in ShareHub nur bei Chrome/Edge.
+- **Neue Dateien**: `displayLayouts.ts`, `platform.ts`, `presentationApi.ts`
+- **~48 neue Translation-Keys**, **8 neue Tests** — **1118 Tests gesamt**
 
 ### v6.6.0 — Share Hub & Cross-Device Display
 

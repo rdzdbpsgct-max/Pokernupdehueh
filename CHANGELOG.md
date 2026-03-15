@@ -5,6 +5,34 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.7.0] – 2026-03-15
+
+### Phase 2: Display-Layouts, Plattform-Guides & Presentation API
+
+**4 Display-Layout-Varianten:**
+- Standard (55/45), Kompakt (40/60), Timer-Only (100/0), Ultra Large (70/30)
+- `displayLayouts.ts` (~80 Zeilen) mit `LayoutConfig`-Interface und `getLayoutConfig()`
+- DisplayMode.tsx parameterized: dynamische Flex-Ratios, Font-Scales (clamp-basiert), Visibility-Flags
+- Layout-Picker als 2×2 Grid im SettingsPanel
+- `DisplayLayout` Type in Settings, durchgereicht über App.tsx, TVDisplayWindow, CrossDeviceDisplay, DisplayStatePayload
+
+**Plattform-spezifische Wireless-Guides:**
+- `platform.ts` (~25 Zeilen): `detectPlatform()` + `detectDesktopOS()` als shared Utility (aus PWAInstallGuide extrahiert)
+- ShareHub erkennt Plattform und zeigt relevante Anleitung zuerst (AirPlay auf iOS/macOS, Chromecast auf Android/Desktop)
+- Schritt-für-Schritt-Anleitungen (nummerierte Listen) statt Einzeiler
+- Relevante Guide automatisch aufgeklappt
+
+**Presentation API:**
+- `presentationApi.ts` (~40 Zeilen): Progressive Enhancement für Browser-nativen Second-Screen-Support
+- `isPresentationApiAvailable()` Capability-Check, `startPresentation()` öffnet Display-URL auf externem Bildschirm
+- Button in ShareHub nur sichtbar wenn Browser die API unterstützt (Chrome/Edge)
+
+**Neue Dateien**: `src/domain/displayLayouts.ts`, `src/domain/platform.ts`, `src/domain/presentationApi.ts`
+**~48 neue Translation-Keys** (24 DE + 24 EN)
+**8 neue Tests** — **1118 Tests gesamt** (16 Testdateien)
+
+---
+
 ## [6.6.0] – 2026-03-15
 
 ### Share Hub & Cross-Device Display

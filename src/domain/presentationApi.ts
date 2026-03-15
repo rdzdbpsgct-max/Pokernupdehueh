@@ -8,6 +8,12 @@
  * We use this as an optional enhancement — never the only path.
  */
 
+// Presentation API types (not in all TS lib targets)
+declare class PresentationRequest {
+  constructor(urls: string[]);
+  start(): Promise<{ id: string }>;
+}
+
 export function isPresentationApiAvailable(): boolean {
   try {
     return typeof navigator !== 'undefined' && 'presentation' in navigator && typeof PresentationRequest !== 'undefined';
