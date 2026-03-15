@@ -4,7 +4,7 @@
 
 Poker tournament timer — a fully client-side React/TypeScript SPA for managing home poker tournaments. Handles blind levels, timers, player tracking, rebuys, bounties, chip management, and payouts. No server required, all data persisted in IndexedDB (with localStorage fallback).
 
-**Version**: 6.5.1
+**Version**: 6.6.0
 **Live**: Deployed to [GitHub Pages](https://rdzdbpsgct-max.github.io/7MountainPoker/) and [Vercel](https://7mountainpoker.vercel.app/)
 
 ## Tech Stack
@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (1090 tests, single run)
+npm run test         # Vitest run (1103 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -60,6 +60,7 @@ src/
 │   │   ├── ChipsScreen.tsx      # Chip denominations display
 │   │   ├── SeatingScreen.tsx    # SVG oval poker table seating diagram
 │   │   ├── LeagueScreen.tsx      # League standings display for TV mode
+│   │   ├── CrossDeviceDisplay.tsx  # PeerJS-based cross-device display client
 │   │   └── index.ts             # Barrel export
 │   ├── AppHeader.tsx            # App header: mode toggle, clock, theme/language/voice switchers, feature gates
 │   ├── FeatureGateModal.tsx     # Modal for locked features (freemium paywall)
@@ -91,6 +92,7 @@ src/
 │   ├── SetupWizard.tsx          # Guided first-time setup wizard (6 steps)
 │   ├── HelpCenter.tsx           # In-app help center — bilingual guide, FAQ, keyboard shortcuts
 │   ├── RemoteControl.tsx        # PeerJS remote control — host QR modal + smartphone controller UI
+│   ├── ShareHub.tsx              # Central share/display/connect modal with QR codes
 │   ├── SettingsPanel.tsx        # Quick-access sound/volume, auto-advance, fullscreen, call-the-clock, accent color, background, TV screen config
 │   ├── SidePotCalculator.tsx    # Side pot calculator modal for all-in situations
 │   ├── TemplateManager.tsx      # Save/load/delete tournament templates, JSON import/export
@@ -154,6 +156,7 @@ src/
 │   ├── usePrintViewWarmup.ts   # Warm-up print view for faster capture
 │   ├── useRemoteHostBridge.ts  # Remote host bridge communication
 │   ├── useSharedPayloads.ts    # Shared payload management across modes
+│   ├── useDisplaySession.ts      # Host-side PeerJS display broadcast to connected peers
 │   └── useTournamentModeTransitions.ts # Tournament mode transition logic
 ├── theme/                       # Dark/Light mode system
 │   ├── index.ts                 # Public re-exports
@@ -329,10 +332,12 @@ public/
 - **PDF Export**: `pdfExport.ts` (~166 lines): `exportTournamentResultAsPdf()` generates professional PDF with header, standings table, tournament info. Dependencies: `jspdf` + `jspdf-autotable`.
 - **Duration Prognosis**: `estimateTournamentDuration()` in blinds.ts estimates total tournament duration based on player count, blind structure, rebuy/addon probabilities. Displayed in TournamentStats and TV StatsScreen.
 - **Remote Session Persistence**: Peer ID stored in `sessionStorage` — remote connection survives browser refresh. `remoteResizeTable` command for table resize support.
+- **Cross-Device Display**: PeerJS-based display on remote devices (TV, tablet, laptop). Hash `#display=PKR-XXXXX` connects to host session, receives `DisplayStatePayload` via PeerJS data channel. `CrossDeviceDisplay.tsx` renders same `DisplayMode` component as local TV window. Timer interpolation (100ms), auto-reconnect (3 attempts, exponential backoff). Hello handshake protocol (`{ type: 'hello', role: 'display', version: 2 }`) differentiates display from remote controller connections. Host broadcasts to N display peers simultaneously.
+- **Share Hub**: Central `ShareHub.tsx` modal (📡 button in game mode header) for all sharing/display options. Sections: Display on another device (QR + link), Remote control (QR + link), This device (second window + fullscreen), Cable & Wireless guides (AirPlay, Chromecast, HDMI). Live connection status indicators. Auto-starts PeerJS host session when opened.
 
 ## Testing
 
-- **1090 tests** across 16 test files + 1 setup file
+- **1103 tests** across 16 test files + 1 setup file
 - Core files: `logic.test.ts` (654), `components.test.tsx` (95), `edge-cases.test.ts` (88), `sound-speech.test.ts` (54), `integration.test.ts` (36), `tournamentActions.test.tsx` (31), `hooks.test.tsx` (25), `i18n.test.ts` (24), `persistence.test.ts` (24), `controls.test.tsx` (22), `display-channel.test.ts` (14), `entitlements.test.ts` (8), `toast.test.ts` (6), `monetizationTelemetry.test.ts` (3), `recovery.test.ts` (3)
 - Use Vitest with globals mode (`describe`, `it`, `expect` available without imports)
 - Run `npm run test` before committing — CI will fail on test failures
@@ -370,6 +375,15 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - When chips are enabled, the blind generator uses the smallest chip denomination as rounding base
 
 ## Changelog
+
+### v6.6.0 — Share Hub & Cross-Device Display
+
+- **Cross-Device Display**: Turnieranzeige auf separatem Gerät via PeerJS. `CrossDeviceDisplay.tsx` (~360 Zeilen), `#display=PKR-XXXXX` Hash-Routing, Timer-Interpolation, Auto-Reconnect.
+- **Share Hub**: Zentrales Modal `ShareHub.tsx` (~350 Zeilen) mit Display-Link, Remote-Link, QR-Codes, Vollbild, AirPlay/Chromecast/HDMI-Anleitungen. 📡 Button im Header.
+- **Multi-Role Sessions**: Hello-Handshake-Protokoll in RemoteHost, N Display-Peers gleichzeitig, Session-ID teilen.
+- **useDisplaySession Hook**: Host-seitige PeerJS Display-Broadcast-Logik (~100 Zeilen).
+- **~64 neue Translation-Keys** (32 DE + 32 EN)
+- **13 neue Tests** — **1103 Tests gesamt**
 
 ### v6.5.1 — Audio-Setup & Sidebar-Lesbarkeit
 

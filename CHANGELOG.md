@@ -5,6 +5,45 @@ All notable changes to the 7Mountain Poker app.
 
 ---
 
+## [6.6.0] – 2026-03-15
+
+### Share Hub & Cross-Device Display
+
+**Cross-Device Display:**
+- Turnieranzeige auf separatem Gerät (TV, Tablet, Laptop) via PeerJS-Verbindung
+- `#display=PKR-XXXXX` Hash-Routing für Cross-Device-Modus in main.tsx
+- `CrossDeviceDisplay.tsx` (~360 Zeilen): PeerJS-Client, Timer-Interpolation (100ms), Auto-Reconnect (3 Versuche, exponentieller Backoff), Fullscreen, Dark Mode
+- DisplayMode 1:1 wiederverwendet — identische Darstellung wie Same-Device TV
+
+**Share Hub (📡):**
+- Zentrales Modal „Teilen / Anzeigen" im Spielmodus-Header
+- Display-Link mit QR-Code (QRCodeSVG) und Kopier-Button
+- Remote-Link mit QR-Code und Kopier-Button
+- Same-Device: Zweites Fenster + Browser-Vollbild
+- Wireless-Anleitungen: AirPlay (iPhone/iPad + Mac), Chromecast, HDMI
+- Live-Verbindungsstatus-Indikatoren
+
+**Multi-Role Sessions:**
+- Hello-Handshake-Protokoll: `{ type: 'hello', role: 'display' | 'remote', version: 2 }`
+- RemoteHost unterstützt N Display-Peers gleichzeitig (broadcast)
+- Display URL: `buildDisplayUrl()`, `parseDisplayHash()` in remote.ts
+- Rückwärtskompatibel: Alte Controller ohne Hello-Handshake weiterhin unterstützt
+
+**Neue Dateien:**
+- `CrossDeviceDisplay.tsx` (~360 Zeilen): PeerJS Display-Client
+- `ShareHub.tsx` (~350 Zeilen): Zentrales Share/Connect-Modal
+- `useDisplaySession.ts` (~100 Zeilen): Host-seitige PeerJS Display-Broadcast-Logik
+
+**Geänderte Dateien:**
+- `remote.ts` — Hello-Handshake, Multi-Connection, Display-URL-Funktionen
+- `main.tsx` — Hash-Routing für `#display=`
+- `App.tsx` — ShareHub-Integration, useDisplaySession
+- `AppHeader.tsx` — 📡 Share-Button
+- `translations.ts` — ~64 neue Keys
+
+- **~64 neue Translation-Keys** (32 DE + 32 EN)
+- **13 neue Tests** — **1103 Tests gesamt** (16 Testdateien)
+
 ## [6.5.1] – 2026-03-15
 
 ### Audio-Setup & Sidebar-Lesbarkeit
