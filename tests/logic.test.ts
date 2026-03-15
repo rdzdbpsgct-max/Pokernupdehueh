@@ -174,6 +174,7 @@ import type { SeriesExport } from '../src/domain/series';
 import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE, REMOTE_STATE_CONTRACT_VERSION, persistHostSession, loadHostSession, clearHostSession, buildDisplayUrl, parseDisplayHash, isHelloMessage } from '../src/domain/remote';
 import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
 import { detectPlatform, detectDesktopOS } from '../src/domain/platform';
+import { isPresentationApiAvailable, buildPresentationUrl } from '../src/domain/presentationApi';
 
 // Helper to create a full TournamentConfig for tests
 function makeConfig(partial: Partial<TournamentConfig> & { name: string; levels: Level[] }): TournamentConfig {
@@ -7411,5 +7412,21 @@ describe('platform detection', () => {
   it('detectDesktopOS returns windows for Win32 platform', () => {
     Object.defineProperty(navigator, 'platform', { value: 'Win32', configurable: true });
     expect(detectDesktopOS()).toBe('windows');
+  });
+});
+
+describe('Presentation API', () => {
+  it('isPresentationApiAvailable returns false in test env', () => {
+    expect(isPresentationApiAvailable()).toBe(false);
+  });
+
+  it('buildPresentationUrl includes display hash', () => {
+    const url = buildPresentationUrl('PKR-12345');
+    expect(url).toContain('#display=PKR-12345');
+  });
+
+  it('buildPresentationUrl uses current origin', () => {
+    const url = buildPresentationUrl('PKR-99999');
+    expect(url).toMatch(/^https?:\/\//);
   });
 });

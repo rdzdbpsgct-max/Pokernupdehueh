@@ -253,6 +253,7 @@ const de = {
   'shareHub.guide.hdmi.step1': 'HDMI-Kabel an Laptop/PC und TV anschließen',
   'shareHub.guide.hdmi.step2': 'Browser in Vollbild öffnen (F11 oder ⌘+Ctrl+F)',
   'shareHub.guide.hdmi.step3': 'Fenster auf den externen Bildschirm ziehen',
+  'shareHub.presentationApi': 'Auf externem Display öffnen (Browser)',
 
   // --- Cross-Device Display ---
   'share.display.connecting': 'Verbinde mit Turnier…',
@@ -1461,6 +1462,7 @@ const en: Record<TranslationKey, string> = {
   'shareHub.guide.hdmi.step1': 'Connect HDMI cable to laptop/PC and TV',
   'shareHub.guide.hdmi.step2': 'Open browser in fullscreen (F11 or ⌘+Ctrl+F)',
   'shareHub.guide.hdmi.step3': 'Drag window to the external display',
+  'shareHub.presentationApi': 'Open on External Display (Browser)',
 
   // --- Cross-Device Display ---
   'share.display.connecting': 'Connecting to tournament…',

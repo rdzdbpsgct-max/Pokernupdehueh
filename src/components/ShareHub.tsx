@@ -4,6 +4,7 @@ import { useTranslation } from '../i18n';
 import { useDialogA11y } from '../hooks/useDialogA11y';
 import { useTheme } from '../theme';
 import { detectPlatform, detectDesktopOS } from '../domain/platform';
+import { isPresentationApiAvailable, startPresentation } from '../domain/presentationApi';
 
 interface Props {
   sessionId: string | null;
@@ -161,6 +162,16 @@ function ShareHubInner({
                     />
                   </div>
                 </div>
+              )}
+
+              {isPresentationApiAvailable() && sessionId && (
+                <button
+                  onClick={() => startPresentation(sessionId)}
+                  className="w-full text-sm px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700/60 bg-white dark:bg-gray-800/80 hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-300 transition-colors active:scale-[0.97] flex items-center justify-center gap-2"
+                >
+                  <span>{String.fromCodePoint(0x1F5A5)}</span>
+                  <span>{t('shareHub.presentationApi' as TKey)}</span>
+                </button>
               )}
 
               <StatusDot
