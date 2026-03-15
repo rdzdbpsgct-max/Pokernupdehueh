@@ -6,10 +6,10 @@
 
 **Der Poker-Turnier-Timer für deinen Spieleabend**
 
-[![Version](https://img.shields.io/badge/Version-6.5.0-blue?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-6.7.0-blue?style=flat-square)](#)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-34d399?style=flat-square&logo=github)](https://rdzdbpsgct-max.github.io/7MountainPoker/)
 [![Vercel](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=flat-square&logo=vercel)](https://7mountainpoker.vercel.app/)
-[![Tests](https://img.shields.io/badge/Tests-1090%20passed-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-1118%20passed-brightgreen?style=flat-square)](#)
 [![Build](https://img.shields.io/badge/Build-passing-brightgreen?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-installierbar-7c3aed?style=flat-square)](#)
 
@@ -72,7 +72,9 @@ Eine vollständig clientseitige Web-App zur Verwaltung von Poker-Heimturnieren. 
 | QR-Codes | App-URL + Turnierergebnis als QR-Code — scannen und Ergebnis in der App sehen |
 | Sound | Countdown-Beeps, Level-Ende, Bubble-Spannung, ITM-Fanfare, Sieges-Melodie (Web Audio API) |
 | Sprachansagen | Professionelle ElevenLabs-MP3-Stimmen (Deutsch + Englisch) für Level-Wechsel, Pausen (1–30 Min), 5-Min-Warnung, Letzte Hand, Bubble, dynamische Spieleranzahl (basierend auf Auszahlungsplätzen), Heads-Up, ITM, Eliminierungen, Rebuys, Sieger, Turnierstart, Color-Up, Tischwechsel, Timer-Status. Dreistufiger Fallback: Web Audio API → HTMLAudioElement → Web Speech API. 468 Audio-Dateien (234 pro Sprache), offline via PWA. |
-| TV-Modus | Split-Layout: Timer permanent oben, 6 rotierende Screens unten (Spieler, Stats, Auszahlung, Blindstruktur, Chips, Sitzplan) — optimiert für TV/Beamer |
+| TV-Modus | Split-Layout: Timer permanent oben, 8 rotierende Screens unten (Spieler, Stats, Auszahlung, Blindstruktur, Chips, Sitzplan, Liga, Side-Pots) — optimiert für TV/Beamer. 4 Display-Layouts (Standard, Kompakt, Timer-Only, Ultra Large) |
+| Cross-Device Display | Turnieranzeige auf separatem Gerät (TV, Tablet, Laptop) via PeerJS — Display-Link teilen, QR-Code scannen, fertig |
+| Share Hub | Zentrales „Teilen/Anzeigen"-Modal — Display-Link, Remote-Link, QR-Codes, Vollbild, plattformspezifische Wireless-Anleitungen (AirPlay, Chromecast, HDMI) |
 | PWA | Installierbar auf Mobile/Desktop, offline nutzbar |
 | Wake Lock | Bildschirm bleibt während laufendem Timer an (kein Energiesparmodus) |
 | Persistenz | Cache-First IndexedDB-Speicher (12 IndexedDB-Stores) mit automatischem localStorage-Fallback |
@@ -174,7 +176,9 @@ A fully client-side web app for managing home poker tournaments. No server, no a
 | Last Hand | Toggle button + keyboard shortcut (L) + amber banner + voice announcement (before break / end of level) |
 | Dealer rotation | One-click dealer button advance, skips eliminated players |
 | Error boundary | Catches React crashes with user-friendly reload page |
-| TV Display Mode | Dedicated fullscreen overlay for projectors/TVs — six rotating screens (players, stats, payout, blind schedule, chip values, seating), auto-rotation every 15 sec, arrow key navigation (T) |
+| TV Display Mode | Dedicated fullscreen overlay for projectors/TVs — eight rotating screens (players, stats, payout, blind schedule, chip values, seating, league, side pots), auto-rotation, arrow key navigation (T). 4 display layouts (Standard, Compact, Timer-Only, Ultra Large) |
+| Cross-Device Display | Show tournament on a separate device (TV, tablet, laptop) via PeerJS — share display link, scan QR code, done |
+| Share Hub | Central "Share/Display" modal — display link, remote link, QR codes, fullscreen, platform-specific wireless guides (AirPlay, Chromecast, HDMI) |
 | Fullscreen | Large timer mode for TV or projector display |
 | PWA | Installable on mobile/desktop, works offline |
 | Wake Lock | Screen stays on during active timer (no sleep mode) |
@@ -225,13 +229,13 @@ Please make sure `npm run lint` and `npm run test` pass without errors.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-1090_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-1118_Tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 
 - **React 19** — Funktionale Komponenten und Hooks / Functional components and hooks
 - **TypeScript 5.9** — Strikte Typisierung / Strict typing
 - **Vite 7** — Build-Tool / Build tool
 - **Tailwind CSS 4** — Styling (keine CSS-Dateien / no CSS files)
-- **Vitest** — 1090 Tests / Unit tests
+- **Vitest** — 1118 Tests / Unit tests
 - **GitHub Actions** — CI/CD mit Deploy auf GitHub Pages / with deploy to GitHub Pages
 - **Vercel** — Automatisches Deploy / Auto-deploy on push
 - **PWA** — vite-plugin-pwa, offline-fähig / offline-capable
@@ -265,7 +269,7 @@ App: `http://localhost:5173/`
 
 ```bash
 npm run lint        # ESLint
-npm run test        # 1090 Tests
+npm run test        # 1118 Tests
 npm run build       # Production-Build → ./dist
 ```
 
@@ -282,6 +286,9 @@ src/
     speech.ts           # Sprachansagen (ElevenLabs MP3 + Web Speech API Fallback)
     audioPlayer.ts      # MP3-Playback-Engine
     series.ts           # Turnier-Serien-Logik / Tournament series logic
+    displayLayouts.ts   # Display-Layout-Varianten / Display layout variants
+    platform.ts         # Plattform-Erkennung / Platform detection
+    presentationApi.ts  # Presentation API (Second Screen) / Presentation API support
     customAudio.ts      # Custom Audio Management / Custom audio management
     pdfExport.ts        # PDF-Export / PDF export
   hooks/
@@ -301,7 +308,9 @@ src/
   components/
     TimerDisplay.tsx     # Timer-Anzeige / Timer display
     ConfigEditor.tsx     # Blindstruktur-Editor / Blind structure editor
-    DisplayMode.tsx      # TV-Display mit 5 rotierenden Screens / TV display with 5 rotating screens
+    DisplayMode.tsx      # TV-Display mit 8 rotierenden Screens / TV display with 8 rotating screens
+    CrossDeviceDisplay.tsx # PeerJS Display-Client / PeerJS display client
+    ShareHub.tsx          # Zentrales Teilen-Modal / Central sharing modal
     TournamentHistory.tsx # Turnier-Historie mit Statistiken & Export / Tournament history with stats & export
     ErrorBoundary.tsx    # React-Error-Boundary mit Reload / Error boundary with reload
     BlindGenerator.tsx   # Blindstruktur-Generator / Blind structure generator
@@ -335,7 +344,7 @@ public/
   audio/de/             # 234 ElevenLabs MP3 Audiodateien (Deutsch, Stimme: Ava)
   audio/en/             # 234 ElevenLabs MP3 Audiodateien (Englisch)
 tests/
-  logic.test.ts         # 1090 Tests
+  logic.test.ts         # 1118 Tests
 ```
 
 ## Architektur / Architecture

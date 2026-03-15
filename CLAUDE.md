@@ -23,7 +23,7 @@ Poker tournament timer — a fully client-side React/TypeScript SPA for managing
 npm run dev          # Start dev server (http://localhost:5173/)
 npm run build        # TypeScript compile + Vite bundle → dist/
 npm run lint         # ESLint check
-npm run test         # Vitest run (1103 tests, single run)
+npm run test         # Vitest run (1118 tests, single run)
 npm run test:watch   # Vitest in watch mode
 npm run preview      # Preview production build locally
 ```
@@ -397,6 +397,7 @@ Version numbers, test counts, feature lists, and project structure must stay in 
 - **Multi-Role Sessions**: Hello-Handshake-Protokoll in RemoteHost, N Display-Peers gleichzeitig, Session-ID teilen.
 - **useDisplaySession Hook**: Host-seitige PeerJS Display-Broadcast-Logik (~100 Zeilen).
 - **~64 neue Translation-Keys** (32 DE + 32 EN)
+- **Neue Dateien**: `CrossDeviceDisplay.tsx`, `ShareHub.tsx`, `useDisplaySession.ts`, `session.ts` (via remote.ts)
 - **13 neue Tests** — **1103 Tests gesamt**
 
 ### v6.5.1 — Audio-Setup & Sidebar-Lesbarkeit
