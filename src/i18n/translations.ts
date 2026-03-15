@@ -1007,7 +1007,7 @@ const de = {
   'display.layout.timerOnlyDesc': 'Maximaler Timer, keine Sekundäranzeige',
   'display.layout.ultraLarge': 'Ultra Large',
   'display.layout.ultraLargeDesc': 'Übergroßer Timer (70%), kompakte Infos (30%)',
-  'settings.displayLayout': 'Display-Layout',
+  'settings.displayLayout': 'TV-Modus Layout',
 
   // --- Side Pot warnings (domain) ---
   'sidePot.warnZeroPlayers': '{n} Spieler mit 0 Einsatz werden ignoriert.',
@@ -2213,7 +2213,7 @@ const en: Record<TranslationKey, string> = {
   'display.layout.timerOnlyDesc': 'Maximum timer, no secondary screens',
   'display.layout.ultraLarge': 'Ultra Large',
   'display.layout.ultraLargeDesc': 'Oversized timer (70%), compact info (30%)',
-  'settings.displayLayout': 'Display Layout',
+  'settings.displayLayout': 'TV Mode Layout',
 
   // --- Side Pot warnings (domain) ---
   'sidePot.warnZeroPlayers': '{n} player(s) with 0 investment ignored.',
