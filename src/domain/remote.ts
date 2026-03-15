@@ -480,9 +480,17 @@ export class RemoteHost {
               }
               return;
             }
+            if (isHelloMessage(msg) && msg.role === 'remote') {
+              // Remote controller hello — register and set up, but don't re-process the hello
+              identified = true;
+              conn.off('data', onFirstData);
+              this.conn = conn;
+              this.setupConnection(conn);
+              return;
+            }
           } catch { /* not a hello — fall through to remote */ }
 
-          // No display hello or remote hello → treat as remote controller
+          // No hello at all → treat as legacy remote controller
           identified = true;
           conn.off('data', onFirstData);
           this.conn = conn;

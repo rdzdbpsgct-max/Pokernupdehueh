@@ -6437,50 +6437,6 @@ describe('League Module', () => {
     });
   });
 
-  describe('remote — display URL functions', () => {
-    it('buildDisplayUrl includes peer ID as hash parameter', () => {
-      const url = buildDisplayUrl('PKR-ABCDE');
-      expect(url).toContain('#display=PKR-ABCDE');
-    });
-
-    it('buildDisplayUrl uses correct base URL', () => {
-      const url = buildDisplayUrl('PKR-ABCDE');
-      expect(url).toMatch(/^https?:\/\/.+#display=PKR-ABCDE$/);
-    });
-
-    it('parseDisplayHash extracts valid peer ID', () => {
-      expect(parseDisplayHash('#display=PKR-AB3D5')).toEqual({ peerId: 'PKR-AB3D5' });
-    });
-
-    it('parseDisplayHash returns null for invalid format', () => {
-      expect(parseDisplayHash('#display=invalid')).toBeNull();
-      expect(parseDisplayHash('#display=')).toBeNull();
-      expect(parseDisplayHash('#remote=PKR-AB3D5')).toBeNull();
-    });
-
-    it('parseDisplayHash returns null for missing prefix', () => {
-      expect(parseDisplayHash('#PKR-AB3D5')).toBeNull();
-      expect(parseDisplayHash('')).toBeNull();
-    });
-  });
-
-  describe('remote — hello handshake', () => {
-    it('isHelloMessage validates display hello', () => {
-      expect(isHelloMessage({ type: 'hello', role: 'display', version: 2 })).toBe(true);
-    });
-
-    it('isHelloMessage validates remote hello', () => {
-      expect(isHelloMessage({ type: 'hello', role: 'remote', version: 2 })).toBe(true);
-    });
-
-    it('isHelloMessage rejects invalid messages', () => {
-      expect(isHelloMessage({ type: 'command', action: 'play' })).toBe(false);
-      expect(isHelloMessage({ type: 'hello' })).toBe(false);
-      expect(isHelloMessage({ type: 'hello', role: 'spectator', version: 2 })).toBe(false);
-      expect(isHelloMessage(null)).toBe(false);
-    });
-  });
-
   // ---------------------------------------------------------------------------
   // Sprint 4: displayChannel Tests
   // ---------------------------------------------------------------------------
@@ -6527,6 +6483,54 @@ describe('League Module', () => {
       expect(restored!.size).toBe(original.size);
       expect(restored!.get(5)![0].value).toBe(50);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Remote — display URL functions & hello handshake
+// ---------------------------------------------------------------------------
+
+describe('remote — display URL functions', () => {
+  it('buildDisplayUrl includes peer ID as hash parameter', () => {
+    const url = buildDisplayUrl('PKR-ABCDE');
+    expect(url).toContain('#display=PKR-ABCDE');
+  });
+
+  it('buildDisplayUrl uses correct base URL', () => {
+    const url = buildDisplayUrl('PKR-ABCDE');
+    expect(url).toMatch(/^https?:\/\/.+#display=PKR-ABCDE$/);
+  });
+
+  it('parseDisplayHash extracts valid peer ID', () => {
+    expect(parseDisplayHash('#display=PKR-AB3D5')).toEqual({ peerId: 'PKR-AB3D5' });
+  });
+
+  it('parseDisplayHash returns null for invalid format', () => {
+    expect(parseDisplayHash('#display=invalid')).toBeNull();
+    expect(parseDisplayHash('#display=')).toBeNull();
+    expect(parseDisplayHash('#remote=PKR-AB3D5')).toBeNull();
+  });
+
+  it('parseDisplayHash returns null for missing prefix', () => {
+    expect(parseDisplayHash('#PKR-AB3D5')).toBeNull();
+    expect(parseDisplayHash('')).toBeNull();
+  });
+});
+
+describe('remote — hello handshake', () => {
+  it('isHelloMessage validates display hello', () => {
+    expect(isHelloMessage({ type: 'hello', role: 'display', version: 2 })).toBe(true);
+  });
+
+  it('isHelloMessage validates remote hello', () => {
+    expect(isHelloMessage({ type: 'hello', role: 'remote', version: 2 })).toBe(true);
+  });
+
+  it('isHelloMessage rejects invalid messages', () => {
+    expect(isHelloMessage({ type: 'command', action: 'play' })).toBe(false);
+    expect(isHelloMessage({ type: 'hello' })).toBe(false);
+    expect(isHelloMessage({ type: 'hello', role: 'spectator', version: 2 })).toBe(false);
+    expect(isHelloMessage(null)).toBe(false);
   });
 });
 
