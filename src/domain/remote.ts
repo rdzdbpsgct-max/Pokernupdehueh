@@ -205,6 +205,46 @@ export function parseRemoteHash(hash: string): RemoteHashResult | null {
   return null;
 }
 
+/* ── Display URL helpers ──────────────────────────────────── */
+
+export interface DisplayHashResult {
+  peerId: string;
+}
+
+export function buildDisplayUrl(peerId: string): string {
+  const base = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname}`
+    : 'https://7mountainpoker.vercel.app/';
+  return `${base}#display=${peerId}`;
+}
+
+export function parseDisplayHash(hash: string): DisplayHashResult | null {
+  if (!hash.startsWith('#display=')) return null;
+  const peerId = hash.slice('#display='.length);
+  if (!/^PKR-[A-Z2-9]{5}$/.test(peerId)) return null;
+  return { peerId };
+}
+
+/* ── Hello handshake protocol ─────────────────────────────── */
+
+export type SessionRole = 'display' | 'remote';
+
+export interface HelloMessage {
+  type: 'hello';
+  role: SessionRole;
+  version: number;
+}
+
+export function isHelloMessage(msg: unknown): msg is HelloMessage {
+  if (!msg || typeof msg !== 'object') return false;
+  const m = msg as Record<string, unknown>;
+  return (
+    m.type === 'hello' &&
+    (m.role === 'display' || m.role === 'remote') &&
+    typeof m.version === 'number'
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Message types
 // ---------------------------------------------------------------------------
@@ -318,6 +358,7 @@ export interface RemoteHostCallbacks {
   onCommand: (cmd: RemoteCommand) => void;
   onStatusChange: (status: HostStatus) => void;
   onError?: (error: string) => void;
+  onDisplayCountChange?: (count: number) => void;
 }
 
 export interface RemoteHostOptions {
@@ -340,6 +381,8 @@ export class RemoteHost {
   private rateLimiter = new RateLimiter();
   /** Most recently built state message for immediate snapshot on reconnect */
   private lastBuiltState: RemoteState | null = null;
+  /** Connected display peers (TV windows, projectors) */
+  private displayConnections: Map<string, DataConnection> = new Map();
 
   constructor(callbacks: RemoteHostCallbacks, options?: RemoteHostOptions) {
     this.callbacks = callbacks;
@@ -372,6 +415,11 @@ export class RemoteHost {
     return this._resumed;
   }
 
+  /** Number of currently connected display peers */
+  get displayCount(): number {
+    return this.displayConnections.size;
+  }
+
   private async initHmacKey(): Promise<void> {
     try {
       this.hmacKey = await importHmacKey(this._secret);
@@ -394,9 +442,66 @@ export class RemoteHost {
       });
 
       this.peer.on('connection', (conn) => {
-        // Accept incoming connection from controller
-        this.conn = conn;
-        this.setupConnection(conn);
+        // Wait for first message to determine role (hello handshake)
+        let identified = false;
+
+        const onFirstData = (raw: unknown) => {
+          if (identified) return;
+          try {
+            const msg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            if (isHelloMessage(msg) && msg.role === 'display') {
+              // Display peer — register and set up close handler
+              identified = true;
+              conn.off('data', onFirstData);
+              this.displayConnections.set(conn.peer, conn);
+              this.callbacks.onDisplayCountChange?.(this.displayConnections.size);
+
+              conn.on('data', (d) => {
+                // Display peers only send pongs
+                try {
+                  const m = typeof d === 'string' ? JSON.parse(d) : d;
+                  if (m.type === 'pong') { /* keepalive */ }
+                } catch { /* ignore */ }
+              });
+
+              conn.on('close', () => {
+                this.displayConnections.delete(conn.peer);
+                this.callbacks.onDisplayCountChange?.(this.displayConnections.size);
+              });
+
+              conn.on('error', () => {
+                this.displayConnections.delete(conn.peer);
+                this.callbacks.onDisplayCountChange?.(this.displayConnections.size);
+              });
+
+              // Send immediate state snapshot to display
+              if (this.lastBuiltState && conn.open) {
+                try { conn.send(JSON.stringify(this.lastBuiltState)); } catch { /* ignore */ }
+              }
+              return;
+            }
+          } catch { /* not a hello — fall through to remote */ }
+
+          // No display hello or remote hello → treat as remote controller
+          identified = true;
+          conn.off('data', onFirstData);
+          this.conn = conn;
+          this.setupConnection(conn);
+          // Re-process this first message through normal handler
+          this.handleIncoming(raw);
+        };
+
+        conn.on('data', onFirstData);
+
+        // Timeout: if no hello within 2s, assume remote controller
+        setTimeout(() => {
+          if (!identified) {
+            identified = true;
+            conn.off('data', onFirstData);
+            this.conn = conn;
+            this.setupConnection(conn);
+          }
+        }, 2000);
       });
 
       this.peer.on('error', (err) => {
@@ -562,10 +667,30 @@ export class RemoteHost {
     }
   }
 
+  /** Broadcast a state payload to all connected display peers */
+  sendDisplayState(payload: unknown): void {
+    if (this.displayConnections.size === 0) return;
+    const json = JSON.stringify(payload);
+    for (const [peerId, conn] of this.displayConnections) {
+      if (conn.open) {
+        try { conn.send(json); } catch {
+          // Connection lost — clean up
+          this.displayConnections.delete(peerId);
+          this.callbacks.onDisplayCountChange?.(this.displayConnections.size);
+        }
+      }
+    }
+  }
+
   /** Close the connection and destroy peer */
   destroy(): void {
     this.stopKeepalive();
     clearHostSession();
+    // Close all display connections
+    for (const [, conn] of this.displayConnections) {
+      try { conn.close(); } catch { /* ignore */ }
+    }
+    this.displayConnections.clear();
     if (this.conn) {
       try { this.conn.close(); } catch { /* ignore */ }
       this.conn = null;

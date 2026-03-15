@@ -169,7 +169,7 @@ import {
 } from '../src/domain/chips';
 import type { Level, TournamentConfig, TimerState, PayoutConfig, RebuyConfig, Player, League, TournamentResult, Table, GameDay, ExtendedLeagueStanding, PlayerPotInput, PotWinnerAssignment, RegisteredPlayer, ChipDenomination, SeriesStanding } from '../src/domain/types';
 import type { SeriesExport } from '../src/domain/series';
-import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE, REMOTE_STATE_CONTRACT_VERSION, persistHostSession, loadHostSession, clearHostSession } from '../src/domain/remote';
+import { generatePeerId, generateSecret, buildRemoteUrl, parseRemoteHash, buildHmacPayload, signMessage, verifyMessage, RateLimiter, MAX_MESSAGE_SIZE, REMOTE_STATE_CONTRACT_VERSION, persistHostSession, loadHostSession, clearHostSession, buildDisplayUrl, parseDisplayHash, isHelloMessage } from '../src/domain/remote';
 import { serializeColorUpMap, deserializeColorUpMap } from '../src/domain/displayChannel';
 
 // Helper to create a full TournamentConfig for tests
@@ -6434,6 +6434,50 @@ describe('League Module', () => {
       expect(skipCmd.action).toBe('skipBreak');
       expect(extendCmd.action).toBe('extendBreak');
       expect(extendCmd.payload?.seconds).toBe(300);
+    });
+  });
+
+  describe('remote — display URL functions', () => {
+    it('buildDisplayUrl includes peer ID as hash parameter', () => {
+      const url = buildDisplayUrl('PKR-ABCDE');
+      expect(url).toContain('#display=PKR-ABCDE');
+    });
+
+    it('buildDisplayUrl uses correct base URL', () => {
+      const url = buildDisplayUrl('PKR-ABCDE');
+      expect(url).toMatch(/^https?:\/\/.+#display=PKR-ABCDE$/);
+    });
+
+    it('parseDisplayHash extracts valid peer ID', () => {
+      expect(parseDisplayHash('#display=PKR-AB3D5')).toEqual({ peerId: 'PKR-AB3D5' });
+    });
+
+    it('parseDisplayHash returns null for invalid format', () => {
+      expect(parseDisplayHash('#display=invalid')).toBeNull();
+      expect(parseDisplayHash('#display=')).toBeNull();
+      expect(parseDisplayHash('#remote=PKR-AB3D5')).toBeNull();
+    });
+
+    it('parseDisplayHash returns null for missing prefix', () => {
+      expect(parseDisplayHash('#PKR-AB3D5')).toBeNull();
+      expect(parseDisplayHash('')).toBeNull();
+    });
+  });
+
+  describe('remote — hello handshake', () => {
+    it('isHelloMessage validates display hello', () => {
+      expect(isHelloMessage({ type: 'hello', role: 'display', version: 2 })).toBe(true);
+    });
+
+    it('isHelloMessage validates remote hello', () => {
+      expect(isHelloMessage({ type: 'hello', role: 'remote', version: 2 })).toBe(true);
+    });
+
+    it('isHelloMessage rejects invalid messages', () => {
+      expect(isHelloMessage({ type: 'command', action: 'play' })).toBe(false);
+      expect(isHelloMessage({ type: 'hello' })).toBe(false);
+      expect(isHelloMessage({ type: 'hello', role: 'spectator', version: 2 })).toBe(false);
+      expect(isHelloMessage(null)).toBe(false);
     });
   });
 
