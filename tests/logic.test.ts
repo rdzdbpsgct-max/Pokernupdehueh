@@ -157,6 +157,8 @@ import {
   getCustomAudioForAnnouncement,
   formatFileSize,
   CUSTOMIZABLE_ANNOUNCEMENTS,
+  getLayoutConfig,
+  DISPLAY_LAYOUTS,
 } from '../src/domain/logic';
 import {
   applyChipPreset,
@@ -7318,5 +7320,51 @@ describe('DisplayLayout type', () => {
   it('should accept valid display layout values', () => {
     const layouts: import('../src/domain/types').DisplayLayout[] = ['standard', 'compact', 'timer-only', 'ultra-large'];
     expect(layouts).toHaveLength(4);
+  });
+});
+
+describe('displayLayouts', () => {
+  it('getLayoutConfig returns standard layout by default', () => {
+    const cfg = getLayoutConfig('standard');
+    expect(cfg.timerFlex).toBe(55);
+    expect(cfg.secondaryFlex).toBe(45);
+    expect(cfg.showSecondary).toBe(true);
+    expect(cfg.showTicker).toBe(true);
+  });
+
+  it('getLayoutConfig returns compact layout', () => {
+    const cfg = getLayoutConfig('compact');
+    expect(cfg.timerFlex).toBe(40);
+    expect(cfg.secondaryFlex).toBe(60);
+    expect(cfg.showSecondary).toBe(true);
+  });
+
+  it('getLayoutConfig returns timer-only layout', () => {
+    const cfg = getLayoutConfig('timer-only');
+    expect(cfg.showSecondary).toBe(false);
+    expect(cfg.showTicker).toBe(false);
+    expect(cfg.timerFlex).toBe(100);
+  });
+
+  it('getLayoutConfig returns ultra-large layout', () => {
+    const cfg = getLayoutConfig('ultra-large');
+    expect(cfg.timerFlex).toBe(70);
+    expect(cfg.secondaryFlex).toBe(30);
+    expect(cfg.showSecondary).toBe(true);
+    expect(cfg.timerFontScale).toBeGreaterThan(1);
+  });
+
+  it('getLayoutConfig defaults to standard for undefined', () => {
+    const cfg = getLayoutConfig(undefined);
+    expect(cfg.timerFlex).toBe(55);
+  });
+
+  it('DISPLAY_LAYOUTS has all 4 variants with labels', () => {
+    expect(DISPLAY_LAYOUTS).toHaveLength(4);
+    expect(DISPLAY_LAYOUTS.map((l: { id: string }) => l.id)).toEqual(['standard', 'compact', 'timer-only', 'ultra-large']);
+    for (const l of DISPLAY_LAYOUTS) {
+      expect(l.labelKey).toBeTruthy();
+      expect(l.descKey).toBeTruthy();
+    }
   });
 });
